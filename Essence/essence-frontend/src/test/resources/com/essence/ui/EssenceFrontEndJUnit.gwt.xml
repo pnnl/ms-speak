@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module>
+  <!-- Inherit our applications main module.                      -->
+  <inherits name='com.essence.ui.EssenceFrontEnd' />
+
+  <!-- Specify the path to any remote services.                   -->
+  <servlet path="/EssenceFrontEnd/greet" class="com.essence.ui.server.GreetingServiceImpl" />
+
+</module>

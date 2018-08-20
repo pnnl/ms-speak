@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/MultiSpeaker">
+        <file>Resources/media-pause-32.png</file>
+        <file>Resources/media-play-32.png</file>
+        <file>Resources/repeat.png</file>
+        <file>Resources/settings.png</file>
+        <file>Resources/undo.png</file>
+        <file>Resources/network_w.png</file>
+        <file>Resources/clear.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,176 @@
+<head>
+	<title>Open Modeling Framework</title>
+	<meta charset="utf-8">
+	<link href="{{pathPrefix}}/static/omf.css" type="text/css" rel="stylesheet"/>
+	<link rel="shortcut icon" href="{{pathPrefix}}/static/favicon.ico">
+	<link href="{{pathPrefix}}/static/models.css" type="text/css" rel="stylesheet"/>
+	<!-- Library Imports -->
+	<script type="text/javascript" src="{{pathPrefix}}/static/omf.js"></script>
+	<script type="text/javascript" src="{{pathPrefix}}/static/jquery-1.9.1.js"></script>
+	<script src="{{pathPrefix}}/static/highcharts.src.js"></script>
+	<!-- Global Funcs Import -->
+	<script type="text/javascript" src="{{pathPrefix}}/static/models.js"></script>
+	<!-- Data  Imports -->
+	<script>allInputData={% if allInputData %}{{allInputData | safe}}{% else %}null{% endif %}</script>
+	<script>allOutputData={% if allOutputData %}{{allOutputData | safe}}{% else %}null{% endif %}</script>
+	<script>modelStatus="{{modelStatus}}"</script>
+	<script>currentUser="{{datastoreNames.get('currentUser','test')}}"</script>
+</head>
+<body onload="init()">
+	<div id="title">
+		<div id="logoBox"><a href="/">&#10059;</a></div>
+		<p id="titleText">New PV Watts Model</p>
+	</div>
+	<p class="reportTitle">Model Input</p>
+	<div id="input" class="content">
+		<form name="inputForm" action="/runModel/" method="post" onsubmit="return validateForm()">
+			<div class="shortInput">
+				<label>Model Type</label>
+				<input type="text" id="modelType" name="modelType" value="pvWatts" readonly/>
+			</div>
+			<div class="shortInput">
+				<label>Model Name</label>
+				<input type="text" id="modelName" name="modelName" data-validRegex="[\w\s]+"/>
+			</div>
+			<div class="shortInput runningInline postRunInline">
+				<label>User</label>
+				<input type="text" id="user" name="user" readonly/>
+			</div>
+			<div class="shortInput runningInline postRunInline ">
+				<label>Created</label>
+				<input type="text" id="created" name="created" readonly/>
+			</div>
+			<div class="shortInput postRunInline">
+				<label>Run Time</label>
+				<input type="text" id="runTime" name="runTime" readonly/>
+			</div>
+			<hr>
+			<div class="shortInput">
+				<label class="tooltip">Climate<span class="classic">Climate</span></label>
+				<select id="climateName" name="climateName">
+					{% for climate in datastoreNames["climates"] %}
+						<option value="{{ climate }}">{{ climate }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Simulation Length<span class="classic">Simulation Length</span></label>
+				<input type="text" id="simLength" name="simLength" data-validRegex="\d+"/>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Length Units<span class="classic">Length Units</span></label>
+				<select id="simLengthUnits" name="simLengthUnits">
+					<!--<option value="minutes">Minutes</option> -->
+					<option value="hours">Hours</option>
+					<option value="days">Days</option>
+				</select>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Simulation Start Date (YYYY-MM-DD)<span class="classic">Simulation Start Date</span></label>
+				<input type="text" id="simStartDate" name="simStartDate" data-validRegex="\d\d\d\d-\d\d-\d\d"/>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">System Size (kW)<span class="classic">System Size</span></label>
+				<input type="text" id="systemSize" name="systemSize" data-validRegex="\d+\.?\d*"/>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Derate (%)<span class="classic">Derate</span></label>
+				<input type="text" id="derate" name="derate" data-validRegex="\d+\.?\d*"/>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Tracking Mode<span class="classic">Tracking Mode<br>Fixed:<br>1 Axis:<br>2 Axis:<br>Azimuth Axis:</span></label>
+				<select id="trackingMode" name="trackingMode"/>
+					<option value="0">Fixed</option>
+					<option value="1">1 Axis</option>
+					<option value="2">2 Axis</option>
+					<option value="3">Azimuth Axis</option>
+				</select>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Azimuth (degrees)<span class="classic">Azimuth (degrees)</span></label>
+				<input type="text" id="azimuth" name="azimuth"/>
+			</div>
+			<hr>
+			<div>
+				<label style="text-align:right;cursor:hand"><p class="discloser" onclick="javascript:toggleAdvanced(this)" title="to show more options">&#9654; Advanced Options</p></label>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Tracker rotation limit (deg)<span class="classic">Tracker rotation limit</span></label>
+				<input type="text" id="rotlim" name="rotlim" value="45.0"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Nominal operating cell temperature (C)<span class="classic">Nominal operating cell temperature</span></label>
+				<input type="text" id="t_noct" name="t_noct" value="45.0"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Reference cell temperature (C)<span class="classic">Reference cell temperature</span></label>
+				<input type="text" id="t_ref" name="t_ref" value="25.0"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Max power temperature coefficient (%/C)<span class="classic">Max power temperature coefficient</span></label>
+				<input type="text" id="gamma" name="gamma" value="-0.5"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Inverter efficiency at rated power (frac)<span class="classic">Inverter efficiency at rated power</span></label>
+				<input type="text" id="inv_eff" name="inv_eff" value="0.92"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Diffuse fraction (0..1)<span class="classic">Diffuse fraction</span></label>
+				<input type="text" id="fd" name="fd" value="1.0"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Rating condition irradiance (W/m2)<span class="classic">Rating condition irradiance</span></label>
+				<input type="text" id="i_ref" name="i_ref" value="1000"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Min reqd irradiance for operation (W/m2)<span class="classic">Min reqd irradiance for operation</span></label>
+				<input type="text" id="poa_cutin" name="poa_cutin" value="0"/>
+			</div>
+			<div class="advancedOption shortInput">
+				<label class="tooltip">Wind stow speed	(m/s)<span class="classic"Wind stow speed></span></label>
+				<input type="text" id="w_stow" name="w_stow" value="0"/>
+			</div>
+			<div class="wideInput" style="text-align:right">
+				<button id="deleteButton" type="button" class="stoppedInline postRunInline" onclick="deleteModel()">Delete</button>
+				<button id="publishButton" type="button" class="postRunInline" onclick="publishModel()">Publish</button>
+				<button id="duplicateButton" type="button" class="postRunInline" onclick="duplicateModel()">Duplicate</button>
+				<button id="runButton" type="submit" class="preRun">Run Model</button>
+				<button id="rerunButton" type="submit" class="stoppedInline postRunInline">Re-Run Model</button>
+			</div>
+		</form>
+	</div>
+	<div id ="runIndicator" class="content running">
+		Model running on server. Refresh the page to check for results.
+	</div>
+	<div id ="stopIndicator" class="content stopped">
+		Model cancelled or encountered an error. Please change inputs and re-run.
+	</div>
+	<div id="output">
+		<p class="reportTitle postRun">System Outputs</p>
+		<div id="powerGenerationReport" class="tightContent postRun">
+			<div id="powerTimeSeries"></div>
+			<div id="energyBalance"></div>
+			<script>
+				Highcharts.setOptions({global: { useUTC: false }});
+				powerSeries = [{"marker":{"enabled":false},"color":"red","data":allOutputData.Consumption.Power,"name":"Power Generated"}]
+				var diff = Date.parse(allOutputData.timeStamps[0].substr(0,19)) - Date.parse(allOutputData.timeStamps[0])
+				pointStart = Date.parse(allOutputData.timeStamps[0]) + diff
+				pointInterval = Date.parse(allOutputData.timeStamps[1]) - Date.parse(allOutputData.timeStamps[0])
+				new Highcharts.Chart({"credits":{"enabled":false},"plotOptions":{"series":{"pointStart":pointStart,"shadow":false,"pointInterval":pointInterval},"line":{"marker":{"enabled":false}}},"xAxis":{"maxZoom":108000000,"tickColor":"gray","type":"datetime","lineColor":"gray"},"title":{"text":null},"series":powerSeries,"yAxis":{"title":{"text":"Power (W)","style":{"color":"gray"}}},"chart":{"zoomType":"x","marginBottom":20,"width":1000,"height":250,"marginRight":20,"renderTo":"powerTimeSeries","type":"line"},"tooltip":{"valueDecimals":1},"legend":{"verticalAlign":"top","align":"top","borderWidth":0,"x":50,"y":-10,"layout":"horizontal"}})
+			</script>
+		</div>
+		<p class="reportTitle postRun">Climate</p>
+		<div id="climateReport" class="tightContent postRun">
+			<div id="climateChartDiv"></div>
+			<script>
+				climateSeriesData = [
+					{"name":"Ambient Temperature (F)","marker":{"enabled":false},"color":"dimgray","data":allOutputData.climate["Ambient Temperature (F)"]},
+					{"name":"Wind Speed (m/s)","marker":{"enabled":false},"color":"darkgray","data":allOutputData.climate["Wind Speed (m/s)"]},
+					{"name":"Direct Irradiance (W/m^2)","marker":{"enabled":false},"color":"darkgray","data":allOutputData.climate["Direct Irradiance (W/m^2)"]},
+					{"name":"Difuse Irradiance (W/m^2)","marker":{"enabled":false},"color":"gainsboro","data":allOutputData.climate["Difuse Irradiance (W/m^2)"]},
+					{"name":"Cell Temperature (F)","marker":{"enabled":false},"color":"gainsboro","data":allOutputData.climate["Cell Temperature (F)"]}]
+				new Highcharts.Chart({"credits":{"enabled":false},"plotOptions":{"series":{"pointStart":pointStart,"shadow":false,"pointInterval":pointInterval},"line":{"marker":{"enabled":false}}},"xAxis":{"maxZoom":108000000,"tickColor":"gray","type":"datetime","lineColor":"gray"},"title":{"text":null},"series":climateSeriesData,"yAxis":{"title":{"text":"Climate Units","style":{"color":"gray"}}},"chart":{"marginBottom":20,"zoomType":"x","renderTo":"climateChartDiv","type":"line","marginRight":20, "height":250,"width":1000},"tooltip":{"valueDecimals":1},"legend":{"verticalAlign":"top","align":"top","borderWidth":0,"x":50,"y":-10,"layout":"horizontal"}})
+			</script>
+		</div>
+	</div>
+</body>

@@ -1,0 +1,175 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:req="http://www.multispeak.org/V5.0/ws/request" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:cb="http://www.multispeak.org/V5.0/wsdl/CB_Server" xmlns:com1="http://www.multispeak.org/V5.0/commonArrays" xmlns:v5="http://www.multispeak.org/V5.0">
+   <soapenv:Header>
+      <req:MultiSpeakRequestMsgHeader DefaultRegisteredName="?" DefaultSystemName="?" DefaultUtility="?" DefaultCurrencyCode="?" RegistrationID="?" MessageID="?" TimeStamp="?" MessageCreatedTimeStamp="?" Context="?">
+         <req:MultiSpeakVersion>
+            <com:MajorVersion>?</com:MajorVersion>
+            <com:MinorVersion>?</com:MinorVersion>
+            <com:Build>?</com:Build>
+            <!--Optional:-->
+            <com:Branch>?</com:Branch>
+            <com:BuildString>?</com:BuildString>
+         </req:MultiSpeakVersion>
+         <req:Caller>
+            <com:AppName>?</com:AppName>
+            <!--Optional:-->
+            <com:AppVersion>?</com:AppVersion>
+            <com:Company>?</com:Company>
+            <!--Optional:-->
+            <com:AuditID>?</com:AuditID>
+            <!--Optional:-->
+            <com:AuditPassword>?</com:AuditPassword>
+            <com:SystemID>?</com:SystemID>
+            <!--Optional:-->
+            <com:Password>?</com:Password>
+         </req:Caller>
+         <!--Optional:-->
+         <req:CodedNames>
+            <!--1 or more repetitions:-->
+            <com:codedName nameType="?">
+               <com:codedValue>?</com:codedValue>
+               <com:namePart>?</com:namePart>
+               <!--Optional:-->
+               <com:description>?</com:description>
+            </com:codedName>
+         </req:CodedNames>
+         <!--Optional:-->
+         <req:CoordinateSystemInformation>
+            <com:CSUnits otherKind="?">?</com:CSUnits>
+            <com:CSAuthorities>
+               <!--1 or more repetitions:-->
+               <com:CSAuthority>
+                  <com:CSAuthorityName otherKind="?">?</com:CSAuthorityName>
+                  <com:CoordinateSystemAuthorityCode>?</com:CoordinateSystemAuthorityCode>
+                  <com:Datum>?</com:Datum>
+               </com:CSAuthority>
+            </com:CSAuthorities>
+         </req:CoordinateSystemInformation>
+         <!--Optional:-->
+         <req:DataSetState>
+            <com:DataSetID>?</com:DataSetID>
+            <com:PreviousDataSetID>?</com:PreviousDataSetID>
+         </req:DataSetState>
+         <!--Optional:-->
+         <req:DoNotReply>
+            <!--1 or more repetitions:-->
+            <com:registrationID>?</com:registrationID>
+         </req:DoNotReply>
+      </req:MultiSpeakRequestMsgHeader>
+   </soapenv:Header>
+   <soapenv:Body>
+      <cb:ChangeUsageData>
+         <!--Optional:-->
+         <cb:ArrayOfUsage>
+            <!--Zero or more repetitions:-->
+            <com1:usage referableID="?">
+               <!--Optional:-->
+               <com:extensions>
+                  <!--You may enter ANY elements at this point-->
+               </com:extensions>
+               <!--Optional:-->
+               <com:extensionsList>
+                  <!--1 or more repetitions:-->
+                  <com:extensionsItem>
+                     <com:extName>?</com:extName>
+                     <com:extValue units="?">?</com:extValue>
+                     <!--Optional:-->
+                     <com:extType>?</com:extType>
+                  </com:extensionsItem>
+               </com:extensionsList>
+               <!--Optional:-->
+               <v5:errorObjects>
+                  <!--1 or more repetitions:-->
+                  <com:errorObject referenceID="?" nounType="?">
+                     <!--Optional:-->
+                     <com:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </com:extensions>
+                     <!--Optional:-->
+                     <com:extensionsList>
+                        <!--1 or more repetitions:-->
+                        <com:extensionsItem>
+                           <com:extName>?</com:extName>
+                           <com:extValue units="?">?</com:extValue>
+                           <!--Optional:-->
+                           <com:extType>?</com:extType>
+                        </com:extensionsItem>
+                     </com:extensionsList>
+                     <!--Optional:-->
+                     <com:errorCode>
+                        <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                        <com:index>?</com:index>
+                     </com:errorCode>
+                     <com:eventTime>?</com:eventTime>
+                     <!--Optional:-->
+                     <com:displayString>?</com:displayString>
+                     <!--Optional:-->
+                     <com:detailedString>?</com:detailedString>
+                  </com:errorObject>
+               </v5:errorObjects>
+               <!--Optional:-->
+               <v5:serviceLocationID>
+                  <com:objectGUID>?</com:objectGUID>
+                  <!--Optional:-->
+                  <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               </v5:serviceLocationID>
+               <!--Optional:-->
+               <v5:customerID>
+                  <com:objectGUID>?</com:objectGUID>
+                  <!--Optional:-->
+                  <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               </v5:customerID>
+               <!--Optional:-->
+               <v5:gridLocation>?</v5:gridLocation>
+               <!--Optional:-->
+               <v5:accountID>
+                  <com:objectGUID>?</com:objectGUID>
+                  <!--Optional:-->
+                  <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               </v5:accountID>
+               <!--Optional:-->
+               <v5:meterID meterName="?" serviceType="?" otherServiceType="?" objectGUID="?" communicationAddress="?" communicationsPort="?" utility="?" registeredName="?" systemName="?">?</v5:meterID>
+               <!--Optional:-->
+               <v5:usageDetails>
+                  <!--1 or more repetitions:-->
+                  <v5:usageDetail>
+                     <!--Optional:-->
+                     <com:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </com:extensions>
+                     <!--Optional:-->
+                     <com:extensionsList>
+                        <!--1 or more repetitions:-->
+                        <com:extensionsItem>
+                           <com:extName>?</com:extName>
+                           <com:extValue units="?">?</com:extValue>
+                           <!--Optional:-->
+                           <com:extType>?</com:extType>
+                        </com:extensionsItem>
+                     </com:extensionsList>
+                     <!--Optional:-->
+                     <v5:dateTime>2014-08-01</v5:dateTime>
+                     <!--Optional:-->
+                     <v5:monthNumber>?</v5:monthNumber>
+                     <!--Optional:-->
+                     <v5:value>1001</v5:value>
+                     <!--Optional:-->
+                     <v5:uom otherKind="?">?</v5:uom>
+                     <!--Optional:-->
+                     <v5:useDays>?</v5:useDays>
+                     <!--Optional:-->
+                     <v5:quality otherKind="?">?</v5:quality>
+                     <!--Optional:-->
+                     <v5:unitPrefix otherKind="?">?</v5:unitPrefix>
+                     <!--Optional:-->
+                     <v5:rate>?</v5:rate>
+                  </v5:usageDetail>
+               </v5:usageDetails>
+            </com1:usage>
+         </cb:ArrayOfUsage>
+         <!--Optional:-->
+         <cb:responseURL>?</cb:responseURL>
+         <!--Optional:-->
+         <cb:transactionID>?</cb:transactionID>
+      </cb:ChangeUsageData>
+   </soapenv:Body>
+</soapenv:Envelope>

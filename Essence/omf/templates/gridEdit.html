@@ -1,0 +1,1450 @@
+<!DOCCTYPE html>
+<!--
+ Copyright (C) 2014-2016, National Rural Electric Cooperative Association and Cigital, Inc
+ -->
+<head>
+<meta charset="utf-8">
+<style>
+table.legend {
+    margin-left:auto;
+    margin-right:auto;
+    margin:0 auto;
+    background-color: lightgray;
+}
+
+table.ruleslist {
+    color: white;
+    width: 100%;
+    table-layout: fixed;
+}
+
+table.ruleslist thead
+{
+    display: block;
+    border: 1px solid white;
+}
+
+table.ruleslist tbody {
+    table-layout: fixed;
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 100px;
+    width: 100%;
+    border: 1px solid white;
+}
+
+table.ruleslist td, table.ruleslist th {
+    border: 1px solid white;
+}
+
+table.center {
+    color: white;
+    margin-left:auto;
+    margin-right:auto;
+    margin:0 auto;
+}
+
+table.center tbody {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 75px;
+    width: 100%;
+    padding-right: 20px;
+}
+
+table.center tbody, table.center td, table.center thead th {
+    /* padding-right: 20px; */
+    /* width: 20%; */ /* Optional */
+    border-right: 0px solid black;
+    /* white-space: nowrap; */
+}
+
+table.tableSection {
+    display: table;
+    layout: fixed;
+    color: white;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+}
+
+table.tableSection tbody {
+    float: left;
+}
+
+table.tableSection tbody {
+    overflow: auto;
+    max-height: 100px;
+    /*height: 100px;*/
+}
+
+table.tableSection tr {
+    text-align: left;
+}
+
+table.tableSection th, table.tableSection td {
+    width: 200px;
+    color: white;
+}
+
+table.alertTableSection {
+    display: table;
+    color: white;
+    margin-left:5px;
+    margin-right:5px;
+    margin-top:10px;
+    background: red;
+    width: 95%;
+}
+
+table.alertTableSection tbody {
+    overflow: auto;
+    /*height: 150px;*/
+    max-height: 150px;
+}
+
+table.alertTableSection tr {
+    text-align: left;
+}
+
+table.alertTableSection th, table.alertTableSection td {
+    /*width: 500px;*/
+    color: white;
+    padding: 2px;
+}
+
+#infoTable.client tr:nth-child(even) { /* blue */
+    background-color: #0000ff;
+}
+
+#infoTable.client tr:nth-child(odd) { /* blue */
+    background-color: #4682B4;
+}
+
+#infoTable.client td { /* blue */
+    color: #ffffff;
+}
+
+#infoTable.server tr:nth-child(even) { /* orange */
+    background-color: #FFA500;
+}
+
+#infoTable.server tr:nth-child(odd) { /* orange */
+    background-color: #FFDEAD;
+}
+
+#infoTable.server td { /* orange */
+    color: #000000;
+}
+
+#infoTable.clientServer tr:nth-child(even) { /* purple */
+    background-color: #B194C8;
+}
+
+#infoTable.clientServer tr:nth-child(odd) { /* purple */
+    background-color: #8860A9;
+}
+
+#infoTable.clientServer td { /* purple */
+    color: #ffffff;
+}
+
+#infoTable.analyzed tr:nth-child(even) { /* green */
+    background-color: #088a08;
+}
+
+#infoTable.analyzed tr:nth-child(odd) { /* green */
+    background-color: #00ff00;
+}
+
+#infoTable.analyzed td { /* green */
+    color: #ffffff;
+}
+
+#infoTable.alert tr:nth-child(even) { /* red */
+    background-color: #621201;
+}
+
+#infoTable.alert tr:nth-child(odd) { /* red */
+    background-color: #FF0000;
+}
+
+#infoTable.alert td { /* red */
+    color: #ffffff;
+}
+
+#infoTable.default tr:nth-child(even) {
+    background-color: #000000;
+}
+
+#infoTable.default tr:nth-child(odd) {
+    background-color: #000000;
+}
+
+#infoTable.default td {
+    color: #ffffff;
+}
+
+#rulesTable tr:nth-child(even) {
+    background-color: #621201;
+}
+
+#rulesTable tr:nth-child(odd) {
+    background-color: red;
+}
+
+#rulesTable td {
+    color: white;
+}
+
+.pressable {
+    cursor: pointer;
+}
+
+legend {
+    display: block;
+    padding-left: 2px;
+    padding-right: 2px;
+    border: none;
+}
+
+#rcorners2 {
+    position:absolute;
+    top:540px;
+    padding: 0px;
+    width: 100%;
+    height: 60px;
+}
+
+g.tooltip {
+    pointer-events: none;
+    opacity: 0.9;
+    fill:currentColor;
+}
+
+g.tooltip rect {
+    rx: 8;
+    ry: 8;
+    /*fill: lightblue;
+    stroke: gray;*/
+}
+
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    /*width: 100px;*/
+    height: 18px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    color: white;
+}
+
+div.annotations {
+    position: absolute;
+    text-align: center;
+    left: 400px;
+    top: 0px;
+    width: 360px;
+    height: 160px;
+    padding: 8px;
+    font: 12px sans-serif;
+    background: black;
+    border: 0px;
+    border-radius: 8px;
+    color: black;
+}
+
+div.edits {
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    text-align: center;
+    background: black;
+    border-radius: 8px;
+    color: white;
+    width: 500px;
+    height: 300px;
+}
+
+div.genericDialog {
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    text-align: center;
+    background: black;
+    border-radius: 8px;
+    color: white;
+    width: 150px;
+    height: 75px;
+}
+
+div.settings {
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    text-align: center;
+    background: black;
+    border-radius: 8px;
+    color: white;
+    width: 300px;
+    height: 200px;
+}
+
+div.rules {
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    text-align: center;
+    background: black;
+    border-radius: 8px;
+    color: white;
+    width: 500px;
+    height: 300px;
+}
+
+#info {
+    position:absolute;
+    left:625px;
+    top:0px;
+    width:250px;
+    height:150px;
+    float:left;
+    padding:10px;
+}
+
+#alerts {
+    position:absolute;
+    left:625px;
+    top:210px;
+    width:200px;
+    height:100px;
+    float:left;
+    padding:10px;
+}
+
+#section {
+    width:600px;
+    float:left;
+    padding:10px;
+}
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+#graphSvg circle {
+    stroke: #333;
+    stroke-width: 1.5px;
+}
+
+circle {
+    cursor: pointer;
+}
+
+circle.selected {
+    stroke: yellow !important;
+    stroke-width: 4px !important;
+}
+
+.link {
+    fill: none;
+    stroke: #666;
+    stroke-width: 1.5px;
+}
+
+#licensing {
+    fill: black;
+}
+
+.link.licensing {
+    stroke: black;
+}
+
+.link.resolved {
+    stroke-dasharray: 0,2 1;
+}
+
+/*text {
+    font: 10px sans-serif;
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}*/
+
+div.menu {                      
+    width: 100%;     
+    font: 12px sans-serif;        
+    background: #E0E0E0;   
+    border: 0px;
+    pointer-events: all;
+    margin-left:  auto; 
+    margin-right: auto;  
+}
+
+ul.menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+li.menu {
+    float: left;
+}
+
+button.menu {
+    display: block;
+    width: 120px;
+    height: 30px;
+    font-weight: bold;
+    color: #FFFFFF;
+    background-color: #808080;
+    text-align: center;
+    padding: 4px;
+    text-decoration: none;
+    cursor: hand;
+}
+
+button.menu:hover {
+    cursor: pointer; 
+    cursor: hand;
+}
+
+ul.topmenu li{
+    height: 50px;
+    line-height: 50px;
+    display: inline-block;
+    text-align: center;
+}
+
+ul.topmenu li a{
+    height: 50px;
+    line-height: 50px;
+    padding: 0px 25px;
+    border-radius: 5px;
+    color: #ffffff;
+    background: #000000;
+    text-decoration: none;
+    display:inline-block;
+    vertical-align: middle;
+}
+
+ul.topmenu li a:hover{
+    padding: 0px 25px;
+    height: 50px;
+    line-height: 50px;
+    border-radius: 5px;
+    background: #a2a2a2;
+    color: #ffffff;
+    font-weight: bold;
+    display:inline-block;
+    vertical-align: middle;
+}
+
+div.topmenu {
+    width: 100%;
+    height: 55px;
+    border-radius: 5px;
+    background: #000000;
+    text-align: center;
+    padding: 0px;
+}
+</style>
+<link rel="stylesheet" href="static/bootstrap.css">
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.js"></script>
+<script src="static/omf.js"></script>
+<!--<script src="static/jquery-1.9.1.js"></script>-->
+<link rel="shortcut icon" href="static/favicon.ico" />
+<!-- <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script> -->
+</head>
+<body>
+<div class="topmenu">
+    <ul class="topmenu">
+        <li><a href="#" id="legendLink">Legend</a></li>
+        <li><a href="#" id="refreshLink">Refresh</a></li>
+        <li><a href="#" id="settingsLink">Settings</a></li>
+        <li><input type="search" id="searchText" placeholder="Search"></input></li>
+        <li><a href="#" id="findLink">Search</a></li>
+        <li><a href="#" id="clearSearchLink">Clear Search</a></li>
+    </ul>
+</div>
+<script>
+// http://blog.thomsonreuters.com/index.php/mobile-patent-suits-graphic-of-the-day/
+(function(){
+"use strict";
+var xmod = 10;
+var ymod = -25;
+
+var apiAddress = "/feederData/{{ owner }}/{{ feederName }}/{{ modelFeeder }}", refreshRate = 20,
+    showOnlyMspNodes = true, path, circle, force, zoom, body = d3.select("body"), svg, mydiv,
+    div, tooltips, tooltipDisplay = 1, divAnnotations, divAlerts, links = [], nodes = [], alerts = [], rect, drag,
+    margin = {top: -5, right: -5, bottom: -5, left: -5};
+var linkIndex = {}; //this is a hack
+
+setup();
+
+function setup() {
+    d3.select("#legendLink").on("click", showLegend);
+    d3.select("#refreshLink").on("click", function() {
+      d3.json(apiAddress, manualRefreshCallBack);
+    });
+    d3.select("#settingsLink").on("click", showSettingsMenu);
+    //d3.select("#searchText").on("change", searchTextChanged).on("keypress", searchTextChanged)
+    //  .on("keypress", searchTextChanged).on("paste", searchTextChanged).on("input", searchTextChanged);
+    d3.select("#findLink").on("click", find);
+    d3.select("#clearSearchLink").on("click", clearSearch);
+    
+    d3.xhr("/gettooltipdisplay")
+      .get(
+          function(err, data) {
+            if (data.response == "1") {
+                tooltipDisplay = 1;
+            }
+            else {
+                tooltipDisplay = 0;
+            }
+          }
+      );
+
+    var bodyNode = body.node();
+    var bodyRect = bodyNode.getBoundingClientRect();
+    var width = bodyRect.width;
+    var height = bodyRect.height - d3.select("div.topmenu").node().offsetHeight;
+    var bottomMargin = window.getComputedStyle(bodyNode)["margin-bottom"];
+    if (typeof bottomMargin !== "undefined") {
+        height = height - parseInt(bottomMargin.replace("px", ""));
+    }
+    var leftMargin = window.getComputedStyle(bodyNode)["margin-left"];
+    if (typeof leftMargin !== "undefined") {
+        width = width - parseInt(leftMargin.replace("px", ""));
+    }
+    var rightMargin = window.getComputedStyle(bodyNode)["margin-right"];
+    if (typeof rightMargin !== "undefined") {
+        width = width - parseInt(rightMargin.replace("px", ""));
+    }
+
+    force = d3.layout.force()
+                     .size([width, height])
+                     .linkDistance(150)
+                     .charge(-300)
+                     .nodes(d3.values(nodes))
+                     .links(links)
+                     .on("tick", tick)
+                     .start();  
+            
+    zoom = d3.behavior.zoom();
+    zoom.scaleExtent([0.125, 8]);
+
+    div = body.append("div")
+                           .attr("class", "tooltip")               
+                           .style("opacity", 0);
+
+    svg = body.append("svg")
+                           .attr('id', 'graphSvg')
+                           .attr("width", width)
+                           .attr("height", height)
+                           //.append("g")
+                           .attr('viewBox', '0 0 ' + window.innerWidth + ' ' + window.innerHeight)
+                           .call(zoom.on("zoom", zoomed))
+                           //.call(d3.behavior.zoom().scaleExtent([0.125, 8]).on("zoom", zoomed))
+                           .append("g");
+    //svg.call(zoom.on("zoom", zoomed));
+            
+    rect = svg.append("rect")
+              .attr("width", width)
+              .attr("height", height)
+              .style("fill", "none")
+              .style("pointer-events", "all");
+
+    // Per-type markers, as they don't inherit styles.
+    svg.append("defs").selectAll("marker")
+                      .data(["suit", "licensing", "resolved"])
+                      .call(d3.behavior.zoom().scaleExtent([0.125, 8]).on("zoom", zoomed))
+                      .enter().append("marker")
+                      .attr("id", function(d) { return d; })
+                      .attr("viewBox", "0 -5 10 10")
+                      .attr("refX", 15)
+                      .attr("refY", -1.5)
+                      .attr("markerWidth", 6)
+                      .attr("markerHeight", 6)
+                      .attr("orient", "auto")
+                      .append("path")
+                      //.attr("d", "M 0,0 V 4 L6,2 Z");
+                      .attr("d", "M0,-5L10,0L0,5");
+
+    path = svg.append("g").selectAll("path")
+                          .data(force.links());
+    circle = svg.append("g").selectAll("circle")
+                            .data(force.nodes());
+    tooltips = svg.append("g").selectAll("g.tooltip");
+                            
+    updateGraph();
+}
+
+function buildGraph(json, isManual) {
+    var updated = false;
+    var rjson = json;
+    
+    //This will need to be updated when/if we only retrieve alerts from a certain time frame
+    alerts = rjson['alerts'];
+    var mynodes = force.nodes()
+    for (var index in rjson['nodes']) {
+        var newnode = rjson['nodes'][index];
+        if (showOnlyMspNodes && !newnode.displayWithMultiSpeak) {
+            // If only displaying msp nodes (and alerts) and this node isn't flagged, then this node should not be displayed
+            if (typeof nodes[newnode.name] !== 'undefined') {
+                var deletedNode = nodes[newnode.name];
+                // Remove node from force.nodes
+                var nodeIndex = mynodes.indexOf(deletedNode);
+                if (nodeIndex > -1) {
+                    mynodes.splice(nodeIndex, 1)
+                }
+                
+                delete nodes[newnode.name];
+                updated = true;
+            }
+            continue;
+        }
+
+        if (typeof nodes[newnode.name] !== 'undefined') {
+            //we only want to update the color for now
+            //var nodeCircle = document.getElementById("circle" + newnode.name);
+            var re = /\./g;
+            var nodeCircle = d3.select("#" + "circle" + newnode.name.replace(re, "\\."))
+            if (nodeCircle) {
+                nodeCircle.style("fill", newnode.color);
+                nodeCircle.transition().attr("r", newnode.radius ? newnode.radius : 4);
+            }
+            var currentNode = nodes[newnode.name];
+            currentNode.color = newnode.color;
+            if (typeof newnode["TCP connections made"] != 'undefined') {
+                currentNode["TCP connections made"] = newnode["TCP connections made"];
+            }
+            if (typeof newnode["Open TCP ports"] != 'undefined') {
+                currentNode["Open TCP ports"] = newnode["Open TCP ports"];
+            }
+            var forbidden = {'x':'',
+                 'color':'',
+                 'index':'',
+                 'weight':'',
+                 'y':'',
+                 'px':'',
+                 'py':'',
+                 'fixed':'',
+                 'ipAddress':'',
+                 'name':'',
+                 'edittextarea':'',
+                 'IP address':'',
+                 'Open TCP ports':'',
+                 'Protocols Analyzed':'',
+                 'TCP connections made':''
+                 };
+            for (var key in newnode) {
+                if (typeof forbidden[key] === 'undefined') {
+                    currentNode[key] = newnode[key];
+                }
+            }
+            
+            continue;
+        }
+            
+        updated = true;
+        nodes[newnode.name] = newnode;
+        mynodes.push(newnode)
+    }
+    
+    // Update circles (nodes) now (rather than in the loop)
+    if (updated) {
+        circle = circle.data(force.nodes(), function(d) {
+            return d.name
+        });
+        circle.enter().append("circle")
+                      .attr("r", function (d) { if (d.radius) return d.radius; else return 4;})
+                      //.attr("stroke", "#333")
+                      //.attr("stroke-width", "1.5px")
+                      .attr("id", function(d) { return "circle" + d.name; })
+                      .style("fill", function (d) { return d.color;})
+                      .on('mouseover', showTooltip)
+                      .on("mouseout", hideTooltip)
+                      .on('click', function(d, i){
+                        removeAnnotations();
+                        divAnnotations = body.append("div")
+                                             .attr("id", "nodeannotations")
+                                             .attr("class", "annotations")
+                                             .style("opacity", 0);
+
+                        var x = d3.event.pageX;
+                        var y = d3.event.pageY;
+                        if (x > 700) {
+                            x = 700;
+                        }
+                        if (y > 400) {
+                            y = 400;
+                        }
+                        if (typeof alerts[d.name] !== 'undefined') {
+                            if (x > 400) {
+                                x = 400;
+                            }
+                            if (y > 200) {
+                                y = 200;
+                            }
+                        }
+
+                        divAnnotations.transition()
+                                      .duration(1000)
+                                      .style("left", x + "px")
+                                      .style("top", y + "px")
+                                      .style("opacity", .95);
+
+                        var str = buildTable(d.name, "infoTable", d);
+
+                        str += "<button onclick=\"showEndpointConfiguration('" + d.name +
+                        "');\" style=\"margin-top: 10px\">Show Node Configuration</button>";
+
+                        if (typeof alerts[d.name] !== 'undefined') {
+                            divAnnotations.style("width", 700)
+                                            .style("height", "auto");
+                                          //.style("height", 450);
+                            str += buildAlertTable(d.name);
+                            //str += buildAlertTable(alerts[d.name]);
+                        } else {
+                            divAnnotations.style("width", 360)
+                                            .style("height", "auto");
+                                          //.style("height", 160);
+                        }
+
+                        str += "<div style=\"margin-top: 10px; margin-bottom: 10px;\"><button onclick=removeAnnotations();showEditMenu('" + d.name + "')>Edit</button> ";
+                        
+                        if (typeof nodes[d.name]["Protocols Analyzed"] !== 'undefined') {
+                            str += "<button onclick=removeAnnotations();showRulesMenu('" + d.name + "')>View Rules</button> ";
+                        }
+
+                        str += "<button onclick=removeAnnotations()>Close</button></div>";
+                                              
+                        divAnnotations.html(str);
+
+                        var evenColor, oddColor;
+                        var textColor;
+                        if (d["color"] === "blue") {
+                            var cssClass = "client";
+                            //evenColor = "#0000ff";
+                            //oddColor = "#4682B4";
+                            //textColor = "#ffffff";
+                        } else if (d["color"] === "purple") {
+                            var cssClass = "clientServer";
+                            //evenColor = "#B194C8";
+                            //oddColor = "#8860A9";
+                            //textColor = "#ffffff";
+                        } else if (d["color"] === "orange") {
+                            var cssClass = "server";
+                            //evenColor = "#FFA500";
+                            //oddColor = "#FFDEAD";
+                            //textColor = "#000000";
+                        } else if (d["color"] === "green") {
+                            var cssClass = "analyzed";
+                            //evenColor = "#088a08";
+                            //oddColor = "#00ff00";
+                            //textColor = "#ffffff";
+                        } else if (d["color"] === "red") {
+                            var cssClass = "alert";
+                            //evenColor = "#621201";
+                            //oddColor = "#FF0000";
+                            //textColor = "#ffffff";
+                        } else {
+                            var cssClass = "default";
+                            //evenColor = "#000000";
+                            //oddColor = "#000000";
+                            //textColor = "#ffffff";
+                        }
+                        d3.select("#infotable").classed(cssClass, true);
+                        //d3.select("#infoTable tr:even").style.background = evenColor;
+                        //d3.select("#infoTable tr:odd").style.background = oddColor;
+                        //d3.select("#infoTable td").style.color = textColor;
+                        //$("#infoTable tr:even").css("background", evenColor);
+                        //$("#infoTable tr:odd").css("background", oddColor);
+                        //$("#infoTable td").css("color", textColor);
+                       });
+        circle.exit().remove();
+    }
+                  
+    var mylinks = [];
+    mylinks = force.links();
+    for (var index in rjson['links']) {
+        var newlink = rjson['links'][index];
+        if (showOnlyMspNodes && !newlink.displayWithMultiSpeak) {
+            // If only displaying msp nodes (and alerts) and this link isn't flagged, then this link should not be displayed
+            if (typeof linkIndex[newlink.id] !== 'undefined') {
+                var deletedLink = linkIndex[newlink.id];
+                // Remove link from force.links
+                var index = mylinks.indexOf(deletedLink);
+                if (index > -1) {
+                    mylinks.splice(index, 1)
+                }
+                
+                delete linkIndex[newlink.id];
+                updated = true;
+            }
+            continue;
+        }
+        
+        if (typeof linkIndex[newlink.id] !== 'undefined') {
+            continue;
+        }
+        
+        updated = true;
+        linkIndex[newlink.id] = newlink
+        newlink.source = nodes[newlink.source];
+        newlink.target = nodes[newlink.target];
+        mylinks.push(newlink)
+    }
+
+    if (updated) {
+        // Update links now (rather than in the loop)
+        path = path.data(links, function (d) {
+			return d.id;
+		})
+        path.enter().append("path")
+                    .attr("class", function(d) { return "link " + "licensing"; })
+                    .attr("marker-end", function(d) { return "url(#" +"licensing" + ")"; });
+        path.exit().remove();
+
+        force.start();
+    }
+    
+    setTimeout(updateGraph, refreshRate * 1000);
+}
+
+function updateGraphCallBack(json) {
+    buildGraph(json, false);
+}
+
+function manualRefreshCallBack(json) {
+    buildGraph(json, true);
+}
+
+function updateGraph() {
+    d3.json(apiAddress, updateGraphCallBack);
+}
+
+function tick() {
+// Use elliptical arc path segments to doubly-encode directionality.
+  path.attr("d", linkArc);
+  circle.attr("transform", transform);
+  tooltips.attr("transform", transformTooltip);
+  //text.attr("transform", transform);
+}
+
+function linkArc(d) {
+  var dx = d.target.x - d.source.x,
+      dy = d.target.y - d.source.y,
+      dr = Math.sqrt(dx * dx + dy * dy);
+  return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+}
+
+function transform(d) {
+    return "translate(" + d.x + "," + d.y + ")";
+}
+
+function transformTooltip(d) {
+    var xnew = d.x + xmod;
+    var ynew = d.y + ymod;
+    return "translate(" + xnew + "," + ynew + ")";
+}
+
+function selectNode(node) {
+    var re = /\./g;
+    var nodeCircle = svg.select("#" + "circle" + node.name.replace(re, "\\."))
+    if (nodeCircle) {
+        nodeCircle.classed('selected', true);
+    }
+}
+
+function showTooltip(d) {
+    if (d.color === "orange" || d.color === "red") {
+        div.style("color", "black");
+    } else {
+        div.style("color", "white");
+    }
+    div.style("background", d.color);
+    div.transition()
+       .duration(200)
+       .style("opacity", .95);
+    if (tooltipDisplay == 1) {
+        div.html(d.name);
+    } else {
+        div.html(d.hostname);
+    }
+    if (d3.event.type == "mouseover") {
+       div.style("left", (d3.event.pageX) + "px")
+          .style("top", (d3.event.pageY - 28) + "px");
+    } else {
+       div.style("left", (d.x) + "px")
+          .style("top", (d.y - 28) + "px");
+    }
+}
+
+function showMultiTooltip(nodeList) {
+    var fontColor;
+    if (n.color === "orange" || n.color === "red") {
+        fontColor = "black";
+    } else {
+        fontColor = "white";
+    }
+    
+    var tip = body.append("div")
+        .classed("multiTooltip", true)
+        .style("opacity", 0)
+        .style("color", fontColor)
+        .style("background", n.color)
+        .html(n.name);
+    tip.transition()
+       .duration(200)
+       .style("opacity", .95);
+    tip.style("left", (n.x) + "px")
+       .style("top", (n.y - 28) + "px");
+}
+
+function hideTooltip() {
+    div.transition()
+       .duration(500)
+       .style("opacity", 0);
+    d3.select(".multiTooltip").remove();
+}
+
+function clearSelection() {
+    hideTooltip();
+    svg.select('.selected').classed('selected', false);
+}
+
+function clearSearch() {
+    tooltips = tooltips.data([]);
+    tooltips.exit().remove();
+}
+
+function find() {
+    //clearSelection(); // temporary comment (uncommnt when fixed)
+    var search = document.getElementById("searchText");
+    var results = force.nodes().filter(function(d) { 
+            return d.ipAddress.indexOf(search.value) > -1;
+        });
+    if (results.length > 0) {
+        var rectWidth = 130;
+        var rectHeight = 25;
+        //var rectWidth = "7em";
+        //var rectHeight = "1.25em";
+        var textdy = "1.1em";
+        var textx = "1em";
+        tooltips = tooltips.data(results);
+        tooltips.enter().append("g").classed("tooltip", true);
+        tooltips.append("rect").attr("width", rectWidth).attr("height", rectHeight)
+                .style("fill", function(d) { return d.color; });
+        tooltips.append("text").attr("dy", textdy).attr("x", textx).attr("text-anchor", "start")
+                .style("rx", 8).style("ry", 8).style("fill", function(d) {
+                    if (d.color === "orange" || d.color === "red") {
+                        return "black";
+                    } else {
+                        return "white";
+                    }
+                })
+                .text(function(d) {
+                    if (tooltipDisplay == 1) {
+                        return d.name;
+                    } else {
+                        return d.hostname;
+                    }
+                });
+        tooltips.attr("transform", transformTooltip);
+        tooltips.selectAll("text").each(function() {
+            var box = d3.select(this).node().getBBox();
+            var newHeight = box.height + 10;
+            var newWidth = box.width + 30;
+            d3.select(this.previousSibling).attr("width", newWidth).attr("height", newHeight);
+        });
+        tooltips.exit().remove();
+    } else {
+        showDialog("No search results found.");
+    }
+}
+
+function showDialog(text) {
+    var genericDialog = body.append("div")
+                              .attr("id", "genericDialog")
+                              .attr("class", "genericDialog")
+                              .style("opacity", 0)
+                              .style("background", "black")
+                              .style("color", "white")
+                              .style("padding-top", "15px");
+    genericDialog.transition()
+               .duration(1000)
+               .style("opacity", .90);
+    
+    genericDialog.html("<b margin-top='5px' id='genericDialogLabel'></b>" + 
+    "<br/><br/><button type='button' onclick='omf.remove(document.getElementById(\"genericDialog\"))';>OK</button>");
+    var dialogLabel = document.getElementById("genericDialogLabel");
+    dialogLabel.innerText = text;
+    
+}
+
+function zoomTo(x, y, s) {
+    // Set the behavior scale and translate to the current condition.
+    zoom.scale(s);
+    zoom.translate([x, y]);
+    zoom.event(svg.transition().duration(500));
+}
+
+function zoomToSelection() {
+    domTargets = document.getElementsByClassName('selected');
+    if (domTargets.length != 1) {
+        return false;
+    }
+    if (domTargets[0].nodeName == 'line') {
+        x = getSelectedLink()['source']['x'];
+        y = getSelectedLink()['source']['y'];
+    } else {
+        x = getSelectedNode()['x'];
+        y = getSelectedNode()['y'];
+    }
+    var scale = 2;
+    var xNew = -x * scale + graphSvg.clientWidth / 2;
+    var yNew = -y * scale + graphSvg.clientHeight / 2;
+    // Zooming to a node's coordinates
+    zoom(xNew, yNew, scale);
+}
+
+function zoomToNode(node) {
+    var x = node['x'];
+    var y = node['y'];
+    var scale = 2;
+    var xNew = -x * scale + graphSvg.clientWidth / 2;
+    var yNew = -y * scale + graphSvg.clientHeight / 2;
+    // Zooming to a node's coordinates
+    zoomTo(xNew, yNew, scale);
+}
+
+function zoomed() {
+  svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+
+function dragstarted(d) {
+  d3.event.sourceEvent.stopPropagation();
+  d3.select(this).classed("dragging", true);
+}
+
+function dragged(d) {
+  d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+}
+
+function dragended(d) {
+  d3.select(this).classed("dragging", false);
+}
+
+function showEndpointConfiguration(ipAddress) {
+    var msg = {
+            Call: "showEndpointConfiguration",
+            IPAddress: ipAddress
+        };
+    if (parent) {
+        // TODO: Make this configurable in case Essence isn't on port 80 or 443
+        var postUrl = window.location.protocol + "//" + window.location.hostname;
+        parent.postMessage(msg, postUrl);
+    }
+}
+window.showEndpointConfiguration = showEndpointConfiguration;
+
+function showAlertDisplay(id) {
+    var msg = {
+        Call: "showAlertDisplay",
+        id: id
+    };
+    if (parent) {
+        // TODO: Make this configurable in case Essence isn't on port 80 or 443
+        var postUrl = window.location.protocol + "//" + window.location.hostname;
+        parent.postMessage(msg, postUrl);
+    }
+}
+window.showAlertDisplay = showAlertDisplay;
+
+function buildTable(t, i, d) {
+    var tblInfo = "<table border='0' id='" + i + "' class='tableSection'>";
+    tblInfo += "<caption>" + t + "</caption>";
+    tblInfo += "<tbody>"
+
+    var forbidden = {'x':'',
+                     'color':'',
+                     'index':'',
+                     'weight':'',
+                     'y':'',
+                     'px':'',
+                     'py':'',
+                     'fixed':'',
+                     'ipAddress':'',
+                     'name':'',
+                     'edittextarea':'',
+                     'radius':'',
+                     'displayWithMultiSpeak':'',
+                     };
+    for (var key in d) {
+       if (typeof forbidden[key] === 'undefined') {
+           tblInfo += "<tr><td>" + key + "</td><td>" + d[key] + "</td></tr>";
+       }
+    }
+
+   tblInfo += "</tbody></table>";
+   return tblInfo;
+}
+
+function removeAnnotations() {
+    omf.remove(document.getElementById("nodeannotations"));
+}
+window.removeAnnotations = removeAnnotations;
+
+function updateAlertTable(json) {
+    var rjson = json;
+    var nodeAlerts = rjson['alerts'];
+    
+    var format = d3.time.format("%x %I:%M:%S");
+    
+    var m_str = "";
+    //var m_str = "<table class='alertTableSection'><caption>Alert Information</caption><thead><tr><th></th><th>Description</th><th>Severity</th><th>Status</th><th>Creation Time</th></tr></thead><tbody id='alertTbody' style='width: 100%'>";
+    for (var i = 0; i < nodeAlerts.length; i++) {
+        var a = nodeAlerts[i];
+        var severity = typeof a.severity !== "undefined" ? a.severity : "";
+        var status = typeof a.status !== "undefined" ? a.status : "";
+        m_str += "<tr><td><i title='See more detail' onclick='showAlertDisplay(" + a.id + ")' class='pressable glyphicon glyphicon-info-sign'></i></td><td>" + a.description + "</td><td>" + severity + "</td><td>" + status + "</td><td>" + format(new Date(a.creationTime)) + "</td></tr>"
+    }
+    
+    //m_str += "</tbody></table>";
+    
+    //$("div#alertTableDiv").html(m_str);
+    d3.select("tbody#alertTbody").html(m_str);
+}
+
+function buildAlertTable(srcName) {
+    var m_str = "<div style='height: 150px; width: 100%; overflow: auto;'><table class='alertTableSection'><caption>Alert Information</caption><thead><tr><th></th><th>Description</th><th>Severity</th><th>Status</th><th>Creation Time</th></tr></thead><tbody id='alertTbody' style='width: 100%'></tbody></table></div>";
+    //var m_str = "<table class='alertTableSection'><caption>Alert Information</caption><thead><tr><th></th><th>Description</th><th>Severity</th><th>Status</th><th>Creation Time</th></tr></thead><tbody id='alertTbody' style='width: 100%'>";
+    //var m_str = "<div id='alertTableDiv'></div>";
+
+    //var format = d3.time.format("%x %I:%M:%S");
+    
+    //for (var i = 0; i < o.length; i++) {
+    //    var a = o[i];
+    //    var severity = typeof a.severity !== "undefined" ? a.severity : "";
+    //    var status = typeof a.status !== "undefined" ? a.status : "";
+    //    m_str += "<tr><td><i title='See more detail' onclick='showAlertDisplay(" + o[i].id + ")' class='pressable glyphicon glyphicon-info-sign'></i></td><td>" + a.description + "</td><td>" + severity + "</td><td>" + status + "</td><td>" + format(new Date(a.creationTime)) + "</td></tr>"
+    //    //m_str += "<tr><td><table class='alertTableSection'><caption onclick='showAlertDisplay(" + o[i].id + ")'>Alert " + (i + 1)  + "</caption>";
+    //    //m_str += m_traverse(o[i]) + "</table></td></tr>";
+    //}
+
+    //m_str += "</tbody></table>";
+    
+    d3.json("/alerts/" + srcName, updateAlertTable);
+    
+    return m_str;
+}
+
+function showSettingsMenu() {
+    var divSettingsMenu = body.append("div")
+                              .attr("id", "settingsMenu")
+                              .attr("class", "settings")
+                              .style("opacity", 0)
+                              .style("background", "black")
+                              .style("color", "white");
+    divSettingsMenu.transition()
+               .duration(1000)
+               .style("opacity", .90);
+    var mspCheckBox;
+
+    if (showOnlyMspNodes) {
+        mspCheckBox = "<input type='checkbox' id='mspOnlyCheckBox' value='mspOnly' onclick='mspOnlyCheckboxClicked(this)' checked/>"
+    }
+    else {
+        mspCheckBox = "<input type='checkbox' id='mspOnlyCheckBox' value='mspOnly' onclick='mspOnlyCheckboxClicked(this)'/>"
+    }
+
+    divSettingsMenu.html("<br>Refresh Rate (10-60 seconds)  <input type='number' value='" + 
+    refreshRate + 
+    "' name='refreshrate' onchange='updateRefreshRate(this.value)' min='10' max='60'><br><label>" + 
+    mspCheckBox + 
+    "Show Only MultiSpeak Nodes</label><br>" +
+    "Tooltip Display<br/>" +
+    "<input type='radio' id='tooltiphostname' name='tooltipDisplay' value='hostname' /><label for='tooltiphostname'>Hostname</label><br/>" +
+    "<input type='radio' id='tooltipip' name='tooltipDisplay' value='ip' /><label for='tooltipip'>IP Address</label><br/>" +
+    "<br/><button type='button' onclick='saveTooltipSetting();omf.remove(document.getElementById(\"settingsMenu\"))';>OK</button>");
+
+    if (tooltipDisplay == 1) {
+        var ipRadio = document.getElementById("tooltipip");
+        ipRadio.checked = true;
+    }
+    else {
+        var hostnameRadio = document.getElementById("tooltiphostname");
+        hostnameRadio.checked = true;
+    }
+}
+
+function mspOnlyCheckboxClicked(cb) {
+    showOnlyMspNodes = cb.checked;
+}
+window.mspOnlyCheckboxClicked = mspOnlyCheckboxClicked;
+
+function saveTooltipSetting() {
+    var selection = d3.select('input[name="tooltipDisplay"]:checked').node().value
+    var selectionInt = selection == "ip" ? 1 : 0;
+    tooltipDisplay = selectionInt;
+    d3.xhr("savetooltipdisplay")
+      .header("Content-Type", "application/x-www-form-urlencoded")
+      .post(
+          "tooltipdisplay="+selectionInt,
+          function(err, data) {
+            showDialog("Saved.");
+          }
+      );
+}
+window.saveTooltipSetting = saveTooltipSetting;
+
+function showLegend() {
+    var rcorners = document.getElementById("rcorners2");
+    if (rcorners.style.display != "none") {
+        rcorners.style.display = "none";
+    } else {
+        rcorners.style.display = "";
+    }
+    //$("#rcorners2").toggle();
+}
+
+function updateRefreshRate(value) {
+    refreshRate = value;
+}
+window.updateRefreshRate = updateRefreshRate;
+
+function showEditMenu(d) {
+    var textColor;
+    if (nodes[d].color === "orange") {
+        textColor = "black";
+    } else {
+        textColor = "white";
+    }
+
+    var divEditMenu = body.append("div")
+                          .attr("id", "editmenu")
+                          .attr("class", "edits")
+                          .style("opacity", 0)
+                          .style("background", nodes[d].color)
+                          .style("color", textColor);
+    divEditMenu.transition()
+               .duration(1000)
+               .style("opacity", .90);
+
+    divEditMenu.html(buildEditTable("Edit information for " + nodes[d].name, "edittable", nodes[d]));
+}
+window.showEditMenu = showEditMenu;
+
+function showRulesMenu(d) {
+    var divRulesMenu = body.append("div")
+                           .attr("id", "rulesmenu")
+                           .attr("class", "rules")
+                           .style("opacity", 0)
+                           .style("background", "black");
+    divRulesMenu.transition()
+                .duration(1000)
+                .style("opacity", .90);
+
+    getJSONFromEssenceServices("/detectionruletypes", null, buildRuleTypeList);
+    getJSONFromEssenceServices("/rulesfornode", {'ip': nodes[d].name}, buildRulesTable);  
+}
+window.showRulesMenu = showRulesMenu;
+
+function buildRulesTable(rules) {
+    var tblInfo = "<table border='0' id='rulestable' class='ruleslist'>";
+    /*
+    tblInfo += "<thead><tr>";
+    tblInfo += "<th>Rule Type</th>";
+    tblInfo += "<th>Action To Perform</th>";
+    tblInfo += "<th>Source Endpoint Type</th>";
+    tblInfo += "<th>Destination Endpoint Type</th>";
+    tblInfo += "<th>Multispeak Version</th>";
+    tblInfo += "</tr></thead>";
+    */
+    tblInfo += "<tbody>";
+
+    for (var i = 0; i < rules.length; i++) {
+        tblInfo += "<tr>";
+        tblInfo += "<td>" + rules[i]['ruleType'] + "</td>";
+        tblInfo += "<td>" + rules[i]['actionType'] + "</td>";
+        tblInfo += "<td>" + rules[i]['srcEndpointType'] + "</td>";
+        tblInfo += "<td>" + rules[i]['dstEndpointType'] + "</td>";
+        tblInfo += "<td>" + rules[i]['version'] + "</td>";
+        tblInfo += "</tr>";
+    }
+
+    tblInfo += "</tbody></table>";
+    var rulesMenu = d3.select("#rulesmenu");
+    rulesMenu.html(rulesMenu.html() + tblInfo);
+    //d3.select("#rulestable tr:even").style("background", "#621201");
+    //d3.select("#rulestable tr:odd").style("background", "red");
+    //d3.select("#rulestable td").style("color", "white");
+}
+
+function buildRuleTypeList(rules) {
+    for (var i = 0; i < rules.length; i++) {
+        d3.select("#rulesmenuselects").append("<option value='" + rules[i]["id"] + "'>" + rules[i]["name"] + "</option>");
+    }
+}
+
+function getJSONFromEssenceServices(url, params, callback) {
+    if (params !== null) {
+        url += "?";
+        for (var key in params) {
+            url += (key + "=" + params[key] + "&");
+        }
+    }
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", url, true);
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            callback(JSON.parse(xmlhttp.responseText));
+        }
+    }
+    xmlhttp.send();
+}
+
+function buildEditTable(t, i, d) {
+    var tblInfo = "<form method='post' id='saveannotations' name='saveannotations' action='saveannotations'><table border='0' id='" + i + "' class='center'>";
+    tblInfo += "<caption>" + t + "</caption>";
+    tblInfo += "<input type='hidden' name='node_ip_address' value='" + d.name + "'/>";
+    tblInfo += "<tbody>"
+
+    var forbidden = {'x':'',
+                     'color':'',
+                     'index':'',
+                     'weight':'',
+                     'y':'',
+                     'px':'',
+                     'py':'',
+                     'fixed':'',
+                     'ipAddress':'',
+                     'name':'',
+                     'edittextarea':'',
+                     'IP address':'',
+                     'Open TCP ports':'',
+                     'Protocols Analyzed':'',
+                     'TCP connections made':''
+                     };
+    for (var key in d) {
+       if (typeof forbidden[key] === 'undefined') {
+           tblInfo += "<tr>";
+           tblInfo += "<td><input type='text' name='" + key + "' value='" + key + "'/></td>";
+           tblInfo += "<td><input type='text' name='" + key + "value_pair' value='" + d[key] + "'></td>";
+           tblInfo += "<td><button onclick='deleteRowFromEditTable(this)'>Delete</button></td>";
+           tblInfo += "</tr>";
+       }
+    }
+
+   tblInfo += "</tbody></table>";
+   tblInfo += "<br>";
+   if (typeof d['edittextarea'] === 'undefined') {
+        tblInfo += "Notes<br><textarea rows='6' name='edittextarea' id='edittextarea' cols='50'></textarea>";
+   } else {
+        tblInfo += "Notes<br><textarea rows='6' name='edittextarea' id='edittextarea' cols='50'>" + d['edittextarea'] + "</textarea>";
+   }
+   tblInfo += "<br><br>";
+   tblInfo += "<button type='button' onclick='addRowToEditTable();'>Add</button>    ";
+   tblInfo += "<button type='button' onclick='omf.remove(document.getElementById(\"editmenu\"));'>Cancel</button>   ";
+   tblInfo += "<button type='button' onclick='uploadEditsToServer();'>Save</button></form>    ";
+
+   return tblInfo;
+}
+
+function uploadEditsToServer() {
+    d3.xhr("saveannotations")
+      .post(
+          new FormData(document.getElementById("saveannotations")),
+          function(err, data) {
+            showDialog("Saved.");
+          }
+      );
+    omf.remove(document.getElementById("editmenu"));
+}
+window.uploadEditsToServer = uploadEditsToServer;
+
+function addRowToEditTable() {
+    var editTableTrLength = d3.select("#edittable tr").length;
+    d3.select("#edittable tbody").append("tr").html("<tr><td><input type='text' name='key" + 
+    editTableTrLength + "'/></td><td><input type='text' name='key" + 
+    editTableTrLength + "value_pair'/></td><td><button onclick='deleteRowFromEditTable(this)'>Delete</button></td></tr>")
+}
+window.addRowToEditTable = addRowToEditTable;
+
+function deleteRowFromEditTable(r) {
+    var i = r.parentNode.parentNode.rowIndex;
+    document.getElementById("edittable").deleteRow(i);
+}
+window.deleteRowFromEditTable = deleteRowFromEditTable;
+})();
+</script>
+
+<div id="rcorners2">
+<table class="legend">
+<caption style="background-color: lightgray;">Legend</caption>
+<tr>
+<td>Alert</td>
+<td>
+<svg height="50" width="50">
+  <circle cx="20" cy="25" r="6" stroke="black" fill="red" /> 
+</svg> 
+</td>
+<td>Analyzed</td>
+<td>
+<svg height="50" width="50">
+  <circle cx="20" cy="25" r="6" stroke="black" fill="green" />  
+</svg>
+</td>
+<td>Client</td>
+<td>
+<svg height="50" width="50">
+  <circle cx="20" cy="25" r="6" stroke="black" fill="blue" />  
+</svg>
+</td>
+<td>Server</td>
+<td>
+<svg height="50" width="50">
+  <circle cx="20" cy="25" r="6" stroke="black" fill="orange" />  
+</svg>
+</td>
+<td>Client & Server</td>
+<td>
+<svg height="50" width="50">
+  <circle cx="20" cy="25" r="6" stroke="black" fill="purple" />  
+</svg>
+</td>
+</tr>
+</table>
+</div>
+
+<script>
+document.getElementById("rcorners2").style.display = "none";
+</script>
+</body>
+</html>

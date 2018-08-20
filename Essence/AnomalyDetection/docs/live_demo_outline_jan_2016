@@ -1,0 +1,64 @@
+Send a message from machine A to machine B 10 times a second
+
+Run machine learning code
+> mvn clean;mvn tomcat:run
+
+Do some configuration:
+set the sample window period (default 1800 sec):
+http://localhost:8080/AnomalyDetection/rest/setSampleWindowSecs/60 (so this will give about 600 packets per time window)
+
+set the slide window: sample periods overlap and we slide the window
+forward by this many seconds each time (default 300 sec):
+http://localhost:8080/AnomalyDetection/rest/setSlideWindowSecs/10
+
+path to the essence services server:
+http://localhost:8080/AnomalyDetection/rest/setAnomalyServer?hostname=???
+default is 54.210.142.233 (this is formed into 'http://hostname/essence-services'
+
+
+Load the webpage that runs the demo test:
+http://localhost:8080/AnomalyDetection/rest/demo?hostname=54.210.142.233&categoryCSV=source_addr&valueCSV=dest_addr&keySpace=demo&refreshSec=20000&table=packet
+hostname = where the cassandra DB is
+keySpace = name of keyspace on the cassandra DB
+table = name of the table with the packet info in the cassandra DB
+refreshSec = how often the demo page refreshes
+recentMin = how to split the data. The most recent recentMin of data is the test data and the data before that is the training data
+  default is 1
+demoFilter = the filter type and value to run the test on. For this demo we'll use "source_addr;<IP address of machine A>"
+	   default is the first filter value that was seen
+ageMins = cutoff for how far back in time the training data starts. Default = no cutoff, use all packets in database
+
+Create anomalous situation:
+   - stop machine A's messages
+   or start sending messages from A to A, B, and C
+   or start sending messages from A to just C
+(The demo only considers packets originating from A ->  see demoFilter above)
+The code should automatically adjust when the machine C appears in the data, however it has not been well tested.
+
+Stop the anomalous situation and return to normal messages
+
+Anomalies will be submitted to essence-services
+ - label the cause and status however a user would
+ - duplicate these entries so that there are say 20 of them (as with most machine learning, a single labeled example won't be enough)
+
+Allow time to pass so that anomalous situation is older than ageMins (we don't currently have a way to exclude the anomalous packets from
+the training data, and we don't want the anomalous data from becoming "correct")
+
+Repeat the original anomalous situation and observe that the new anomaly is automatically labeled with useful cause and status
+
+
+Misc configuration:
+
+For testing/debugging purposes it is possible to disable the supervised learning part (i.e., the interaction with the essence-services)
+http://localhost:8080/AnomalyDetection/rest/setEnableSupervisedLearning/?
+0 = off
+1 = on
+
+To set the threshold for what scores trigger an anomaly:
+http://localhost:8080/AnomalyDetection/rest/setUnsupervisedThreshold/?
+default is 1.0
+A positive score is considered anomalous. The higher the score, the more anomalous, so increase this if there are too many false positives, 
+or decrease it if there are too few anomalies
+
+To purge the supervised learning cache of confirmed status/causes
+http://localhost:8080/AnomalyDetection/rest/purgeSupervisedCache

@@ -1,0 +1,73 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ver="http://www.multispeak.org/Version_3.0">
+   <soapenv:Header>
+      <ver:MultiSpeakMsgHeader Version="?" UserID="?" Pwd="?" AppName="?" AppVersion="?" Company="?" CSUnits="feet" CoordinateSystem="?" Datum="?" SessionID="?" PreviousSessionID="?" ObjectsRemaining="?" LastSent="?" RegistrationID="?" AuditID="?" MessageID="?" TimeStamp="?" BuildString="?"/>
+   </soapenv:Header>
+   
+   <!-- TODO: Commenting temporarily to get rid of error in Eclipse -->
+<!--    <soap:Header> -->
+<!--     <ver:MultiSpeakMsgHeader -->
+<!--         Version="3.0" -->
+<!--         UserID="SEDC" -->
+<!--         Pwd="sedcupn" -->
+<!--         AppName="Command Center" -->
+<!--         Company="Hunt Technologies Inc."/> -->
+<!--     </soap:Header> -->
+
+   <soapenv:Body>
+      <ver:GetMetersByCustomerNameResponse>
+         <!--Optional:-->
+         <ver:GetMetersByCustomerNameResult>
+            <!--Zero or more repetitions:-->
+            <ver:meter objectID="?" verb="Change" errorString="?" replaceID="?" utility="?">
+               <!--Optional:-->
+               <ver:meterNo>125167722</ver:meterNo>
+               <!--Optional:-->
+               <ver:serialNumber>125167722</ver:serialNumber>
+               <!--Optional:-->
+               <ver:meterType>0</ver:meterType>
+               <!--Optional:-->
+               <ver:AMRVendor>01</ver:AMRVendor>
+               <!--Optional:-->
+               <ver:nameplate>
+                  <!--Optional:-->
+                  <ver:maxAmperage>30</ver:maxAmperage>
+                  <!--Optional:-->
+                  <ver:phases>0</ver:phases>
+                  <!--Optional:-->
+                  <ver:wires>0</ver:wires>
+                  <!--Optional:-->
+                  <ver:dials>5</ver:dials>
+                  <!--Optional:-->
+                  <ver:form/>
+                  <!--Optional:-->
+                  <ver:multiplier>1</ver:multiplier>
+                  <!--Optional:-->
+                  <ver:transponderID>4036870508</ver:transponderID>
+               </ver:nameplate>
+               <!--Optional:-->
+               <ver:utilityInfo>
+                  <!--Optional:-->
+                  <ver:owner>Scott Tiger</ver:owner>
+                  <!--Optional:-->
+                  <ver:district>10</ver:district>
+                  <!--Optional:-->
+                  <ver:servLoc>16773720</ver:servLoc>
+                  <!--Optional:-->
+                  <ver:accountNumber>66873006</ver:accountNumber>
+                  <!--Optional:-->
+                  <ver:custID>668730</ver:custID>
+                  <!--Optional:-->
+                  <ver:substationCode>10</ver:substationCode>
+                  <!--Optional:-->
+                  <ver:substationName>Spout Springs</ver:substationName>
+                  <!--Optional:-->
+                  <ver:feeder>104</ver:feeder>
+                  <!--Optional:-->
+                  <ver:transformerBankID>1677364001</ver:transformerBankID>
+               </ver:utilityInfo>
+               <!--Optional:-->
+            </ver:meter>			
+         </ver:GetMetersByCustomerNameResult>
+      </ver:GetMetersByCustomerNameResponse>
+   </soapenv:Body>
+</soapenv:Envelope>

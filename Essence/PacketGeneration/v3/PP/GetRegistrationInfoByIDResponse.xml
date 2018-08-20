@@ -1,0 +1,27 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ver="http://www.multispeak.org/Version_3.0">
+   <soapenv:Header>
+      <ver:MultiSpeakMsgHeader Version="?" UserID="?" Pwd="?" AppName="?" AppVersion="?" Company="?" CSUnits="feet" CoordinateSystem="?" Datum="?" SessionID="?" PreviousSessionID="?" ObjectsRemaining="?" LastSent="?" RegistrationID="?" AuditID="?" MessageID="?" TimeStamp="?" BuildString="?"/>
+   </soapenv:Header>
+   <soapenv:Body>
+      <ver:GetRegistrationInfoByIDResponse>
+         <!--Optional:-->
+         <ver:GetRegistrationInfoByIDResult>
+            <!--Optional:-->
+            <ver:registrationID>?</ver:registrationID>
+            <!--Optional:-->
+            <ver:responseURL>?</ver:responseURL>
+            <!--Optional:-->
+            <ver:responseUserID>?</ver:responseUserID>
+            <!--Optional:-->
+            <ver:responsePwd>?</ver:responsePwd>
+            <!--Optional:-->
+            <ver:MSFunction>?</ver:MSFunction>
+            <!--Optional:-->
+            <ver:methodsList>
+               <!--Zero or more repetitions:-->
+               <ver:methodName>?</ver:methodName>
+            </ver:methodsList>
+         </ver:GetRegistrationInfoByIDResult>
+      </ver:GetRegistrationInfoByIDResponse>
+   </soapenv:Body>
+</soapenv:Envelope>

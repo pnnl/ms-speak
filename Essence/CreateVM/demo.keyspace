@@ -1,0 +1,117 @@
+CREEATE KEYSPACE demo WITH replication = {
+  'class': 'SimpleStrategy',
+  'replication_factor': '1'
+};
+
+USE demo;
+
+CREATE TABLE generic_packet (
+  source_addr text,
+  time_stamp timestamp,
+  source_port int,
+  destination_addr text,
+  destination_port int,
+  protocol text,
+  claimed boolean,
+  destination_content blob,
+  source_content blob,
+  PRIMARY KEY ((source_addr), time_stamp, source_port, destination_addr, destination_port, protocol)
+) WITH
+  bloom_filter_fp_chance=0.010000 AND
+  caching='KEYS_ONLY' AND
+  comment='' AND
+  dclocal_read_repair_chance=0.100000 AND
+  gc_grace_seconds=864000 AND
+  index_interval=128 AND
+  read_repair_chance=0.000000 AND
+  replicate_on_write='true' AND
+  populate_io_cache_on_flush='false' AND
+  default_time_to_live=0 AND
+  speculative_retry='99.0PERCENTILE' AND
+  memtable_flush_period_in_ms=0 AND
+  compaction={'class': 'SizeTieredCompactionStrategy'} AND
+  compression={'sstable_compression': 'LZ4Compressor'};
+
+CREATE INDEX my_time ON generic_packet (time_stamp);
+
+CREATE TABLE packet (
+  dest_addr text,
+  time_stamp timestamp,
+  source_addr text,
+  content blob,
+  numeric_values map<text, float>,
+  protocol text,
+  text_values map<text, text>,
+  voltage int,
+  PRIMARY KEY ((dest_addr), time_stamp, source_addr)
+) WITH
+  bloom_filter_fp_chance=0.010000 AND
+  caching='KEYS_ONLY' AND
+  comment='' AND
+  dclocal_read_repair_chance=0.000000 AND
+  gc_grace_seconds=864000 AND
+  index_interval=128 AND
+  read_repair_chance=0.100000 AND
+  replicate_on_write='true' AND
+  populate_io_cache_on_flush='false' AND
+  default_time_to_live=0 AND
+  speculative_retry='99.0PERCENTILE' AND
+  memtable_flush_period_in_ms=0 AND
+  compaction={'class': 'SizeTieredCompactionStrategy'} AND
+  compression={'sstable_compression': 'LZ4Compressor'};
+
+CREATE INDEX packet_protocol_idx ON packet (protocol);
+
+CREATE TABLE packet_test (
+  dest_addr text,
+  time_stamp timestamp,
+  source_addr text,
+  content blob,
+  numeric_values map<text, float>,
+  protocol text,
+  text_values map<text, text>,
+  voltage int,
+  PRIMARY KEY ((dest_addr), time_stamp, source_addr)
+) WITH
+  bloom_filter_fp_chance=0.010000 AND
+  caching='KEYS_ONLY' AND
+  comment='' AND
+  dclocal_read_repair_chance=0.000000 AND
+  gc_grace_seconds=864000 AND
+  index_interval=128 AND
+  read_repair_chance=0.100000 AND
+  replicate_on_write='true' AND
+  populate_io_cache_on_flush='false' AND
+  default_time_to_live=0 AND
+  speculative_retry='99.0PERCENTILE' AND
+  memtable_flush_period_in_ms=0 AND
+  compaction={'class': 'SizeTieredCompactionStrategy'} AND
+  compression={'sstable_compression': 'LZ4Compressor'};
+
+
+CREATE TABLE packet_twong (
+  dest_addr text,
+  time_stamp timestamp,
+  source_addr text,
+  content blob,
+  numeric_values map<text, float>,
+  protocol text,
+  text_values map<text, text>,
+  voltage int,
+  PRIMARY KEY ((dest_addr), time_stamp, source_addr)
+) WITH
+  bloom_filter_fp_chance=0.010000 AND
+  caching='KEYS_ONLY' AND
+  comment='' AND
+  dclocal_read_repair_chance=0.100000 AND
+  gc_grace_seconds=864000 AND
+  index_interval=128 AND
+  read_repair_chance=0.000000 AND
+  replicate_on_write='true' AND
+  populate_io_cache_on_flush='false' AND
+  default_time_to_live=0 AND
+  speculative_retry='99.0PERCENTILE' AND
+  memtable_flush_period_in_ms=0 AND
+  compaction={'class': 'SizeTieredCompactionStrategy'} AND
+  compression={'sstable_compression': 'LZ4Compressor'};
+

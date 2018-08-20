@@ -1,0 +1,22 @@
+<soap:Envelope
+	xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<soap:Header>
+		<MultiSpeakMsgHeader
+			Version="3.0"
+			UserID="SEDC"
+			Pwd="sedcupn"
+			AppName="Command Center"
+			Company="Hunt Technologies Inc."
+			xmlns="http://www.multispeak.org/Version_3.0"/>
+		</soap:Header>
+	<soap:Body>
+		  <GetMetersByCustomerName xmlns="http://www.multispeak.org/Version_3.0">
+			 <!--Optional:-->
+			 <firstName>Scott</firstName>
+			 <!--Optional:-->
+			 <lastName>Tiger</lastName>
+		  </GetMetersByCustomerName>
+	</soap:Body>
+</soap:Envelope>

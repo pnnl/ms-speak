@@ -1,0 +1,207 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ver="http://www.multispeak.org/Version_3.0">
+   <soapenv:Header>
+      <ver:MultiSpeakMsgHeader Version="?" UserID="?" Pwd="?" AppName="?" AppVersion="?" Company="?" CSUnits="feet" CoordinateSystem="?" Datum="?" SessionID="?" PreviousSessionID="?" ObjectsRemaining="?" LastSent="?" RegistrationID="?" AuditID="?" MessageID="?" TimeStamp="?" BuildString="?"/>
+   </soapenv:Header>
+   <soapenv:Body>
+      <ver:ModifyCBDataForMeter>
+         <!--Optional:-->
+         <ver:meterData>
+            <!--Zero or more repetitions:-->
+            <ver:meter objectID="?" verb="Change" errorString="?" replaceID="?" utility="?">
+               <!--Optional:-->
+               <ver:extensions>
+                  <!--You may enter ANY elements at this point-->
+               </ver:extensions>
+               <!--Optional:-->
+               <ver:comments>?</ver:comments>
+               <!--Optional:-->
+               <ver:extensionsList>
+                  <!--Zero or more repetitions:-->
+                  <ver:extensionsItem>
+                     <!--Optional:-->
+                     <ver:extName>?</ver:extName>
+                     <!--Optional:-->
+                     <ver:extValue>?</ver:extValue>
+                     <!--Optional:-->
+                     <ver:extType>?</ver:extType>
+                  </ver:extensionsItem>
+               </ver:extensionsList>
+               <!--Optional:-->
+               <ver:deviceClass>Basic</ver:deviceClass>
+               <!--Optional:-->
+               <ver:inServiceDate>2014-01-15</ver:inServiceDate>
+               <!--Optional:-->
+               <ver:outServiceDate>?</ver:outServiceDate>
+               <!--Optional:-->
+               <ver:facilityID>?</ver:facilityID>
+               <!--Optional:-->
+               <ver:meterNo>?</ver:meterNo>
+               <!--Optional:-->
+               <ver:serialNumber>?</ver:serialNumber>
+               <!--Optional:-->
+               <ver:meterType>?</ver:meterType>
+               <!--Optional:-->
+               <ver:manufacturer>?</ver:manufacturer>
+               <!--Optional:-->
+               <ver:sealNumberList>
+                  <!--Zero or more repetitions:-->
+                  <ver:sealNumber>?</ver:sealNumber>
+               </ver:sealNumberList>
+               <!--Optional:-->
+               <ver:AMRType>?</ver:AMRType>
+               <!--Optional:-->
+               <ver:AMRDeviceType>?</ver:AMRDeviceType>
+               <!--Optional:-->
+               <ver:AMRVendor>?</ver:AMRVendor>
+               <!--Optional:-->
+               <ver:nameplate>
+                  <!--Optional:-->
+                  <ver:kh>?</ver:kh>
+                  <!--Optional:-->
+                  <ver:kr>?</ver:kr>
+                  <!--Optional:-->
+                  <ver:frequency>?</ver:frequency>
+                  <!--Optional:-->
+                  <ver:numberOfElements>?</ver:numberOfElements>
+                  <!--Optional:-->
+                  <ver:baseType>?</ver:baseType>
+                  <!--Optional:-->
+                  <ver:accuracyClass>?</ver:accuracyClass>
+                  <!--Optional:-->
+                  <ver:elementsVoltage>241</ver:elementsVoltage>
+                  <!--Optional:-->
+                  <ver:supplyVoltage>?</ver:supplyVoltage>
+                  <!--Optional:-->
+                  <ver:maxAmperage>60</ver:maxAmperage>
+                  <!--Optional:-->
+                  <ver:testAmperage>?</ver:testAmperage>
+                  <!--Optional:-->
+                  <ver:regRatio>?</ver:regRatio>
+                  <!--Optional:-->
+                  <ver:phases>?</ver:phases>
+                  <!--Optional:-->
+                  <ver:wires>?</ver:wires>
+                  <!--Optional:-->
+                  <ver:dials>?</ver:dials>
+                  <!--Optional:-->
+                  <ver:form>?</ver:form>
+                  <!--Optional:-->
+                  <ver:multiplier>3</ver:multiplier>
+                  <!--Optional:-->
+                  <ver:demandMult>?</ver:demandMult>
+                  <!--Optional:-->
+                  <ver:transponderID>?</ver:transponderID>
+               </ver:nameplate>
+               <!--Optional:-->
+               <ver:utilityInfo>
+                  <!--Optional:-->
+                  <ver:owner>?</ver:owner>
+                  <!--Optional:-->
+                  <ver:district>?</ver:district>
+                  <!--Optional:-->
+                  <ver:servLoc>?</ver:servLoc>
+                  <!--Optional:-->
+                  <ver:accountNumber>?</ver:accountNumber>
+                  <!--Optional:-->
+                  <ver:custID>?</ver:custID>
+                  <!--Optional:-->
+                  <ver:substationCode>?</ver:substationCode>
+                  <!--Optional:-->
+                  <ver:substationName>?</ver:substationName>
+                  <!--Optional:-->
+                  <ver:feeder>?</ver:feeder>
+                  <!--Optional:-->
+                  <ver:bus>?</ver:bus>
+                  <!--Optional:-->
+                  <ver:phaseCd>?</ver:phaseCd>
+                  <!--Optional: using loc:ea00 for noun does not work -->
+                  <ver:eaLoc name="?" noun="{&quot;http://example.com/ns/foo&quot;, &quot;p&quot;}" objectID="?"/>
+                  <!--Optional:-->
+                  <ver:transformerBankID>?</ver:transformerBankID>
+                  <!--Optional:-->
+                  <ver:meterBaseID>?</ver:meterBaseID>
+                  <!--Optional:-->
+                  <ver:mapLocation>
+                     <!--You have a CHOICE of the next 2 items at this level-->
+                     <!--Optional:-->
+                     <ver:coord>
+                        <ver:X>100.1</ver:X>
+                        <!--Optional:-->
+                        <ver:Y>200.1</ver:Y>
+                        <!--Optional:-->
+                        <ver:Z>?</ver:Z>
+                        <!--Optional:-->
+                        <ver:Bulge>?</ver:Bulge>
+                     </ver:coord>
+                     <!--Optional:-->
+                     <ver:coordinates decimal="." cs="," ts=" ">?</ver:coordinates>
+                  </ver:mapLocation>
+               </ver:utilityInfo>
+               <!--Optional:-->
+               <ver:moduleList>
+                  <!--Zero or more repetitions:-->
+                  <ver:module objectID="?" verb="Change" errorString="?" replaceID="?" utility="?">
+                     <!--Optional:-->
+                     <ver:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </ver:extensions>
+                     <!--Optional:-->
+                     <ver:comments>?</ver:comments>
+                     <!--Optional:-->
+                     <ver:extensionsList>
+                        <!--Zero or more repetitions:-->
+                        <ver:extensionsItem>
+                           <!--Optional:-->
+                           <ver:extName>?</ver:extName>
+                           <!--Optional:-->
+                           <ver:extValue>?</ver:extValue>
+                           <!--Optional:-->
+                           <ver:extType>?</ver:extType>
+                        </ver:extensionsItem>
+                     </ver:extensionsList>
+                     <!--Optional:-->
+                     <ver:deviceClass>?</ver:deviceClass>
+                     <!--Optional:-->
+                     <ver:inServiceDate>?</ver:inServiceDate>
+                     <!--Optional:-->
+                     <ver:outServiceDate>?</ver:outServiceDate>
+                     <!--Optional:-->
+                     <ver:facilityID>?</ver:facilityID>
+                     <!--Optional:-->
+                     <ver:description>?</ver:description>
+                     <!--Optional:-->
+                     <ver:moduleType>?</ver:moduleType>
+                     <!--Optional:-->
+                     <ver:firmwareVersion>?</ver:firmwareVersion>
+                     <!--Optional:-->
+                     <ver:manufacturer>?</ver:manufacturer>
+                     <!--Optional:-->
+                     <ver:serialNumber>?</ver:serialNumber>
+                  </ver:module>
+               </ver:moduleList>
+               <!--Optional:-->
+               <ver:subMeterList>
+                  <!--Zero or more repetitions:-->
+                  <ver:subMeterID>?</ver:subMeterID>
+               </ver:subMeterList>
+               <!--Optional:-->
+               <ver:parentMeterList>
+                  <!--Zero or more repetitions:-->
+                  <ver:parentMeterID>?</ver:parentMeterID>
+               </ver:parentMeterList>
+               <!--Optional:-->
+               <ver:meterStatusList>
+                  <!--Zero or more repetitions:-->
+                  <ver:meterStatus>?</ver:meterStatus>
+               </ver:meterStatusList>
+               <!--Optional:-->
+               <ver:meterConnectionStatus>?</ver:meterConnectionStatus>
+               <!--Optional:-->
+               <ver:meterCommAddress>?</ver:meterCommAddress>
+               <!--Optional:-->
+               <ver:remoteReconnectSetting>?</ver:remoteReconnectSetting>
+            </ver:meter>
+         </ver:meterData>
+      </ver:ModifyCBDataForMeter>
+   </soapenv:Body>
+</soapenv:Envelope>

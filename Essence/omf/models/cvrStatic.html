@@ -1,0 +1,399 @@
+<head>
+	<title>Open Modeling Framework</title>
+	<meta charset="utf-8">
+	<link href="{{pathPrefix}}/static/omf.css" type="text/css" rel="stylesheet"/>
+	<link rel="shortcut icon" href="{{pathPrefix}}/static/favicon.ico">
+	<link href="{{pathPrefix}}/static/models.css" type="text/css" rel="stylesheet"/>
+	<!-- Library Imports -->
+	<script type="text/javascript" src="{{pathPrefix}}/static/omf.js"></script>
+	<script type="text/javascript" src="{{pathPrefix}}/static/jquery-1.9.1.js"></script>
+	<script src="{{pathPrefix}}/static/highcharts.src.js"></script>
+	<!-- Global Funcs Import -->
+	<script type="text/javascript" src="{{pathPrefix}}/static/models.js"></script>
+	<!-- Data  Imports -->
+	<script>allInputData={% if allInputData %}{{allInputData | safe}}{% else %}null{% endif %}</script>
+	<script>allOutputData={% if allOutputData %}{{allOutputData | safe}}{% else %}null{% endif %}</script>
+	<script>modelStatus="{{modelStatus}}"</script>
+	<script>currentUser="{{datastoreNames.get('currentUser','test')}}"</script>
+</head>
+<style type="text/css">
+
+</style>
+<body onload="init()">
+	<div id="title">
+		<div id="logoBox"><a href="/">&#10059;</a></div>
+		<p id="titleText">New Static CVR Model</p>
+	</div>
+	<p class="reportTitle">Model Input</p>
+	<div id="input" class="content">
+		<form name="inputForm" action="/runModel/" method="post" onsubmit="return validateForm()">
+			<div class="shortInput">
+				<label>Model Type</label>
+				<input type="text" id="modelType" name="modelType" value="cvrStatic" readonly/>
+			</div>
+			<div class="shortInput">
+				<label>Model Name</label>
+				<input type="text" id="modelName" name="modelName" data-validRegex="[\w\s]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label>Feeder</label>
+				<select id="feederName" name="feederName"/>
+					<option disabled><strong>Personal Feeders</strong></option>
+					{% for feeder in datastoreNames['feeders'] %}
+						<option value="{{ datastoreNames.get('currentUser','test') + '___' + feeder }}">{{ feeder }}</option>
+					{% endfor %}
+					<option disabled><strong>Public Feeders</strong></option>
+					{% for pFeeder in datastoreNames['publicFeeders'] %}
+						<option value="{{ 'public___' + pFeeder }}">{{ pFeeder }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="shortInput runningInline postRunInline">
+				<label>User</label>
+				<input type="text" id="user" name="user" readonly/></td>
+			</div>
+			<div class="shortInput runningInline postRunInline">
+				<label>Created</label>
+				<input type="text" id="created" name="created" readonly/></td>
+			</div>
+			<div class="shortInput postRunInline">
+				<label>Run Time</label>
+				<input type="text" id="runTime" name="runTime" readonly/></td>
+			</div>
+			<hr>
+			<div class="shortInput">
+				<label class="tooltip">Capital Cost<span class="classic">Installation captial cost<br> Type: <em>float</em></span></label>
+				<input type="text" id="capitalCost" name="capitalCost" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">OM Cost<span class="classic">Operating and maintain cost<br> Type: <em>float</em></span></label>	
+				<input type="text" id="omCost" name="omCost" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Wholesale Energy Cost ($/kWh)</label>
+				<input type="text" id="wholesaleEnergyCostPerKwh" name="wholesaleEnergyCostPerKwh" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Retail Energy Cost ($/kWh)</label>
+				<input type="text" id="retailEnergyCostPerKwh" name="retailEnergyCostPerKwh" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Spring Demand Charge ($/kW)</label>
+				<input type="text" id="peakDemandCostSpringPerKw" name="peakDemandCostSpringPerKw" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Summer Demand Charge ($/kW)</label>
+				<input type="text" id="peakDemandCostSummerPerKw" name="peakDemandCostSummerPerKw" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Fall Demand Charge ($/kW)</label>
+				<input type="text" id="peakDemandCostFallPerKw" name="peakDemandCostFallPerKw" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Winter Demand Charge ($/kW)</label>
+				<input type="text" id="peakDemandCostWinterPerKw" name="peakDemandCostWinterPerKw" data-validRegex="[-+]?[0-9]*\.?[0-9]+"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">baselineTap</label>
+				<input type="text" id="baselineTap" name="baselineTap" value="3"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Z (%)</label>
+				<input type="text" id="z_percent" name="z_percent"  value="0.5"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">I (%)</label>
+				<input type="text" id="i_percent" name="i_percent" value="0"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">P (%)</label>
+				<input type="text" id="p_percent" name="p_percent"  value="0.5"/></td>
+			</div>
+			<div class="shortInput">
+				<label class="tooltip">Power factor</label>
+				<input type="text" id="power_factor" name="power_factor" value="0.9"/></td>
+			</div>
+			<hr>
+			<div class="wideInput">
+				<table>
+					<tr>
+						<th></th>
+						<th>January</th>
+						<th>February</th>
+						<th>March</th>
+						<th>April</th>
+						<th>May</th>
+						<th>June</th>
+						<th>July</th>
+						<th>August</th>
+						<th>September</th>
+						<th>October</th>
+						<th>November</th>
+						<th>December</th>
+					</tr>						
+					<tr>
+						<th>Peak Load</th>
+						<td><input type="text" id="janAvg" name="janAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="febAvg" name="febAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="marAvg" name="marAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="aprAvg" name="aprAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="mayAvg" name="mayAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="junAvg" name="junAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="julAvg" name="julAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="augAvg" name="augAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="sepAvg" name="sepAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="octAvg" name="octAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="novAvg" name="novAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="decAvg" name="decAvg" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+					</tr>
+					<tr>
+						<th>Avg Load</th>
+						<td><input type="text" id="janPeak" name="janPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="febPeak" name="febPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="marPeak" name="marPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="aprPeak" name="aprPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="mayPeak" name="mayPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="junPeak" name="junPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="julPeak" name="julPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="augPeak" name="augPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="sepPeak" name="sepPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="octPeak" name="octPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="novPeak" name="novPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+						<td><input type="text" id="decPeak" name="decPeak" data-validRegex="[-+]?[0-9]*\.?[0-9]+"></td>
+					</tr>
+				</table>
+			</div>
+			<div class="wideInput" style="text-align:right">
+				<button id="deleteButton" type="button" class="stoppedInline postRunInline" onclick="deleteModel()">Delete</button>
+				<button id="publishButton" type="button" class="postRunInline" onclick="publishModel()">Publish</button>
+				<button id="duplicateButton" type="button" class="postRunInline" onclick="duplicateModel()">Duplicate</button>
+				<button id="runButton" type="submit" class="preRun">Run Model</button>
+				<button id="cancelButton" class="runningInline" type="button" onclick="cancelModel()">Cancel Run</button>
+				<button id="rerunButton" type="submit" class="postRunInline stoppedInline">Re-Run Model</button>
+			</div>
+		</form>
+	</div>
+	<div id ="runIndicator" class="content running">
+		Model running on server. Refresh the page to check for results.
+	</div>
+	<div id ="stopIndicator" class="content stopped">
+		Model cancelled or encountered an error. Please change inputs and re-run.
+	</div>
+	<div id="output">
+		<script type="text/javascript">
+		function insertMetric(tableId, name, vector) {
+				// Add a vector to a table as a row.
+				table = gebi(tableId)
+				newRow = table.insertRow()
+				newRow.insertCell().innerHTML = name
+				for (i=0; i<vector.length; i++) {
+					cell = newRow.insertCell()
+					cell.innerHTML = vector[i]
+				}
+			}
+		</script>
+		<p class="reportTitle postRun">Historical Loads</p>
+		<div id="scadaReport" class="tightContent postRun">
+			<script type="text/javascript">
+				new Highcharts.Chart({
+					"chart":{
+						"height": 200,
+						"width": 1000,
+						"renderTo": "scadaReport",
+						"type": "column"
+					},
+					"title":{
+						"text":null
+					},
+					"legend":{
+						"layout":"horizontal", 
+						"align":"top", 
+						"verticalAlign":"top", 
+						"x":50, 
+						"y":-10, 
+						"borderWidth":0
+					},
+					"credits":{
+						"enabled":false
+					},
+					"tooltip":{
+						"valueDecimals":1
+					},
+					"xAxis": {
+						"categories": allOutputData["monthName"]
+					},
+					"yAxis": {
+						"title": {
+							"text": "Historical Power Con(KW)",
+							"style":{
+								"color":"gray"
+							}
+						}
+					},
+					"plotOptions": {
+						"column": {
+							"pointPadding": 0.2,
+							"borderWidth": 0
+						}
+					},
+					"series":[{
+						"data": allOutputData["histPeak"],
+						"type": "column",
+						"color": "darkgrey",
+						"name": "histPeak"
+					},{
+						"data": allOutputData["histAverage"],
+						"type": "column",
+						"color": "grey",
+						"name": "histAverage"
+					}]
+				})
+			</script>
+		</div>
+		<p class="reportTitle postRun">One Line Diagram</p>
+		<div id="feederReport" class="tightContent postRun">
+			<img id="feederChart" />
+			<script type="text/javascript">gebi("feederChart").src = "data:image/png;base64," + allOutputData.feederChart</script>
+		</div>
+		<p class="reportTitle postRun">Projected Savings by Month</p>
+		<div id="spendReport" class="tightContent postRun">
+			<script type="text/javascript">
+				new Highcharts.Chart({
+					"chart":{
+						"height": 200,
+						"width": 1000,
+						"renderTo": "spendReport",
+						"type": "column"
+					},
+					"title":{
+						"text":null
+					},
+					"legend":{
+						"layout":"horizontal", 
+						"align":"top", 
+						"verticalAlign":"top", 
+						"x":50, 
+						"y":-10, 
+						"borderWidth":0
+					},
+					"credits":{
+						"enabled":false
+					},
+					"tooltip":{
+						"valueDecimals":1
+					},
+					"xAxis": {
+						"categories": allOutputData["monthName"]
+					},
+					"yAxis": {
+						"title": {
+							"text": "Utility Savings ($)",
+							"style":{
+								"color":"gray"
+							}
+						}
+					},
+					"plotOptions": {
+						"column": {
+							"pointPadding": 0.2,
+							"borderWidth": 0
+						}
+					},
+					"series":[{
+						"data": allOutputData["energyReductionDollars"],
+						"type": "column",
+						"color": "blue",
+						"name": "Energy Reduction"
+					},{
+						"data": allOutputData["lossReductionDollars"],
+						"type": "column",
+						"color": "green",
+						"name": "Loss Reduction"
+					},{
+						"data": allOutputData["peakReductionDollars"],
+						"type": "column",
+						"color": "red",
+						"name": "Peak Reduction"
+					}]
+				})
+			</script>
+		</div>
+		<p class="reportTitle postRun">Projected Avoided Cost</p>
+		<div id="savingsReport" class="tightContent postRun">
+			<script type="text/javascript">
+				for (i=0; i<=30; i++){
+					if (allOutputData["annualSave"][i]<=0 && allOutputData["annualSave"][i+1] >= 0)
+						paybackYear = i + (-allOutputData["annualSave"][i])/(allOutputData["annualSave"][i+1] + allOutputData["annualSave"][i])
+				}
+				new Highcharts.Chart({
+					"chart":{
+						"height": 200,
+						"width": 1000,
+						"renderTo": "savingsReport",
+						"type": "line"
+					},
+					"title":{
+						"text":null
+					},
+					"legend":{
+						"layout":"horizontal", 
+						"align":"top", 
+						"verticalAlign":"top", 
+						"x":50, 
+						"y":-10, 
+						"borderWidth":0
+					},
+					"credits":{
+						"enabled":false
+					},
+					"tooltip":{
+						"valueDecimals":1
+					},
+					"xAxis": {
+						"plotLines": [{
+						    "color": 'green', // Color value
+						    "value": paybackYear||null, // Value of where the line will appear
+						    "width": 1, // Width of the line    
+						    "label": {
+				                "text": "payback after " + paybackYear.toFixed(2)||null,
+				            }
+						}]
+					},
+					"yAxis": {
+						"title": {
+							"text": "Cumulative Savings($)",
+							"style":{
+								"color":"gray"
+							}
+						}
+					},
+					"plotOptions": {
+					},
+					"series":[{
+						"data": allOutputData["annualSave"],
+						"color": "blue",
+						"name": "Annual Savings"
+					}]
+				})
+			</script>
+		</div>
+		<p class="reportTitle postRun">Power Flows at Various Loads</p>
+		<div id="powerflowReport" class="tightContent postRun tableReport">
+			<table id="powerflowReportTable"></table>
+ 			<script type="text/javascript">
+ 				for (row in allOutputData["monthDataMat"]){
+ 					insertMetric("powerflowReportTable","", allOutputData["monthDataMat"][row])
+ 				}
+ 			</script>	
+		</div>
+		<p class="reportTitle postRun">Savings at Various Loads</p>
+		<div id="moneyReport" class="tightContent postRun tableReport">
+			<table id="moneyReportTable"></table>
+			<script type="text/javascript">
+				for (row in allOutputData["monthDataPart"]){
+ 					insertMetric("moneyReportTable","", allOutputData["monthDataPart"][row])
+ 				}
+			</script>
+		</div>
+	</div>
+</body>

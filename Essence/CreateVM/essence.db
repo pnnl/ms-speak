@@ -1,0 +1,649 @@
+-- MySQL dump 10.13  Distrib 5.5.47, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: essence
+-- ------------------------------------------------------
+-- Server version	5.5.47-0+deb8u1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `action`
+--
+
+DROP TABLE IF EXISTS `action`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `action` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `detail` varchar(400) DEFAULT NULL,
+  `decision_id` bigint(20) unsigned DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `decision_id` (`decision_id`),
+  CONSTRAINT `action_ibfk_1` FOREIGN KEY (`decision_id`) REFERENCES `decision` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `alert`
+--
+
+DROP TABLE IF EXISTS `alert`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `alert` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `alert_type_id` int(10) unsigned NOT NULL,
+  `creation_time` datetime NOT NULL,
+  `description` varchar(256) DEFAULT NULL,
+  `status` varchar(20) DEFAULT NULL,
+  `organization_id` int(11) DEFAULT NULL,
+  `severity` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `organization_id_idx` (`organization_id`),
+  KEY `alert_type_id_idx` (`alert_type_id`),
+  CONSTRAINT `alert_type_id` FOREIGN KEY (`alert_type_id`) REFERENCES `alert_type` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `organization_id` FOREIGN KEY (`organization_id`) REFERENCES `organization` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `alert_type`
+--
+
+DROP TABLE IF EXISTS `alert_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `alert_type` (
+  `id` int(10) unsigned NOT NULL,
+  `name` varchar(45) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `analyzer_result`
+--
+
+DROP TABLE IF EXISTS `analyzer_result`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `analyzer_result` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `alertid` bigint(20) unsigned NOT NULL,
+  `run_time` mediumtext NOT NULL,
+  `detector_type` varchar(40) NOT NULL,
+  `src_ip_addr` varchar(20) DEFAULT NULL,
+  `dst_ip_addr` varchar(20) DEFAULT NULL,
+  `num_dos_pkts` int(11) DEFAULT NULL,
+  `time_win_seconds` mediumtext,
+  `ref_rule_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `analyzer_result_ibfk_2_idx` (`alertid`),
+  CONSTRAINT `analyzer_result_ibfk_2` FOREIGN KEY (`alertid`) REFERENCES `alert` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `annotations`
+--
+
+DROP TABLE IF EXISTS `annotations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `annotations` (
+  `ip_address` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+  `keyname` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+  `keyvalue` varchar(1024) CHARACTER SET latin1 DEFAULT NULL,
+  PRIMARY KEY (`ip_address`,`keyname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly`
+--
+
+DROP TABLE IF EXISTS `anomaly`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `alertid` bigint(20) unsigned NOT NULL,
+  `DetectionTimeWindowStart` datetime DEFAULT NULL,
+  `DetectionTimeWindowEnd` datetime DEFAULT NULL,
+  `TrainingTimeWindowStart` datetime DEFAULT NULL,
+  `TrainingTimeWindowEnd` datetime DEFAULT NULL,
+  `SourceType` int(11) unsigned DEFAULT NULL,
+  `SourceValue` varchar(100) DEFAULT NULL,
+  `TargetType` int(11) unsigned DEFAULT NULL,
+  `Score` decimal(10,0) DEFAULT NULL,
+  `Algorithm` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `alertid_idx` (`alertid`),
+  KEY `anomaly_ibfk_2_idx` (`SourceType`),
+  KEY `anomaly_ibfk_3_idx` (`TargetType`),
+  CONSTRAINT `anomaly_ibfk_1` FOREIGN KEY (`alertid`) REFERENCES `alert` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `anomaly_ibfk_2` FOREIGN KEY (`SourceType`) REFERENCES `anomay_source_target_type` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `anomaly_ibfk_3` FOREIGN KEY (`TargetType`) REFERENCES `anomay_source_target_type` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_anomalyentry`
+--
+
+DROP TABLE IF EXISTS `anomaly_anomalyentry`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_anomalyentry` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `anomalyid` bigint(20) unsigned NOT NULL,
+  `sequence_number` tinyint(3) unsigned NOT NULL,
+  `target_value` varchar(255) DEFAULT NULL,
+  `count` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ANOMALY_FOREIGN` (`anomalyid`),
+  CONSTRAINT `anomaly_anomalyentry_ibfk_1` FOREIGN KEY (`anomalyid`) REFERENCES `anomaly` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_normalentry`
+--
+
+DROP TABLE IF EXISTS `anomaly_normalentry`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_normalentry` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `anomalyid` bigint(20) unsigned NOT NULL,
+  `sequence_number` tinyint(3) unsigned NOT NULL,
+  `target_value` varchar(255) DEFAULT NULL,
+  `min_count` decimal(10,0) DEFAULT NULL,
+  `max_count` decimal(10,0) DEFAULT NULL,
+  `mean_count` decimal(10,0) DEFAULT NULL,
+  `standard_deviation` decimal(10,0) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ANOMALY_FK` (`anomalyid`),
+  CONSTRAINT `anomaly_normalentry_ibfk_1` FOREIGN KEY (`anomalyid`) REFERENCES `anomaly` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_patternindex`
+--
+
+DROP TABLE IF EXISTS `anomaly_patternindex`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_patternindex` (
+  `anomalyId` bigint(20) unsigned NOT NULL,
+  `patternIndex` int(11) NOT NULL,
+  PRIMARY KEY (`anomalyId`,`patternIndex`),
+  CONSTRAINT `anomaly_patternindex_ibfk_1` FOREIGN KEY (`anomalyId`) REFERENCES `anomaly` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_predictedcause`
+--
+
+DROP TABLE IF EXISTS `anomaly_predictedcause`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_predictedcause` (
+  `anomalyid` bigint(20) unsigned NOT NULL,
+  `causeid` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`anomalyid`,`causeid`),
+  KEY `anomaly_predictedcause_ibfk_2_idx` (`causeid`),
+  CONSTRAINT `anomaly_predictedcause_ibfk_1` FOREIGN KEY (`anomalyid`) REFERENCES `anomaly` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `anomaly_predictedcause_ibfk_2` FOREIGN KEY (`causeid`) REFERENCES `cause` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_predictedstate`
+--
+
+DROP TABLE IF EXISTS `anomaly_predictedstate`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_predictedstate` (
+  `anomalyid` bigint(20) unsigned NOT NULL,
+  `anomalystateid` tinyint(3) unsigned NOT NULL,
+  PRIMARY KEY (`anomalyid`,`anomalystateid`),
+  KEY `anomaly_predi_2_idx` (`anomalystateid`),
+  CONSTRAINT `anomaly_predictedstate_ibf_2` FOREIGN KEY (`anomalystateid`) REFERENCES `anomaly_state` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `anomaly_predictedstate_i_1` FOREIGN KEY (`anomalyid`) REFERENCES `anomaly` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_prediction`
+--
+
+DROP TABLE IF EXISTS `anomaly_prediction`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_prediction` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `anomalyid` bigint(20) unsigned NOT NULL,
+  `stateid` tinyint(3) unsigned DEFAULT NULL,
+  `causeid` bigint(20) unsigned DEFAULT NULL,
+  `score` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `anomaly_prediction_ibfk_1_idx` (`stateid`),
+  KEY `anomaly_prediction_ibfk_2_idx` (`causeid`),
+  KEY `anomaly_prediction_ibfk_3_idx` (`anomalyid`),
+  CONSTRAINT `anomaly_prediction_ibfk_1` FOREIGN KEY (`stateid`) REFERENCES `anomaly_state` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `anomaly_prediction_ibfk_2` FOREIGN KEY (`causeid`) REFERENCES `cause` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `anomaly_prediction_ibfk_3` FOREIGN KEY (`anomalyid`) REFERENCES `anomaly` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomaly_state`
+--
+
+DROP TABLE IF EXISTS `anomaly_state`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomaly_state` (
+  `id` tinyint(3) unsigned NOT NULL,
+  `name` varchar(45) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `anomay_source_target_type`
+--
+
+DROP TABLE IF EXISTS `anomay_source_target_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `anomay_source_target_type` (
+  `id` int(10) unsigned NOT NULL,
+  `name` varchar(45) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_UNIQUE` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `authorities`
+--
+
+DROP TABLE IF EXISTS `authorities`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `authorities` (
+  `username` varchar(50) NOT NULL,
+  `authority` varchar(50) NOT NULL,
+  UNIQUE KEY `authorities_idx_1` (`username`,`authority`),
+  CONSTRAINT `authorities_ibfk_1` FOREIGN KEY (`username`) REFERENCES `users` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `cause`
+--
+
+DROP TABLE IF EXISTS `cause`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cause` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `cause` varchar(200) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `classification`
+--
+
+DROP TABLE IF EXISTS `classification`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `classification` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `classification` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `decision`
+--
+
+DROP TABLE IF EXISTS `decision`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `decision` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `decision_type` varchar(40) NOT NULL,
+  `src_ip_addr` varchar(20) DEFAULT NULL,
+  `dst_ip_addr` varchar(20) DEFAULT NULL,
+  `memo` varchar(256) DEFAULT NULL,
+  `issue_id` bigint(20) unsigned DEFAULT NULL,
+  `decision_rule_ref` int(11) DEFAULT NULL,
+  `status` varchar(20) DEFAULT NULL,
+  `severity` varchar(20) DEFAULT NULL,
+  `causeid` bigint(20) unsigned DEFAULT NULL,
+  `classificationid` bigint(20) unsigned DEFAULT NULL,
+  `decision_time` datetime DEFAULT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `stateid` tinyint(3) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `issue_id` (`issue_id`),
+  KEY `decision_rule_ref` (`decision_rule_ref`),
+  KEY `decision_ibfk_3_idx` (`causeid`),
+  KEY `decision_ibfk_4_idx` (`username`),
+  KEY `decision_ibfk_5_idx` (`classificationid`),
+  KEY `decision_ibfk_6_idx` (`stateid`),
+  CONSTRAINT `decision_ibfk_1` FOREIGN KEY (`issue_id`) REFERENCES `alert` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `decision_ibfk_2` FOREIGN KEY (`decision_rule_ref`) REFERENCES `decision_rule` (`rule_id`),
+  CONSTRAINT `decision_ibfk_3` FOREIGN KEY (`causeid`) REFERENCES `cause` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `decision_ibfk_4` FOREIGN KEY (`username`) REFERENCES `users` (`username`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `decision_ibfk_5` FOREIGN KEY (`classificationid`) REFERENCES `classification` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `decision_ibfk_6` FOREIGN KEY (`stateid`) REFERENCES `anomaly_state` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `decision_resolution`
+--
+
+DROP TABLE IF EXISTS `decision_resolution`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `decision_resolution` (
+  `DecisionId` bigint(20) unsigned NOT NULL,
+  `ResolutionId` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`DecisionId`,`ResolutionId`),
+  KEY `decisionresolution_ibfk_1_idx` (`ResolutionId`),
+  CONSTRAINT `decisionresolution_ibfk_1` FOREIGN KEY (`DecisionId`) REFERENCES `decision` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `decision_rule`
+--
+
+DROP TABLE IF EXISTS `decision_rule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `decision_rule` (
+  `rule_id` int(11) NOT NULL AUTO_INCREMENT,
+  `decision_type` varchar(40) NOT NULL,
+  `detection_rule_type` varchar(40) DEFAULT NULL,
+  `detection_rule_ref` int(11) DEFAULT NULL,
+  `severity_type` varchar(20) DEFAULT NULL,
+  `priority` int(11) DEFAULT '99999',
+  `causeid` bigint(20) unsigned DEFAULT NULL,
+  `stateid` tinyint(3) unsigned DEFAULT NULL,
+  PRIMARY KEY (`rule_id`),
+  KEY `detection_rule_type` (`detection_rule_type`),
+  KEY `detection_rule_ref` (`detection_rule_ref`),
+  KEY `decision_rule_ibfk_3_idx` (`causeid`),
+  KEY `decision_rule_ibfk_4_idx` (`stateid`),
+  CONSTRAINT `decision_rule_ibfk_1` FOREIGN KEY (`detection_rule_type`) REFERENCES `detection_rule` (`rule_type`),
+  CONSTRAINT `decision_rule_ibfk_2` FOREIGN KEY (`detection_rule_ref`) REFERENCES `detection_rule` (`rule_id`),
+  CONSTRAINT `decision_rule_ibfk_3` FOREIGN KEY (`causeid`) REFERENCES `cause` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `decision_rule_ibfk_4` FOREIGN KEY (`stateid`) REFERENCES `anomaly_state` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `detection_rule`
+--
+
+DROP TABLE IF EXISTS `detection_rule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `detection_rule` (
+  `rule_id` int(11) NOT NULL AUTO_INCREMENT,
+  `rule_type` varchar(40) DEFAULT NULL,
+  `src_endpoint_type` varchar(10) DEFAULT NULL,
+  `dst_endpoint_type` varchar(10) DEFAULT NULL,
+  `action_type` varchar(20) DEFAULT NULL,
+  `src_ip_addr` varchar(20) DEFAULT NULL,
+  `dst_ip_addr` varchar(20) DEFAULT NULL,
+  `num_dos_pkts` int(11) DEFAULT NULL,
+  `time_win_seconds` mediumtext,
+  `priority` int(11) DEFAULT '99999',
+  `voob_title` varchar(80) DEFAULT NULL,
+  `version` varchar(5) DEFAULT NULL,
+  `organization_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`rule_id`),
+  KEY `rule_type_idx` (`rule_type`),
+  KEY `organization_id` (`organization_id`),
+  CONSTRAINT `detection_rule_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organization` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `endpoint_config`
+--
+
+DROP TABLE IF EXISTS `endpoint_config`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `endpoint_config` (
+  `host_ip_addr` varchar(20) NOT NULL,
+  `host_name` varchar(40) DEFAULT NULL,
+  `endpoint_types` varchar(200) DEFAULT NULL,
+  `version` varchar(5) DEFAULT NULL,
+  `organization_id` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`organization_id`,`host_ip_addr`),
+  CONSTRAINT `endpoint_config_ibfk_1` FOREIGN KEY (`organization_id`) REFERENCES `organization` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `engine_run_log`
+--
+
+DROP TABLE IF EXISTS `engine_run_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `engine_run_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `run_time` bigint(20) NOT NULL,
+  `cutoff_time` bigint(20) NOT NULL,
+  `description` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `links`
+--
+
+DROP TABLE IF EXISTS `links`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `links` (
+  `source` varchar(20) NOT NULL,
+  `target` varchar(20) NOT NULL,
+  `displayWithMultiSpeak` tinyint(3) unsigned NOT NULL,
+  PRIMARY KEY (`source`,`target`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `msp_service_op`
+--
+
+DROP TABLE IF EXISTS `msp_service_op`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `msp_service_op` (
+  `service_name` varchar(20) NOT NULL DEFAULT '',
+  `service_cd` varchar(8) DEFAULT NULL,
+  `version` varchar(5) NOT NULL DEFAULT '',
+  `op_name` varchar(80) NOT NULL DEFAULT '',
+  `input_msg` varchar(80) DEFAULT NULL,
+  `output_msg` varchar(80) DEFAULT NULL,
+  `soap_action` varchar(256) DEFAULT NULL,
+  `soap_req_hdr_msg` varchar(80) DEFAULT NULL,
+  `soap_req_hdr_part` varchar(80) DEFAULT NULL,
+  `soap_resp_hdr_msg` varchar(80) DEFAULT NULL,
+  `soap_resp_hdr_part` varchar(80) DEFAULT NULL,
+  PRIMARY KEY (`service_name`,`version`,`op_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `msp_xpath`
+--
+
+DROP TABLE IF EXISTS `msp_xpath`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `msp_xpath` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `service_cd` varchar(8) NOT NULL,
+  `msg_name` varchar(80) NOT NULL,
+  `field_name` varchar(80) NOT NULL,
+  `is_array` tinyint(1) DEFAULT '0',
+  `xpath` varchar(512) NOT NULL,
+  `value_type` varchar(40) DEFAULT NULL,
+  `version` varchar(5) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `service_cd_idx` (`service_cd`),
+  KEY `field_name_idx` (`field_name`),
+  KEY `value_type_idx` (`value_type`),
+  KEY `msg_value_type_idx` (`service_cd`,`msg_name`,`value_type`),
+  KEY `key_idx` (`service_cd`,`version`,`msg_name`,`xpath`,`is_array`)
+) ENGINE=InnoDB AUTO_INCREMENT=2858080 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `nodes`
+--
+
+DROP TABLE IF EXISTS `nodes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `nodes` (
+  `ipAddress` varchar(20) NOT NULL,
+  `color` varchar(45) DEFAULT NULL,
+  `displayWithMultiSpeak` tinyint(3) unsigned NOT NULL,
+  PRIMARY KEY (`ipAddress`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `organization`
+--
+
+DROP TABLE IF EXISTS `organization`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `organization` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `description` varchar(80) NOT NULL,
+  `enabled` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `resolution`
+--
+
+DROP TABLE IF EXISTS `resolution`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `resolution` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `resolution` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `setting`
+--
+
+DROP TABLE IF EXISTS `setting`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `setting` (
+  `name` varchar(30) NOT NULL,
+  `value` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `timestamps`
+--
+
+DROP TABLE IF EXISTS `timestamps`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `timestamps` (
+  `timestamp` datetime NOT NULL,
+  PRIMARY KEY (`timestamp`),
+  UNIQUE KEY `timestamp_UNIQUE` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `users` (
+  `username` varchar(50) NOT NULL,
+  `password` varchar(64) NOT NULL,
+  `enabled` tinyint(1) NOT NULL,
+  PRIMARY KEY (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `voob_detail`
+--
+
+DROP TABLE IF EXISTS `voob_detail`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `voob_detail` (
+  `rule_id` int(11) NOT NULL,
+  `xpath_id` int(11) NOT NULL,
+  `operator` varchar(2) NOT NULL,
+  `target_value` varchar(80) DEFAULT NULL,
+  `qualified_field_name` varchar(80) NOT NULL,
+  `xpath` varchar(512) DEFAULT NULL,
+  UNIQUE KEY `rule_id` (`rule_id`,`xpath_id`,`operator`),
+  KEY `xpath_id` (`xpath_id`),
+  CONSTRAINT `voob_detail_ibfk_1` FOREIGN KEY (`rule_id`) REFERENCES `detection_rule` (`rule_id`) ON DELETE CASCADE,
+  CONSTRAINT `voob_detail_ibfk_2` FOREIGN KEY (`xpath_id`) REFERENCES `msp_xpath` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2016-04-10 16:59:49

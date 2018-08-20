@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <!-- POM file generated with GWT webAppCreator -->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.essence.ui</groupId>
+  <artifactId>essence</artifactId>
+  <packaging>war</packaging>
+  <version>1.0</version>
+  <name>GWT Maven Archetype</name>
+  
+	<repositories>
+		<repository>
+			<id>SmartBearPluginRepository</id>
+			<url>http://www.soapui.org/repository/maven2/</url>
+		</repository>
+		<repository>
+			<id>smartgwt</id>
+			<url>http://www.smartclient.com/maven2/</url>
+		</repository>
+	</repositories>
+  <properties>
+    <!-- Convenience property to set the GWT version -->
+    <gwtVersion>2.6.0</gwtVersion>
+    <!-- GWT needs at least java 1.5 -->
+    <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+		<groupId>essence-business</groupId>
+		<artifactId>essence-business</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<scope>compile</scope>
+	</dependency>
+	<dependency>
+      <groupId>com.smartbear.soapui</groupId>
+      <artifactId>soapui-maven-plugin</artifactId>
+      <version>5.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-servlet</artifactId>
+      <version>${gwtVersion}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-user</artifactId>
+      <version>${gwtVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.7</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.validation</groupId>
+      <artifactId>validation-api</artifactId>
+      <!-- <version>1.0.0.GA</version> -->
+      <version>1.1.0.Final</version>
+<!--       <scope>test</scope> -->
+    </dependency>
+    <dependency>
+      <groupId>javax.validation</groupId>
+      <artifactId>validation-api</artifactId>
+      <version>1.1.0.Final</version>
+      <!-- <version>1.0.0.GA</version> -->
+      <classifier>sources</classifier>
+      <scope>test</scope>
+    </dependency>
+    
+    <!--  ============================= -->
+    <!--  Support for MySQL + Hibernate -->
+    <!--  ============================= -->
+
+            <!-- MySQL database driver -->
+	<dependency>
+		<groupId>mysql</groupId>
+		<artifactId>mysql-connector-java</artifactId>
+		<version>5.1.9</version>
+	</dependency>
+ 
+<!-- for JPA, use hibernate-entitymanager instead of hibernate-core -->
+  
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-core</artifactId>
+    <version>3.5.6-Final</version>
+</dependency>
+
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-entitymanager</artifactId>
+    <version>3.5.6-Final</version>
+</dependency>
+ 
+ 	<!-- Hibernate annotation -->
+	<dependency>
+		<groupId>org.hibernate</groupId>
+		<artifactId>hibernate-annotations</artifactId>
+		<version>3.5.6-Final</version>
+	</dependency>
+	<dependency>
+		<groupId>org.hibernate.common</groupId>
+		<artifactId>hibernate-commons-annotations</artifactId>
+		<version>4.0.4.Final</version>
+	</dependency>
+	
+	<!-- Hibernate library dependecy start -->
+	
+	<dependency>
+		<groupId>dom4j</groupId>
+		<artifactId>dom4j</artifactId>
+		<version>1.6.1</version>
+	</dependency>
+ 
+	<dependency>
+		<groupId>commons-logging</groupId>
+		<artifactId>commons-logging</artifactId>
+		<version>1.1.1</version>
+	</dependency>
+ 
+	<dependency>
+		<groupId>commons-collections</groupId>
+		<artifactId>commons-collections</artifactId>
+		<version>3.2.1</version>
+	</dependency>
+ 
+	<dependency>
+		<groupId>cglib</groupId>
+		<artifactId>cglib</artifactId>
+		<version>2.2</version>
+	</dependency>
+
+	<dependency>
+	    <groupId>org.slf4j</groupId>
+	    <artifactId>slf4j-api</artifactId>
+	    <version>1.7.7</version>
+	</dependency>
+	  
+	
+	<!-- Hibernate library dependecy end -->
+ 
+	<dependency>
+		<groupId>javax.transaction</groupId>
+		<artifactId>jta</artifactId>
+		<version>1.1</version>
+	</dependency>
+	
+	<!-- for Cassandra -->
+		<dependency>			
+			<groupId>com.impetus.client</groupId>			
+			<artifactId>kundera-cassandra</artifactId>			
+			<version>2.9</version>		
+		</dependency>
+		
+		<dependency>
+			<groupId>javax.mail</groupId>
+			<artifactId>mail</artifactId>
+			<version>1.4.1</version>
+		</dependency>		
+
+	<!-- for Spring security -->
+<dependency>
+   <groupId>org.springframework</groupId>
+   <artifactId>spring-core</artifactId>
+   <version>3.1.0.RELEASE</version>
+  </dependency>
+
+<dependency>
+   <groupId>org.springframework</groupId>
+   <artifactId>spring-beans</artifactId>
+   <version>3.1.0.RELEASE</version>
+  </dependency>
+	<!-- for Spring injection -->
+		<dependency>			
+			<groupId>org.springframework</groupId>			
+			<artifactId>spring-context</artifactId>			
+			<version>3.1.0.RELEASE</version>		
+		</dependency>		
+		<dependency>			
+			<groupId>org.springframework</groupId>			
+			<artifactId>spring-orm</artifactId>			
+			<version>3.1.0.RELEASE</version>		
+		</dependency>	
+
+		<dependency>			
+			<groupId>org.springframework</groupId>			
+			<artifactId>spring-aop</artifactId>			
+			<version>3.1.0.RELEASE</version>		
+		</dependency>	
+		<dependency>			
+			<groupId>org.springframework</groupId>			
+			<artifactId>spring-jdbc</artifactId>			
+			<version>3.1.0.RELEASE</version>		
+		</dependency>	
+		<dependency>			
+			<groupId>org.springframework</groupId>			
+			<artifactId>spring-tx</artifactId>			
+			<version>3.1.0.RELEASE</version>		
+		</dependency>	
+		<dependency>			
+			<groupId>org.springframework</groupId>			
+			<artifactId>spring-expression</artifactId>			
+			<version>3.1.0.RELEASE</version>		
+		</dependency>	
+<dependency>
+	<groupId>org.springframework.security</groupId>
+	<artifactId>spring-security-core</artifactId>
+	<version>3.1.0.RELEASE</version>
+</dependency>
+
+<dependency>
+   <groupId>org.springframework.security</groupId>
+   <artifactId>spring-security-config</artifactId>
+   <version>3.1.0.RELEASE</version>
+  </dependency>
+  <dependency>
+   <groupId>org.springframework.security</groupId>
+   <artifactId>spring-security-web</artifactId>
+   <version>3.1.0.RELEASE</version>
+  </dependency>
+  
+		<dependency>
+  <groupId>org.hibernate</groupId>
+  <artifactId>hibernate-validator-annotation-processor</artifactId>
+  <version>4.1.0.Final</version>
+</dependency>
+
+		<!-- for REST client -->
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jaxrs</artifactId>
+			<version>2.2.1.GA</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>1.7.1</version>
+		 </dependency>	
+		<dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.3.3</version>
+      </dependency>
+
+		<!--  for HttpResponseEntity -->
+		<dependency>
+        	<groupId>org.springframework</groupId>
+        	<artifactId>spring-web</artifactId>
+        	<version>3.1.0.RELEASE</version>
+      	</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.7.7</version>
+		</dependency>
+		<dependency>
+        	<groupId>com.smartgwt</groupId>
+        	<artifactId>smartgwt</artifactId>
+        	<version>4.0</version>
+    	</dependency>
+	  <dependency>
+		  <groupId>com.smartgwt</groupId>
+		  <artifactId>smartgwt-skins</artifactId>
+		  <version>4.0</version>
+	  </dependency>
+    	<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20090211</version>
+		</dependency>
+    	
+  </dependencies>
+  
+  <build>
+    <!-- Generate compiled stuff in the folder used for developing mode -->
+    <outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
+
+    <plugins>
+      <!-- GWT Maven Plugin -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>gwt-maven-plugin</artifactId>
+        <version>2.6.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>test</goal>
+              <!-- 
+              <goal>i18n</goal>
+              <goal>generateAsync</goal>
+               -->
+            </goals>
+          </execution>
+        </executions>
+        <!-- Plugin configuration. There are many available options, see 
+          gwt-maven-plugin documentation at codehaus.org -->
+        <configuration>
+          <runTarget>EssenceFrontEnd.html</runTarget>
+          <hostedWebapp>${webappDirectory}</hostedWebapp>
+          <i18nMessagesBundle>com.essence.ui.client.Messages</i18nMessagesBundle>
+         <logLevel>ERROR</logLevel>
+            <extraJvmArgs>-Xmx512m</extraJvmArgs>
+        </configuration>
+      </plugin>
+
+      <!-- Copy static web files before executing gwt:run -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>2.1.1</version>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>exploded</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <webappDirectory>${webappDirectory}</webappDirectory>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+		<plugin>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>exec-maven-plugin</artifactId>
+			<version>1.4.0</version>
+			<configuration>
+				<mainClass>com.essence.analysis.PacketAnalyzerEngine</mainClass>
+			</configuration>
+	   </plugin>
+    </plugins>
+  </build>
+
+</project>

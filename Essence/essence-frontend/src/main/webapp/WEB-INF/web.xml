@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+    "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+	<!-- <context-param> <param-name>contextConfigLocation</param-name> <param-value>/WEB-INF/application-security.xml 
+		</param-value> </context-param> -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath*:META-INF/application-security.xml</param-value>
+	</context-param>
+
+	<!-- Authentication filter -->
+<!-- 	<filter> -->
+<!-- 		<filter-name>springSecurityFilterChain</filter-name> -->
+<!-- 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class> -->
+<!-- 	</filter> -->
+
+<!-- 	<filter-mapping> -->
+<!-- 		<filter-name>springSecurityFilterChain</filter-name> -->
+<!-- 		<url-pattern>/*</url-pattern> -->
+<!-- 	</filter-mapping> -->
+
+<!-- 	<filter-mapping> -->
+<!-- 		<filter-name>springSecurityFilterChain</filter-name> -->
+<!-- 		<servlet-name>greetServlet</servlet-name> -->
+<!-- 	</filter-mapping> -->
+
+	<!-- Creates the Spring Container -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+	<!-- Listeners need them? -->
+	<listener>
+		<listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>
+	</listener>
+
+	<!-- Servlets -->
+	<servlet>
+		<servlet-name>greetServlet</servlet-name>
+		<servlet-class>com.essence.ui.server.GreetingServiceImpl</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>greetServlet</servlet-name>
+		<url-pattern>/EssenceFrontEnd/greet</url-pattern>
+	</servlet-mapping>
+
+	<!-- Specify a session timeout (in minutes) -->
+
+	<session-config>
+		<!-- <tracking-mode>COOKIE</tracking-mode> <cookie-config> <secure>true</secure> 
+			<http-only>true</http-only> </cookie-config> -->
+		<session-timeout>30</session-timeout>
+	</session-config>
+
+	<!-- Default page to serve -->
+	<welcome-file-list>
+		<welcome-file>EssenceFrontEnd.html</welcome-file>
+	</welcome-file-list>
+</web-app>

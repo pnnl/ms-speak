@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	         xmlns:beans="http://www.springframework.org/schema/beans" 
+	         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	         xmlns:util="http://www.springframework.org/schema/util"
+	         xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:p="http://www.springframework.org/schema/p"
+	         xmlns:jms="http://www.springframework.org/schema/jms"
+	         xmlns:context="http://www.springframework.org/schema/context"     
+	         xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	                             http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                                 http://www.springframework.org/schema/security 
+                                 http://www.springframework.org/schema/security/spring-security-3.1.xsd
+                                 http://www.springframework.org/schema/util 
+                                 http://www.springframework.org/schema/util/spring-util.xsd	
+                                 http://activemq.apache.org/schema/core 
+	                             http://activemq.apache.org/schema/core/activemq-core.xsd
+	                             http://www.springframework.org/schema/jms 
+	                             http://www.springframework.org/schema/jms/spring-jms-2.5.xsd
+	                             http://www.springframework.org/schema/context 
+	                             http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+     	
+	<beans:bean id="securityContextRepository" class="org.springframework.security.web.context.HttpSessionSecurityContextRepository" > 
+	</beans:bean>
+	
+	<beans:bean id="securityContextFilter" class="org.springframework.security.web.context.SecurityContextPersistenceFilter">
+   		<beans:property name="securityContextRepository" ref="securityContextRepository"/>
+	</beans:bean>
+ 
+ <!-- HTTP security configurations -->
+ <http auto-config='true'>
+  <intercept-url pattern="/login.html" access="IS_AUTHENTICATED_ANONYMOUSLY" />
+<!--   <intercept-url pattern="/**" access="IS_AUTHENTICATED_FULLY" /> -->
+  <intercept-url pattern="/**" access="IS_AUTHENTICATED_ANONYMOUSLY" />
+  <logout logout-success-url="/login.html" />
+  <form-login login-page="/login.html" default-target-url="/EssenceFrontEnd.html"
+   always-use-default-target="true" />
+  <session-management invalid-session-url="/login.html"
+   session-authentication-error-url="/login.html"
+   session-fixation-protection="newSession">
+   <concurrency-control max-sessions="1"
+    error-if-maximum-exceeded="false" />
+  </session-management>
+ </http>
+
+	<context:property-placeholder location="classpath*:application.properties" />
+
+ 	<!-- Rule and Configuration Section -->
+    <beans:bean id="authenticationDataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+          <beans:property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+          <beans:property name="url" value="${hibernate.connection.url}"/>
+          <beans:property name="username" value="${hibernate.connection.username}"/>
+          <beans:property name="password" value="${hibernate.connection.password}"/> 
+          </beans:bean>
+          
+ <!--  
+ <authentication-manager> 
+ 	<authentication-provider> 
+ 		<password-encoder hash="sha-256"> 
+ 			<salt-source user-property="username"/> 
+ 		</password-encoder> 
+ 		<jdbc-user-service data-source-ref="authenticationDataSource"/> 
+ 	</authentication-provider> 
+ </authentication-manager>
+  -->
+   
+ <authentication-manager> 
+ 	<authentication-provider> 
+ 		<password-encoder ref="encoder"/> 
+ 		<jdbc-user-service data-source-ref="authenticationDataSource"/> 
+ 	</authentication-provider> 
+ </authentication-manager>
+ <beans:bean id="encoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+ 
+<!--
+	<beans:bean id="authenticationManager" class="org.springframework.security.authentication.ProviderManager">
+		<beans:property name="providers">
+			<beans:list>
+				<beans:ref bean="daoAuthenticationProvider" />
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="daoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="userDetailsService" />
+		<beans:property name="passwordEncoder" ref="passwordEncoder" />
+	</beans:bean>
+
+	<beans:bean id="passwordEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder">
+		<beans:constructor-arg value="256" />
+		<beans:property name="encodeHashAsBase64" value="true"></beans:property>
+	</beans:bean>
+
+	<beans:bean id="userDetailsService" class="com.essence.security.EssenceUserDetailsService">
+		<beans:property name="users">
+			<util:properties location="WEB-INF/essence-users.properties" />
+		</beans:property>
+		<beans:property name="roles">
+			<util:properties
+				location="WEB-INF/essence-user-roles.properties" />
+		</beans:property>
+		<beans:property name="userLookupCaseInsensitive" value="true"></beans:property>
+		</beans:bean>
+		-->
+
+</beans:beans>

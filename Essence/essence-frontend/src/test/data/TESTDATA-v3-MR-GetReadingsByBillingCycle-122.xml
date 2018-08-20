@@ -1,0 +1,24 @@
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ver="http://www.multispeak.org/Version_3.0">
+   <soap:Header>
+      <ver:MultiSpeakMsgHeader Version="?" UserID="?" Pwd="?" AppName="?" AppVersion="?" Company="?" CSUnits="feet" CoordinateSystem="?" Datum="?" SessionID="?" PreviousSessionID="?" ObjectsRemaining="?" LastSent="?" RegistrationID="?" AuditID="?" MessageID="?" TimeStamp="?" BuildString="?"/>
+   </soap:Header>
+   <soap:Body>
+      <ver:GetReadingsByBillingCycle>
+         <!--Optional:-->
+         <ver:billingCycle>?</ver:billingCycle>
+         <ver:billingDate>2014-07-15</ver:billingDate>
+         <ver:kWhLookBack>?</ver:kWhLookBack>
+         <ver:kWLookBack>2001</ver:kWLookBack>
+         <ver:kWLookForward>1001</ver:kWLookForward>
+         <!--Optional:-->
+         <ver:lastReceived>?</ver:lastReceived>
+         <!--Optional:-->
+         <ver:formattedBlockTemplateName>?</ver:formattedBlockTemplateName>
+         <!--Optional:-->
+         <ver:fieldName>
+            <!--Zero or more repetitions:-->
+            <ver:string>?</ver:string>
+         </ver:fieldName>
+      </ver:GetReadingsByBillingCycle>
+   </soap:Body>
+</soap:Envelope>

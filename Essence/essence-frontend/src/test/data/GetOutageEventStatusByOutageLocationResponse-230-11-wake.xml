@@ -1,0 +1,27 @@
+<soapenv:Envelope
+        xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <soapenv:Header>
+            <ns1:MultiSpeakMsgHeader
+                soapenv:actor="http://schemas.xmlsoap.org/soap/actor/next"
+                soapenv:mustUnderstand="0"
+                CSUnits="feet"
+                AppName="iVUE"
+                BuildString="ac"
+                Company="NISC"
+                Version="3.0"
+                xmlns:ns1="http://www.multispeak.org/Version_3.0"/>
+            </soapenv:Header>
+        <soapenv:Body>
+            <GetOutageEventStatusByOutageLocationResponse
+                xmlns="http://www.multispeak.org/Version_3.0">
+                <GetOutageEventStatusByOutageLocationResult
+                    errorString="No outage found for given location. OutageLocation: areaCode=919 phone=8636300">
+                    <customerFound>
+                        true
+                        </customerFound>
+                    </GetOutageEventStatusByOutageLocationResult>
+                </GetOutageEventStatusByOutageLocationResponse>
+            </soapenv:Body>
+        </soapenv:Envelope>

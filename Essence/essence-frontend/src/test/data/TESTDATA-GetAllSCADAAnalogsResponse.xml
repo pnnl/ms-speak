@@ -1,0 +1,317 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:res="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:v5="http://www.multispeak.org/V5.0" xmlns:scad="http://www.multispeak.org/V5.0/wsdl/SCADA_Server" xmlns:com1="http://www.multispeak.org/V5.0/commonArrays" xmlns:cpsm="http://www.multispeak.org/V5.0/cpsm">
+   <soapenv:Header>
+      <res:MultiSpeakResponseMsgHeader DefaultRegisteredName="?" DefaultSystemName="?" DefaultUtility="?" DefaultCurrencyCode="?" MessageID="?" TimeStamp="?" MessageCreatedTimeStamp="?" Context="?">
+         <res:MultiSpeakVersion>
+            <com:MajorVersion>?</com:MajorVersion>
+            <com:MinorVersion>?</com:MinorVersion>
+            <com:Build>?</com:Build>
+            <!--Optional:-->
+            <com:Branch>?</com:Branch>
+            <com:BuildString>?</com:BuildString>
+         </res:MultiSpeakVersion>
+         <res:Caller>
+            <com:AppName>?</com:AppName>
+            <!--Optional:-->
+            <com:AppVersion>?</com:AppVersion>
+            <com:Company>?</com:Company>
+            <!--Optional:-->
+            <com:AuditID>?</com:AuditID>
+            <!--Optional:-->
+            <com:AuditPassword>?</com:AuditPassword>
+            <com:SystemID>?</com:SystemID>
+            <!--Optional:-->
+            <com:Password>?</com:Password>
+         </res:Caller>
+         <!--Optional:-->
+         <res:CodedNames>
+            <!--1 or more repetitions:-->
+            <com:codedName nameType="?">
+               <com:codedValue>?</com:codedValue>
+               <com:namePart>?</com:namePart>
+               <!--Optional:-->
+               <com:description>?</com:description>
+            </com:codedName>
+         </res:CodedNames>
+         <!--Optional:-->
+         <res:CoordinateSystemInformation>
+            <com:CSUnits otherKind="?">?</com:CSUnits>
+            <com:CSAuthorities>
+               <!--1 or more repetitions:-->
+               <com:CSAuthority>
+                  <com:CSAuthorityName otherKind="?">?</com:CSAuthorityName>
+                  <com:CoordinateSystemAuthorityCode>?</com:CoordinateSystemAuthorityCode>
+                  <com:Datum>?</com:Datum>
+               </com:CSAuthority>
+            </com:CSAuthorities>
+         </res:CoordinateSystemInformation>
+         <res:Result>
+            <v5:resultIdentifier>
+               <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+               <com:index>?</com:index>
+            </v5:resultIdentifier>
+            <!--Optional:-->
+            <v5:resultDescription>?</v5:resultDescription>
+            <!--Optional:-->
+            <v5:level otherKind="?">?</v5:level>
+            <!--Optional:-->
+            <v5:errorObjects>
+               <!--1 or more repetitions:-->
+               <com:errorObject referenceID="?" nounType="?">
+                  <!--Optional:-->
+                  <com:extensions>
+                     <!--You may enter ANY elements at this point-->
+                  </com:extensions>
+                  <!--Optional:-->
+                  <com:extensionsList>
+                     <!--1 or more repetitions:-->
+                     <com:extensionsItem>
+                        <com:extName>?</com:extName>
+                        <com:extValue units="?">?</com:extValue>
+                        <!--Optional:-->
+                        <com:extType>?</com:extType>
+                     </com:extensionsItem>
+                  </com:extensionsList>
+                  <!--Optional:-->
+                  <com:errorCode>
+                     <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                     <com:index>?</com:index>
+                  </com:errorCode>
+                  <com:eventTime>?</com:eventTime>
+                  <!--Optional:-->
+                  <com:displayString>?</com:displayString>
+                  <!--Optional:-->
+                  <com:detailedString>?</com:detailedString>
+               </com:errorObject>
+            </v5:errorObjects>
+            <!--Optional:-->
+            <v5:lastSent>?</v5:lastSent>
+            <!--Optional:-->
+            <v5:objectsRemaining>?</v5:objectsRemaining>
+         </res:Result>
+      </res:MultiSpeakResponseMsgHeader>
+   </soapenv:Header>
+   <soapenv:Body>
+      <scad:GetAllSCADAAnalogsResponse>
+         <!--Optional:-->
+         <scad:ArrayOfScadaAnalog>
+            <!--Zero or more repetitions:-->
+            <com1:scadaAnalog objectGUID="?" utility="?">
+               <!--Optional:-->
+               <v5:extensions>
+                  <!--You may enter ANY elements at this point-->
+               </v5:extensions>
+               <!--Optional:-->
+               <v5:comments>?</v5:comments>
+               <!--Optional:-->
+               <v5:extensionsList>
+                  <!--1 or more repetitions:-->
+                  <com:extensionsItem>
+                     <com:extName>?</com:extName>
+                     <com:extValue units="?">?</com:extValue>
+                     <!--Optional:-->
+                     <com:extType>?</com:extType>
+                  </com:extensionsItem>
+               </v5:extensionsList>
+               <!--Optional:-->
+               <v5:errorObjects>
+                  <!--1 or more repetitions:-->
+                  <com:errorObject referenceID="?" nounType="?">
+                     <!--Optional:-->
+                     <com:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </com:extensions>
+                     <!--Optional:-->
+                     <com:extensionsList>
+                        <!--1 or more repetitions:-->
+                        <com:extensionsItem>
+                           <com:extName>?</com:extName>
+                           <com:extValue units="?">?</com:extValue>
+                           <!--Optional:-->
+                           <com:extType>?</com:extType>
+                        </com:extensionsItem>
+                     </com:extensionsList>
+                     <!--Optional:-->
+                     <com:errorCode>
+                        <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                        <com:index>?</com:index>
+                     </com:errorCode>
+                     <com:eventTime>?</com:eventTime>
+                     <!--Optional:-->
+                     <com:displayString>?</com:displayString>
+                     <!--Optional:-->
+                     <com:detailedString>?</com:detailedString>
+                  </com:errorObject>
+               </v5:errorObjects>
+               <v5:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               <!--Optional:-->
+               <v5:secondaryIdentifier identifierName="?" identifierLabel="?"/>
+               <!--Optional:-->
+               <v5:IdentifiedObject>
+                  <!--Optional:-->
+                  <cpsm:mRID>?</cpsm:mRID>
+                  <!--Optional:-->
+                  <cpsm:description>?</cpsm:description>
+                  <!--Optional:-->
+                  <cpsm:Names>
+                     <!--1 or more repetitions:-->
+                     <cpsm:Name>
+                        <!--Optional:-->
+                        <cpsm:nameString>?</cpsm:nameString>
+                        <!--Optional:-->
+                        <cpsm:description>?</cpsm:description>
+                        <cpsm:NameType>
+                           <!--Optional:-->
+                           <cpsm:nameString>?</cpsm:nameString>
+                           <!--Optional:-->
+                           <cpsm:description>?</cpsm:description>
+                           <!--Optional:-->
+                           <cpsm:NameTypeAuthority>
+                              <!--Optional:-->
+                              <cpsm:nameString>?</cpsm:nameString>
+                              <!--Optional:-->
+                              <cpsm:description>?</cpsm:description>
+                           </cpsm:NameTypeAuthority>
+                        </cpsm:NameType>
+                     </cpsm:Name>
+                  </cpsm:Names>
+               </v5:IdentifiedObject>
+               <v5:timeStamp>2014-07-13</v5:timeStamp>
+               <v5:value units="?">?</v5:value>
+               <!--Optional:-->
+               <v5:unitPrefixType otherKind="?">?</v5:unitPrefixType>
+               <!--Optional:-->
+               <v5:quality otherKind="?">?</v5:quality>
+               <!--Optional:-->
+               <v5:analogCondition otherKind="?">?</v5:analogCondition>
+               <!--Optional:-->
+               <v5:phaseCode>?</v5:phaseCode>
+               <!--Optional:-->
+               <v5:scadaAnalogValues>
+                  <!--Zero or more repetitions:-->
+                  <v5:AnalogValue objectGUID="?" utility="?">
+                     <!--Optional:-->
+                     <cpsm:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </cpsm:extensions>
+                     <!--Optional:-->
+                     <cpsm:comments>?</cpsm:comments>
+                     <!--Optional:-->
+                     <cpsm:extensionsList>
+                        <!--1 or more repetitions:-->
+                        <com:extensionsItem>
+                           <com:extName>?</com:extName>
+                           <com:extValue units="?">?</com:extValue>
+                           <!--Optional:-->
+                           <com:extType>?</com:extType>
+                        </com:extensionsItem>
+                     </cpsm:extensionsList>
+                     <!--Optional:-->
+                     <cpsm:errorObjects>
+                        <!--1 or more repetitions:-->
+                        <com:errorObject referenceID="?" nounType="?">
+                           <!--Optional:-->
+                           <com:extensions>
+                              <!--You may enter ANY elements at this point-->
+                           </com:extensions>
+                           <!--Optional:-->
+                           <com:extensionsList>
+                              <!--1 or more repetitions:-->
+                              <com:extensionsItem>
+                                 <com:extName>?</com:extName>
+                                 <com:extValue units="?">?</com:extValue>
+                                 <!--Optional:-->
+                                 <com:extType>?</com:extType>
+                              </com:extensionsItem>
+                           </com:extensionsList>
+                           <!--Optional:-->
+                           <com:errorCode>
+                              <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                              <com:index>?</com:index>
+                           </com:errorCode>
+                           <com:eventTime>?</com:eventTime>
+                           <!--Optional:-->
+                           <com:displayString>?</com:displayString>
+                           <!--Optional:-->
+                           <com:detailedString>?</com:detailedString>
+                        </com:errorObject>
+                     </cpsm:errorObjects>
+                     <cpsm:primaryIdentifier/>
+                     <!--Optional:-->
+                     <cpsm:secondaryIdentifier/>
+                     <!--Optional:-->
+                     <cpsm:IdentifiedObject>
+                        <!--Optional:-->
+                        <cpsm:mRID>?</cpsm:mRID>
+                        <!--Optional:-->
+                        <cpsm:description>?</cpsm:description>
+                        <!--Optional:-->
+                        <cpsm:Names>
+                           <!--1 or more repetitions:-->
+                           <cpsm:Name>
+                              <!--Optional:-->
+                              <cpsm:nameString>?</cpsm:nameString>
+                              <!--Optional:-->
+                              <cpsm:description>?</cpsm:description>
+                              <cpsm:NameType>
+                                 <!--Optional:-->
+                                 <cpsm:nameString>?</cpsm:nameString>
+                                 <!--Optional:-->
+                                 <cpsm:description>?</cpsm:description>
+                                 <!--Optional:-->
+                                 <cpsm:NameTypeAuthority>
+                                    <!--Optional:-->
+                                    <cpsm:nameString>?</cpsm:nameString>
+                                    <!--Optional:-->
+                                    <cpsm:description>?</cpsm:description>
+                                 </cpsm:NameTypeAuthority>
+                              </cpsm:NameType>
+                           </cpsm:Name>
+                        </cpsm:Names>
+                     </cpsm:IdentifiedObject>
+                     <!--Optional:-->
+                     <cpsm:timeStamp>?</cpsm:timeStamp>
+                     <!--Optional:-->
+                     <cpsm:sensorAccuracy>?</cpsm:sensorAccuracy>
+                     <!--Optional:-->
+                     <cpsm:value>1001</cpsm:value>
+                     <!--Optional:-->
+                     <cpsm:measurementValueSourceID>
+                        <com:objectGUID>?</com:objectGUID>
+                        <!--Optional:-->
+                        <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+                     </cpsm:measurementValueSourceID>
+                  </v5:AnalogValue>
+               </v5:scadaAnalogValues>
+               <!--Optional:-->
+               <v5:unitID>
+                  <com:objectGUID>?</com:objectGUID>
+                  <!--Optional:-->
+                  <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               </v5:unitID>
+               <!--Optional:-->
+               <v5:positiveFlowIn>?</v5:positiveFlowIn>
+               <!--Optional:-->
+               <v5:analogLimitSetID>
+                  <com:objectGUID>?</com:objectGUID>
+                  <!--Optional:-->
+                  <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               </v5:analogLimitSetID>
+               <!--Optional:-->
+               <v5:measurementTypeID>
+                  <com:objectGUID>?</com:objectGUID>
+                  <!--Optional:-->
+                  <com:primaryIdentifier identifierName="?" identifierLabel="?"/>
+               </v5:measurementTypeID>
+               <!--Optional:-->
+               <v5:powerSystemResourceID primaryIdentifierName="?" secondaryIdentifierName="?" noun="?" objectGUID="?" utility="?" registeredName="?" systemName="?">?</v5:powerSystemResourceID>
+               <!--Optional:-->
+               <v5:maxValue>?</v5:maxValue>
+               <!--Optional:-->
+               <v5:minValue>?</v5:minValue>
+               <!--Optional:-->
+               <v5:nominalValue>1001</v5:nominalValue>
+            </com1:scadaAnalog>
+         </scad:ArrayOfScadaAnalog>
+      </scad:GetAllSCADAAnalogsResponse>
+   </soapenv:Body>
+</soapenv:Envelope>

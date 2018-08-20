@@ -1,0 +1,14 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ver="http://www.multispeak.org/Version_3.0">
+   <soapenv:Header>
+      <ver:MultiSpeakMsgHeader Version="?" UserID="?" Pwd="?" AppName="?" AppVersion="?" Company="?" CSUnits="feet" CoordinateSystem="?" Datum="?" SessionID="?" PreviousSessionID="?" ObjectsRemaining="?" LastSent="?" RegistrationID="?" AuditID="?" MessageID="?" TimeStamp="?" BuildString="?"/>
+   </soapenv:Header>
+   <soapenv:Body>
+      <ver:GetDomainNamesResponse>
+         <!--Optional:-->
+         <ver:GetDomainNamesResult>
+            <!--Zero or more repetitions:-->
+            <ver:string>?</ver:string>
+         </ver:GetDomainNamesResult>
+      </ver:GetDomainNamesResponse>
+   </soapenv:Body>
+</soapenv:Envelope>

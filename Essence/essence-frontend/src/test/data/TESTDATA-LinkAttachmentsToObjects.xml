@@ -1,0 +1,295 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:req="http://www.multispeak.org/V5.0/ws/request" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:wv="http://www.multispeak.org/V5.0/wsdl/WV_Server" xmlns:com1="http://www.multispeak.org/V5.0/commonArrays" xmlns:v5="http://www.multispeak.org/V5.0" xmlns:cpsm="http://www.multispeak.org/V5.0/cpsm">
+   <soapenv:Header>
+      <req:MultiSpeakRequestMsgHeader DefaultRegisteredName="?" DefaultSystemName="?" DefaultUtility="?" DefaultCurrencyCode="?" RegistrationID="?" MessageID="?" TimeStamp="?" MessageCreatedTimeStamp="2014-07-30" Context="?">
+         <req:MultiSpeakVersion>
+            <com:MajorVersion>?</com:MajorVersion>
+            <com:MinorVersion>?</com:MinorVersion>
+            <com:Build>?</com:Build>
+            <!--Optional:-->
+            <com:Branch>?</com:Branch>
+            <com:BuildString>?</com:BuildString>
+         </req:MultiSpeakVersion>
+         <req:Caller>
+            <com:AppName>?</com:AppName>
+            <!--Optional:-->
+            <com:AppVersion>?</com:AppVersion>
+            <com:Company>?</com:Company>
+            <!--Optional:-->
+            <com:AuditID>?</com:AuditID>
+            <!--Optional:-->
+            <com:AuditPassword>?</com:AuditPassword>
+            <com:SystemID>?</com:SystemID>
+            <!--Optional:-->
+            <com:Password>?</com:Password>
+         </req:Caller>
+         <!--Optional:-->
+         <req:CodedNames>
+            <!--1 or more repetitions:-->
+            <com:codedName nameType="?">
+               <com:codedValue>?</com:codedValue>
+               <com:namePart>?</com:namePart>
+               <!--Optional:-->
+               <com:description>?</com:description>
+            </com:codedName>
+         </req:CodedNames>
+         <!--Optional:-->
+         <req:CoordinateSystemInformation>
+            <com:CSUnits otherKind="?">?</com:CSUnits>
+            <com:CSAuthorities>
+               <!--1 or more repetitions:-->
+               <com:CSAuthority>
+                  <com:CSAuthorityName otherKind="?">?</com:CSAuthorityName>
+                  <com:CoordinateSystemAuthorityCode>?</com:CoordinateSystemAuthorityCode>
+                  <com:Datum>?</com:Datum>
+               </com:CSAuthority>
+            </com:CSAuthorities>
+         </req:CoordinateSystemInformation>
+         <!--Optional:-->
+         <req:DataSetState>
+            <com:DataSetID>?</com:DataSetID>
+            <com:PreviousDataSetID>?</com:PreviousDataSetID>
+         </req:DataSetState>
+         <!--Optional:-->
+         <req:DoNotReply>
+            <!--1 or more repetitions:-->
+            <com:registrationID>?</com:registrationID>
+         </req:DoNotReply>
+      </req:MultiSpeakRequestMsgHeader>
+   </soapenv:Header>
+   <soapenv:Body>
+      <wv:LinkAttachmentsToObjects>
+         <!--Optional:-->
+         <wv:ArrayOfAttachmentContainer>
+            <!--Zero or more repetitions:-->
+            <com1:attachmentContainer referableID="?">
+               <!--Optional:-->
+               <com:extensions>
+                  <!--You may enter ANY elements at this point-->
+               </com:extensions>
+               <!--Optional:-->
+               <com:extensionsList>
+                  <!--1 or more repetitions:-->
+                  <com:extensionsItem>
+                     <com:extName>?</com:extName>
+                     <com:extValue units="?">?</com:extValue>
+                     <!--Optional:-->
+                     <com:extType>?</com:extType>
+                  </com:extensionsItem>
+               </com:extensionsList>
+               <!--Optional:-->
+               <v5:errorObjects>
+                  <!--1 or more repetitions:-->
+                  <com:errorObject referenceID="?" nounType="?">
+                     <!--Optional:-->
+                     <com:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </com:extensions>
+                     <!--Optional:-->
+                     <com:extensionsList>
+                        <!--1 or more repetitions:-->
+                        <com:extensionsItem>
+                           <com:extName>?</com:extName>
+                           <com:extValue units="?">?</com:extValue>
+                           <!--Optional:-->
+                           <com:extType>?</com:extType>
+                        </com:extensionsItem>
+                     </com:extensionsList>
+                     <!--Optional:-->
+                     <com:errorCode>
+                        <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                        <com:index>?</com:index>
+                     </com:errorCode>
+                     <com:eventTime>?</com:eventTime>
+                     <!--Optional:-->
+                     <com:displayString>?</com:displayString>
+                     <!--Optional:-->
+                     <com:detailedString>?</com:detailedString>
+                  </com:errorObject>
+               </v5:errorObjects>
+               <v5:objectRef primaryIdentifierName="?" secondaryIdentifierName="?" noun="?" objectGUID="?" utility="?" registeredName="?" systemName="?">?</v5:objectRef>
+               <v5:attachments>
+                  <!--1 or more repetitions:-->
+                  <v5:attachment objectGUID="?" utility="?">
+                     <!--Optional:-->
+                     <v5:extensions>
+                        <!--You may enter ANY elements at this point-->
+                     </v5:extensions>
+                     <!--Optional:-->
+                     <v5:comments>?</v5:comments>
+                     <!--Optional:-->
+                     <v5:extensionsList>
+                        <!--1 or more repetitions:-->
+                        <com:extensionsItem>
+                           <com:extName>?</com:extName>
+                           <com:extValue units="?">?</com:extValue>
+                           <!--Optional:-->
+                           <com:extType>?</com:extType>
+                        </com:extensionsItem>
+                     </v5:extensionsList>
+                     <!--Optional:-->
+                     <v5:errorObjects>
+                        <!--1 or more repetitions:-->
+                        <com:errorObject referenceID="?" nounType="?">
+                           <!--Optional:-->
+                           <com:extensions>
+                              <!--You may enter ANY elements at this point-->
+                           </com:extensions>
+                           <!--Optional:-->
+                           <com:extensionsList>
+                              <!--1 or more repetitions:-->
+                              <com:extensionsItem>
+                                 <com:extName>?</com:extName>
+                                 <com:extValue units="?">?</com:extValue>
+                                 <!--Optional:-->
+                                 <com:extType>?</com:extType>
+                              </com:extensionsItem>
+                           </com:extensionsList>
+                           <!--Optional:-->
+                           <com:errorCode>
+                              <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                              <com:index>?</com:index>
+                           </com:errorCode>
+                           <com:eventTime>?</com:eventTime>
+                           <!--Optional:-->
+                           <com:displayString>?</com:displayString>
+                           <!--Optional:-->
+                           <com:detailedString>?</com:detailedString>
+                        </com:errorObject>
+                     </v5:errorObjects>
+                     <v5:primaryIdentifier identifierName="?" identifierLabel="?"/>
+                     <!--Optional:-->
+                     <v5:secondaryIdentifier identifierName="?" identifierLabel="?"/>
+                     <!--Optional:-->
+                     <v5:IdentifiedObject>
+                        <!--Optional:-->
+                        <cpsm:mRID>?</cpsm:mRID>
+                        <!--Optional:-->
+                        <cpsm:description>?</cpsm:description>
+                        <!--Optional:-->
+                        <cpsm:Names>
+                           <!--1 or more repetitions:-->
+                           <cpsm:Name>
+                              <!--Optional:-->
+                              <cpsm:nameString>?</cpsm:nameString>
+                              <!--Optional:-->
+                              <cpsm:description>?</cpsm:description>
+                              <cpsm:NameType>
+                                 <!--Optional:-->
+                                 <cpsm:nameString>?</cpsm:nameString>
+                                 <!--Optional:-->
+                                 <cpsm:description>?</cpsm:description>
+                                 <!--Optional:-->
+                                 <cpsm:NameTypeAuthority>
+                                    <!--Optional:-->
+                                    <cpsm:nameString>?</cpsm:nameString>
+                                    <!--Optional:-->
+                                    <cpsm:description>?</cpsm:description>
+                                 </cpsm:NameTypeAuthority>
+                              </cpsm:NameType>
+                           </cpsm:Name>
+                        </cpsm:Names>
+                     </v5:IdentifiedObject>
+                     <!--You have a CHOICE of the next 2 items at this level-->
+                     <v5:content objectGUID="?" utility="?">
+                        <!--Optional:-->
+                        <v5:extensions>
+                           <!--You may enter ANY elements at this point-->
+                        </v5:extensions>
+                        <!--Optional:-->
+                        <v5:comments>?</v5:comments>
+                        <!--Optional:-->
+                        <v5:extensionsList>
+                           <!--1 or more repetitions:-->
+                           <com:extensionsItem>
+                              <com:extName>?</com:extName>
+                              <com:extValue units="?">?</com:extValue>
+                              <!--Optional:-->
+                              <com:extType>?</com:extType>
+                           </com:extensionsItem>
+                        </v5:extensionsList>
+                        <!--Optional:-->
+                        <v5:errorObjects>
+                           <!--1 or more repetitions:-->
+                           <com:errorObject referenceID="?" nounType="?">
+                              <!--Optional:-->
+                              <com:extensions>
+                                 <!--You may enter ANY elements at this point-->
+                              </com:extensions>
+                              <!--Optional:-->
+                              <com:extensionsList>
+                                 <!--1 or more repetitions:-->
+                                 <com:extensionsItem>
+                                    <com:extName>?</com:extName>
+                                    <com:extValue units="?">?</com:extValue>
+                                    <!--Optional:-->
+                                    <com:extType>?</com:extType>
+                                 </com:extensionsItem>
+                              </com:extensionsList>
+                              <!--Optional:-->
+                              <com:errorCode>
+                                 <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                                 <com:index>?</com:index>
+                              </com:errorCode>
+                              <com:eventTime>?</com:eventTime>
+                              <!--Optional:-->
+                              <com:displayString>?</com:displayString>
+                              <!--Optional:-->
+                              <com:detailedString>?</com:detailedString>
+                           </com:errorObject>
+                        </v5:errorObjects>
+                        <v5:primaryIdentifier identifierName="?" identifierLabel="?"/>
+                        <!--Optional:-->
+                        <v5:secondaryIdentifier identifierName="?" identifierLabel="?"/>
+                        <!--Optional:-->
+                        <v5:IdentifiedObject>
+                           <!--Optional:-->
+                           <cpsm:mRID>?</cpsm:mRID>
+                           <!--Optional:-->
+                           <cpsm:description>?</cpsm:description>
+                           <!--Optional:-->
+                           <cpsm:Names>
+                              <!--1 or more repetitions:-->
+                              <cpsm:Name>
+                                 <!--Optional:-->
+                                 <cpsm:nameString>?</cpsm:nameString>
+                                 <!--Optional:-->
+                                 <cpsm:description>?</cpsm:description>
+                                 <cpsm:NameType>
+                                    <!--Optional:-->
+                                    <cpsm:nameString>?</cpsm:nameString>
+                                    <!--Optional:-->
+                                    <cpsm:description>?</cpsm:description>
+                                    <!--Optional:-->
+                                    <cpsm:NameTypeAuthority>
+                                       <!--Optional:-->
+                                       <cpsm:nameString>?</cpsm:nameString>
+                                       <!--Optional:-->
+                                       <cpsm:description>?</cpsm:description>
+                                    </cpsm:NameTypeAuthority>
+                                 </cpsm:NameType>
+                              </cpsm:Name>
+                           </cpsm:Names>
+                        </v5:IdentifiedObject>
+                        <!--Optional:test1-->
+                        <v5:contentBinary>dGVzdDE=</v5:contentBinary>
+                        <!--Optional:-->
+                        <v5:contentEncoding>base64/utf-8</v5:contentEncoding>
+                        <!--Optional:-->
+                        <v5:contentType type="?" subType="?" charset="?">?</v5:contentType>
+                        <!--Optional:-->
+                        <v5:fileName>?</v5:fileName>
+                        <!--Optional:-->
+                        <v5:sourceFilePath>?</v5:sourceFilePath>
+                        <!--Optional:-->
+                        <v5:attachDateTime>?</v5:attachDateTime>
+                        <!--Optional:-->
+                        <v5:caption>?</v5:caption>
+                     </v5:content>
+                     <v5:contentReference URI="?" name="?" category="?">?</v5:contentReference>
+                  </v5:attachment>
+               </v5:attachments>
+            </com1:attachmentContainer>
+         </wv:ArrayOfAttachmentContainer>
+      </wv:LinkAttachmentsToObjects>
+   </soapenv:Body>
+</soapenv:Envelope>

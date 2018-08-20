@@ -1,0 +1,19 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html">
+    <title>Essence Login Page</title>
+  </head>
+  <body>
+    <h2>Please log in</h2><br>
+    <!-- make sure the path is the same as the app name such as /essence-1.0/ -->
+    <form method="post" action="j_spring_security_check">
+      <label for="j_username">Username:</label> 
+      <input type="text" name="j_username" />
+      <br />
+      <label for="j_password">Password:</label> 
+      <input type="password" name="j_password" /> 
+      <br />
+      <input type="submit" value="Login" />
+    </form>
+  </body>
+</html>

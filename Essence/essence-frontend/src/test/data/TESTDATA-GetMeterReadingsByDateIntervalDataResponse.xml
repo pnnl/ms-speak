@@ -1,0 +1,182 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:res="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:v5="http://www.multispeak.org/V5.0" xmlns:mr="http://www.multispeak.org/V5.0/wsdl/MR_Server" xmlns:com1="http://www.multispeak.org/V5.0/commonArrays">
+   <soapenv:Header>
+      <res:MultiSpeakResponseMsgHeader DefaultRegisteredName="?" DefaultSystemName="?" DefaultUtility="?" DefaultCurrencyCode="?" MessageID="?" TimeStamp="?" MessageCreatedTimeStamp="?" Context="?">
+         <res:MultiSpeakVersion>
+            <com:MajorVersion>?</com:MajorVersion>
+            <com:MinorVersion>?</com:MinorVersion>
+            <com:Build>?</com:Build>
+            <!--Optional:-->
+            <com:Branch>?</com:Branch>
+            <com:BuildString>?</com:BuildString>
+         </res:MultiSpeakVersion>
+         <res:Caller>
+            <com:AppName>?</com:AppName>
+            <!--Optional:-->
+            <com:AppVersion>?</com:AppVersion>
+            <com:Company>?</com:Company>
+            <!--Optional:-->
+            <com:AuditID>?</com:AuditID>
+            <!--Optional:-->
+            <com:AuditPassword>?</com:AuditPassword>
+            <com:SystemID>?</com:SystemID>
+            <!--Optional:-->
+            <com:Password>?</com:Password>
+         </res:Caller>
+         <!--Optional:-->
+         <res:CodedNames>
+            <!--1 or more repetitions:-->
+            <com:codedName nameType="?">
+               <com:codedValue>?</com:codedValue>
+               <com:namePart>?</com:namePart>
+               <!--Optional:-->
+               <com:description>?</com:description>
+            </com:codedName>
+         </res:CodedNames>
+         <!--Optional:-->
+         <res:CoordinateSystemInformation>
+            <com:CSUnits otherKind="?">?</com:CSUnits>
+            <com:CSAuthorities>
+               <!--1 or more repetitions:-->
+               <com:CSAuthority>
+                  <com:CSAuthorityName otherKind="?">?</com:CSAuthorityName>
+                  <com:CoordinateSystemAuthorityCode>?</com:CoordinateSystemAuthorityCode>
+                  <com:Datum>?</com:Datum>
+               </com:CSAuthority>
+            </com:CSAuthorities>
+         </res:CoordinateSystemInformation>
+         <res:Result>
+            <v5:resultIdentifier>
+               <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+               <com:index>?</com:index>
+            </v5:resultIdentifier>
+            <!--Optional:-->
+            <v5:resultDescription>?</v5:resultDescription>
+            <!--Optional:-->
+            <v5:level otherKind="?">?</v5:level>
+            <!--Optional:-->
+            <v5:errorObjects>
+               <!--1 or more repetitions:-->
+               <com:errorObject referenceID="?" nounType="?">
+                  <!--Optional:-->
+                  <com:extensions>
+                     <!--You may enter ANY elements at this point-->
+                  </com:extensions>
+                  <!--Optional:-->
+                  <com:extensionsList>
+                     <!--1 or more repetitions:-->
+                     <com:extensionsItem>
+                        <com:extName>?</com:extName>
+                        <com:extValue units="?">?</com:extValue>
+                        <!--Optional:-->
+                        <com:extType>?</com:extType>
+                     </com:extensionsItem>
+                  </com:extensionsList>
+                  <!--Optional:-->
+                  <com:errorCode>
+                     <com:replyCodeCategory otherKind="?">?</com:replyCodeCategory>
+                     <com:index>?</com:index>
+                  </com:errorCode>
+                  <com:eventTime>?</com:eventTime>
+                  <!--Optional:-->
+                  <com:displayString>?</com:displayString>
+                  <!--Optional:-->
+                  <com:detailedString>?</com:detailedString>
+               </com:errorObject>
+            </v5:errorObjects>
+            <!--Optional:-->
+            <v5:lastSent>?</v5:lastSent>
+            <!--Optional:-->
+            <v5:objectsRemaining>?</v5:objectsRemaining>
+         </res:Result>
+      </res:MultiSpeakResponseMsgHeader>
+   </soapenv:Header>
+   <soapenv:Body>
+      <mr:GetMeterReadingsByDateIntervalDataResponse>
+         <!--Optional:-->
+         <mr:ArrayOfIntervalData>
+            <!--Zero or more repetitions:-->
+            <com1:intervalData>
+               <v5:statusDelimiter>?</v5:statusDelimiter>
+               <v5:intervalDelimiter>?</v5:intervalDelimiter>
+               <!--Optional:-->
+               <v5:comment>?</v5:comment>
+               <!--Optional:-->
+               <v5:profiles>
+                  <!--Zero or more repetitions:-->
+                  <v5:profile profileID="?">
+                     <!--Optional:-->
+                     <v5:name>?</v5:name>
+                     <!--Optional:-->
+                     <v5:intervalLength units="?">?</v5:intervalLength>
+                     <!--Optional:-->
+                     <v5:channels>
+                        <!--1 or more repetitions:-->
+                        <v5:channel>
+                           <!--Optional:-->
+                           <com:extensions>
+                              <!--You may enter ANY elements at this point-->
+                           </com:extensions>
+                           <!--Optional:-->
+                           <com:extensionsList>
+                              <!--1 or more repetitions:-->
+                              <com:extensionsItem>
+                                 <com:extName>?</com:extName>
+                                 <com:extValue units="?">?</com:extValue>
+                                 <!--Optional:-->
+                                 <com:extType>?</com:extType>
+                              </com:extensionsItem>
+                           </com:extensionsList>
+                           <!--Optional:-->
+                           <v5:index>?</v5:index>
+                           <!--Optional:-->
+                           <v5:fieldName>?</v5:fieldName>
+                           <!--Optional:-->
+                           <v5:fieldDescription>?</v5:fieldDescription>
+                           <!--Optional:-->
+                           <v5:units otherKind="?">?</v5:units>
+                        </v5:channel>
+                     </v5:channels>
+                  </v5:profile>
+               </v5:profiles>
+               <!--Optional:-->
+               <v5:blocks>
+                  <!--Zero or more repetitions:-->
+                  <v5:block>
+                     <!--Optional:-->
+                     <v5:profileID>?</v5:profileID>
+                     <!--Optional:-->
+                     <v5:meterID meterName="?" serviceType="?" otherServiceType="?" objectGUID="?" communicationAddress="?" communicationsPort="?" utility="?" registeredName="?" systemName="?">?</v5:meterID>
+                     <!--Optional:-->
+                     <v5:endReadings>
+                        <!--1 or more repetitions:-->
+                        <v5:endReading>
+                           <!--Optional:-->
+                           <v5:channelIndex>?</v5:channelIndex>
+                           <!--Optional:-->
+                           <v5:reading>1001</v5:reading>
+                           <!--Optional:-->
+                           <v5:readingDate>?</v5:readingDate>
+                        </v5:endReading>
+                     </v5:endReadings>
+                     <!--Optional:-->
+                     <v5:logTime>?</v5:logTime>
+                     <!--Optional:-->
+                     <v5:intervalStart>?</v5:intervalStart>
+                     <v5:dB>
+                        <v5:chs>
+                           <!--1 or more repetitions:-->
+                           <v5:ch>
+                              <v5:idx>9</v5:idx>
+                              <v5:d>?</v5:d>
+                           </v5:ch>
+                        </v5:chs>
+                        <!--Optional:-->
+                        <v5:cS>?</v5:cS>
+                     </v5:dB>
+                  </v5:block>
+               </v5:blocks>
+            </com1:intervalData>
+         </mr:ArrayOfIntervalData>
+      </mr:GetMeterReadingsByDateIntervalDataResponse>
+   </soapenv:Body>
+</soapenv:Envelope>

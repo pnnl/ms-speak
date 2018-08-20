@@ -1,0 +1,40 @@
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"	
+	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence	http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"	version="2.0">	
+
+	<persistence-unit name="mysql_pu" transaction-type="RESOURCE_LOCAL">
+        <description>
+            Persistence unit for the JPA 
+        </description>
+        <provider>org.hibernate.ejb.HibernatePersistence</provider>
+        <class>com.essence.model.DetectionRule</class>
+        <class>com.essence.model.EndpointConfiguration</class>
+        <class>com.essence.model.AnalyzerResult</class>
+        <class>com.essence.model.Alert</class>
+        <class>com.essence.alert.AlertCount</class>
+        <class>com.essence.model.Anomaly</class>
+        <class>com.essence.model.AnomalyTargetType</class>
+        <class>com.essence.model.AnomalyAnomalyEntry</class>
+        <class>com.essence.model.AnomalyNormalEntry</class>
+        <class>com.essence.model.AnomalyPrediction</class>
+        <class>com.essence.model.AnomalyState</class>
+        <class>com.essence.model.Cause</class>
+        <class>com.essence.model.Classification</class>
+        <class>com.essence.multispeak.MSPServiceOperation</class>
+        <class>com.essence.model.EngineRunLog</class>
+        <class>com.essence.model.Classification</class>
+        <class>com.essence.model.DecisionRule</class>
+        <class>com.essence.model.Decision</class>
+        <class>com.essence.model.Action</class>
+        <class>com.essence.model.Xpath</class>
+        <class>com.essence.model.ValueOutOfBoundDetail</class>
+        <class>com.essence.model.OrganizationProfile</class>
+		<exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect" />
+            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.format_sql" value="true" />
+        </properties>
+ 
+    </persistence-unit>
+</persistence>
