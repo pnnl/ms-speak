@@ -1,0 +1,1806 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- edited with XMLSpy v2015 sp2 (x64) (http://www.altova.com) by Gary A McNaughton (private) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.multispeak.org/V5.0/commonTypes" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:gml="http://www.multispeak.org/V5.0/gml" targetNamespace="http://www.multispeak.org/V5.0/commonTypes" elementFormDefault="qualified" version="5.0.7">
+	<xs:annotation>
+		<xs:documentation>MultiSpeak mspCommonTypes Schema. Version 5.0.7 Release (Version = "V5.0.7 Release") Release dated: 2/20/2015.  Cooperative Energy Services (CES) reserves exclusive discretion to determine the content and definition of MultiSpeak®,a federally registered trademark of NRECA. Copyright © 2000-2015 CES. 
+
+Disclaimer: Modifications of this document have been made, and will be made, on the basis of consensus among the participants of the MultiSpeak Initiative. Cornice Engineering, Inc. (Cornice) hereby prepared this document to reflect the input provided by the participants as of the date listed above. This work is being completed under contract to the National Rural Electric Cooperative Association (NRECA) Neither Cornice nor NRECA (i) makes any representation or warranty, express or implied, as to the suitability of this information for any purpose whatsoever, or (ii) assumes any responsibility for damages or other liability whatsoever.</xs:documentation>
+	</xs:annotation>
+	<xs:import namespace="http://www.multispeak.org/V5.0/enumerations" schemaLocation="mspEnumerations.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/primitives" schemaLocation="mspPrimitives.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/gml" schemaLocation="mspGeometry.xsd"/>
+	<xs:complexType name="activePower">
+		<xs:annotation>
+			<xs:documentation>Product of RMS value of the voltage and the RMS value of the in-phase component of the current (Megawatt).</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:realPowerUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this active power is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="address">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="address1" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Address line 1.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="address2" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Address line 2.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="detailedAddressFields" type="detailedAddressFields" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Detailed information about the components of the composite address lines.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="townCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Additional information about the city or town, if required.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="city" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Name of the city or municipality.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="state" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The state or province.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="postalCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The postal code.  For instance, in the United States this is the zip code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="country" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="addressItem">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="address" type="address"/>
+					<xs:element name="addressType" type="enum:addressType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Type of address. For instance, billing, mailing, service location, etc.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="priorityOrder" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Order that should be used to contact this person.  First = 1, second = 2, etc.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="addressItems">
+		<xs:sequence>
+			<xs:element name="addressItem" type="addressItem" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="admittance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:sUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which this admittance is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="allocatedLoad">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="phaseCode" type="enum:phaseCode" minOccurs="0"/>
+					<xs:element name="realPower" type="realPower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Real power load on this section.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="reactivePower" type="reactivePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>kVAr load on this section.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="numberOfCustomers" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Number of customers allocated to this section.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="allocatedLoads">
+		<xs:annotation>
+			<xs:documentation>An array of allocated loads.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="allocatedLoad" type="allocatedLoad" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="angle">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:angleUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which this angle is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="angleInDegrees">
+		<xs:annotation>
+			<xs:documentation>Angle measured in degrees.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:degreeUnits" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="apparentPower">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:apparentPowerUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this apparent power is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="boundingBox">
+		<xs:annotation>
+			<xs:documentation>A geographic bounding box defined by two coordinates: (Xmin, Ymin)  and (Xmax, Ymax).</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Xmin" type="xs:double">
+				<xs:annotation>
+					<xs:documentation>The x coordinate of the lower left point of the bounding box.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Ymin" type="xs:double">
+				<xs:annotation>
+					<xs:documentation>The y coordinate of the lower left point of the bounding box.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Xmax" type="xs:double">
+				<xs:annotation>
+					<xs:documentation>The x coordinate of the upper right point of the bounding box.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Ymax" type="xs:double">
+				<xs:annotation>
+					<xs:documentation>The y coordinate of the upper right point of the bounding box.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="BuildDescriptor">
+		<xs:annotation>
+			<xs:documentation>The BuildString contains a description of the type of data schema build that is used for thie data in this message.  The options are: PR - Prerelease, RC - Release candidate, Branch - Development branch off of the trunck development, and Release - final release. </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Branch">
+				<xs:annotation>
+					<xs:documentation>Branch - A Branch is a draft build that is issued to investigate a concept.  The concept may or may not result in the issuance of a PR.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="PR">
+				<xs:annotation>
+					<xs:documentation>Pre-Release.  A Pre-Release is a draft build that has not yet been adopted as a Release Candidate.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RC">
+				<xs:annotation>
+					<xs:documentation>Release Candidate - A Release Candidate is a draft build that is candidate for balloting to become a Release for Development or Release.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="RD">
+				<xs:annotation>
+					<xs:documentation>Release for Development - A Release for Development is a build that has been balloted by the MultiSpeak Technical Committee to be ready for internal development by MultiSpeak members, but has not yet been adopted as a Release.  </xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Release">
+				<xs:annotation>
+					<xs:documentation>Release - A Release is a build that has been balloted by the MultiSpeak Technical Committee as being ready for development into commercial products.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Caller">
+		<xs:annotation>
+			<xs:documentation>Information to identify the application that sent this message.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="AppName" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>This is the name of the application that sent this message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AppVersion" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is the version of the application that sent this message.  This is NOT the version of MultiSpeak that is used in this message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Company" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>This is the name of the company that provides the application that sent this message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AuditID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is the userID of the person who used the system that generated this message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AuditPassword" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is the password of the person who used the system that generated this message.  It is suggested that this field be used for authorization.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SystemID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is the identifier for the system that is sending this message, if needed for authentication.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Password" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is the password for the system that is sending this message if needed for authentication.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="capacitance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:capacitanceUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the capacitance is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="capacitancePerUnitLength">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="capacitanceUnits" type="enum:capacitanceUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the capacitance is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="lengthUnits" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units used for the reference length.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="cimTimePoints">
+		<xs:annotation>
+			<xs:documentation>This structure is here for future CIM harmonization.  It is not expeted that this schedule structure will be used in MultiSpeak scheduling applications</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="absoluteTime" type="prim:mspDateTime" minOccurs="0"/>
+			<xs:element name="relativeTimeInterval" type="duration" minOccurs="0"/>
+			<xs:element name="sequenceNumber" type="xs:integer" minOccurs="0"/>
+			<xs:element name="window" type="timePeriod" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="codedName">
+		<xs:annotation>
+			<xs:documentation>This is an abbreviation for a part of a fully-qualified object identifier of the form GlobalDomain.RegisteredName.SystemName.nounType.objectGUID</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="codedValue" type="prim:alphaNumericRestrictedString">
+				<xs:annotation>
+					<xs:documentation>This is the shorthand abbreviation for the name part.  For instance, codedValue could equal "1" or "A" for RegisteredName = "ACMEWidgets"</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="namePart" type="prim:alphaNumericRestrictedString">
+				<xs:annotation>
+					<xs:documentation>This is the complete name part.  For instance "ACMEWidgets in the example given in the annotation for the codedValue.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is an optional string description of the name part.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="codedNameType" type="codedNameType" use="optional">
+			<xs:annotation>
+				<xs:documentation>The type of name to be encoded, such as RegisteredName, SystemName, etc.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="CodedNames">
+		<xs:sequence>
+			<xs:element name="codedName" type="codedName" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This is an abbreviation for a part of a fully-qualified object identifier of the form GlobalDomain.RegisteredName.SystemName.nounType.objectGUID</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="codedNameType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="GlobalDomain"/>
+			<xs:enumeration value="RegisteredName"/>
+			<xs:enumeration value="SystemName"/>
+			<xs:enumeration value="NounType"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="complexImpedance">
+		<xs:sequence>
+			<xs:element name="r" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The resistive portion of impedance.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="x" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The reactive portion of the impedance</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="units" type="enum:zUnits" use="optional">
+			<xs:annotation>
+				<xs:documentation>The units in which this impedance is expressed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="complexImpedanceWithLeakage">
+		<xs:sequence>
+			<xs:element name="r" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The resistive portion of the impedance.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="x" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The reactive portion of the impedance.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="b" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The leakage susceptance.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="zUnits" type="enum:zUnits" use="optional">
+			<xs:annotation>
+				<xs:documentation>The units in which this impedance is expressed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="sUnits" type="enum:sUnits" use="optional">
+			<xs:annotation>
+				<xs:documentation>Units in which the leakage (susceptance) is expressed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="complexNum">
+		<xs:sequence>
+			<xs:element name="r" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Real portion of the complex number.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="x" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Imaginary part of the complex number.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="units" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="complexVoltage">
+		<xs:sequence>
+			<xs:element name="r" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Real component of the voltage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="x" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Imaginary component of the voltage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="units" type="enum:voltageUnits" use="optional">
+			<xs:annotation>
+				<xs:documentation>Units in which this voltage is expressed.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="conductance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:sUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which this conductance is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="connectivityModelGroup">
+		<xs:choice>
+			<xs:element name="connectivityNodes" type="connectivityNodes"/>
+			<xs:element name="connectivitySections" type="connectivitySections"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="connectivityNodes">
+		<xs:sequence>
+			<xs:element name="node1ID" type="nodeIdentifier">
+				<xs:annotation>
+					<xs:documentation>This is the node identifier for this feature in a node-oriented engineering connectivity model.  The connectivityNodeID must be unique. For series-connected devices this is one of the terminal nodes, the upstream node in radial systems.  For shunt-connected devices this is the point of attachment.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="node2ID" type="nodeIdentifier">
+				<xs:annotation>
+					<xs:documentation>The connectivityNodeID must be unique if it exists. For series-connected devices this is one of the terminal nodes, the downstream node in a radial system.  For shunt-connected devices this connectivityNodeID refers to neutral, and thus often is not used.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="connectivitySections">
+		<xs:sequence>
+			<xs:element name="parentSectionIDs" type="networkModelRef" maxOccurs="3">
+				<xs:annotation>
+					<xs:documentation>This specifies the upline section(s) in a section-based engineering connectivity model.  Use multiple parentSectionsIDs to model the case in an electrical network model where two or more reduced-phase elements come together to feed a multi-phase element.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="contentsItems">
+		<xs:sequence>
+			<xs:element name="contentsItem" type="objectRef" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This item is a pointer to the equipment contained in this container. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CoordinateSystemInformation">
+		<xs:sequence>
+			<xs:element name="CSUnits" type="CSUnits"/>
+			<xs:element name="CSAuthorities" type="CSAuthorities">
+				<xs:annotation>
+					<xs:documentation>It is the intention that if there is more than one coordinate system identified here that they SHALL BE multiple identifiers for the same coordinate system.  More than one coordinate system choice Must NOT be implied.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CSAuthorities">
+		<xs:annotation>
+			<xs:documentation>It is the intention that if there is more than one coordinate system identified here that they SHALL BE multiple identifiers for the same coordinate system.  More than one coordinate system choice Must NOT be implied.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="CSAuthority" type="CSAuthority" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CSAuthority">
+		<xs:annotation>
+			<xs:documentation>A naming authority for GIS coordinate systems.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="CSAuthorityName" type="CSAuthorityName">
+				<xs:annotation>
+					<xs:documentation>The string designator for the coordinate system authority.  For example, "SPCS" for the State Plane Coordinate System, "EPSG" for the European Petroleum Survey Group, "UTM" for the Universal Transverse Mercator coordinate system authority.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="CoordinateSystemAuthorityCode" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The string name of the coordinate system authority code.  Examples of coordinate system names are "SPCS:0401", "EPSG:26741", and "UTM:30U".  In these examples "SPCS", "EPSG", and "UTM" are coordinate system authorities and "0401", "26741", and "30U" are coordinate system authority codes.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Datum" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>A datum is a mathematical representation of the shape of the earth's surface.  A complete determination of a geographic coordinate system requires the specification of the CSUnits, Datum, and coordinate system (CSAuthorityName AND CoordinateSystemAuthorityCode).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CSAuthorityName">
+		<xs:annotation>
+			<xs:documentation>The name of the GIS coordinate system naming authority.  Examples include "SPCS" for U.S. State Plane Coordinate System, "EPSG" for the European Petroleum Survey Group, and "UTM" for the Universal Transverse Mercator.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="CSAuthorityNameKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="CSAuthorityNameKind">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SPCS">
+				<xs:annotation>
+					<xs:documentation>U.S. State Plane Coordinate System.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="EPSG">
+				<xs:annotation>
+					<xs:documentation>European Petroleum Survey Group.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="UTM">
+				<xs:annotation>
+					<xs:documentation>Universal Transverse Mercator.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="Other">
+				<xs:annotation>
+					<xs:documentation>If none of the specified enumeration options are appropriate, "Other" SHALL be chosen and the appropriate option SHALL be included in the otherKind attribute of the CSAuthorityName complex type.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="CSUnits">
+		<xs:annotation>
+			<xs:documentation>This attribute carries the unit of measure for the defined coordinate system. Possible values are "Feet", "Meters", "USSurveyFeet", and "Other".  If the value "Other" is given, the units MUST be specified using the "otherKind" attribute.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="CSUnitsKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="CSUnitsKind">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Feet"/>
+			<xs:enumeration value="Meters"/>
+			<xs:enumeration value="USSurveyFeet"/>
+			<xs:enumeration value="Other">
+				<xs:annotation>
+					<xs:documentation>If none of the enumerations are appropriate, then the choice "Other" MUST be chosen and the appropriate unit SHALL be included in the "otherKind" attribute on the CSUnits complex type.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="current">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:currentUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this current is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="DataSetState">
+		<xs:choice>
+			<xs:element name="PublishDataSetState" type="PublishDataSetState">
+				<xs:annotation>
+					<xs:documentation>This option SHALL be used if this message header is for a published data (*Notification) message and it is desired to denote the data set associated with the published information that is being sent in this message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="RequestDataSetState" type="RequestDataSetState">
+				<xs:annotation>
+					<xs:documentation>This option SHALL be chosen if this message header is associated with a Get-type request and it is desired to denote the previous data set since which changed data are being requested. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="detailedAddressFields">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="streetPrefix" type="xs:string" minOccurs="0"/>
+					<xs:element name="streetNumber" type="xs:string" minOccurs="0"/>
+					<xs:element name="streetSuffix" type="xs:string" minOccurs="0"/>
+					<xs:element name="streetType" type="xs:string" minOccurs="0"/>
+					<xs:element name="buildingNumber" type="xs:string" minOccurs="0"/>
+					<xs:element name="suiteNumber" type="xs:string" minOccurs="0"/>
+					<xs:element name="addressGeneral" type="xs:string" minOccurs="0"/>
+					<xs:element name="postOfficeBox" type="xs:string" minOccurs="0"/>
+					<xs:element name="region" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="duration">
+		<xs:annotation>
+			<xs:documentation>Time duration.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:timeUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of time duration.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="eMailAddress">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="eMail" type="xs:string"/>
+					<xs:element name="eMailType" type="enum:eMailType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The type of e-mail address.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="priorityOrder" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Order in which these e-mail addresses should be used to contact this person.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="eMailAddresses">
+		<xs:sequence>
+			<xs:element name="eMailAddress" type="eMailAddress" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="equipmentCatalogRef">
+		<xs:annotation>
+			<xs:documentation>This is a reference to an engineering equipment catalog entry.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="equipmentType" type="enum:equipmentTypeKind" use="required">
+					<xs:annotation>
+						<xs:documentation>This is the type of the engineering catalog entry.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="entryName" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the human-readable name for the specific type of equipment defined by this catalog entry.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="errorObject">
+		<xs:sequence>
+			<xs:element name="extensions" type="extensions" minOccurs="0"/>
+			<xs:element name="extensionsList" type="extensionsList" minOccurs="0"/>
+			<xs:element name="errorCode" type="replyCodeIdentifier" minOccurs="0"/>
+			<xs:element name="eventTime" type="prim:mspDateTime"/>
+			<xs:element name="displayString" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Human readable error message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="detailedString" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="referenceID" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>Identifier for object with error.For objects that inherit from mspObject, this SHALL be an objectGUID, for objects that inherit from mspReferable, this SHALL be a referableID.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="nounType" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>Type of noun for which this error is associated.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="errorObjects">
+		<xs:sequence>
+			<xs:element name="errorObject" type="errorObject" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="exponent">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="xs:string" use="optional" fixed="Exponent"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="extensions">
+		<xs:annotation>
+			<xs:documentation>The extensions container is one way that MultiSpeak objects can be extended using XSD elements.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence minOccurs="0">
+			<xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This container is one way in which objects can be extended using XSD elements.</xs:documentation>
+				</xs:annotation>
+			</xs:any>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="extensionsItem">
+		<xs:annotation>
+			<xs:documentation>This is an optional means to add self-describing extensions to any class that inherits from the mspObject.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="extName" type="xs:string"/>
+			<xs:element name="extValue" type="extValue"/>
+			<xs:element name="extType" type="enum:extType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="extensionsList">
+		<xs:annotation>
+			<xs:documentation>This is an optional, self-describing means to extend any MultiSpeak object.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="extensionsItem" type="extensionsItem" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="extValue">
+		<xs:annotation>
+			<xs:documentation>This is the value of the extensionsItem.  The units of this extensionsItem are included in the Units attrbute on extValue.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:stringType">
+				<xs:attribute name="units" type="enum:uomKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If used, this attribute carries the units in which the extValue is expressed. </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="frequency">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:frequencyUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the frequency is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="GMLLine">
+		<xs:complexContent>
+			<xs:extension base="gml:LineStringType"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GMLLines">
+		<xs:sequence>
+			<xs:element name="GMLLine" type="GMLLine" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GMLLocation">
+		<xs:annotation>
+			<xs:documentation>This is a geographical x,y, (z) location, referenced to a specific geographical coordinate system and datum.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="gml:PointType"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GMLPolygon">
+		<xs:annotation>
+			<xs:documentation>This is a polygon geometry that is built using GML classes. Note that the lines that make up a polygon should be closed.  If the line is intended to be a closed line, then the first and last coordiantes must be identical.  If the first and last coordinates are not identical, then the line is assumed not to be closed.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="gml:PolygonType"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GMLPolygons">
+		<xs:sequence>
+			<xs:element name="GMLPolygon" type="GMLPolygon" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GPSLocation">
+		<xs:annotation>
+			<xs:documentation>A geographical location as expressed in a geographic coordinate system. The GPSLocation SHALL be expressed using the WGS84 datum. This object SHOULD be used for expressing all types of GPS data. </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="latitude" type="xs:double">
+						<xs:annotation>
+							<xs:documentation>The latitude portion of a geographical location.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="longitude" type="xs:double">
+						<xs:annotation>
+							<xs:documentation>The longitude portion of a geographical location.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="altitude" type="xs:double" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The altitude above mean sea level for this geographical location, assuming the use of the WGS84 datum.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="GPSMetadata" type="GPSMetadata" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If it is desirable to send metadata about how this GPSLocation was collected, that data is documented in this element.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="GPSValidity" type="xs:boolean" use="optional">
+					<xs:annotation>
+						<xs:documentation>Validity of GPS location; false = invalid, true = valid.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GPSMetadata">
+		<xs:annotation>
+			<xs:documentation>If it is desirable to send metadata about how this GPSLocation was collected, that data is documented in this element.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="easting" type="xs:double" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Easting for coordinate zone.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="northing" type="xs:double" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Northing for coordinate zone.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="source" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Source of data.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="number" type="xs:long" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Number of readings that were averaged during the collection of this location.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="isRealTimeDiffCorrection" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Has this point been differentially corrected in real time?</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="hdop" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Horizontal dilution of precision.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="vdop" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Vertical dilution of precision.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="diffID" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The identifier for the source of differential correction signal.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="collected" type="xs:dateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The date and time that this location was taken.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="numSat" type="xs:long" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Number of satellites visible when this location was taken.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="height">
+		<xs:annotation>
+			<xs:documentation>Value of height expressed in units carried in lengthUnits.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of height.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="impedance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:zUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the impedance is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="impedances">
+		<xs:annotation>
+			<xs:documentation>Impedance values are only used in the CPSM profile.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="r" type="resistance" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Positive sequence resistance</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="x" type="reactance" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Positive sequence reactance.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="length">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the length is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="lengthUnitValue">
+		<xs:simpleContent>
+			<xs:extension base="prim:doubleType">
+				<xs:attribute name="units" type="enum:lengthUnits" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="MessageContext">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Development"/>
+			<xs:enumeration value="Production"/>
+			<xs:enumeration value="Study"/>
+			<xs:enumeration value="Testing"/>
+			<xs:enumeration value="Training"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="meterID">
+		<xs:annotation>
+			<xs:documentation>This is the identifier for a meter.  The body of the meterID SHALL carry the GUID identifier for the meter.  Additional information, such as the meterName (the primaryIdentifier for a meter instance) or the serviceType MAY also be specified. Note that the meter might be of different service types (for example: electric, gas, propane, water, etc.). </xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="meterName" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Meter name.  This is a utility-assigned, human readable identifier This identifier SHALL be used in the primaryIdentifier field for any meter.  This value was called meterNo in both Version 3.0 and 4.1.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="serviceType" type="enum:serviceKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>This identifies the type of service this meter records.  For instance for an electricMeter, the serviceType would be "Electric".  </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="otherServiceType" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available for serviceType, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="communicationAddress" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>This attribute carries the unique address for the communications module (transponder) associated with the meter, if any.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="communicationsPort" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the port identifier on the communications module (transponder) if necessary to communicate with this meter. This attribute is used when multiple meters are addressed using a single communication device (module). This identifier allows the CIS (or other inventory management) system to identify to the AMI system what port a meter is connected to on AMI devices that support multiple meters connected to a single AMI device.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="utility" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>A string identifier for the owner (typically a utility) of the meter identified by this meterID.  It may be a text string or a pointer to an organization.  If it is a text string, it is suggested that the string be the Internet domain name for the owner in valid XS:anyURI format.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="registeredName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the registeredName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="systemName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the systemName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="money">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="currencyCode" type="enum:currencyCode" use="optional">
+					<xs:annotation>
+						<xs:documentation>Three letter currency code as standardized in ISO4217-2001. Typically is the two letter Internet domain code for the country followed by a one letter designator for the currency; for instance the USA dollar is USD.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="mspExtensible" abstract="true">
+		<xs:annotation>
+			<xs:documentation>This is an abstract class from which children elements may inherit in order to gain extensibility.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="extensions" type="extensions" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The extensions container is one way that MultiSpeak objects can be extended using XSD elements.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="extensionsList" type="extensionsList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is an optional, self-describing means to extend any MultiSpeak object.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="multiPartIdentifier">
+		<xs:annotation>
+			<xs:documentation>The multiPartIdentifier is an object identifier that is used when: (i) the noun type is known in advance and hence does not need to be specified in a message payload, (ii) it is not necessary or desirable to use a GUID to point to an object instance, and (iii) at least one and possibly two string names may be used to point to the data instance of interest.  Thus the multiPartIdentifier is a SOFT, NOUN-UNSPECIFIED object identifier.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="primaryIdentifier" type="singleIdentifier">
+				<xs:annotation>
+					<xs:documentation>Primary human-readable identifier for this instance of the object. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="secondaryIdentifier" type="singleIdentifier" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Additional human-readable identifier for this instance of the object. When the secondaryIdentifier is provided, it is expected that the union of the primary and secondary identifiers is necessary to uniquely identify a data instance and both shall be used.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MultiSpeakVersion">
+		<xs:sequence>
+			<xs:element name="MajorVersion" type="xs:integer">
+				<xs:annotation>
+					<xs:documentation>The MajorVersion attribute identifies the major version of the data schema used for data in the message.  For instance for Version 5.0.4, the MajorVersion attribute would contain the integer 5.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MinorVersion" type="xs:integer">
+				<xs:annotation>
+					<xs:documentation>The MinorVersion attribute identifies the minor version of the data schema used for data in the message. For instance for Version 5.0.4, the MinorVersion attribute would contain the integer 0.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Build" type="xs:integer">
+				<xs:annotation>
+					<xs:documentation>The Build attribute identifies the build of the data schema used for data in the message. For instance for Version 5.0.4, the Build attribute would contain the integer 4.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Branch" type="xs:integer" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The Branch attribute identifies the branch number of the data schema used for data in the message. For instance for Version 5.0.4.1, the Branch attribute would contain the integer 1.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="BuildString" type="BuildDescriptor" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The BuildString contains a description of the type of data schema build that is used for the data in this message.  The options are: PR - Prerelease, RC - Release candidate, Branch - Development branch off of the trunk development, RD - Release for Development,  and Release - final release. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="networkModelRef">
+		<xs:annotation>
+			<xs:documentation>Reference to an instance of an object. When used to describe an engineering line section, this object must contain a section name and may also contain a noun/objectID pair that will uniquely identify the MultiSpeak noun (element) and instance of that noun that is contained in the named section.  In Versions 3.0 and 4.1 this was called eaLoc.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="objectRef"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="nodeIdentifier">
+		<xs:annotation>
+			<xs:documentation>This class identifies a node in a connectivity model.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="name" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>Name for engineering node.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="nounSpecifiedMultiPartIdentifier">
+		<xs:annotation>
+			<xs:documentation>The nounSpecifiedMultiPartIdentifier is used to identify an object when (i) the noun type is not known in advance and hence the noun type must be specified in the message payload, (iii) it is not necessary or desirable to use a GUID to refer to the data instance, and (iii) one or more string identifiers are needed to uniquely specify the desired data instance.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="multiPartIdentifier">
+				<xs:attribute name="identifierKind" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>Type of identifier to follow.  Potential examples of this identifier are:"Work order", "Service order", "Outage ticket", "Other" and "Unknown".</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="nounSpecifiedRef">
+		<xs:annotation>
+			<xs:documentation>The nounSpecifiedRef is used to refer to a data instance when (i) the noun type is not known in advance and hence must be specified in the message payload and (ii) it is desired to use either an objectRef or nounSpecifiedMultiPartIdentifier to refer to the data instance of interest.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element name="objectIdentifier" type="nounSpecifiedMultiPartIdentifier"/>
+			<xs:element name="objectRef" type="objectRef"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="nounUnspecifiedRef">
+		<xs:annotation>
+			<xs:documentation>The nounUnspecifiedRef is used when it is desirable to refer to an object of known noun type using either an objectID or a multiPartIdentifier. </xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element name="objectGUID" type="prim:MultiSpeakGUID"/>
+			<xs:element name="objectName" type="multiPartIdentifier"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="objectID">
+		<xs:annotation>
+			<xs:documentation>An objectID is the primary way to identify an object, using a GUID where the noun type is known in advance.  Since the noun type is known in advance, it does not need to be specified in a message payload.  Thus an objectID is a HARD, NOUN-UNSPECIFIED object identifier.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="objectGUID" type="prim:MultiSpeakGUID">
+				<xs:annotation>
+					<xs:documentation>This is the objectIdentifier for the data instance of interest.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="primaryIdentifier" type="singleIdentifier" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Primary human-readable identifier for this instance of the object. For instance if this object is an instance of an electricMeter, this should be the meterNumber; if this is a customer account, this should be the accountNumber. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="objectRef">
+		<xs:annotation>
+			<xs:documentation>This is a reference to any type of object.  An objectRef is used as an objectIdentifier when the noun type is not necessarily known in advance and hence must be specified in the message payload.   An objectRef is a HARD, NOUN-SPECIFIED object identifier.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="primaryIdentifierValue" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Primary human-readable identifier for this instance of the object. </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="secondaryIdentifierValue" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Additional human-readable identifier for this instance of the object. When the secondaryIdentifier is provided, it is expected that the union of the primary and secondary identifiers is necessary to uniquely identify a data instance and both shall be used.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="noun" type="xs:QName" use="required">
+					<xs:annotation>
+						<xs:documentation>The noun is the name of the object type that includes this instance.  For example, if instance is described by the MultiSpeak "substation" object then this field will contain "substation".</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="utility" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>String that is used to identify the utility associated with this item. It may be a text string or a pointer to an organization.  If it is a text string, it is suggested that the string be the Internet domain name for the owner in valid XS:anyURI format.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="registeredName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the registeredName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="systemName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the systemName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="odometer">
+		<xs:annotation>
+			<xs:documentation>Odometer reading.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="odometerReadingType" type="enum:odometerReadingType" use="optional"/>
+				<xs:attribute name="otherOdometerReadingType" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>If the enumeration value chose in the odometerReadingType is "Other" the actual value should be specified here.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="units" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units that the odometer reading is expressed in.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="otherContactInformation">
+		<xs:sequence>
+			<xs:element name="otherContactItem" type="otherContactItem" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="otherContactItem">
+		<xs:annotation>
+			<xs:documentation>This is an element to carry other miscellaneous contact information, such as web site address, truck radio number, etc.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="details" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>This element carries the miscellaneous contact information.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="infoType" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This element is used to describe the type of information stored in the "details" element.  Examples might be: IP address, truck number, radio number.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="phoneNumber">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="phone" type="telephoneNumber"/>
+					<xs:element name="phoneType" type="enum:phoneType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The type of phone number.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="priorityOrder" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Order in which these phone numbers should be used to contact this person.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="phoneNumbers">
+		<xs:sequence minOccurs="0">
+			<xs:element name="phoneNumber" type="phoneNumber" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="pressure">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:pressureUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the pressure is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="PublishDataSetState">
+		<xs:annotation>
+			<xs:documentation>This option SHALL be used if this message header is for a published data (*Notification) message and it is desired to denote the data set associated with the published information that is being sent in this message.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="DataSetID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>When it is desired to support data sets, this element SHALL be used to denote the data set for the data included in the message with which this message header is associated.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PreviousDataSetID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>When it is desired to support data sets, this attribute identifies the previously sent block of data by data set identifier.  If the receiver of this message has not received the data set identified in the previous data set ID, it has missed data and it SHALL attempt recovery by calling the appropriate GetModified* service, if any, that has the PreviousDataSetID parameter populated in the message header with the data set identifier of the last data set that it had successfully received. If no GetModified* service is available, or the GetModified service is not supported by the server, then the receiver SHALL return a message with appropriate error information included in the result element.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="reactance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:zUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which this reactance is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="reactancePerUnitLength">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="reactanceUnits" type="enum:zUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in wich the reactance is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="lengthUnits" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the reference length is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="reactiveEnergy">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:reactiveEnergyUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this reactive energy is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="reactivePower">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:reactivePowerUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this reactive power is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="realEnergy">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:realEnergyUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this real energy is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="realPower">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:realPowerUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this real power is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="registrationIDs">
+		<xs:sequence>
+			<xs:element name="registrationID" type="prim:MultiSpeakGUID" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="replyCodeIdentifier">
+		<xs:sequence>
+			<xs:element name="replyCodeCategory" type="enum:replyCodeCategory"/>
+			<xs:element name="index" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RequestDataSetState">
+		<xs:annotation>
+			<xs:documentation>This option SHALL be chosen if this message header is associated with a Get-type request and it is desired to denote the previous data set since which changed data are being requested. </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="DataSetID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>When necessary, this optional attribute identifies the data sent in this session.  If the DataSetID is included in a GetAll-type method call, then the server shall respond as if it was being asked for a GetModified-type call since that DataSetID, that is to say, it should send only those data instances that have changed since the PreviousDataSetID provided herein.  If the GetAll-type call does not include a DataSetID, or the server does not support data sets, then all instances of the requested object shall be returned.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PreviousDataSetID" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>When necessary, this attribute identifies the previously sent block of data by data set identifier.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="requestedCoordinateSystem">
+		<xs:complexContent>
+			<xs:extension base="CoordinateSystemInformation"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="requiredTimePeriod">
+		<xs:annotation>
+			<xs:documentation>A defined time period for which both the start and end times are required.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="startTime" type="prim:mspDateTime"/>
+			<xs:element name="endTime" type="prim:mspDateTime"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="resistance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:zUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this resistance is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="resistancePerUnitLength">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="resistanceUnits" type="enum:zUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units in which this resistance is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="lengthUnits" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units for the reference length.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="resistivity">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:resistivityUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the resistivity is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="result">
+		<xs:annotation>
+			<xs:documentation>The result object is used by a Responder to return information to a Requester on the result of processing a prior message.  The result object may also be used as the payload of an asynchronous/unsolicited error message (a SystemStateNotification).</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="resultIdentifier" type="replyCodeIdentifier">
+				<xs:annotation>
+					<xs:documentation>It is suggested that the values of replyCode be chosen from those values included in IEC 61968-9, 2nd Ed., Annex B as extended by Appendix A of "Security in MultiSpeak-Enabled Applications: Requirements".  Values of replyCode SHOULD be of the form [category] "." [index].</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="resultDescription" type="xs:string" minOccurs="0"/>
+			<xs:element name="level" type="enum:messageResultLevel" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The level element describes the severity of the error message.  It is suggested that no level element be returned for a fully successful message.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="errorObjects" type="errorObjects" minOccurs="0"/>
+			<xs:element name="dataSetID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>If this response header is associated with a GetAll* message, this element SHOULD be populated with the data set identifier by which the server knows the included data so that subsequent GetModified* messages for the same type of data could include a PreviousDataSetID in the request header so that the server could determine which data instances to include in its response (the data instances that had been modified since this base data set).  </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="lastSent" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Pointer assigned by the server to the last object sent by server when using lastSent and lastReceived to send "chunks" of data.  It is up to the server to generate a pointer that ensures that all data instances are returned, but the pointer does not need to have meaning to the receiver, and it is not required that the pointer match the objectID of the last sent data instance.   Client will return this value in the lastReceived parameter of a web service method to request more data.
+ </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="objectsRemaining" type="prim:objectsRemaining" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is an optional attribute that is used to denote the number of objects remaining in a complete data transfer after this set of data is handled.  If this attribute is not included or is set to be 0, all data have been sent at the completion of this data transfer.  If the number of objectsRemaining is known, the value should be entered here.  If the number of remaining data instances is not known, the number should be set to be -1.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="seconds">
+		<xs:annotation>
+			<xs:documentation>Time expressed in seconds</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="xs:string" use="optional" fixed="Seconds">
+					<xs:annotation>
+						<xs:documentation>"Seconds"</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="servicePointID">
+		<xs:annotation>
+			<xs:documentation>This is a reference for a customer service point.  A service point is located at a customer service location and applies to a specific service type (electric, gas, water, etc.).  Service points may be of different classes, for instance electricServicePoint, waterServicePoint, gasServicePoint, etc.).  Hence to completely identify a service point, it is necessary to know the type of service and the objectID of that type of service point. The servicePointID should include the concatenated string consisting of serviceType.objectID.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="serviceType" type="enum:serviceKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>Service type is an enumeration that describes the class of utility service (electric, gas, water, etc.).</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="otherServiceType" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available for serviceType, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="utility" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>String that is used to identify the owner of this item.  It may be a text string or a pointer to an organization.  If it is a text string, it is suggested that the string be the Internet domain name for the owner in valid XS:anyURI format. </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="registeredName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the registeredName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="systemName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the systemName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="servicePointIDs">
+		<xs:sequence>
+			<xs:element name="servicePointID" type="servicePointID" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="singleIdentifier">
+		<xs:annotation>
+			<xs:documentation>This is a class of string identifer.  The identifier value for a data instance goes in the element that inherits from this complexType.  The identifierName is the commonly used human-readable identifier name assigned by the sysem of record for this type of object and the identifierLabel is the string value that would be displayed to a user to describe the context of this identifier type.  For instance, for a customer account object, the system of record might consider the accountNumber to be the primary human-readable identifier.  Also, in previous versions, MultiSpeak included methods such as GetAllMetersByAccountNumber, which implies that this is expected to be a unique identifier.  Thus the identifierName would be "accountNumber" and the identifierLabel might be "Account Number".  </xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:stringType">
+				<xs:attribute name="identifierName" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>This is the name of the human-readable identifier by which the system of record knows an instance of this object.  For instance, for a customer account object, the system of record might consider the accountNumber to be the primary human-readable identifier.  Also, in previous versions, MultiSpeak included methods such as GetMetersByAccountNumber, which implies that this human-readable identifier was expected to be a unique value.  Thus the identifierName for the account object would be "accountNumber".   If this identifierName is not applicable to a specific data instance than fill this field with "NA".</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="identifierLabel" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>If desired, this string will be displayed to the user as a reference for this identifier. For instance, for a meter, the identifierLabel for the primaryIdentifer might be "Meter Number".  For a workOrder, the identifierLabel for the secondaryIdentifier might be "Job Number".</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="speed">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:speedUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the speed is measured.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="substationRef">
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="substationCode" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>A alphanumeric code that refers to this substation.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="substationName" type="xs:string" use="required">
+					<xs:annotation>
+						<xs:documentation>This is the utility-defined, human-friendly name for this substation.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="utility" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is a string identifier for the utility to which this substation pertains.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="registeredName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the registeredName part of the fully-qualified object name of the format: GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="systemName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the registeredName part of the fully-qualified object name of the format: GlobalDomain.RegisteredName.SystemName.Noun.objectGUID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="susceptance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:sUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which this suseptance is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="telephoneNumber">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="areaCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Area or region code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="cityCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>City code for telephone number, if applicable.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="countryCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Country code for telephone number, if applicable.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="localNumber" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The primary portion of a telephone number as dialed in a local calling area.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="extension" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Extension for telephone number if required.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="temperature">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:temperatureUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the temperature is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="thermalCoefficientOfResistance">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:thermalCoefficientOfResistanceUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of temperature coefficient.  It is suggested that temperatures are expressed in degrees C and that the coefficient is expressed in reciprocal degrees C.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="thickness">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:thicknessUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the thickness is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="time">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:timeUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of time</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="timePeriod">
+		<xs:sequence>
+			<xs:element name="startTime" type="prim:mspDateTime" minOccurs="0"/>
+			<xs:element name="endTime" type="prim:mspDateTime" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="timeZone">
+		<xs:annotation>
+			<xs:documentation>This is the time zone for this location.  The time zone designator goes in the element, the attributes optioanlly give additional information about this time zone.  For instance the time zine for Denver, Colorado, USA is MT (Mountain Time).  Daylight savings time is enabled in Denver, so DSTEnabled = 1 or true.  The MT time zone is UTC - 7.00 hours when DST is not in effect, so the UTCOffest would be "-7.00".  On the other hand, Phoenix is also in the Moutain Time zone, but DST is not employed in Arizona.  For the case of Phoenix, all of the settings would be the same as for Denver, except that DSTEnabled would be false.  The standard civilian time zones (e.g., AT,ET,CT, MT, PT, and AKT for North America) are included for all global locations as are the military time zone designations (e.g. Z, A, B...). </xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:stringType">
+				<xs:attribute name="DSTEnabled" type="xs:boolean" use="optional">
+					<xs:annotation>
+						<xs:documentation>This attribute determines if daylight savings time is enabled at this location.  If DSTEnabled is false then DST offsets are not used at this location.  Standard date ranges for DST effectiveness and DST offsets are assumed for this location.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="UTCOffset" type="xs:decimal" use="required">
+					<xs:annotation>
+						<xs:documentation>This is the offset in decimal hours from Universal Coordinated Time (UTC) for this timezone when daylight savings time is not in effect.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="name" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Display name for this time zone.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="comment" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>Additional information about this time zone.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="utilityInfo">
+		<xs:complexContent>
+			<xs:extension base="mspExtensible">
+				<xs:sequence>
+					<xs:element name="owner" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the owner of the physical device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="serviceLocationID" type="objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the objectID of the service location at which this device is installed.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="servicePointID" type="servicePointID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the service point at which this meter is installed</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="accountID" type="objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the customer account for this serviceLocation. This SHALL be the objectID of the associated account object.  If the acountNumber is different than the objectGUID for this data instance of account, then the accountNumber may be carried in the accountID.primaryIdentifier element.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="customerID" type="objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the objectID of the customer with which this device is associated.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="voltage">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:voltageUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of voltage</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="weight">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:weightUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the weight is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="weightPerLength">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="weightUnits" type="enum:weightUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units in which the weight is expressed.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="lengthUnits" type="enum:lengthUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The units used to express the reference length.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

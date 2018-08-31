@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:tns="http://www.multispeak.org/Version_3.0">
+    <env:header>
+        <tns:MultiSpeakMsgHeader Version="string" UserID="string" Pwd="string" AppName="string" AppVersion="string" Company="string" CSUnits="feet" CoordinateSystem="string" Datum="string" SessionID="string" PreviousSessionID="string" ObjectsRemaining="-9223372036854775808" LastSent="string" RegistrationID="string" AuditID="string" MessageID="string" TimeStamp="2002-10-10T12:00:00-05:00" BuildString="string" any_attribute="any_value">
+            <!--Attribute BuildString is optional-->
+            <!--Attribute TimeStamp is optional-->
+            <!--Attribute MessageID is optional-->
+            <!--Attribute AuditID is optional-->
+            <!--Attribute RegistrationID is optional-->
+            <!--Attribute LastSent is optional-->
+            <!--Attribute ObjectsRemaining is optional-->
+            <!--Attribute PreviousSessionID is optional-->
+            <!--Attribute SessionID is optional-->
+            <!--Attribute Datum is optional-->
+            <!--Attribute CoordinateSystem is optional-->
+            <!--Attribute CSUnits is optional-->
+            <!--Attribute Company is optional-->
+            <!--Attribute AppVersion is optional-->
+            <!--Attribute AppName is optional-->
+            <!--Attribute Pwd is optional-->
+            <!--Attribute UserID is optional-->
+            <!--Attribute Version is optional-->
+        </tns:MultiSpeakMsgHeader>
+    </env:header>
+    <env:Body>
+        <tns:GetLatestReadings>
+            <!--Element tns:lastReceived is optional-->
+            <tns:lastReceived>string</tns:lastReceived>
+        </tns:GetLatestReadings>
+    </env:Body>
+</env:Envelope>

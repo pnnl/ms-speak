@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+              xmlns:p3="http://www.multispeak.org/V5.0/commonTypes"
+              xmlns:p2="http://www.multispeak.org/V5.0/ws/response"
+              xmlns:p1="http://www.multispeak.org/V5.0/wsdl/MR_Server">
+    <env:header>
+        <p2:MultiSpeakResponseMsgHeader DefaultRegisteredName="DefaultRegisteredResponse"
+                                        DefaultSystemName="System235"
+                                        DefaultUtility="Bonneville Power Admin"
+                                        DefaultCurrencyCode="USD"
+                                        MessageID="James' First Response"
+                                        TimeStamp="2016-08-26T07:15:07-05:00"
+                                        MessageCreatedTimeStamp="2016-08-26T07:15:07-04:00"
+                                        Context="Context0"
+                                        any_attribute="myAttrib">
+            <p2:MultiSpeakVersion>
+                <p3:MajorVersion>5</p3:MajorVersion>
+                <p3:MinorVersion>3</p3:MinorVersion>
+                <p3:Build>7</p3:Build>
+                <p3:Branch>Branch</p3:Branch>
+                <p3:BuildString>Release</p3:BuildString>
+            </p2:MultiSpeakVersion>
+            <p2:Caller>
+                <p3:AppName>v5MultiSpeaker Transformer</p3:AppName>
+                <p3:AppVersion>0.0.1.Branch</p3:AppVersion>
+                <p3:Company>Pacific Northwest National Laboratory</p3:Company>
+                <p3:AuditID>MillerC</p3:AuditID>
+                <p3:AuditPassword>MyPW17458</p3:AuditPassword>
+                <p3:SystemID>SysID002</p3:SystemID>
+                <p3:Password>MyPW17458</p3:Password>
+            </p2:Caller>
+            <p2:CodedNames>
+                <p3:codedName codedNameType="cNameT">
+                    <p3:codedValue>P</p3:codedValue>
+                    <p3:namePart>nameP</p3:namePart>
+                    <p3:description>Part of Name</p3:description>
+                </p3:codedName>
+                <p3:codedName codedNameType="cNameT2">
+                    <p3:codedValue>Q</p3:codedValue>
+                    <p3:namePart>nameQ</p3:namePart>
+                    <p3:description>Part of Name2</p3:description>
+                </p3:codedName>
+                <p3:codedName codedNameType="cNameT3">
+                    <p3:codedValue>R</p3:codedValue>
+                    <p3:namePart>nameR</p3:namePart>
+                    <p3:description>Part of Name3</p3:description>
+                </p3:codedName>
+            </p2:CodedNames>
+            <p2:CoordinateSystemInformation>
+                <p3:CSUnits otherKind="inches">metersUSSurveyFeet</p3:CSUnits>
+                <p3:CSAuthorities>
+                    <p3:CSAuthority>
+                        <p3:CSAuthorityName otherKind="otherSPCS">SPCS</p3:CSAuthorityName>
+                        <p3:CoordinateSystemAuthorityCode>0401</p3:CoordinateSystemAuthorityCode>
+                        <p3:Datum>WGS84</p3:Datum>
+                    </p3:CSAuthority>
+                </p3:CSAuthorities>
+            </p2:CoordinateSystemInformation>
+            <p2:Result>
+                <p3:resultIdentifier>
+                    <p3:replyCodeCategory otherKind="replyCodeCategory1">Other Attribute</p3:replyCodeCategory>
+                    <p3:index>replyCodeCategory</p3:index>
+                </p3:resultIdentifier>
+                <p3:resultDescription>resultDescription</p3:resultDescription>
+                <p3:level otherKind="level otherKind">level</p3:level>
+                <p3:errorObjects>
+                    <p3:errorObject referenceID="errorObject1"
+                                    nounType="errorObject NounType1">
+                        <p3:extensions>
+                            <any_element/>
+                            <any_element/>
+                            <any_element/>
+                        </p3:extensions>
+                        <p3:extensionsList>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name</p3:extName>
+                                <p3:extValue units="extValue Units">Attribute units</p3:extValue>
+                                <p3:extType>2344</p3:extType>
+                            </p3:extensionsItem>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name2</p3:extName>
+                                <p3:extValue units="extValue2 Units">Attribute2 units</p3:extValue>
+                                <p3:extType>2345</p3:extType>
+                            </p3:extensionsItem>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name3</p3:extName>
+                                <p3:extValue units="extValue3 Units">Attribute3 units</p3:extValue>
+                                <p3:extType>2346</p3:extType>
+                            </p3:extensionsItem>
+                        </p3:extensionsList>
+                        <p3:errorCode>
+                            <p3:replyCodeCategory otherKind="reply Code Category1">OtherKind</p3:replyCodeCategory>
+                            <p3:index>replyCodeCategory</p3:index>
+                        </p3:errorCode>
+                        <p3:eventTime>2016-08-26T07:15:08-01:11</p3:eventTime>
+                        <p3:displayString>Event Display String1</p3:displayString>
+                        <p3:detailedString>Event Detailed String1</p3:detailedString>
+                    </p3:errorObject>
+                    <p3:errorObject referenceID="errorObject2"
+                                    nounType="errorObject NounType2">
+                        <p3:extensions>
+                            <any_element/>
+                            <any_element/>
+                            <any_element/>
+                        </p3:extensions>
+                        <p3:extensionsList>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name</p3:extName>
+                                <p3:extValue units="extValue Units">Attribute units</p3:extValue>
+                                <p3:extType>2344</p3:extType>
+                            </p3:extensionsItem>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name2</p3:extName>
+                                <p3:extValue units="extValue2 Units">Attribute2 units</p3:extValue>
+                                <p3:extType>2345</p3:extType>
+                            </p3:extensionsItem>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name3</p3:extName>
+                                <p3:extValue units="extValue3 Units">Attribute3 units</p3:extValue>
+                                <p3:extType>2346</p3:extType>
+                            </p3:extensionsItem>
+                        </p3:extensionsList>
+                        <p3:errorCode>
+                            <p3:replyCodeCategory otherKind="reply Code Category1">OtherKind</p3:replyCodeCategory>
+                            <p3:index>replyCodeCategory</p3:index>
+                        </p3:errorCode>
+                        <p3:eventTime>2016-08-26T07:15:08-03:33</p3:eventTime>
+                        <p3:displayString>Event Display String2</p3:displayString>
+                        <p3:detailedString>Event Detailed String2</p3:detailedString>
+                    </p3:errorObject>
+                    <p3:errorObject referenceID="errorObject3"
+                                    nounType="errorObject NounType3">
+                        <p3:extensions>
+                            <any_element/>
+                            <any_element/>
+                            <any_element/>
+                        </p3:extensions>
+                        <p3:extensionsList>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name</p3:extName>
+                                <p3:extValue units="extValue Units">Attribute units</p3:extValue>
+                                <p3:extType>2344</p3:extType>
+                            </p3:extensionsItem>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name2</p3:extName>
+                                <p3:extValue units="extValue2 Units">Attribute2 units</p3:extValue>
+                                <p3:extType>2345</p3:extType>
+                            </p3:extensionsItem>
+                            <p3:extensionsItem>
+                                <p3:extName>Extension Name3</p3:extName>
+                                <p3:extValue units="extValue3 Units">Attribute3 units</p3:extValue>
+                                <p3:extType>2346</p3:extType>
+                            </p3:extensionsItem>
+                        </p3:extensionsList>
+                        <p3:errorCode>
+                            <p3:replyCodeCategory otherKind="reply Code Category1">OtherKind</p3:replyCodeCategory>
+                            <p3:index>replyCodeCategory</p3:index>
+                        </p3:errorCode>
+                        <p3:eventTime>2016-08-26T07:15:08-03:00</p3:eventTime>
+                        <p3:displayString>Event Display String</p3:displayString>
+                        <p3:detailedString>Event Detailed String</p3:detailedString>
+                    </p3:errorObject>
+                </p3:errorObjects>
+                <p3:dataSetID>DataSetID001</p3:dataSetID>
+                <p3:lastSent>lastSent String</p3:lastSent>
+                <p3:objectsRemaining>2</p3:objectsRemaining>
+            </p2:Result>
+        </p2:MultiSpeakResponseMsgHeader>
+    </env:header>
+    <env:Body>
+        <p1:PingURLResponse/>
+    </env:Body>
+</env:Envelope>

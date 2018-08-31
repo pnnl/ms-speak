@@ -1,0 +1,227 @@
+<s:schema elementFormDefault="qualified" xmlns:s="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.multispeak.org/Version_3.0" xmlns:tns="http://www.multispeak.org/Version_3.0">
+  <s:element name="PingURL">
+    <s:complexType/>
+  </s:element>
+  <s:element name="PingURLResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfErrorObject" name="PingURLResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:complexType name="ArrayOfErrorObject">
+    <s:sequence>
+      <s:element minOccurs="0" nillable="true" type="tns:errorObject" name="errorObject" maxOccurs="unbounded"/>
+    </s:sequence>
+  </s:complexType>
+  <s:complexType name="errorObject">
+    <s:attribute type="s:string" name="objectID"/>
+    <s:attribute type="s:string" name="errorString"/>
+    <s:attribute type="s:string" name="nounType"/>
+    <s:attribute type="s:dateTime" name="eventTime"/>
+  </s:complexType>
+  <s:element type="tns:MultiSpeakMsgHeader" name="MultiSpeakMsgHeader"/>
+  <s:complexType name="MultiSpeakMsgHeader">
+    <s:attribute type="s:string" name="Version"/>
+    <s:attribute type="s:string" name="UserID"/>
+    <s:attribute type="s:string" name="Pwd"/>
+    <s:attribute type="s:string" name="AppName"/>
+    <s:attribute type="s:string" name="AppVersion"/>
+    <s:attribute type="s:string" name="Company"/>
+    <s:attribute type="tns:MessageHeaderCSUnits" name="CSUnits" default="feet"/>
+    <s:attribute type="s:string" name="CoordinateSystem"/>
+    <s:attribute type="s:string" name="Datum"/>
+    <s:attribute type="s:string" name="SessionID"/>
+    <s:attribute type="s:string" name="PreviousSessionID"/>
+    <s:attribute type="s:integer" name="ObjectsRemaining"/>
+    <s:attribute type="s:string" name="LastSent"/>
+    <s:attribute type="s:string" name="RegistrationID"/>
+    <s:attribute type="s:string" name="AuditID"/>
+    <s:attribute type="s:string" name="MessageID"/>
+    <s:attribute type="s:dateTime" name="TimeStamp"/>
+    <s:attribute type="s:string" name="BuildString"/>
+    <s:anyAttribute/>
+  </s:complexType>
+  <s:simpleType name="MessageHeaderCSUnits">
+    <s:restriction base="s:string">
+      <s:enumeration value="feet"/>
+      <s:enumeration value="meters"/>
+      <s:enumeration value="USSurveyFeet"/>
+      <s:enumeration value="other"/>
+    </s:restriction>
+  </s:simpleType>
+  <s:element name="GetMethods">
+    <s:complexType/>
+  </s:element>
+  <s:element name="GetMethodsResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfString" name="GetMethodsResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:complexType name="ArrayOfString">
+    <s:sequence>
+      <s:element minOccurs="0" nillable="true" type="s:string" name="string" maxOccurs="unbounded"/>
+    </s:sequence>
+  </s:complexType>
+  <s:element name="GetDomainNames">
+    <s:complexType/>
+  </s:element>
+  <s:element name="GetDomainNamesResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfString" name="GetDomainNamesResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="GetDomainMembers">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="s:string" name="domainName" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="GetDomainMembersResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfDomainMember" name="GetDomainMembersResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:complexType name="ArrayOfDomainMember">
+    <s:sequence>
+      <s:element minOccurs="0" nillable="true" type="tns:domainMember" name="domainMember" maxOccurs="unbounded"/>
+    </s:sequence>
+  </s:complexType>
+  <s:complexType name="domainMember">
+    <s:sequence>
+      <s:element minOccurs="0" type="s:string" name="code" maxOccurs="1"/>
+      <s:element minOccurs="0" type="s:string" name="description" maxOccurs="1"/>
+    </s:sequence>
+  </s:complexType>
+  <s:element name="RequestRegistrationID">
+    <s:complexType/>
+  </s:element>
+  <s:element name="RequestRegistrationIDResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="s:string" name="RequestRegistrationIDResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="RegisterForService">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:registrationInfo" name="registrationDetails" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:complexType name="registrationInfo">
+    <s:sequence>
+      <s:element minOccurs="0" type="s:string" name="registrationID" maxOccurs="1"/>
+      <s:element minOccurs="0" type="s:anyURI" name="responseURL" maxOccurs="1"/>
+      <s:element minOccurs="0" type="s:string" name="responseUserID" maxOccurs="1"/>
+      <s:element minOccurs="0" type="s:string" name="responsePwd" maxOccurs="1"/>
+      <s:element minOccurs="0" type="s:string" name="MSFunction" maxOccurs="1"/>
+      <s:element minOccurs="0" type="tns:methodsList" name="methodsList" maxOccurs="1"/>
+    </s:sequence>
+  </s:complexType>
+  <s:complexType name="methodsList">
+    <s:sequence>
+      <s:element minOccurs="0" type="s:string" name="methodName" maxOccurs="unbounded"/>
+    </s:sequence>
+  </s:complexType>
+  <s:element name="RegisterForServiceResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfErrorObject" name="RegisterForServiceResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="UnregisterForService">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="s:string" name="registrationID" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="UnregisterForServiceResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfErrorObject" name="UnregisterForServiceResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="GetRegistrationInfoByID">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="s:string" name="registrationID" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="GetRegistrationInfoByIDResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:registrationInfo" name="GetRegistrationInfoByIDResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="GetPublishMethods">
+    <s:complexType/>
+  </s:element>
+  <s:element name="GetPublishMethodsResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfString" name="GetPublishMethodsResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="DomainMembersChangedNotification">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfDomainMember" name="changedDomainMembers" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="DomainMembersChangedNotificationResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfErrorObject" name="DomainMembersChangedNotificationResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:element name="DomainNamesChangedNotification">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfDomainNameChange" name="changedDomainNames" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+  <s:complexType name="ArrayOfDomainNameChange">
+    <s:sequence>
+      <s:element minOccurs="0" nillable="true" type="tns:domainNameChange" name="domainNameChange" maxOccurs="unbounded"/>
+    </s:sequence>
+  </s:complexType>
+  <s:complexType name="domainNameChange">
+    <s:sequence>
+      <s:element minOccurs="0" type="s:string" name="domainName" maxOccurs="1"/>
+      <s:element minOccurs="0" type="s:string" name="oldDomainName" maxOccurs="1"/>
+      <s:element minOccurs="1" type="tns:domainNameAction" name="action" maxOccurs="1"/>
+    </s:sequence>
+  </s:complexType>
+  <s:simpleType name="domainNameAction">
+    <s:restriction base="s:string">
+      <s:enumeration value="Add"/>
+      <s:enumeration value="Delete"/>
+      <s:enumeration value="Modify"/>
+    </s:restriction>
+  </s:simpleType>
+  <s:element name="DomainNamesChangedNotificationResponse">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="0" type="tns:ArrayOfErrorObject" name="DomainNamesChangedNotificationResult" maxOccurs="1"/>
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+</s:schema>

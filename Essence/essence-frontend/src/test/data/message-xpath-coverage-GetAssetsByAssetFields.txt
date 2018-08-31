@@ -1,0 +1,342 @@
+
+Overall Coverage
+----------------
+
+| value_type                      | msg_name                       |
++---------------------------------+--------------------------------+
+| string                          | GetAssetsByAssetFields         |
+
+| alphaNumericRestrictedString    | GetAssetsByAssetFieldsResponse |x-92
+| anyURI                          | GetAssetsByAssetFieldsResponse |x-94d
+| boolean                         | GetAssetsByAssetFieldsResponse |x-94
+| date                            | GetAssetsByAssetFieldsResponse |x-100
+| dateTime                        | GetAssetsByAssetFieldsResponse |x-93
+| dayNumber                       | GetAssetsByAssetFieldsResponse |x-95
+| decimal                         | GetAssetsByAssetFieldsResponse |x-101
+| double                          | GetAssetsByAssetFieldsResponse |x-95
+*| duration                        | GetAssetsByAssetFieldsResponse | 1236
+| float                           | GetAssetsByAssetFieldsResponse |x-92
+*| floatWithUnits                  | GetAssetsByAssetFieldsResponse | 297 list of floats
+| integer                         | GetAssetsByAssetFieldsResponse |x-101
+| long                            | GetAssetsByAssetFieldsResponse |x-100
+| monthNumber                     | GetAssetsByAssetFieldsResponse |x-94
+| mspDateTime                     | GetAssetsByAssetFieldsResponse |x-93
+| QName                           | GetAssetsByAssetFieldsResponse |x-95d
+| string                          | GetAssetsByAssetFieldsResponse |x-93
+| GUID                            | GetAssetsByAssetFieldsResponse |x-92
+voltageUnits x-97
+voltage x-97
+
+5/4/6/1/1/3=20
+16+4
+
+valueFloat /(not found) 6
+int (not found) 13
+positiveInteger (not found) 17
+base64Binary (not found) 283
+
+* - not supported
+4 missing from this message
+16 covered in this messg
+
+Actual Coverage
+---------------
+
+mysql> select distinct xp.value_type from voob_detail vd, msp_xpath xp where vd.xpath_id=xp.id order by xp.value_type;
++------------------------------+
+| value_type                   |
++------------------------------+
+| alphaNumericRestrictedString |
+| anyURI                       |
+| boolean                      |
+| date                         |
+| dateTime                     |
+| dayNumber                    |
+| decimal                      |
+| double                       |
+| float                        |
+| GUID                         |
+| integer                      |
+| long                         |
+| monthNumber                  |
+| mspDateTime                  |
+| QName                        |
+| string                       |
+| voltage                      |
+| voltageUnits                 |
++------------------------------+
+18 rows in set (0.05 sec)
+
+Coverage Fields
+---------------
+
+ string     |
+| 140913 | AM         | GetAssetsByAssetFieldsResponse | @units                    |        0 | 
+	/Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/CIMObjectList/TapChanger/subsequentDelay/@units 
+| 139534 | AM         | GetAssetsByAssetFieldsResponse | @identifierName          |        0 | 
+	/Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/transformers/transformer/transformerWindings/TransformerWinding/baseVoltageID/primaryIdentifier/@identifierName                                   | string     |
+
+alphaNumericRestrictedString
+| 139814 | AM         | GetAssetsByAssetFieldsResponse | @registeredName |        0 | /Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/transformerBanks/transformerBank/electricLocationFields/substationRef/@registeredName
+| 139815 | AM         | GetAssetsByAssetFieldsResponse | @systemName     |        0 | /Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/transformerBanks/transformerBank/electricLocationFields/substationRef/@systemName                                                                                                                                                                                                            | alphaNumericRestrictedString |
+| 139823 | AM         | GetAssetsByAssetFieldsResponse | @registeredName |        0 | /Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/transformerBanks/transformerBank/electricLocationFields/powerSystemModelRef/@registeredName                                                                                                                                                                                                  | alphaNumericRestrictedString |
+| 139824 | AM         | GetAssetsByAssetFieldsResponse | @systemName     |        0 | /Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/transformerBanks/transformerBank/electricLocationFields/powerSystemModelRef/@systemName 
+
+anyURI
+| 140003 | AM         | GetAssetsByAssetFieldsResponse | @srsName   |        0 | /Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/transformerBanks/transformerBank/transformers/transformer/transformerWindings/TransformerWinding/GMLLine/@srsName  
+
+boolean
+| 138128 | AM         | GetAssetsByAssetFieldsResponse | @GPSValidity             |        0 | /Envelope/Body/GetAssetsByAssetFieldsResponse/assetContainer/switchingDeviceBanks/switchingDeviceBank/switchingDeviceList/switchingDevice/fuse/assetAction/assetLocation/GPSLocation/@GPSValidity 
+
+| voltage                         | GetAssetsByAssetFieldsResponse |
+| voltageUnits                    | GetAssetsByAssetFieldsResponse |
+| current                         | GetAssetsByAssetFieldsResponse |
+| currentUnits                    | GetAssetsByAssetFieldsResponse |
+| extType                         | GetAssetsByAssetFieldsResponse |
+| extValue                        | GetAssetsByAssetFieldsResponse |
+| frequency                       | GetAssetsByAssetFieldsResponse |
+| frequencyUnits                  | GetAssetsByAssetFieldsResponse |
+| gasFlow                         | GetAssetsByAssetFieldsResponse |
+| gasPressure                     | GetAssetsByAssetFieldsResponse |
+| ID                              | GetAssetsByAssetFieldsResponse |
+| loadConnection                  | GetAssetsByAssetFieldsResponse |
+| loadDistribution                | GetAssetsByAssetFieldsResponse |
+| loadInterruptibleType           | GetAssetsByAssetFieldsResponse |
+| meterID                         | GetAssetsByAssetFieldsResponse |
+| money                           | GetAssetsByAssetFieldsResponse |
+| outageDetectionDeviceStatus     | GetAssetsByAssetFieldsResponse |
+| outageDetectionSource           | GetAssetsByAssetFieldsResponse |
+| PANDeviceID                     | GetAssetsByAssetFieldsResponse |
+| PANInterfaceID                  | GetAssetsByAssetFieldsResponse |
+| timeZone                        | GetAssetsByAssetFieldsResponse |
+| totalUsage                      | GetAssetsByAssetFieldsResponse |
+| uom                             | GetAssetsByAssetFieldsResponse |
+| uomKind                         | GetAssetsByAssetFieldsResponse |
++---------------------------------+--------------------------------+
+	<xs:simpleType name="voltageUnits">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Unknown"/>
+			<xs:enumeration value="V"/>
+			<xs:enumeration value="kV"/>
+			<xs:enumeration value="MV"/>
+			<xs:enumeration value="GV"/>
+			<xs:enumeration value="mV"/>
+			<xs:enumeration value="microV"/>
+			<xs:enumeration value="PerUnit"/>
+			<xs:enumeration value="Percent"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+mysql> select value_type, count(*) from msp_xpath where service_cd='AM' and msg_name='GetAssetsByAssetFieldsResponse' and value_type in ('date', 'alphaNumericRestrictedString','anyURI','string','boolean','dateTime','dayNumber','decimal','double','duration','float','integer','long','monthNumber','mspDateTime','QName','GUID') group by value_type;
++------------------------------+----------+
+| value_type                   | count(*) |
++------------------------------+----------+
+| alphaNumericRestrictedString |     1258 |
+| anyURI                       |      426 |
+| boolean                      |      855 |
+| date                         |       10 |
+| dateTime                     |      426 |
+| dayNumber                    |       10 |
+| decimal                      |     1318 |
+| double                       |     1876 |
+| duration                     |        4 |
+| float                        |     1352 |
+| GUID                         |      630 |
+| integer                      |      322 |
+| long                         |      750 |
+| monthNumber                  |       10 |
+| mspDateTime                  |      779 |
+| QName                        |      652 |
+| string                       |    30480 |
++------------------------------+----------+
+17 rows in set (0.26 sec)
+
+
+mysql> select value_type, count(*) from msp_xpath where service_cd='AM' and msg_name='GetAssetsByAssetFieldsResponse' and value_type in ('date', 'alphaNumericRestrictedString','anyURI','string','boolean','dateTime','dayNumber','decimal','double','duration','float','integer','long','monthNumber','mspDateTime','QName','GUID','valueFloat','positiveInteger','int','base64Binary','voltageUnits','voltage','current','currentUnits','frequency','frequencyUnits','gasFlow','gasPressure') group by value_type;
++------------------------------+----------+
+| value_type                   | count(*) |
++------------------------------+----------+
+| alphaNumericRestrictedString |     1258 |
+| anyURI                       |      426 |
+| boolean                      |      855 |
+| current                      |       28 |
+| currentUnits                 |       28 |
+| date                         |       10 |
+| dateTime                     |      426 |
+| dayNumber                    |       10 |
+| decimal                      |     1318 |
+| double                       |     1876 |
+| duration                     |        4 |
+| float                        |     1352 |
+| frequency                    |        5 |
+| frequencyUnits               |        5 |
+| gasFlow                      |        4 |
+| gasPressure                  |        4 |
+| GUID                         |      630 |
+| integer                      |      322 |
+| long                         |      750 |
+| monthNumber                  |       10 |
+| mspDateTime                  |      779 |
+| QName                        |      652 |
+| string                       |    30480 |
+| voltage                      |       81 |
+| voltageUnits                 |       82 |
++------------------------------+----------+
+25 rows in set (0.04 sec)
+
+mysql> select distinct field_name from msp_xpath where service_cd='AM' and msg_name='GetAssetsByAssetFieldsResponse' and value_type='decimal';
++------------+
+| field_name |
++------------+
+| X          |
+| Y          |
+| Z          |
+| @UTCOffset |
++------------+
+4 rows in set (0.01 sec)
+
+mysql> select distinct field_name from msp_xpath where service_cd='AM' and msg_name='GetAssetsByAssetFieldsResponse' and value_type='integer';
++------------------+
+| field_name       |
++------------------+
+| noOfCustomers    |
+| sequenceNumber   |
+| priorityOrder    |
+| numberOfBushings |
+| maximumSections  |
+| normalSections   |
+| binIndex         |
+| phases           |
+| wires            |
+| dials            |
+| softStartType    |
+| numberOfRelays   |
+| relayNumber      |
+| counts           |
+| daysRemaining    |
+| recordNumber     |
+| model            |
+| numberOfSteps    |
++------------------+
+18 rows in set (0.07 sec)
+
+mysql> select distinct field_name from msp_xpath where service_cd='AM' and msg_name='GetAssetsByAssetFieldsResponse' and value_type='date';
++------------+
+| field_name |
++------------+
+| date       |
++------------+
+1 row in set (0.04 sec)
+
+mysql> select distinct field_name from msp_xpath where service_cd='AM' and msg_name='GetAssetsByAssetFieldsResponse' and value_type='long';
++------------+
+| field_name |
++------------+
+| number     |
+| numSat     |
+| phases     |
++------------+
+
+Other Coverage
+---------------
+mysql> select service_cd, msg_name, field_name, value_type from msp_xpath where value_type='valueFloat';
++------------+--------------------------------------+------------+------------+
+| service_cd | msg_name                             | field_name | value_type |
++------------+--------------------------------------+------------+------------+
+| CB         | ChangeUsageData                      | value      | valueFloat | x-102
+| CB         | GetUsageByAccountIDsResponse         | value      | valueFloat |
+| CB         | GetUsageByMeterIDsResponse           | value      | valueFloat |
+| CB         | GetUsageByMonthResponse              | value      | valueFloat |
+| CB         | GetUsageByServiceLocationIDsResponse | value      | valueFloat |
+| NOT        | UsageChangedNotification             | value      | valueFloat |
++------------+--------------------------------------+------------+------------+
+6 rows in set (0.01 sec)
+mysql> select service_cd, msg_name, field_name, value_type from msp_xpath where value_type='int';
++------------+------------------------------------------------------------------------+------------+------------+
+| service_cd | msg_name                                                               | field_name | value_type |
++------------+------------------------------------------------------------------------+------------+------------+
+| MDM        | GetLPReadingsByBillingCycleIntervalDataResponse                        | idx        | int        |
+| MDM        | GetMeterReadingsByBillingCycleIntervalDataResponse                     | idx        | int        |
+| MR         | GetLatestMeterReadingsByMeterGroupIntervalDataResponse                 | idx        | int        |
+| MR         | GetLatestMeterReadingsByMeterIDsAndReadingTypeCodeIntervalDataResponse | idx        | int        |
+| MR         | GetLatestMeterReadingsByMeterIDsIntervalDataResponse                   | idx        | int        |
+| MR         | GetLatestMeterReadingsByReadingTypeCodeIntervalDataResponse            | idx        | int        |
+| MR         | GetLPReadingsByDateIntervalDataResponse                                | idx        | int        |
+| MR         | GetLPReadingsByMeterIDIntervalDataResponse                             | idx        | int        |
+| MR         | GetMeterReadingsByDateAndReadingTypeCodeIntervalDataResponse           | idx        | int        |
+| MR         | GetMeterReadingsByDateIntervalDataResponse                             | idx        | int        |x-103
+| MR         | GetMeterReadingsByMeterIDsAndFieldNameIntervalDataResponse             | idx        | int        |
+| MR         | GetMeterReadingsByMeterIDsIntervalDataResponse                         | idx        | int        |
+| NOT        | IntervalDataNotification                                               | idx        | int        |
++------------+------------------------------------------------------------------------+------------+------------+
+13 rows in set (0.08 sec)
+mysql> select service_cd, msg_name, field_name, value_type from msp_xpath where value_type='positiveInteger';
++------------+----------------------------------------------+---------------------------+-----------------+
+| service_cd | msg_name                                     | field_name                | value_type      |
++------------+----------------------------------------------+---------------------------+-----------------+
+| AVL        | GetAVLMessagesResponse                       | maxEngineSpeedLastReading | positiveInteger |
+| AVL        | GetAVLMessagesByAVLRefsResponse              | maxEngineSpeedLastReading | positiveInteger |
+| AVL        | GetAVLMessagesByVehicleNamesResponse         | maxEngineSpeedLastReading | positiveInteger |
+| AVL        | GetLastAVLMessagesResponse                   | maxEngineSpeedLastReading | positiveInteger |
+| DA         | GetAllSCADAAnalogsResponse                   | value                     | positiveInteger |x-104
+| DA         | GetSCADAAnalogsByDateRangeAndPointIDResponse | value                     | positiveInteger |
+| DA         | GetSCADAAnalogsBySCADAPointIDsResponse       | value                     | positiveInteger |
+| DR         | GetAllSubstationLoadControlStatusesResponse  | value                     | positiveInteger |
+| NOT        | AnalogChangedNotificationByPointID           | value                     | positiveInteger |
+| NOT        | AVLMessageNotification                       | maxEngineSpeedLastReading | positiveInteger |
+| NOT        | SCADAAnalogChangedNotification               | value                     | positiveInteger |
+| NOT        | SCADAAnalogChangedNotificationByPointID      | value                     | positiveInteger |
+| NOT        | SCADAAnalogChangedNotificationForPower       | value                     | positiveInteger |
+| NOT        | SCADAAnalogChangedNotificationForVoltage     | value                     | positiveInteger |
+| SCADA      | GetAllSCADAAnalogsResponse                   | value                     | positiveInteger |
+| SCADA      | GetSCADAAnalogsByDateRangeAndPointIDResponse | value                     | positiveInteger |
+| SCADA      | GetSCADAAnalogsBySCADAPointIDsResponse       | value                     | positiveInteger |
++------------+----------------------------------------------+---------------------------+-----------------+
+17 rows in set (0.21 sec)
+mysql> select distinct service_cd from msp_xpath where value_type='base64Binary';
++------------+
+| service_cd |
++------------+
+| AM         |
+| ASM        |
+| AVL        |
+| CB         |
+| CD         |
+| CH         |
+| CP         |
+| DA         |
+| DER        |
+| DGN        |
+| DM         |
+| DR         |
+| EA         |
+| EDTR       |
+| FA         |
+| GIS        |
+| INV        |
+| LOC        |
+| MDM        |
+| MM         |
+| MOD        |
+| MR         |
+| NOT        |
+| OA         |
+| OD         |
+| PAN        |
+| PG         |
+| PPM        |
+| PP         |
+| RM         |
+| SA         |
+| SCADA      |
+| SWO        |
+| WEA        |
+| WG         |
+| WO         |
+| WP         |
+| WR         |
+| WV         |x-105
++------------+
+39 rows in set (0.03 sec)
+

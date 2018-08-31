@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MultiSpeakerClass</class>
+ <widget class="QMainWindow" name="MultiSpeakerClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>739</width>
+    <height>656</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MultiSpeaker</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="MultiSpeaker.qrc">
+    <normaloff>:/MultiSpeaker/Resources/MultiSpeaker.Ico</normaloff>:/MultiSpeaker/Resources/MultiSpeaker.Ico</iconset>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout_7">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QSplitter" name="MainSplitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="TitleHeaderWidget" name="TopologyHeader" native="true"/>
+        </item>
+        <item>
+         <widget class="HostView" name="TheHostView"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="TimelineContainerWidget" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="TimelineHeaderWidget" name="TimelineHeader" native="true"/>
+        </item>
+        <item>
+         <widget class="TimelineView" name="TheTimelineView">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>200</width>
+            <height>60</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>60</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="spacing">
+           <number>2</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="toolTip">
+             <string>Timestamp (Beginning of Scenario)</string>
+            </property>
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="TimestampLabel">
+            <property name="text">
+             <string>0:00:00</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QToolButton" name="TimelineSpanBtn">
+            <property name="toolTip">
+             <string>Duration of Scenario Timeline.  Click to Change.</string>
+            </property>
+            <property name="text">
+             <string>0:00:00</string>
+            </property>
+            <property name="popupMode">
+             <enum>QToolButton::InstantPopup</enum>
+            </property>
+            <property name="autoRaise">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="TitleHeaderWidget" name="MethodEventsHeader" native="true"/>
+        </item>
+        <item>
+         <widget class="QListView" name="TimelineEventListView"/>
+        </item>
+       </layout>
+       <zorder>MethodEventsHeader</zorder>
+       <zorder>TimelineEventListView</zorder>
+       <zorder>TimelineHeader</zorder>
+       <zorder>TheTimelineView</zorder>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>TitleHeaderWidget</class>
+   <extends>QWidget</extends>
+   <header>TitleHeaderWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TimelineView</class>
+   <extends>QGraphicsView</extends>
+   <header>TimelineView.h</header>
+  </customwidget>
+  <customwidget>
+   <class>HostView</class>
+   <extends>QGraphicsView</extends>
+   <header>HostView.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TimelineHeaderWidget</class>
+   <extends>QWidget</extends>
+   <header>TimelineHeaderWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="MultiSpeaker.qrc"/>
+ </resources>
+ <connections/>
+</ui>

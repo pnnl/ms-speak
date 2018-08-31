@@ -1,0 +1,22 @@
+
+  ** NOTE:  always run v3Client after JabbaPipe and v5Server have been started. **
+  
+>: python v5Server.py
+>: python v3Client.py
+
+or 
+
+>: python v5Server.py -i v5_mr_GetLatestMeterReadingsResponse.xml
+>: python v3Client.py -i v3_mr_GetLatestReadings.xml
+
+or 
+
+>: python v5Server.py -ip 64.184.186.25 -p 7070
+>: python v3Client.py -ip 64.184.186.24 -p 9090
+
+or (to run in Loopback mode)
+>: python v5Server.py -L
+>: python v3Client.py -L
+
+to show pid of stalled sockets:
+    sudo netstat -pl | grep port 

@@ -1,0 +1,260 @@
+2017-03-16 00:20:21 INFO    
+ ******* Jabba Started. *******
+2017-03-16 00:20:21 INFO    Public IP of system is: 130.20.185.0
+2017-03-16 00:20:21 INFO    Pipeline Server at 130.20.185.0 is listening on 0.0.0.0:8080
+2017-03-16 00:20:30 INFO    Pipeline Server Connected to Request Client @/130.20.185.35
+2017-03-16 00:20:30 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 00:20:30 INFO    ->> Request Received from 130.20.185.35
+2017-03-16 00:20:30 INFO    Processing Request for Path: '/'
+2017-03-16 00:20:30 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 00:20:32 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 00:20:32 INFO    Received Response from 127.0.0.1
+2017-03-16 00:20:32 INFO    1 out of 1 Requests sucessfully forwarded.
+2017-03-16 00:20:33 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 00:20:33 INFO    1 out of 1 Responses sucessfully forwarded.
+2017-03-16 00:21:26 INFO    ->> Request Received from 130.20.185.35
+2017-03-16 00:21:26 INFO    Processing Request for Path: '/'
+2017-03-16 00:21:26 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 00:21:27 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 00:21:27 INFO    2 out of 2 Requests sucessfully forwarded.
+2017-03-16 00:21:27 INFO    Received Response from 127.0.0.1
+2017-03-16 00:21:28 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 00:21:28 INFO    2 out of 2 Responses sucessfully forwarded.
+2017-03-16 00:21:57 INFO    ->> Request Received from 130.20.185.35
+2017-03-16 00:21:57 INFO    Processing Request for Path: '/'
+2017-03-16 00:21:57 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 00:21:58 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 00:21:58 INFO    3 out of 3 Requests sucessfully forwarded.
+2017-03-16 00:21:58 INFO    Received Response from 127.0.0.1
+2017-03-16 00:21:59 INFO    Pipeline Server Connected to Request Client @/130.20.185.35
+2017-03-16 00:21:59 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 00:21:59 INFO    ->> Request Received from 130.20.185.35
+2017-03-16 00:21:59 INFO    Processing Request for Path: '/'
+2017-03-16 00:21:59 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 00:21:59 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 00:21:59 INFO    3 out of 3 Responses sucessfully forwarded.
+2017-03-16 00:22:01 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 00:22:01 INFO    4 out of 4 Requests sucessfully forwarded.
+2017-03-16 09:16:35 INFO    
+ ******* Jabba Started. *******
+2017-03-16 09:16:35 INFO    Public IP of system is: 130.20.185.0
+2017-03-16 09:16:35 INFO    Pipeline Server at 130.20.185.0 is listening on 0.0.0.0:8080
+2017-03-16 09:16:43 INFO    
+ ******* Jabba Started. *******
+2017-03-16 09:16:43 INFO    Public IP of system is: 130.20.185.0
+2017-03-16 09:16:43 INFO    Pipeline Server at 130.20.185.0 is listening on 0.0.0.0:8080
+2017-03-16 09:16:51 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:16:51 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:16:51 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:16:51 INFO    Processing Request for Path: '/'
+2017-03-16 09:16:51 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:16:52 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:16:52 INFO    1 out of 1 Requests sucessfully forwarded.
+2017-03-16 09:16:52 INFO    Received Response from 127.0.0.1
+2017-03-16 09:25:01 INFO    
+ ******* Jabba Started. *******
+2017-03-16 09:25:01 INFO    Public IP of system is: 130.20.185.0
+2017-03-16 09:25:01 INFO    Pipeline Server at 130.20.185.0 is listening on 0.0.0.0:8080
+2017-03-16 09:25:08 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:25:08 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:25:08 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:25:08 INFO    Processing Request for Path: '/'
+2017-03-16 09:25:08 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:25:09 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:25:09 INFO    Received Response from 127.0.0.1
+2017-03-16 09:25:09 INFO    1 out of 1 Requests sucessfully forwarded.
+2017-03-16 09:25:10 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:28:13 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:28:13 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:28:13 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:28:13 INFO    Processing Request for Path: '/'
+2017-03-16 09:28:13 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:28:14 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:28:14 INFO    2 out of 2 Requests sucessfully forwarded.
+2017-03-16 09:28:14 INFO    Received Response from 127.0.0.1
+2017-03-16 09:32:07 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:32:07 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:32:07 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:32:07 INFO    Processing Request for Path: '/'
+2017-03-16 09:32:07 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:32:07 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:32:07 INFO    3 out of 3 Requests sucessfully forwarded.
+2017-03-16 09:32:07 INFO    Received Response from 127.0.0.1
+2017-03-16 09:33:38 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:33:38 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:33:38 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:33:38 INFO    Processing Request for Path: '/'
+2017-03-16 09:33:38 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:33:39 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:33:39 INFO    4 out of 4 Requests sucessfully forwarded.
+2017-03-16 09:33:39 INFO    Received Response from 127.0.0.1
+2017-03-16 09:37:14 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:37:14 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:37:14 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:37:14 INFO    Processing Request for Path: '/'
+2017-03-16 09:37:14 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:37:15 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:37:15 INFO    5 out of 5 Requests sucessfully forwarded.
+2017-03-16 09:37:15 INFO    Received Response from 127.0.0.1
+2017-03-16 09:37:35 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 09:37:35 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 09:37:35 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:37:35 INFO    Processing Request for Path: '/'
+2017-03-16 09:37:35 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:37:36 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:37:36 INFO    6 out of 6 Requests sucessfully forwarded.
+2017-03-16 09:37:36 INFO    Received Response from 127.0.0.1
+2017-03-16 09:37:37 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:37:37 INFO    1 out of 6 Responses sucessfully forwarded.
+2017-03-16 09:37:59 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:37:59 INFO    Processing Request for Path: '/'
+2017-03-16 09:37:59 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:37:59 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:37:59 INFO    7 out of 7 Requests sucessfully forwarded.
+2017-03-16 09:37:59 INFO    Received Response from 127.0.0.1
+2017-03-16 09:38:00 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:38:00 INFO    2 out of 7 Responses sucessfully forwarded.
+2017-03-16 09:38:02 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:38:02 INFO    Processing Request for Path: '/'
+2017-03-16 09:38:02 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:38:03 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:38:03 INFO    8 out of 8 Requests sucessfully forwarded.
+2017-03-16 09:38:03 INFO    Received Response from 127.0.0.1
+2017-03-16 09:38:03 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:38:03 INFO    3 out of 8 Responses sucessfully forwarded.
+2017-03-16 09:38:05 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:38:05 INFO    Processing Request for Path: '/'
+2017-03-16 09:38:05 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:38:06 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:38:06 INFO    9 out of 9 Requests sucessfully forwarded.
+2017-03-16 09:38:06 INFO    Received Response from 127.0.0.1
+2017-03-16 09:38:07 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:38:07 INFO    4 out of 9 Responses sucessfully forwarded.
+2017-03-16 09:38:09 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:38:09 INFO    Processing Request for Path: '/'
+2017-03-16 09:38:09 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:38:10 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:38:10 INFO    10 out of 10 Requests sucessfully forwarded.
+2017-03-16 09:38:10 INFO    Received Response from 127.0.0.1
+2017-03-16 09:38:10 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:38:10 INFO    5 out of 10 Responses sucessfully forwarded.
+2017-03-16 09:38:12 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:38:12 INFO    Processing Request for Path: '/'
+2017-03-16 09:38:12 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:38:13 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:38:13 INFO    11 out of 11 Requests sucessfully forwarded.
+2017-03-16 09:38:13 INFO    Received Response from 127.0.0.1
+2017-03-16 09:38:14 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:38:14 INFO    6 out of 11 Responses sucessfully forwarded.
+2017-03-16 09:38:16 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 09:38:16 INFO    Processing Request for Path: '/'
+2017-03-16 09:38:16 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 09:38:17 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 09:38:17 INFO    12 out of 12 Requests sucessfully forwarded.
+2017-03-16 09:38:17 INFO    Received Response from 127.0.0.1
+2017-03-16 09:38:17 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 09:38:17 INFO    7 out of 12 Responses sucessfully forwarded.
+2017-03-16 10:05:22 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 10:05:22 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 10:05:22 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:05:22 INFO    Processing Request for Path: '/'
+2017-03-16 10:05:22 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:05:23 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:05:23 INFO    13 out of 13 Requests sucessfully forwarded.
+2017-03-16 10:05:23 INFO    Received Response from 127.0.0.1
+2017-03-16 10:05:24 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:05:24 INFO    8 out of 13 Responses sucessfully forwarded.
+2017-03-16 10:05:28 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:05:28 INFO    Processing Request for Path: '/'
+2017-03-16 10:05:28 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:05:29 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:05:29 INFO    14 out of 14 Requests sucessfully forwarded.
+2017-03-16 10:05:29 INFO    Received Response from 127.0.0.1
+2017-03-16 10:05:30 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:05:30 INFO    9 out of 14 Responses sucessfully forwarded.
+2017-03-16 10:05:37 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 10:05:37 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 10:05:37 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:05:37 INFO    Processing Request for Path: '/'
+2017-03-16 10:05:37 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:05:38 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:05:38 INFO    15 out of 15 Requests sucessfully forwarded.
+2017-03-16 10:05:38 INFO    Received Response from 127.0.0.1
+2017-03-16 10:07:06 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 10:07:06 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 10:07:06 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:07:06 INFO    Processing Request for Path: '/'
+2017-03-16 10:07:06 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:07:06 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:07:06 INFO    16 out of 16 Requests sucessfully forwarded.
+2017-03-16 10:07:06 INFO    Received Response from 127.0.0.1
+2017-03-16 10:18:46 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 10:18:46 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 10:18:46 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:18:46 INFO    Processing Request for Path: '/'
+2017-03-16 10:18:46 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:18:47 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:18:47 INFO    17 out of 17 Requests sucessfully forwarded.
+2017-03-16 10:18:47 INFO    Received Response from 127.0.0.1
+2017-03-16 10:18:47 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:18:47 INFO    10 out of 17 Responses sucessfully forwarded.
+2017-03-16 10:18:47 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:18:47 INFO    Processing Request for Path: '/'
+2017-03-16 10:18:47 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:18:48 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:18:48 INFO    18 out of 18 Requests sucessfully forwarded.
+2017-03-16 10:18:48 INFO    Received Response from 127.0.0.1
+2017-03-16 10:18:49 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:18:49 INFO    11 out of 18 Responses sucessfully forwarded.
+2017-03-16 10:19:37 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 10:19:37 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 10:19:37 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:19:37 INFO    Processing Request for Path: '/'
+2017-03-16 10:19:37 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:19:37 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:19:37 INFO    19 out of 19 Requests sucessfully forwarded.
+2017-03-16 10:19:37 INFO    Received Response from 127.0.0.1
+2017-03-16 10:19:38 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:19:38 INFO    12 out of 19 Responses sucessfully forwarded.
+2017-03-16 10:19:38 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:19:38 INFO    Processing Request for Path: '/'
+2017-03-16 10:19:38 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:19:39 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:19:39 INFO    20 out of 20 Requests sucessfully forwarded.
+2017-03-16 10:19:39 INFO    Received Response from 127.0.0.1
+2017-03-16 10:19:39 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:19:39 INFO    13 out of 20 Responses sucessfully forwarded.
+2017-03-16 10:19:49 INFO    Pipeline Server Connected to Request Client @/127.0.0.1
+2017-03-16 10:19:49 INFO    -Connecting to the destination endpoint server at 127.0.0.1:7777 ...
+2017-03-16 10:19:49 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:19:49 INFO    Processing Request for Path: '/'
+2017-03-16 10:19:49 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:19:50 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:19:50 INFO    21 out of 21 Requests sucessfully forwarded.
+2017-03-16 10:19:50 INFO    Received Response from 127.0.0.1
+2017-03-16 10:19:50 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:19:50 INFO    14 out of 21 Responses sucessfully forwarded.
+2017-03-16 10:19:50 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:19:50 INFO    Processing Request for Path: '/'
+2017-03-16 10:19:50 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:19:51 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:19:51 INFO    22 out of 22 Requests sucessfully forwarded.
+2017-03-16 10:19:51 INFO    Received Response from 127.0.0.1
+2017-03-16 10:19:52 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:19:52 INFO    15 out of 22 Responses sucessfully forwarded.
+2017-03-16 10:19:52 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:19:52 INFO    Processing Request for Path: '/'
+2017-03-16 10:19:52 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:19:53 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:19:53 INFO    23 out of 23 Requests sucessfully forwarded.
+2017-03-16 10:19:53 INFO    Received Response from 127.0.0.1
+2017-03-16 10:19:53 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:19:53 INFO    16 out of 23 Responses sucessfully forwarded.
+2017-03-16 10:19:53 INFO    ->> Request Received from 127.0.0.1
+2017-03-16 10:19:53 INFO    Processing Request for Path: '/'
+2017-03-16 10:19:53 INFO    SUCCESS ----->validating V3 Request.
+2017-03-16 10:19:54 INFO    SUCCESS ----->translating V3 Request.
+2017-03-16 10:19:54 INFO    24 out of 24 Requests sucessfully forwarded.
+2017-03-16 10:19:54 INFO    Received Response from 127.0.0.1
+2017-03-16 10:19:55 INFO    SUCCESS <-----translating V5 Response.
+2017-03-16 10:19:55 INFO    17 out of 24 Responses sucessfully forwarded.
