@@ -65,16 +65,19 @@
 #include <QTime>
 
 #include "ServerWorker.h"
+#include "HttpResponse.h"
 
 //------------------------------------------------------------------------------
 // ServerWorker
 //
-ServerWorker::ServerWorker(qintptr socketDescriptor, QObject* parent)
+ServerWorker::ServerWorker(qintptr socketDescriptor, QByteArray& qba, QObject* parent)
   : QObject(parent),
 	m_bufferSize(0),
 	m_bytesRead(0),
+	m_bytesYettoRead(0),
 	m_headerRead(false),
-	m_socketDescriptor(socketDescriptor)
+	m_socketDescriptor(socketDescriptor),
+	m_responseFile(qba)
 {
 }
 //------------------------------------------------------------------------------
@@ -92,12 +95,16 @@ ServerWorker::~ServerWorker()
 void ServerWorker::ReadMessage(QTcpSocket* socket)
 {
 	QByteArray Header = "\n*** HTTP Header ***\n";
-	QString errString;
+	QString errString = "Failed to read Header.";
 	bool ContentLenRead = false;
-	qint64 bytesAvailable = socket->bytesAvailable();
-	//qDebug() << "Bytes Available:" << bytesAvailable;
-	if (bytesAvailable)
+	quint16 content_len=0;
+	qint64 initBytesAvailable = socket->bytesAvailable(); // max tcp packet: 65,535, dunno why its a qint64...
+	qint64 bytesAvailable=initBytesAvailable;
+
+	//qDebug() << "Initial Bytes Available:" << initBytesAvailable;
+	if( initBytesAvailable && (m_bytesYettoRead == 0) )
 	{
+		m_headerRead = false;
 		// the header ends with a final empty line, that separates the data block from the header block.
 		QString CLString;
 		QString CL = "Content-Length:";
@@ -105,7 +112,6 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 			if( socket->canReadLine() ){
 				QString line =  socket->readLine();
 				Header.append(line);
-				//qDebug() << "Read Line from Socket: " << line;
 				if( line.startsWith(CL) ){
 					ContentLenRead = true;
 					CLString = line;
@@ -121,18 +127,17 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 					QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 			}
 			bytesAvailable = socket->bytesAvailable();
+			//qDebug() << "Bytes Now Available:" << bytesAvailable;
 		}while( !m_headerRead && bytesAvailable );
 
 		if( ContentLenRead ){
-			quint16 content_len;
 			QStringList LenToken = CLString.split(CL, QString::SkipEmptyParts, Qt::CaseInsensitive);
 			if (LenToken.length() == 1){
 				QTextStream stream(&LenToken[0]);
 				stream >> content_len;
 				//qDebug() << "Content Length is " << content_len;
-				//errString = QString("Content Length is %1.").arg(content_len);
-				//emit Message(errString.toLatin1());
 				m_bufferSize = content_len;
+				m_bytesYettoRead = content_len;
 			}
 			else{
 				errString =  "Failed to extract " + CL;
@@ -141,26 +146,36 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 		else{
 			errString =   "Failed to read Content Length ";
 		}
+		if (!m_headerRead)
+		{
+			qDebug() << errString;
+			emit Message(errString.toLatin1());
+			socket->readAll(); // read any remaining data
+			m_bytesYettoRead = 0;
+			return;
+		}
+		emit Message(Header);
+		//qDebug() << QString("Header Size: %1.").arg(initBytesAvailable-bytesAvailable);
+		//qDebug() << "Bytes left to read: " << bytesAvailable;
 	}
-	emit Message(Header);
-
-	if (!m_headerRead)
-	{
-		qDebug() << errString;
-		emit Message(errString.toLatin1());
-		//ReadMessage(socket);
-		socket->readAll(); // read any remaining data
+	else{
+		if( initBytesAvailable == 0 ){
+			//qDebug() << "No bytesAvailable";
+			return;
+		}
+		m_bufferSize =  static_cast <int>(m_bytesYettoRead);
+	}
+	if( bytesAvailable == 0 )
 		return;
-	}
-	m_headerRead = false;
-
-	Header = "*** Message Content ***\n";
+	Header = "*** Message Content ***\n"; // note: reusing 'Header' string
 	emit Message(Header);
 	QByteArray block;
 	if (m_bufferSize == 0) // buffer size of 0 means we are streaming
 	{
 		block = socket->readAll(); // We are streaming so read it all
 		emit Message(block);  // We are streaming with no idea of size of message so just emit and return
+		qDebug() << "Streaming";
+		m_bytesYettoRead = 0;
 		return;
 	}
 	else
@@ -168,31 +183,71 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 
 	m_buffer.append(block);
 	m_bytesRead = block.size();
-
+	m_bytesYettoRead -= m_bytesRead;
 	if (m_bytesRead >= m_bufferSize)
 	{
-		/* emit complete message Get incoming Message
-		QByteArray data;
-		QDataStream in(m_buffer);
-		in.setByteOrder(QDataStream::BigEndian); // network byte order
-		in >> data;*/
-		//emit Message(m_bytesRead, m_buffer);
+		//qDebug() << "Read all " << m_bytesRead << " bytes out of " << m_bufferSize;
 		emit Message(m_buffer);
-		//m_headerRead = false;
+		m_buffer.clear();
 	}
-	if (socket->bytesAvailable())
-		ReadMessage(socket);
+	else{
+		//qDebug() << "Only Read " << m_bytesRead << " bytes out of " << m_bufferSize;
+		emit Message(m_buffer);
+		m_buffer.clear();
+		return;
+	}
+	if (socket->bytesAvailable()){
+		qDebug() << "recursive ReadMessage";
+		ReadMessage(socket); // recursive, will reset ContentLenRead
+	}
+	QByteArray respdata = m_responseFile;
+	if( respdata.isEmpty() )
+		respdata="\n*** No Response File Selected *** ";
 
-	socket->write("HTTP/1.1 200 OK\r\n********************XYZX"); // \r needs to be before \n
-	/*
-	 * Send back response:
-	socket->write("Content-Type: text/html\r\n");
-	socket->write("Content-Length: text/html\r\n");
-	socket->write(_response_msg);
-	*/
+	SendResponse(200, respdata, socket);
+
 	//  reset;sudo tcpdump -i lo -v	# capture loopback traffic
-	//  show all data, in hex:  sudo tcpdump -i lo tcp and port 7777 -s0 -vv -X -c 1000
+	//  show all data, in hex:  sudo tcpdump -i lo tcp and dst port 8888 -s0 -vv -X -c 1000
+	// reset;sudo tcpdump -i lo tcp and dst port 8888 -s0 -A -c 100 -q -t -v >= 400
 }
+//------------------------------------------------------------------------------
+// SendResponse
+//
+void ServerWorker::SendResponse( int code, QByteArray& data, QTcpSocket* socket )
+{
+	QString str;
+	HttpResponse response(socket); // statusCode=200, statusText="OK";
+	if( code != 200 ){
+		response.setStatusFromCode(code );
+	}
+
+	response.setHeader("Content-Type", response.getContentType(0));
+	response.setHeader("Content-Length",QByteArray::number(data.size()));
+	response.setHeader("Connection","keep-alive"); // "close"
+	response.setHeader("Server","MultiSpeakerServer");
+	response.setHeader("SOAPAction", "CD/InitiateConnectDisconnectResponse");
+
+	response.write(data,true);
+
+	/*
+	https://developer.mozilla.org/en-US/docs/Web/HTTP
+	The Accept request HTTP header advertises which content types, expressed as MIME types, the client is
+	able to understand. Using content negotiation, the server then selects one of the proposals, uses it
+	and informs the client of its choice with the Content-Type response header.
+
+	The Host request header specifies the domain name of the server (for virtual hosting), and (optionally)
+	the TCP port number on which the server is listening.
+	If no port is given, the default port for the service requested (e.g., "80" for an HTTP URL) is implied.
+	A Host header field must be sent in all HTTP/1.1 request messages. A 400 (Bad Request) status code will
+	be sent to any HTTP/1.1 request message that lacks a Host header field or contains more than one.
+
+	if you are missing the Content-Length header on your HTTP response,
+	the HTTP client does not know
+	when the response is complete, so it keeps on waiting for more
+	*/
+
+}
+
 //------------------------------------------------------------------------------
 // OnConnected
 //

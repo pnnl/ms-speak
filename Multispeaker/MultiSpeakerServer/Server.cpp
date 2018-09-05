@@ -62,6 +62,7 @@
 #include <QSettings>
 #include <QTcpSocket>
 #include <QThread>
+#include <QFile>
 
 #include "Server.h"
 #include "ServerWorker.h"
@@ -89,7 +90,7 @@ void Server::incomingConnection(qintptr socketDescriptor)
 {
 	qDebug() << "Server::incomingConnection():" << serverAddress().toString() << serverPort();
 	QThread* thread = new QThread;
-	ServerWorker* worker = new ServerWorker(socketDescriptor);
+	ServerWorker* worker = new ServerWorker(socketDescriptor,m_responseFile);
 	worker->moveToThread(thread);
 	connect(worker, SIGNAL(SocketError(QAbstractSocket::SocketError, const QString&)), this, SIGNAL(SocketError(QAbstractSocket::SocketError, const QString&)));
 	connect(worker, SIGNAL(Finished()), thread, SLOT(quit()));
@@ -99,4 +100,16 @@ void Server::incomingConnection(qintptr socketDescriptor)
 	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 	connect(thread, SIGNAL(started()), worker, SLOT(OnStart()));
 	thread->start();
+}
+//------------------------------------------------------------------------------
+// SetResponseFile
+//
+bool Server::SetResponseFile(const QString& path)
+{
+	QFile responseFile(path);
+	if (!responseFile.open(QIODevice::ReadOnly))
+		return false;
+
+	m_responseFile = responseFile.readAll();
+	return true;
 }

@@ -66,9 +66,12 @@ class Server : public QTcpServer
 {
 	Q_OBJECT
 private:
+	QByteArray m_responseFile;
 public:
 	Server(QObject* parent);
 	~Server();
+	bool SetResponseFile(const QString& file);
+	QByteArray& ResponseFile(){ return m_responseFile; }
 
 protected:
 	virtual void incomingConnection(qintptr socketDescriptor);

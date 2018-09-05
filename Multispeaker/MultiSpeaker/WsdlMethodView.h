@@ -116,7 +116,7 @@ private slots:
 	void OnInfoToggled();
 	void OnSaveClicked();
 	void OnEnableClicked(bool checked);
-	void OnRestoreClicked();
+	bool OnRestoreClicked(int clicked);
 	void OnXmlExport();
 	void OnXmlItemChanged(QStandardItem* item);
 };

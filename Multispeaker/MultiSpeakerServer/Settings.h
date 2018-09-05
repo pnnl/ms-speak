@@ -67,5 +67,6 @@ const QString SK_SSL_ENABLED = QStringLiteral("sk_ssl_enabled");
 const QString SK_SSL_CERT_FILE = QStringLiteral("sk_ssl_cert_file");
 const QString SK_SSL_PRIVATE_KEY_FILE = QStringLiteral("sk_ssl_private_key_file");
 const QString SK_SSL_CERT_FOLDER = QStringLiteral("sk_ssl_cert_folder");
+const QString SK_RESPONSE_FILE = QStringLiteral("sk_response_file");
 
 #endif // SPEAKERSERVERSETTINGS_H

@@ -101,71 +101,71 @@ SslServer::~SslServer()
 //
 void SslServer::incomingConnection(qintptr socketDescriptor)
 {
-  qDebug() << "SslServer::incomingConnection()";
-  QSslSocket* socket = new QSslSocket(this);
-  if (!socket->setSocketDescriptor(socketDescriptor))
-  {
-    qDebug() << "SslServer::incomingConnection() ERROR: unable to setSocketDescriptor()";
-    return;
-  }
+	qDebug() << "SslServer::incomingConnection()";
+	QSslSocket* socket = new QSslSocket(this);
+	if (!socket->setSocketDescriptor(socketDescriptor))
+	{
+		qDebug() << "SslServer::incomingConnection() ERROR: unable to setSocketDescriptor()";
+		return;
+	}
 
-  connect(socket, SIGNAL(connected()), this, SLOT(OnConnected()));
-  connect(socket, SIGNAL(disconnected()), this, SLOT(OnDisconnected()));
-  connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(OnError(QAbstractSocket::SocketError)));
+	connect(socket, SIGNAL(connected()), this, SLOT(OnConnected()));
+	connect(socket, SIGNAL(disconnected()), this, SLOT(OnDisconnected()));
+	connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(OnError(QAbstractSocket::SocketError)));
 
-  m_headerSize = 0; // set to HTTP 1.1 POST header size, approx.
-  //m_headerSize = 0;
-  //m_headerSize += (m_parseSourceAndDestIdFlag) ? (2 * sizeof(quint32)) : 0;
-  //m_headerSize += (m_parseContentLengthFlag) ? (sizeof(quint32)) : 0;
+	m_headerSize = 0; // set to HTTP 1.1 POST header size, approx.
+	//m_headerSize = 0;
+	//m_headerSize += (m_parseSourceAndDestIdFlag) ? (2 * sizeof(quint32)) : 0;
+	//m_headerSize += (m_parseContentLengthFlag) ? (sizeof(quint32)) : 0;
 
-  m_headerRead = (m_headerSize == 0) ? true : false; // If the header size if 0 then there is no header
+	m_headerRead = (m_headerSize == 0) ? true : false; // If the header size if 0 then there is no header
 
-  connect(socket, SIGNAL(encrypted()), this, SLOT(OnEncrypted()));
-  connect(socket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(OnSslErrors(const QList<QSslError>&)));
-  connect(socket, SIGNAL(peerVerifyError(const QSslError&)), this, SLOT(OnPeerVerifyError(const QSslError&)));
+	connect(socket, SIGNAL(encrypted()), this, SLOT(OnEncrypted()));
+	connect(socket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(OnSslErrors(const QList<QSslError>&)));
+	connect(socket, SIGNAL(peerVerifyError(const QSslError&)), this, SLOT(OnPeerVerifyError(const QSslError&)));
 
-  socket->setLocalCertificate(m_sslLocalCertificate);
-  socket->setPrivateKey(m_sslPrivateKey);
-  socket->setProtocol(m_sslProtocol);
-  socket->startServerEncryption();
-  //addPendingConnection(socket);
+	socket->setLocalCertificate(m_sslLocalCertificate);
+	socket->setPrivateKey(m_sslPrivateKey);
+	socket->setProtocol(m_sslProtocol);
+	socket->startServerEncryption();
+	//addPendingConnection(socket);
 }
 //------------------------------------------------------------------------------
 // SetSslCertFolder
 //
 bool SslServer::SetSslCertFolder(const QString& folder)
 {
-  if (!QFileInfo::exists(folder))
-    return false;
+	if (!QFileInfo::exists(folder))
+		return false;
 
-  m_sslCertFolder = folder;
-  return true;
+	m_sslCertFolder = folder;
+	return true;
 }
 //------------------------------------------------------------------------------
 // SetSslLocalCertificate
 //
 bool SslServer::SetSslLocalCertificate(const QString& path, QSsl::EncodingFormat format)
 {
-  QFile certificateFile(path);
+	QFile certificateFile(path);
 
-  if (!certificateFile.open(QIODevice::ReadOnly))
-    return false;
+	if (!certificateFile.open(QIODevice::ReadOnly))
+		return false;
 
-  m_sslLocalCertificate = QSslCertificate(certificateFile.readAll(), format);
-  return true;
+	m_sslLocalCertificate = QSslCertificate(certificateFile.readAll(), format);
+	return true;
 }
 //------------------------------------------------------------------------------
 // SetSslPrivateKey
 //
 bool SslServer::SetSslPrivateKey(const QString& fileName, QSsl::KeyAlgorithm algorithm, QSsl::EncodingFormat format, const QByteArray& passPhrase)
 {
-  QFile keyFile(fileName);
+	QFile keyFile(fileName);
 
-  if (!keyFile.open(QIODevice::ReadOnly))
-    return false;
+	if (!keyFile.open(QIODevice::ReadOnly))
+		return false;
 
-  m_sslPrivateKey = QSslKey(keyFile.readAll(), algorithm, format, QSsl::PrivateKey, passPhrase);
-  return true;
+	m_sslPrivateKey = QSslKey(keyFile.readAll(), algorithm, format, QSsl::PrivateKey, passPhrase);
+	return true;
 }
 //------------------------------------------------------------------------------
 // ReadMessage

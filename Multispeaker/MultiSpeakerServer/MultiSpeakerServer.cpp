@@ -96,6 +96,16 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 	ui.EnableSslCheck->setChecked(s.value(SK_SSL_ENABLED, false).toBool());
 	ui.SslFrame->setVisible(s.value(SK_SSL_ENABLED, false).toBool());
 
+	QString respFile = s.value(SK_RESPONSE_FILE, QString()).toString();
+	if( respFile.isEmpty() ){
+		//OnMessage(QString("Warning, No Response File Selected.\n").toLatin1());
+		ui.respFileName->setText(QApplication::translate("MultiSpeakerServerClass", "<No Response File>", nullptr));
+	}
+	else{
+		//OnMessage(QString("Response File: %1\n").arg(respFile).toLatin1());
+		QString justname = respFile.mid(respFile.lastIndexOf("/")+1);
+		ui.respFileName->setText(justname);
+	}
 	QTimer::singleShot(0, this, SLOT(OnInitHostAddress()));
 }
 //------------------------------------------------------------------------------
@@ -149,6 +159,7 @@ void MultiSpeakerServer::ServerClose()
 		return;
 	m_server->close();
 	m_server->deleteLater();
+	ui.btnResponse->setEnabled(true);
 }
 //------------------------------------------------------------------------------
 // ServerListen
@@ -181,6 +192,11 @@ void MultiSpeakerServer::ServerListen()
 		m_server = new Server(this);
 	}
 
+	QString respFile = s.value(SK_RESPONSE_FILE, QString()).toString();
+	if( !respFile.isEmpty() )
+		if (!m_server->SetResponseFile(respFile))
+			OnMessage(QString("Error Reading Response File, %1\n").arg(respFile).toLatin1());
+
 	connect(m_server, SIGNAL(acceptError(QAbstractSocket::SocketError)), this, SLOT(OnServerAcceptError(QAbstractSocket::SocketError)));
 	connect(m_server, SIGNAL(Message(const QByteArray&)), this, SLOT(OnMessage(const QByteArray&)));
 	connect(m_server, SIGNAL(Message(int, const QByteArray&)), this, SLOT(OnMessage(int, const QByteArray&)));
@@ -209,6 +225,7 @@ void MultiSpeakerServer::ServerListen()
 	ui.HostCombo->setEnabled(false);
 	ui.PortSpin->setEnabled(false);
 	ui.EnableSslCheck->setEnabled(false);
+	ui.btnResponse->setEnabled(false);
 }
 //------------------------------------------------------------------------------
 // OnInitHostAddress
@@ -221,7 +238,7 @@ void MultiSpeakerServer::OnInitHostAddress()
 		// Select just IPv4 Addresses
 		if( ip.protocol() == QAbstractSocket::IPv4Protocol )
 			list << ip.toString();
-		list << "555.555.555.555";
+
 	ui.HostCombo->insertItems(0, list);
 	QString ip;
 	/* Select the first non-localhost ipv4 address
@@ -325,5 +342,21 @@ void MultiSpeakerServer::OnClear()
 //
 void MultiSpeakerServer::OnResponse()
 {
-
+	QString saveKey=SK_RESPONSE_FILE;
+	QString fltr = "XML (*xml);; All (*.*)";
+	QString seedFile = QSettings().value(saveKey, QVariant()).toString();
+	QString fileName = QFileDialog::getOpenFileName(this, "Select Response File", seedFile, fltr);
+	if( fileName.isEmpty() ){
+		//if( !seedFile.isEmpty() ){// previously was no response file also?
+		//	//OnMessage(QString("\nWarning, No Response File Selected.\n").toLatin1());
+		//}
+		ui.respFileName->setText(QApplication::translate("MultiSpeakerServerClass", "<No Response File>", nullptr));
+	}
+	else {//if( seedFile.isEmpty() ){
+		//OnMessage(QString("\nResponse File: %1\n").arg(fileName).toLatin1());
+		QString justname = fileName.mid(fileName.lastIndexOf("/")+1);
+		ui.respFileName->setText(justname);
+	}
+	QSettings().setValue(saveKey, fileName);
 }
+

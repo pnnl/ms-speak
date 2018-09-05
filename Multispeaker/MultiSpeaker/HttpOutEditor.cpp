@@ -69,7 +69,10 @@
 // HttpOutEditor
 //		- invoked via MultiSpeaker::OnHostDoubleClicked()
 HttpOutEditor::HttpOutEditor(const Host& host, QWidget* parent)
-	: QDialog(parent), m_host(host)
+	: QDialog(parent)
+	, m_host(host)
+	, m_reqIpChanged(false)
+	, m_resIpChanged(false)
 {
 	Init(host);
 }
@@ -78,6 +81,8 @@ HttpOutEditor::HttpOutEditor(const Host& host, QWidget* parent)
 //		- invoked via MultiSpeaker::HttpOutBtn press.
 HttpOutEditor::HttpOutEditor(QWidget* parent)
 	: QDialog(parent)
+	, m_reqIpChanged(false)
+	, m_resIpChanged(false)
 {
 	//Host* pHost = new Host( -1, "tmpHost", Host::NoApp);
 	Init(HostRef());
@@ -113,26 +118,26 @@ void HttpOutEditor::Init(const Host& host)
 	ui.ResponseHostIpEdit->insertItems(0, ipList);
 
 	QString ip = host.ReqHostAddress();
-	/* shouldn't need this check since setDuplicatesEnabled is set false...
 	int idx = ui.RequestHostIpEdit->findText(ip);
 	if( idx == -1 ){
-		idx = 0;
-		ui.RequestHostIpEdit->insertItem(idx, ip);
-	}*/
-	ui.RequestHostIpEdit->insertItem(0, ip);
-	ui.RequestHostIpEdit->setCurrentIndex(0);
+		ui.RequestHostIpEdit->insertItem(0, ip);
+		ui.RequestHostIpEdit->setCurrentIndex(0);
+	}
+
 	ip = host.RespHostAddress();
-	ui.ResponseHostIpEdit->insertItem(0, ip);
-	ui.ResponseHostIpEdit->setCurrentIndex(0);
+	idx = ui.ResponseHostIpEdit->findText(ip);
+	if( idx == -1 ){
+		ui.ResponseHostIpEdit->insertItem(0, ip);
+		ui.ResponseHostIpEdit->setCurrentIndex(0);
+	}
 
 	// NOTE: using ui.RequestHostIpEdit->lineEdit(),SIGNAL(returnPressed()) cause SIGEV crash on slot return
 	//		 (maybe due to the HttpOutEditor widget also responding to returnPressed...
 	//		 also, passing QString without the ref ampersand does too.
-	connect(ui.RequestHostIpEdit, SIGNAL(currentTextChanged(const QString&)),this,SLOT(OnHostIpSelectionChanged(const QString&)));
-	connect(ui.RequestHostIpEdit, SIGNAL(editTextChanged(const QString&)), SLOT(RequestIpChanged(const QString&)) );
-
-    connect(ui.ResponseHostIpEdit, SIGNAL(currentTextChanged(const QString&)),this,SLOT(OnHostIpSelectionChanged(const QString&)));
-	connect(ui.ResponseHostIpEdit, SIGNAL(editTextChanged(const QString&)), SLOT(ResponseIpChanged(const QString&)) );
+	connect(ui.RequestHostIpEdit, SIGNAL(editTextChanged(const QString&)),this,SLOT(OnHostIpChanged(const QString&)));
+	connect(ui.ResponseHostIpEdit, SIGNAL(editTextChanged(const QString&)),this,SLOT(OnHostIpChanged(const QString&)));
+	connect(ui.RequestHostIpEdit->lineEdit(), SIGNAL(editingFinished()), SLOT(OnEditingFinished()));
+	connect(ui.ResponseHostIpEdit->lineEdit(), SIGNAL(editingFinished()), SLOT(OnEditingFinished()));
 
 	ui.RequestGroup->setChecked(host.ReqHostEnable());
 	ui.RequestHostPortSpin->setValue(host.ReqHostPort());
@@ -145,7 +150,7 @@ void HttpOutEditor::Init(const Host& host)
 	connect(ui.ResponseHostPortSpin, SIGNAL(valueChanged(int)), this, SLOT(OnRespHostPortChanged(int)));
 
 	ui.EnableSslCheck->setChecked(host.EnableSsl());
-	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(OnAccept()));
 	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 	connect(ui.EnableSslCheck, SIGNAL(toggled(bool)), this, SLOT(OnEnableSslCheck(bool)));
 
@@ -174,37 +179,83 @@ bool HttpOutEditor::eventFilter(QObject *object, QEvent *event)
     return false;
 }
 //------------------------------------------------------------------------------
-// OnHostSelectionChanged
-//
-void HttpOutEditor::OnHostIpSelectionChanged(const QString& newText)
+// OnAccept
+void HttpOutEditor::OnAccept()
 {
-	QComboBox* pComboBox = qobject_cast<QComboBox*>(sender());
-	qDebug() << "OnHostIpSelectionChanged() " << pComboBox->objectName() << "newText: " << newText;
-	//qDebug() << "Receiver: " << this->objectName();
-	OnReqHostAddressChanged(newText);
+	if( HttpRequestEnabled() && ui.RequestHostIpEdit->currentText() == "..." )
+		return;
+
+	if( HttpResponseEnabled() && ui.ResponseHostIpEdit->currentText() == "..." )
+		return;
+
+	accept();
+}
+
+//------------------------------------------------------------------------------
+// OnEditingFinished
+//	emitted when the Return or Enter key is pressed or the line edit loses focus.
+void HttpOutEditor::OnEditingFinished()
+{
+	if( !ReqIpChanged() && !ResIpChanged() ){
+		//qDebug() << "Nothing Changed";
+		return;
+	}
+
+	QLineEdit* pLineEdit = qobject_cast<QLineEdit*>(sender());
+	QComboBox* pComboBox = qobject_cast<QComboBox*>(pLineEdit->parentWidget());
+	QString newIp=pLineEdit->text();
+	QHostAddress ipAddr( newIp );
+	if( ipAddr.isNull() ){
+		//qDebug() << "ipAddr isNull";
+		pComboBox->clearEditText();
+		//pComboBox->removeItem( pComboBox->currentIndex() );
+		if( pComboBox == ui.RequestHostIpEdit )
+			ReqIpChanged(false);
+		else
+			ResIpChanged(false);
+	}
+	else{
+		if( pComboBox == ui.RequestHostIpEdit ){
+			//qDebug() << "OnEditingFinished: " << pComboBox->objectName() << ", new Ip: " << newIp;
+			if( ReqIpChanged() ){
+				ReqIpChanged(false);
+				ChangeReqHostAddress(newIp);
+			}
+		}
+		else if( pComboBox == ui.ResponseHostIpEdit){
+			if( ResIpChanged() ){
+				ResIpChanged(false);
+				ChangeRespHostAddress(newIp);
+			}
+		}
+		else{
+			qDebug() << "OnEditingFinished Unknown pComboBox: " << pComboBox << ", Name: " << pComboBox->objectName();
+			return;
+		}
+		int idx = pComboBox->findText(newIp);
+		if( idx == -1 ){
+			idx = 0;
+			pComboBox->insertItem(0, newIp);
+			pComboBox->setCurrentIndex(0);
+		}
+	}
 }
 //------------------------------------------------------------------------------
-// RequestIpChanged
+// OnHostIpChanged
 //
-void HttpOutEditor::RequestIpChanged( const QString& newText )
+//qDebug() << "Sender: " << sender()->objectName();
+//qDebug() << "Receiver: " << this->objectName();
+void HttpOutEditor::OnHostIpChanged(const QString& newText)
 {
-	QComboBox* pComboBox = qobject_cast<QComboBox*>(sender());
-	// clearEditText()
-	//ui.RequestHostIpEdit->setItemText( ui.RequestHostIpEdit->currentIndex(), text );
-	//ui.RequestHostIpEdit->insertItem(0, text);
-	qDebug() << "RequestIpChanged() " << pComboBox->objectName() << "newText: " << newText;
-	OnReqHostAddressChanged(newText);
-}
-//------------------------------------------------------------------------------
-// ResponseIpChanged
-//
-void HttpOutEditor::ResponseIpChanged( const QString& newText )
-{
-	QComboBox* pComboBox = qobject_cast<QComboBox*>(sender());
-	//ui.ResponseHostIpEdit->setItemText( ui.ResponseHostIpEdit->currentIndex(), text );
-	//ui.ResponseHostIpEdit->insertItem(0, text);
-	qDebug() << "ResponseIpChanged() " << pComboBox->objectName() << "newText: " << newText;
-	OnRespHostAddressChanged(newText);
+	Q_UNUSED(newText)
+	//QComboBox* pComboBox = qobject_cast<QComboBox*>(sender());
+	//qDebug() << "Host Ip Changed for " << pComboBox->objectName() << ", new Ip: " << newText;
+	if (sender() == ui.RequestHostIpEdit)
+		ReqIpChanged(true);
+	else if (sender() == ui.ResponseHostIpEdit)
+		ResIpChanged(true);
+	else
+		qDebug() << "Unknown Sender: " << sender() << ", Name: " << sender()->objectName();
 }
 //------------------------------------------------------------------------------
 // getIpAddresses

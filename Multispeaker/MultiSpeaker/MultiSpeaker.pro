@@ -14,15 +14,130 @@ DESTDIR = ../run
 QT += core xml network gui widgets
 CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB #WIN64
-INCLUDEPATH += ./GeneratedFiles \
+INCLUDEPATH += \
     . \
-    ./GeneratedFiles
+    GeneratedFiles
 DEPENDPATH += .
-MOC_DIR += ./GeneratedFiles
+MOC_DIR += GeneratedFiles
 OBJECTS_DIR += obj
-UI_DIR += ./GeneratedFiles
-RCC_DIR += ./GeneratedFiles
-include(MultiSpeaker.pri)
+UI_DIR += GeneratedFiles
+RCC_DIR += GeneratedFiles
+
+HEADERS += \
+    AnimatedLineItem.h \
+    CertInfoDlg.h \
+    DigitalClock.h \
+    DockTitleBar.h \
+    FunctionBlockDock.h \
+    FunctionBlockDockTitleBar.h \
+    FunctionBlockListView.h \
+    FunctionGroupWidget.h \
+    HeaderContainerWidget.h \
+    HeaderWidget.h \
+    Host.h \
+    HostEditor.h \
+    HostItem.h \
+    HostMethodListWidget.h \
+    HostScene.h \
+    HostView.h \
+    HttpHeader.h \
+    HttpOutEditor.h \
+    LogDock.h \
+    MethodDock.h \
+    MiniNetEditor.h \
+    MultiSpeaker.h \
+    NamespaceInfo.h \
+    scTextEdit.h \
+    Settings.h \
+    SslErrorDlg.h \
+    TimelineEvent.h \
+    TimelineEventEditor.h \
+    TimelineEventItem.h \
+    TimelineEventSendWorker.h \
+    TimelineHeaderWidget.h \
+    TimelineScene.h \
+    TimelineView.h \
+    Timer.h \
+    TitleHeaderWidget.h \
+    Utils.h \
+    Version.h \
+    WebServiceInfo.h \
+    WidgetContainer.h \
+    WsdlDock.h \
+    WsdlFile.h \
+    WsdlFileView.h \
+    WsdlMethodTemplateEditor.h \
+    WsdlMethodView.h \
+    WsdlTreeViewHeaderWidget.h \
+    WsdlXmlViewHeaderWidget.h
+SOURCES += \
+    AnimatedLineItem.cpp \
+    CertInfoDlg.cpp \
+    DigitalClock.cpp \
+    DockTitleBar.cpp \
+    FunctionBlockDock.cpp \
+    FunctionBlockDockTitleBar.cpp \
+    FunctionBlockListView.cpp \
+    FunctionGroupWidget.cpp \
+    HeaderContainerWidget.cpp \
+    HeaderWidget.cpp \
+    Host.cpp \
+    HostEditor.cpp \
+    HostItem.cpp \
+    HostMethodListWidget.cpp \
+    HostScene.cpp \
+    HostView.cpp \
+    HttpHeader.cpp \
+    HttpOutEditor.cpp \
+    LogDock.cpp \
+    main.cpp \
+    MiniNetEditor.cpp \
+    MethodDock.cpp \
+    MultiSpeaker.cpp \
+    scTextEdit.cpp \
+    SslErrorDlg.cpp \
+    TimelineEvent.cpp \
+    TimelineEventEditor.cpp \
+    TimelineEventItem.cpp \
+    TimelineEventSendWorker.cpp \
+    TimelineHeaderWidget.cpp \
+    TimelineScene.cpp \
+    TimelineView.cpp \
+    TitleHeaderWidget.cpp \
+    Utils.cpp \
+    WebServiceInfo.cpp \
+    WidgetContainer.cpp \
+    WsdlDock.cpp \
+    WsdlFile.cpp \
+    WsdlFileView.cpp \
+    WsdlMethodTemplateEditor.cpp \
+    WsdlMethodView.cpp \
+    WsdlTreeViewHeaderWidget.cpp \
+    WsdlXmlViewHeaderWidget.cpp
+
+FORMS += \
+    CertInfoDlg.ui \
+    DockTitleBar.ui \
+    FunctionBlockDockTitleBar.ui \
+    FunctionGroupWidget.ui \
+    HeaderContainerWidget.ui \
+    HeaderWidget.ui \
+    HostEditor.ui \
+    HostMethodListWidget.ui \
+    HttpOutEditor.ui \
+    LogDock.ui \
+    MultiSpeaker.ui \
+    MiniNetEditor.ui \
+    SslErrorDlg.ui \
+    TimelineEventEditor.ui \
+    TimelineHeaderWidget.ui \
+    TitleHeaderWidget.ui \
+    WsdlFileView.ui \
+    WsdlMethodTemplateEditor.ui \
+    WsdlMethodView.ui \
+    WsdlTreeViewHeaderWidget.ui \
+    WsdlXmlViewHeaderWidget.ui
+RESOURCES += MultiSpeaker.qrc
 
 #message("DESTDIR is : " $$DESTDIR)
 #message("OBJECTS_DIR is : " $$OBJECTS_DIR)

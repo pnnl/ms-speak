@@ -9,5 +9,4 @@
 
 TEMPLATE = subdirs
 SUBDIRS += MultiSpeaker/MultiSpeaker.pro \
-		   MultiSpeakerServer/MultiSpeakerServer.pro \
-		   SimpleHttpExample/SimpleHttpExample.pro
+           MultiSpeakerServer/MultiSpeakerServer.pro

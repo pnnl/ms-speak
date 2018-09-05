@@ -93,6 +93,7 @@
 
 static bool CLEAR_SETTINGS_ON_EXIT = false;
 
+// NOTE: QSettings stored @ /home/carl/.config/PNNL/MultiSpeaker.conf
 //------------------------------------------------------------------------------
 // MultiSpeaker
 //
@@ -567,14 +568,18 @@ bool MultiSpeaker::OnHttpOut()
 		QStringList ipList = dlg.getIpAddresses();
 		s.setValue(SK_HTTP_OUT_SSL, dlg.HttpSslEnabled());
 
-		if( !ipList.contains(dlg.HttpRequestIp()) )
+		if( dlg.HttpRequestEnabled() ){
+			//if( !ipList.contains(dlg.HttpRequestIp()) )  save even if is loopback...
 			s.setValue(SK_HTTP_OUT_REQ_IP, dlg.HttpRequestIp());
-		s.setValue(SK_HTTP_OUT_REQ_PORT, dlg.HttpRequestPort());
+			s.setValue(SK_HTTP_OUT_REQ_PORT, dlg.HttpRequestPort());
+		}
 		s.setValue(SK_HTTP_OUT_REQ_FLAG, dlg.HttpRequestEnabled());
 
-		if( !ipList.contains(dlg.HttpResponseIp()) )
+		if( dlg.HttpResponseEnabled() ){
+			//if( !ipList.contains(dlg.HttpResponseIp()) )
 			s.setValue(SK_HTTP_OUT_RES_IP, dlg.HttpResponseIp());
-		s.setValue(SK_HTTP_OUT_RES_PORT, dlg.HttpResponsePort());
+			s.setValue(SK_HTTP_OUT_RES_PORT, dlg.HttpResponsePort());
+		}
 		s.setValue(SK_HTTP_OUT_RES_FLAG, dlg.HttpResponseEnabled());
 
 		return true;

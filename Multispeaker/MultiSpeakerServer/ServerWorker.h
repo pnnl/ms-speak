@@ -72,16 +72,19 @@ private:
 	QByteArray m_buffer;
 	qint32 m_bufferSize;
 	qint32 m_bytesRead;
+	qint64 m_bytesYettoRead;
 	bool m_headerRead;
 	qintptr m_socketDescriptor;
+	QByteArray& m_responseFile;
 
 public:
-	ServerWorker(qintptr socketDescriptor, QObject* parent=0);
+	ServerWorker(qintptr socketDescriptor, QByteArray& qba, QObject* parent=0);
 	~ServerWorker();
 
 private:
 	void ReadMessage(QTcpSocket* socket);
- 
+	void SendResponse( int code, QByteArray& data, QTcpSocket* socket );
+
 signals:
 	void Finished();
 	void Message(const QByteArray& msg);

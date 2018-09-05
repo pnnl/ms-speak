@@ -64,6 +64,7 @@
 #include <QSettings>
 #include <QMessageBox>
 #include <QComboBox>
+#include <QSignalMapper>
 
 #include "Settings.h"
 #include "TimelineEvent.h"
@@ -93,9 +94,13 @@ WsdlMethodView::WsdlMethodView(QWidget* parent)
 	connect(ui.TreeHeader, SIGNAL(InfoToggled()), this, SLOT(OnInfoToggled()));
 	connect(ui.TreeHeader, SIGNAL(SaveClicked()), this, SLOT(OnSaveClicked()));
 	connect(ui.TreeHeader, SIGNAL(EnableClicked(bool)), this, SLOT(OnEnableClicked(bool)));
-	connect(ui.TreeHeader, SIGNAL(RestoreClicked()), this, SLOT(OnRestoreClicked()));
 	connect(ui.XmlHeader, SIGNAL(ExportClicked()), this, SLOT(OnXmlExport()));
 	connect(&m_model, SIGNAL(itemChanged(QStandardItem*)), this, SLOT(OnXmlItemChanged(QStandardItem*)));
+	//connect(ui.TreeHeader, SIGNAL(RestoreClicked()), this, SLOT(OnRestoreClicked(bool b=false;)));
+	QSignalMapper* signalMapper = new QSignalMapper (this) ;
+	connect(ui.TreeHeader, SIGNAL(RestoreClicked()), signalMapper, SLOT(map()));
+	signalMapper->setMapping(ui.TreeHeader, 1);
+	connect (signalMapper, SIGNAL(mapped(int)), this, SLOT(OnRestoreClicked(int)));
 }
 //------------------------------------------------------------------------------
 // ~WsdlMethodView
@@ -122,8 +127,11 @@ void WsdlMethodView::Init(TimelineEvent* timelineEvent, bool bIsRequest/*=true*/
 {
 	m_timelineEvent = timelineEvent;
 	m_isRequest = bIsRequest;
-	IsEnabled(m_isRequest); // OnEnableClicked(  );// init Requests as enabled, Responses not.
 	m_doc = m_timelineEvent->Doc();
+	IsEnabled(m_isRequest); // OnEnableClicked(  );// init Requests as enabled, Responses not.
+	//if( IsEnabled() )
+	if( OnRestoreClicked(0) )
+		return;
 	CreateTreeView(m_doc);
 	XmlUpdate();
 }
@@ -446,6 +454,25 @@ void WsdlMethodView::OnInfoToggled()
 	XmlUpdate();
 }
 //------------------------------------------------------------------------------
+// OnEnableClicked
+//
+void WsdlMethodView::OnEnableClicked(bool checked)
+{
+	Q_UNUSED(checked)
+	/*
+	QString dbgStr;
+	if( m_isRequest )
+		dbgStr = "Request Packet";
+	else
+		dbgStr = "Response Packet";
+	if( IsEnabled() )
+		dbgStr += " Is Enabled.";
+	else
+		dbgStr += " Is NOT Enabled.";
+	qDebug() << dbgStr;*/
+	SetItemsEnableState();
+}
+//------------------------------------------------------------------------------
 // OnSaveClicked
 //
 void WsdlMethodView::OnSaveClicked()
@@ -465,6 +492,7 @@ void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
 	QByteArray bytes;
 	QString seedFile;
 	QString saveKey;
+	QString methodKey;
 	QFileDialog *fileDialog = new QFileDialog;
 	QString suffix;
 	QString fltr;
@@ -494,15 +522,18 @@ void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
 	else{
 		prmpt = "Select Editor Settings File";
 		if( m_isRequest ){
-			saveKey = SK_EXPORT_EDTREQ_FILE;
+			saveKey = SK_SAVE_EDTREQ_FILE;
+			methodKey = SK_RESTORE_EDTREQ_METHOD;
 			fltr = "REQ (*req);; All (*.*)";
 			suffix = "req";
 		}
 		else{
-			saveKey = SK_EXPORT_EDTRES_FILE;
+			saveKey = SK_SAVE_EDTRES_FILE;
+			methodKey = SK_RESTORE_EDTRES_METHOD;
 			fltr = "RES (*res);; All (*.*)";
 			suffix = "res";
 		}
+		QSettings().setValue(methodKey, m_timelineEvent->Method());
 	}
 
 	seedFile = QSettings().value(saveKey, QVariant()).toString();
@@ -534,51 +565,45 @@ void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
 	file.close();
 }
 //------------------------------------------------------------------------------
-// OnEnableClicked
-//
-void WsdlMethodView::OnEnableClicked(bool checked)
-{
-	Q_UNUSED(checked)
-	/*
-	QString dbgStr;
-	if( m_isRequest )
-		dbgStr = "Request Packet";
-	else
-		dbgStr = "Response Packet";
-	if( IsEnabled() )
-		dbgStr += " Is Enabled.";
-	else
-		dbgStr += " Is NOT Enabled.";
-	qDebug() << dbgStr;*/
-	SetItemsEnableState();
-}
-//------------------------------------------------------------------------------
 // OnRestoreClicked
 //
-void WsdlMethodView::OnRestoreClicked()
+bool WsdlMethodView::OnRestoreClicked(int clicked)
 {
+	QString fileName;
 	QString saveKey;
+	QString methodKey;
 	QString fltr;
 	if( m_isRequest ){
-		saveKey = SK_IMPORT_EDTREQ_FILE;
+		saveKey = SK_RESTORE_EDTREQ_FILE;
+		methodKey = SK_RESTORE_EDTREQ_METHOD;
 		fltr = "REQ (*req);; All (*.*)";
 	}
 	else{
-		saveKey = SK_IMPORT_EDTRES_FILE;
+		saveKey = SK_RESTORE_EDTRES_FILE;
+		methodKey = SK_RESTORE_EDTRES_METHOD;
 		fltr = "RES (*res);; All (*.*)";
 	}
 	QString seedFile = QSettings().value(saveKey, QVariant()).toString();
-	// Load file
-	QString fileName = QFileDialog::getOpenFileName(this, "Select Editor Settings File", seedFile, fltr);
+	if( !clicked ){
+		QString method = QSettings().value(methodKey, QVariant()).toString();
+		if( method != m_timelineEvent->Method() )
+			return false;// only restore if same type of request previously saved
+		fileName = seedFile;
+	}
+	else{
+		// Load file
+		fileName = QFileDialog::getOpenFileName(this, "Select Editor Settings File", seedFile, fltr);
+	}
 	if (fileName.isEmpty())
-		return;
+		return false;
 
-	QSettings().setValue(saveKey, fileName);
+	if( clicked )
+		QSettings().setValue(saveKey, fileName);
 
 	QFile file(fileName);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))	{
 		qDebug() << file.error() << file.errorString();
-		return;
+		return false;
 	}
 	QDomDocument domDocument;
 	QString errorStr;
@@ -593,7 +618,7 @@ void WsdlMethodView::OnRestoreClicked()
 		qDebug() << errorStr2;
 		QMessageBox messageBox;
 		messageBox.critical(Q_NULLPTR, fileName, errorStr2);
-		return;
+		return false;
 	}
 	file.close();
 
@@ -618,14 +643,14 @@ void WsdlMethodView::OnRestoreClicked()
 			qDebug() << "Error" << QString("Tag '%1' Does not Exist!").arg(tag);
 			QMessageBox messageBox;
 			messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Does not Exist!").arg(tag));
-			return;
+			return false;
 		}
 		if( tagCount != 1 )
 		{
 			qDebug() << "Error" << QString("Tag '%1' Exist More than Once!").arg(tag);
 			QMessageBox messageBox;
 			messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Exist More than Once!").arg(tag));
-			return;
+			return false;
 		}
 		// Iterate through all we found (should only be 1)
 		for(int i=0; i<nodes.count(); i++)
@@ -650,7 +675,7 @@ void WsdlMethodView::OnRestoreClicked()
 							qDebug() << "Error" << QString("Tag '%1' Does not Have Attribute '%2'!").arg(tag,attrmoto.key());
 							QMessageBox messageBox;
 							messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Does not Have Attribute '%2'!").arg(tag,attrmoto.key()));
-							return;
+							return false;
 						}
 						++attrmoto;
 					}
@@ -676,7 +701,7 @@ void WsdlMethodView::OnRestoreClicked()
 	}
 	CreateTreeView(m_doc);
 	XmlUpdate();
-
+	return true;
 }
 void WsdlMethodView::TraverseXmlNode(const QDomNode& node, QHash<QString, QString>& rList,
 										   QHash<QString,QHash<QString, QString>>& rAttribs, QString tagname)
@@ -702,16 +727,19 @@ void WsdlMethodView::TraverseXmlNode(const QDomNode& node, QHash<QString, QStrin
 					QDomAttr attr = debug.toAttr();
 					if( !attr.isNull() )
 					{
-						if( attr.name().startsWith( "xmlns:" ) )
+						if( attr.name().startsWith( "xmlns:" ) ){
 							continue;
-						//qDebug() << "    attribute name: " << attr.name() << ", value: " << attr.value();
+						}
 						rList[domTag] = "hasAttr";
 						rAttribs[domTag][attr.name()] = attr.value();
 					}
 				}
+				else{
+					qDebug() << "map.item(i).isNull()!";
+				}
 			}
 		}
-		else if(domNode.isElement())
+		/*else*/if(domNode.isElement())
 		{
 			domElement = domNode.toElement();
 			//qDebug()<<"domElement tag is: " << domElement.tagName();
@@ -719,7 +747,6 @@ void WsdlMethodView::TraverseXmlNode(const QDomNode& node, QHash<QString, QStrin
 			{
 				//qDebug() << __FUNCTION__ << "isElement" << level << QString(level, ' ').toLocal8Bit().constData() << "tagName: "  << domElement.tagName().toLocal8Bit().constData();
 				tagname = domElement.tagName().toLocal8Bit().constData();
-
 			}
 		}
 		else if(domNode.isText())

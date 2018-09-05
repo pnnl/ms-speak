@@ -71,6 +71,8 @@ class HttpOutEditor : public QDialog
 private:
 	Ui::HttpOutEditor ui;
 	Host m_host;
+	bool m_reqIpChanged;
+	bool m_resIpChanged;
 
 public:
 	HttpOutEditor(const Host& host, QWidget* parent=Q_NULLPTR);
@@ -85,23 +87,30 @@ public:
 	bool HttpRequestEnabled() { return ui.RequestGroup->isChecked(); }
 	bool HttpResponseEnabled(){ return ui.ResponseGroup->isChecked(); }
 	bool HttpSslEnabled() { return ui.EnableSslCheck->isChecked(); }
-	void Init(const Host& host);
+
+	bool ReqIpChanged() const {return m_reqIpChanged;}
+	void ReqIpChanged(bool b) {m_reqIpChanged=b;}
+	bool ResIpChanged() const {return m_resIpChanged;}
+	void ResIpChanged(bool b) {m_resIpChanged=b;}
+
 	const Host& HostRef() const {return m_host;}
+	void ChangeReqHostAddress(const QString& text) { m_host.SetReqHostAddress(text); }
+	void ChangeRespHostAddress(const QString& text) { m_host.SetRespHostAddress(text); }
+	void Init(const Host& host);
 
 private slots:
+
+	void OnAccept();
 	void OnEnableSslCheck(bool checked) {m_host.SetEnableSsl(checked);}
-	void OnReqHostAddressChanged(const QString& text) { m_host.SetReqHostAddress(text); }
-	void OnRespHostAddressChanged(const QString& text) { m_host.SetRespHostAddress(text); }
 
 	void OnReqHostPortChanged(int port) {m_host.SetReqHostPort(port); }
 	void OnRespHostPortChanged(int port) {m_host.SetRespHostPort(port); }
 
 	void OnReqHostEnableChanged(bool checked) {m_host.SetReqHostEnable(checked);}
 	void OnRespHostEnableChanged(bool checked) {m_host.SetRespHostEnable(checked);}
-	void OnHostIpSelectionChanged(const QString& qs);
-	void RequestIpChanged( const QString& text );
-	void ResponseIpChanged( const QString& text );
+	void OnHostIpChanged(const QString& qs);
 	bool eventFilter(QObject *object, QEvent *event);
+	void OnEditingFinished();
 };
 
 #endif // HTTPOUTEDITOR_H

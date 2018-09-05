@@ -80,10 +80,12 @@ const QString SK_HOST_ADDRESS = QStringLiteral("sk_host_address");
 
 const QString SK_EXPORT_XMLREQ_FILE = "sk_export_xmlreq_file";
 const QString SK_EXPORT_XMLRES_FILE = "sk_export_xmlres_file";
-const QString SK_EXPORT_EDTREQ_FILE = "sk_export_edtreq_file";
-const QString SK_EXPORT_EDTRES_FILE = "sk_export_edtres_file";
-const QString SK_IMPORT_EDTREQ_FILE = "sk_import_edtreq_file";
-const QString SK_IMPORT_EDTRES_FILE = "sk_import_edtres_file";
+const QString SK_SAVE_EDTREQ_FILE = "sk_save_edtreq_file";
+const QString SK_SAVE_EDTRES_FILE = "sk_save_edtres_file";
+const QString SK_RESTORE_EDTREQ_FILE = "sk_restore_edtreq_file";
+const QString SK_RESTORE_EDTRES_FILE = "sk_restore_edtres_file";
+const QString SK_RESTORE_EDTREQ_METHOD = "sk_restore_edtreq_method";
+const QString SK_RESTORE_EDTRES_METHOD = "sk_restore_edtres_method";
 const QString SK_SCENARIO_FILENAME = "sk_scenario_filename";
 
 const quint32 SCENARIO_SAVE_MAGIC = 0x77777777;

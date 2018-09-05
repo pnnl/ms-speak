@@ -14,12 +14,28 @@ DESTDIR = ../run
 QT += core xml network gui widgets
 CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB
-INCLUDEPATH += ./GeneratedFiles \
-    . \
-    ./GeneratedFiles
+INCLUDEPATH += .
+#    . \
+#    GeneratedFiles
 DEPENDPATH += .
-MOC_DIR += ./GeneratedFiles
+MOC_DIR += GeneratedFiles
 OBJECTS_DIR += debug
-UI_DIR += ./GeneratedFiles
-RCC_DIR += ./GeneratedFiles
-include(MultiSpeakerServer.pri)
+UI_DIR += GeneratedFiles
+RCC_DIR += GeneratedFiles
+
+HEADERS += \
+    HttpResponse.h \
+    MultiSpeakerServer.h \
+    Settings.h \
+    Server.h \
+    ServerWorker.h \
+    SslServer.h
+SOURCES += \
+    HttpResponse.cpp \
+    main.cpp \
+    MultiSpeakerServer.cpp \
+    Server.cpp \
+    ServerWorker.cpp \
+    SslServer.cpp
+FORMS += MultiSpeakerServer.ui
+RESOURCES += MultiSpeakerServer.qrc
