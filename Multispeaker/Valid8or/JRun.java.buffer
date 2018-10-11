@@ -1,0 +1,214 @@
+
+import java.io.*;
+import org.apache.commons.cli.*;
+
+public class JRun  { // extends JReturn
+	private static JValid m_v5JV;
+	private static JReturn Result=JReturn.INIT_FAIL;
+	private static boolean bBuff=false;
+	private static int verbosity=0;
+	//// constructor
+	public JRun() {
+    }
+	/*
+	 * Typically, in languages where main returns int (such as C and C++) the return code of 
+	 * main becomes the exit code of the process, which is often used by command interpreters 
+	 * and other external programs to determine whether the process completed successfully. 
+	 * 
+	 * To achieve the same effect in Java, use the System.exit method.
+	 * 		i.e. System.exit(42);
+	 * to see the return when java is called from the command line:
+	 * 		echo $?
+	 */
+	public static void main(String[] args) {
+		try {
+			CommandLine cmd;
+			CommandLineParser parser = new DefaultParser();
+
+			HelpFormatter formatter = new HelpFormatter();
+			String header = "Validate XML against a schema.\n\n";
+			String footer = "\nPlease report issues at www.pnnl.gov/MS_SPEAK";
+
+			/* Option
+			 * opt - short representation of the option
+			 * longOpt - the long representation of the option
+			 * hasArg - specifies whether the Option takes an argument or not
+			 * description - describes the function of the option
+				//opt = Option.builder("h").longOpt("help")
+				//		.desc("usage help").hasArg(false).argName("hlp").build();		
+			 */
+			OptionGroup grpHlp = new OptionGroup();
+			grpHlp.setRequired(false);
+			Options hlpOpts = new Options();
+			Option optHlp = new Option("h", "help", false, "usage help)");
+			optHlp.setRequired(false);	
+			grpHlp.addOption(optHlp);	
+			
+			Option optVer = new Option("v", "ver", false, "version)");
+			optVer.setRequired(false);
+			grpHlp.addOption(optVer);	
+			
+			hlpOpts.addOptionGroup(grpHlp);			
+		
+			Options options = new Options();
+			OptionGroup grpXml = new OptionGroup();
+			grpXml.setRequired(true);
+			
+			Option opt = new Option("sf", "schema", true, "schema xsd directory to use)");
+			opt.setRequired(true);
+			options.addOption(opt);		
+			
+			opt = new Option("xf", "xmlfile", true, "xml file to validate)");
+			opt.setRequired(false);
+			grpXml.addOption(opt);
+		
+			opt = new Option("xb", "xmldata", true, "xml buffer to validate)");
+			opt.setRequired(false);
+			grpXml.addOption(opt);
+		
+			options.addOptionGroup(grpXml);
+
+			opt = new Option("v", "verbosity", true, "Debug Verbosity (default: 0 )");
+			opt.setRequired(false);
+			options.addOption(opt);			
+
+			String schema_dir="";
+			String xml_data="";
+			try {
+				
+				// this parses the command line but doesn't throw an exception on unknown options
+				// options - the specified Options
+				// arguments - the command line arguments
+				// stopAtNonOption - if true an unrecognized argument stops the parsing and the remaining 
+				// arguments are added to the CommandLines args list. If false an unrecognized 
+				// argument triggers a ParseException.
+				cmd = parser.parse(hlpOpts, args, true);
+				Option opts[] = cmd.getOptions();
+				if( opts.length != 0 ) {
+					if (cmd.hasOption("h")) {
+						formatter.printHelp("JRun", header, options, footer, true);
+						System.exit(JReturn.SUCCESS.value());		
+						return;
+					} else if (cmd.hasOption("v")) {			
+						System.out.println("--->Version: " + "1.0.0");
+						System.exit(JReturn.SUCCESS.value());		
+						return;
+					}
+				}				
+				
+				cmd = parser.parse(options, args);
+				if (cmd.hasOption("h")) {
+					formatter.printHelp("JRun", header, options, footer, true);
+					System.exit(JReturn.SUCCESS.value());		
+					return;
+				}
+				schema_dir = cmd.getOptionValue("schema");
+
+				if (cmd.hasOption("xmlfile")) {
+					xml_data = cmd.getOptionValue("xmlfile");
+				}
+				else {
+					xml_data = cmd.getOptionValue("xmldata");
+					bBuff=true;
+				}
+				if (cmd.hasOption("verbosity")) {
+					verbosity = Integer.parseInt(cmd.getOptionValue("verbosity"));
+				}
+			} catch (ParseException e) {
+				System.out.println("--->" + e.getMessage());
+				formatter.printHelp("JRun", header, options, footer, true);
+				System.exit(Result.value());
+			}
+			m_v5JV = new JValid(verbosity);
+        	Result = run(schema_dir, xml_data);
+			if( verbosity > 2 )
+				if( Result == JReturn.SUCCESS )
+					System.out.println("--->JRUN::Success");
+				else {
+					System.out.println("--->JRUN::Failure");
+				}
+			System.exit(Result.value());		
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(JReturn.EXCEPTION.value());
+		}
+	}
+	//// run
+	public static JReturn run(String xsddir, String xml_data) throws Exception {
+		JReturn vRet;
+		// capture any output to console stderr, to baos string
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		System.setErr(new PrintStream(baos));
+		try {
+			vRet = InitXsds(xsddir);
+			if( vRet == JReturn.SUCCESS )
+				vRet = Validate(xml_data);
+			return vRet;
+		} catch (Exception ex) {
+			String err = baos.toString();
+			System.out.println("Exception Raised While Validating Data:\n" + err);
+			System.out.println("Schema: " + xsddir );
+			System.out.println("Input Data:" + xml_data );
+			System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.err))); // revert back to the original stderr stream
+			throw new RuntimeException("Translation Exception", ex);
+		}
+	}
+	//// InitXsds
+	public static JReturn InitXsds(String xsdpath){
+		JReturn vRet=JReturn.INITXSD_FAIL;
+		try {
+			vRet = m_v5JV.init_xsds(xsdpath);
+			if( verbosity == 2 )
+				if( vRet == JReturn.SUCCESS )
+					System.out.println("--->JRUN::XSDs Initialized Successfully.");
+				else
+					System.out.println("--->JRUN::Failed to Initialize XSDs.");
+			
+		} catch (Exception ex) {
+			System.out.println("--->JRUN::InitXsds Exception: " +ex.toString());
+		}
+		return vRet;
+	}
+	//// Validate
+	public static JReturn Validate(String xml_src){
+		JReturn vRet=JReturn.VALID8_FAIL;
+		String xml_data;
+		try {
+			if( verbosity > 2 ){
+				if( bBuff )
+					System.out.println("--->JRUN::Validating XML buffer");
+				else
+					System.out.println("--->JRUN::Validating XML file " + xml_src);
+			}
+			if( bBuff ){
+				xml_data = xml_src;
+			}
+			else{
+				File xmlFilePath = new File(xml_src);
+				xml_data = JValid.fileToString(xmlFilePath);
+			}
+			if( xml_data != null ){
+				vRet = m_v5JV.validate(xml_data);
+				if( verbosity == 2 )
+					if( bBuff ){
+						if( vRet == JReturn.SUCCESS )
+							System.out.println("--->JRUN::Successfully Validated XML file " + xml_src);
+						else
+							System.out.println("--->JRUN::Failed to Validate XML file " + xml_src);
+					}
+					else{
+						if( vRet == JReturn.SUCCESS )
+							System.out.println("--->JRUN::Successfully Validated XML buffer");
+						else
+							System.out.println("--->JRUN::Failed to Validate XML buffer");				
+					}
+			}
+			//System.out.println("Exit JRun::Validate().");
+		} catch (Exception ex) {
+			if( verbosity > 0 )
+				System.out.println("--->JRUN::Validate Exception: " +ex.toString());
+		}
+		return vRet;
+	}
+}
