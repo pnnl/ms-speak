@@ -84,6 +84,7 @@ private:
 	QStandardItemModel m_model;
 	TimelineEvent* m_timelineEvent;
 	bool m_isRequest;
+	bool m_HoldoffUpdate{false};
 
 public:
 	WsdlMethodView(QWidget* parent=Q_NULLPTR);
@@ -100,10 +101,10 @@ public:
 
 private:
 	void SetItemsEnableState();
-	void SetEnableState( QStandardItemModel* model, QStandardItem* item, bool bEnable );
+	void SetEnableState( QStandardItemModel* model, QStandardItem* item, bool bEnable, bool b );
 	void CreateTreeView(const QDomDocument& doc);
-	void ExpandItem(QStandardItem* item);
-	void StuffItem(QDomElement node, QStandardItem* item);
+	void ExpandItem(QStandardItem* item, bool b);
+	void StuffItem(QDomElement node, QStandardItem* item, bool b);
 	void StuffJson(QJsonObject obj, QStandardItem* item);
 	void StuffJsonInfo(QStandardItem* parent, int row, const QString& title, const QJsonDocument& jsonDoc);
 	void UpdateJsonInfo(QStandardItem* parent, const QString& title, const QJsonDocument& jsonDoc);
@@ -118,6 +119,7 @@ private slots:
 	void OnEnableClicked(bool checked);
 	bool OnRestoreClicked(int clicked);
 	void OnXmlExport();
+	void OnValid8();
 	void OnXmlItemChanged(QStandardItem* item);
 };
 

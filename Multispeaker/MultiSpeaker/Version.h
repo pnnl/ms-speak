@@ -60,7 +60,7 @@
 
 #include <QString>
 
-static QString SOFTWARE_VERSION = "18.07.31";
+static QString SOFTWARE_VERSION = "18.09.06";
 static QString SOFTWARE_ABOUT = "<center><h2>Multi-Speaker Demonstration</h2>"
     "<h3>Version " + SOFTWARE_VERSION + " Prototype</h3>"
     "<p>All rights in this computer software are reserved by Pacific Northwest National Laboratory (PNNL) Operated by Battelle for the U.S. Department of Energy. Notice: This computer software was prepared by Battelle Memorial Institute, hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of Energy (DOE).  All rights in the computer software are reserved by DOE on behalf of the United States Government and the Contractor as provided in the Contract.  You are authorized to use this computer software for Governmental purposes but it is not to be released or distributed to the public.  NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  This notice including this sentence must appear on any copies of this computer software."

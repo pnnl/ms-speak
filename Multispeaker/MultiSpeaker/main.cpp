@@ -65,7 +65,8 @@
 
 #include "MultiSpeaker.h"
 
-Q_DECLARE_METATYPE(QSslCipher);
+Q_DECLARE_METATYPE(QSslCipher)
+
 
 int main(int argc, char* argv[])
 {

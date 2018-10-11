@@ -69,7 +69,8 @@ WsdlXmlViewHeaderWidget::WsdlXmlViewHeaderWidget(QWidget* parent)
 	m_color(Qt::darkGray)
 {
 	ui.setupUi(this);
-	connect(ui.ExportBtn, SIGNAL(clicked()), this, SIGNAL(ExportClicked()));
+	connect(ui.btnExport, SIGNAL(clicked()), this, SIGNAL(ExportClicked()));
+	connect(ui.btnValid8, SIGNAL(clicked()), this, SIGNAL(Valid8Clicked()));
 	//connect(ui.RefreshBtn, SIGNAL(clicked()), this, SIGNAL(RefreshClicked()));
 }
 //------------------------------------------------------------------------------

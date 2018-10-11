@@ -77,7 +77,7 @@ private:
   TimelineEvent& m_timelineEvent;
 
 public:
-  TimelineEventItem(TimelineEvent& te, QGraphicsItem* parent=0);
+  TimelineEventItem(TimelineEvent& te, QGraphicsItem* parent=Q_NULLPTR);
   ~TimelineEventItem();
 
   void Animate(bool doAnimate=true);
@@ -96,7 +96,7 @@ public:
 
 protected:
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant& value);
-  virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* e) {Q_UNUSED(e); emit MouseDoubleClicked(m_timelineEvent);}
+  virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* e);
 
 signals:
   void MouseDoubleClicked(TimelineEvent& e);

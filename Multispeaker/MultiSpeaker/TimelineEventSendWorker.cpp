@@ -94,7 +94,7 @@ void TimelineEventSendWorker::OnConnected()
 {
 	if (QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender()))
 	{
-		QByteArray content = WsdlFile::XmlSoap(m_timelineEvent);
+		QByteArray content = WsdlFile::XmlSoap(m_timelineEvent, 2, true);
 		QDataStream os(socket);
 		os.setByteOrder(QDataStream::BigEndian); // network byte order
 		os << (qint32) m_timelineEvent.SrcHostId();

@@ -8,5 +8,8 @@
 
 
 TEMPLATE = subdirs
-SUBDIRS += MultiSpeaker/MultiSpeaker.pro \
-           MultiSpeakerServer/MultiSpeakerServer.pro
+SUBDIRS += \
+	MultiSpeaker/MultiSpeaker.pro \
+	MultiSpeakerServer/MultiSpeakerServer.pro
+
+

@@ -60,11 +60,11 @@
 #ifndef MULTISPEAKERSERVER_H
 #define MULTISPEAKERSERVER_H
 
-#include "ui_MultiSpeakerServer.h"
 
 #include <QAbstractSocket>
 #include <QMainWindow>
 
+#include "ui_MultiSpeakerServer.h"
 #include "Settings.h"
 
 class Server;
@@ -75,22 +75,31 @@ class MultiSpeakerServer : public QMainWindow
 private:
 	Ui::MultiSpeakerServerClass ui;
 	Server* m_server;
+	bool    m_testv8{true};
+	QByteArray m_xmlBuff;
 
 public:
 	MultiSpeakerServer(QWidget* parent = Q_NULLPTR);
 	~MultiSpeakerServer();
 
 protected:
+	virtual void closeEvent(QCloseEvent* e);
+	virtual void resizeEvent(QResizeEvent* e) {Q_UNUSED(e); SaveState();}
+
 private:
 	void FileNameBrowse(const QString& msg, const QString& sk, QLabel* label);
 	void FolderBrowse(const QString& msg, const QString& sk, QLabel* label);
 	void InitFileNameLabel(QLabel* label, const QString& folder);
 	void ServerClose();
 	void ServerListen();
+	void Valid8(const QByteArray& msg);
+	void RestoreState();
+	void SaveState();
 
 signals:
 
 private slots :
+	void OnValid8();
 	void OnCertFileBrowse() { FileNameBrowse("Select Certificate File", SK_SSL_CERT_FILE, ui.CertFileLabel); }
 	void OnCertFolderBrowse() { FolderBrowse("Select Certificate Folder", SK_SSL_CERT_FOLDER, ui.CertFileLabel); }
 	void OnInitHostAddress();

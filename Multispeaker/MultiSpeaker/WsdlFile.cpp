@@ -142,7 +142,7 @@ const QString STR_XSI = "xsi";
 static qint64 ID_COUNTER = 0;
 
 //------------------------------------------------------------------------------
-// WsdlFile
+// WsdlFile - called after drop Function Block onto Topology
 //
 WsdlFile::WsdlFile(const QString& hostName, const QString& fileName, QObject* parent)
   : QObject(parent),
@@ -278,11 +278,11 @@ QDomDocument WsdlFile::MethodTemplateRequest(const QString& method)
 	doc.appendChild(root);
 
 	QDomElement templateNode = templateRoot.firstChildElement();
-	QDomElement node = templateNode.cloneNode().toElement(); // Header
-	Filter(node, true, false);
+	QDomElement node = templateNode.cloneNode().toElement(); // REQ Header
+	Filter(node, true, false); // removeUnchecked, removeInfo
 	root.appendChild(node);
 
-	node = templateNode.nextSibling().cloneNode().toElement(); // Body
+	node = templateNode.nextSibling().cloneNode().toElement(); // REQ Body
 	Filter(node, true, false);
 	root.appendChild(node);
 
@@ -297,20 +297,16 @@ QDomDocument WsdlFile::MethodTemplateResponse(const QString& method)
 	QDomElement templateRoot = MethodTemplate(method).documentElement();
 	QDomElement root = doc.createElement(STR_RESPONSE);
 	doc.appendChild(root);
-
-	QDomElement templateNode = templateRoot.firstChildElement(); // REQ Header
-	templateNode = templateNode.nextSiblingElement(); // REQ Body
-
-	templateNode = templateNode.nextSiblingElement(); // RES Header
-	QDomElement node = templateNode.cloneNode().toElement();
+	/*
+	QDomElement templateNode = templateRoot.firstChildElement();
+	QDomElement node = templateNode.cloneNode().toElement();// RES Header
 	Filter(node, true, false);
 	root.appendChild(node);
 
-	templateNode = templateNode.nextSiblingElement(); // RES Body
-	node = templateNode.cloneNode().toElement();
+	node = templateNode.nextSibling().cloneNode().toElement(); // RES Body
 	Filter(node, true, false);
 	root.appendChild(node);
-
+	*/
 	return doc;
 }
 //------------------------------------------------------------------------------
@@ -460,9 +456,9 @@ void WsdlFile::WriteJsonAttrInfo(QDomElement node, const QString& attrName, cons
 		QString desc = val.toString() + jsonAttrObj.value(TAG_JSON_DESC).toString();
 		jsonAttrObj.insert(key, QJsonValue(desc));
 	}
-	else
+	else{
 		jsonAttrObj.insert(key, val);
-
+	}
 	jsonObj.insert(attrName, jsonAttrObj);
 	jsonInfo.setObject(jsonObj);
 	node.setAttribute(TAG_JSON_ATTR, QString(jsonInfo.toJson(QJsonDocument::Compact)));
@@ -520,8 +516,9 @@ void WsdlFile::WriteJsonInfo(QDomElement node, const QString& key, QJsonValue va
 		QString desc = val.toString() + jsonObj.value(TAG_JSON_DESC).toString();
 		jsonObj.insert(key, QJsonValue(desc));
 	}
-	else
+	else{
 		jsonObj.insert(key, val);
+	}
 	jsonInfo.setObject(jsonObj);
 	node.setAttribute(TAG_JSON_INFO, QString(jsonInfo.toJson(QJsonDocument::Compact)));
 }
@@ -583,7 +580,7 @@ QByteArray WsdlFile::Xml(const QDomDocument& doc, int indent, bool doRemoveInfo)
 	return xml.toByteArray(indent);
 }
 //------------------------------------------------------------------------------
-// XmlSoap
+// XmlSoap - shows xml in lower pane
 //
 QByteArray WsdlFile::XmlSoap(const QDomDocument& doc, int indent)
 {
@@ -593,6 +590,10 @@ QByteArray WsdlFile::XmlSoap(const QDomDocument& doc, int indent)
 
 	QDomElement soapHeaderContentsNode = docHeaderNode.cloneNode().toElement();
 	QDomElement soapBodyContentsNode = docBodyNode.cloneNode().toElement();
+
+	//static int counter=0;
+	//counter++;
+	//qDebug() << "XmlSoap Count: " << counter;
 
 	Filter(soapHeaderContentsNode, true, true);
 	Filter(soapBodyContentsNode, true, true);
@@ -606,12 +607,12 @@ QByteArray WsdlFile::XmlSoap(const QDomDocument& doc, int indent)
 
 	QDomElement soapHeaderNode = xml.createElement(SchemaTag(STR_SOAP, TAG_SOAP_HEADER));
 	soapRoot.appendChild(soapHeaderNode);
-	if (!soapHeaderContentsNode.isNull()) // If the user unchecked this node then Filter will clear effectively making it Null
-	soapHeaderNode.appendChild(soapHeaderContentsNode);
+	if( !soapHeaderContentsNode.isNull() ) // If the user unchecked this node then Filter will clear effectively making it Null
+		soapHeaderNode.appendChild(soapHeaderContentsNode);
 
 	QDomElement soapBodyNode = xml.createElement(SchemaTag(STR_SOAP, TAG_SOAP_BODY));
 	soapRoot.appendChild(soapBodyNode);
-	if (!soapBodyContentsNode.isNull()) // If the user unchecked this node then Filter will clear effectively making it Null
+	if( !soapBodyContentsNode.isNull() ) // If the user unchecked this node then Filter will clear effectively making it Null
 		soapBodyNode.appendChild(soapBodyContentsNode);
 
 	QByteArray bytes;
@@ -623,18 +624,18 @@ QByteArray WsdlFile::XmlSoap(const QDomDocument& doc, int indent)
 //------------------------------------------------------------------------------
 // XmlSoap
 //
-QByteArray WsdlFile::XmlSoap(const TimelineEvent& e, int indent)
+QByteArray WsdlFile::XmlSoap(const TimelineEvent& e, int indent, bool bFull)
 {
 	QByteArray bytes;
+	if( bFull ){
+		if (e.Type() == TimelineEvent::Request)
+			bytes.append("REQUEST\n");
+		else if (e.Type() == TimelineEvent::Response)
+			bytes.append("RESPONSE\n");
 
-	if (e.Type() == TimelineEvent::Request)
-		bytes.append("REQUEST\n");
-	else if (e.Type() == TimelineEvent::Response)
-		bytes.append("RESPONSE\n");
-
-	bytes.append(QString("%1\n").arg(e.Host()));
-	bytes.append(QString("SOAPAction: %1/%2\n").arg(e.Namespace()).arg(e.Method()));
-
+		bytes.append(QString("%1\n").arg(e.Host()));
+		bytes.append(QString("SOAPAction: %1/%2\n").arg(e.Namespace()).arg(e.Method()));
+	}
 	bytes.append(XmlSoap(e.Doc(), indent)); // returns with '?' appended....
 	return bytes;
 }
@@ -653,17 +654,43 @@ void WsdlFile::Clear()
 //
 void WsdlFile::Filter(QDomElement& node, bool removeUnchecked, bool removeInfo)
 {
+	bool bUnFiltered = false;
+	bool bCheckIfNot2BFiltered = false;
+
+	/*if( node.tagName() == "com:BuildString" )
+		qDebug() << "filtering node: " << node.tagName();
+	else if( node.tagName() == "com:MajorVersion" )
+		qDebug() << "filtering node: " << node.tagName();*/
+
+	if( removeUnchecked && removeInfo )//only check if not to be filtered after init, which seems to be indicated by both removeUnchecked and removeInfo being true
+		bCheckIfNot2BFiltered = true;
+
 	QJsonDocument jsonInfoDoc = WsdlFile::JsonDoc(node.attributeNode(TAG_JSON_INFO).value().toLatin1());
 	if (removeUnchecked && !jsonInfoDoc.object().find(TAG_JSON_IS_USER_CHECKED).value().toBool())
 	{
 		QDomNode parentNode = node.parentNode();
 		if (parentNode.isNull())
 			node.clear(); // this is the parent to clear it of all contents and attributes
-		else
-			parentNode.removeChild(node); // Remove Node and we are done
+		else{
+			if( bCheckIfNot2BFiltered || !jsonInfoDoc.object().find(TAG_JSON_DONT_FILTER).value().toBool() )
+			{
+				//if( node.tagName() == "com:Branch")
+				//	qDebug()<<"removing child node: " << node.tagName();
+				parentNode.removeChild(node); // Remove Node and we are done
+			}
+			else{
+				 bUnFiltered = true;//
+				 //if( node.tagName() == "com:Branch")
+				 //	qDebug()<<"NOT removing child node: " << node.tagName();
+			}
+		}
 	}
-	else if (removeUnchecked) // Remove the unchecked attributes from json
+	else if (removeUnchecked  ) // Remove the unchecked attributes from json
 	{
+		// the only way we can get here is if the 'if' test above failed and removeUnchecked is true,
+		//	meaning, the above test of TAG_JSON_IS_USER_CHECKED being false must have not passed,
+		//  meaning TAG_JSON_IS_USER_CHECKED must be true here, but here, we are checking
+		//  the AttrObj, not the jsonInfoDoc.object()
 		// Remove the unchecked Attr Nodes
 		QDomAttr attrJsonNode = node.attributeNode(TAG_JSON_ATTR);
 		QStringList uncheckedAttrList;
@@ -675,10 +702,13 @@ void WsdlFile::Filter(QDomElement& node, bool removeUnchecked, bool removeInfo)
 			foreach (const QString key, jsonObj.keys())
 			{
 				QJsonObject jsonAttrObj = jsonInfo.object().find(key).value().toObject();
-				if (!jsonAttrObj.find(TAG_JSON_IS_USER_CHECKED).value().toBool())
-				{
-					jsonObj.remove(key);
-					uncheckedAttrList << key;
+				if( !jsonAttrObj.find(TAG_JSON_IS_USER_CHECKED).value().toBool() ){
+					if( bCheckIfNot2BFiltered || !jsonAttrObj.find(TAG_JSON_DONT_FILTER).value().toBool() )
+					{
+						//qDebug()<<"removing Attr node: " << key;// "DefaultCurrencyCode" etc.
+						jsonObj.remove(key);
+						uncheckedAttrList << key;
+					}
 				}
 			}
 			jsonInfo.setObject(jsonObj);
@@ -710,6 +740,17 @@ void WsdlFile::Filter(QDomElement& node, bool removeUnchecked, bool removeInfo)
 			}
 		}
 		node.removeAttribute(TAG_JSON_NS);
+		// chm 10.3.18 - do children
+		if( bUnFiltered ){
+			// Do Children
+			QDomElement childNode = node.firstChildElement();
+			while( !childNode.isNull() )
+			{
+				QDomElement siblingNode = childNode.nextSiblingElement(); // Get Sibling before recursive call to RemoveInfo can possibly remove childNode
+				Filter(childNode, removeUnchecked, removeInfo);
+				childNode = siblingNode;
+			}
+		}
 	}
 }
 //------------------------------------------------------------------------------
@@ -775,9 +816,24 @@ QDomDocument* WsdlFile::DomDocByNameSpace(const QString& ns, const SchemaInfo& i
 		if (!fileInfo.exists())
 		{
 			qDebug() << "Error" << QString("%1 Does not Exist!").arg(fileName);
+
+			QString dirs = "";
+			int idx = path.lastIndexOf("/"); // linux
+			if(idx == -1){
+				idx = path.lastIndexOf("\\"); // windoze
+			}
+			if(idx != -1){
+				QString endpoint=path.mid(idx+1);
+				dirs = "\nSchema Hierarchy must be similar to:\n";
+				QString ep = QString( "    ..\\EndPoints\\%1\\%2.wsdl & %3.xsd\n").arg(endpoint).arg(endpoint).arg(endpoint);
+				dirs += ep+ "    ..\\xsd\\*.xsd";
+			}
 			QMessageBox messageBox;
 			//messageBox.setFixedSize(1800,1200);
-			messageBox.critical(Q_NULLPTR,"Error",QString("File '%1' Could Not Be Located.").arg(fileName));
+			//messageBox.critical(Q_NULLPTR,"Error",QString("File '%1' Could Not Be Located.").arg(fileName));
+			QString err=QString("'%1'").arg(fileName);
+			err += dirs;
+			messageBox.critical (Q_NULLPTR,"File Could Not Be Located", err );
 			return Q_NULLPTR;
 		}
 
@@ -905,11 +961,11 @@ QDomDocument WsdlFile::Join(const QString& rootNodeName, QList<QDomDocument> lis
 	QDomDocument doc;
 	QDomElement root = doc.createElement(rootNodeName);
 	doc.appendChild(root);
-	qDebug() << QString(doc.toByteArray(2));
+	//qDebug() << QString(doc.toByteArray(2));
 	for (int i = 0; i < list.count(); ++i)
 		root.appendChild(list.at(i).documentElement().cloneNode());
 
-	qDebug() << QString(doc.toByteArray(2));
+	//qDebug() << QString(doc.toByteArray(2));
 	return doc;
 }
 //------------------------------------------------------------------------------
@@ -1035,10 +1091,15 @@ void WsdlFile::ParseAttribute(const QDomElement& srcNode, QDomElement& dstNode, 
 		jsonValues.insert(TAG_JSON_USE, QJsonValue(use));
 		if (use == TAG_JSON_USE_REQUIRED)
 			jsonValues.insert(TAG_JSON_IS_USER_CHECKED, QJsonValue(true));
-		else
+		else{
 			jsonValues.insert(TAG_JSON_IS_USER_CHECKED, QJsonValue(false));
+			jsonValues.insert(TAG_JSON_DONT_FILTER, QJsonValue(true));// chm
+		}
 	}
-
+	else{// chm
+		jsonValues.insert(TAG_JSON_IS_USER_CHECKED, QJsonValue(false));
+		jsonValues.insert(TAG_JSON_DONT_FILTER, QJsonValue(true));
+	}
 	if (!def.isEmpty())
 		jsonValues.insert(TAG_JSON_DEFAULT, QJsonValue(def));
 
@@ -1169,6 +1230,7 @@ void WsdlFile::ParseElement(const QDomElement& srcNode, QDomElement& dstNode, co
 		dstElement = dstNode;
 	else
 	{
+		//qDebug() << "ParseElement Name:" << name;
 		QString tagName = (!name.isEmpty()) ? name : ref;
 		if (!NsInfo().Contains(info.TargetNamespace))
 			NsInfo().Append(info.TargetNamespace, info.TargetNamespacePrefix);
@@ -1184,7 +1246,7 @@ void WsdlFile::ParseElement(const QDomElement& srcNode, QDomElement& dstNode, co
 		if (!type.isEmpty())
 			jsonValues.insert(TAG_JSON_TYPE, QJsonValue(type));
 		if (!min.isEmpty())
-			jsonValues.insert(TAG_JSON_MIN, QJsonValue(min));
+			jsonValues.insert(TAG_JSON_MIN, QJsonValue(min));// should this be TAG_MIN_OCC instead of TAG_JSON_MIN ?
 		if (!max.isEmpty())
 		{
 			if (max == TAG_MAX_OCCURS_UNBOUNDED)
@@ -1193,8 +1255,10 @@ void WsdlFile::ParseElement(const QDomElement& srcNode, QDomElement& dstNode, co
 		}
 		if (isRoot)
 			jsonValues.insert(TAG_JSON_IS_USER_CHECKED, QJsonValue(true));
-		else if (!min.isEmpty() && min.toInt() == 0)
+		else if (!min.isEmpty() && min.toInt() == 0){
 			jsonValues.insert(TAG_JSON_IS_USER_CHECKED, QJsonValue(false));
+			jsonValues.insert(TAG_JSON_DONT_FILTER, QJsonValue(true));
+		}
 		else
 			jsonValues.insert(TAG_JSON_IS_USER_CHECKED, QJsonValue(true));
 
@@ -1319,6 +1383,12 @@ void WsdlFile::ParseExtension(const QDomElement& srcNode, QDomElement& dstNode, 
 //
 void WsdlFile::ParseFileName(const QString& fileName) 
 {
+	if( fileName.isEmpty() )
+	{
+		qDebug() << "Error: Cannot Parse Wsdl File, Name is Empty!";
+		return;
+	}
+
 	QFileInfo info(fileName);
 	if (!info.exists() || info.suffix().toLower() != STR_WSDL)
 	{

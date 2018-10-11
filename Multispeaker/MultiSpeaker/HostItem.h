@@ -74,13 +74,13 @@ public:
   enum {Type = UserType + GRAPH_TYPE_HOST};
 
 private:
-  QList<AnimatedLineItem*> m_edges; // ref only...mem owned by scene
-  Host& m_host;
-  QPointF m_origin;
+	QList<AnimatedLineItem*> m_edges; // ref only...mem owned by scene
+	Host& m_host;
+	QPointF m_origin;
 
 public:
-  HostItem(Host& host, const QPointF& origin, QGraphicsItem* parent=0);
-  ~HostItem();
+	HostItem(Host& host, const QPointF& origin, QGraphicsItem* parent=Q_NULLPTR);
+	~HostItem();
 
   void AddEdge(AnimatedLineItem* edge) {m_edges.append(edge);}
   virtual QRectF boundingRect() const;

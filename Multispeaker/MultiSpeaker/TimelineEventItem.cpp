@@ -98,7 +98,7 @@ void TimelineEventItem::Animate(bool doAnimate)
 	m_doAnimate = doAnimate;
 	update();
 	QTimer::singleShot(500, this, SLOT(OnAnimateQuit())); // show "Animated" State for 500 ms
-	}
+}
 //------------------------------------------------------------------------------
 // paint
 //
@@ -130,6 +130,14 @@ void TimelineEventItem::paint(QPainter* p, const QStyleOptionGraphicsItem* optio
 	}
 
 	p->drawPath(m_path);
+}
+//------------------------------------------------------------------------------
+// mouseDoubleClickEvent
+//
+void TimelineEventItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* e) {
+	Q_UNUSED(e);
+	// this causes a SIGSEGV crash, so don't do it
+	//emit MouseDoubleClicked(m_timelineEvent);
 }
 //------------------------------------------------------------------------------
 // itemChange

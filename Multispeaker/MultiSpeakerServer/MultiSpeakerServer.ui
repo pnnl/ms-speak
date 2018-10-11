@@ -7,15 +7,15 @@
     <x>0</x>
     <y>0</y>
     <width>743</width>
-    <height>561</height>
+    <height>624</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MultiSpeakerServer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="0">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
      <widget class="QGroupBox" name="groupBox_2">
       <property name="title">
        <string>Connection</string>
@@ -225,7 +225,7 @@
       </layout>
      </widget>
     </item>
-    <item row="1" column="0">
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QPushButton" name="btnClear">
@@ -241,7 +241,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>108</width>
+          <width>58</width>
           <height>20</height>
          </size>
         </property>
@@ -249,8 +249,20 @@
       </item>
       <item>
        <widget class="QLabel" name="respFileName">
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
         <property name="text">
          <string>Response File</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -261,7 +273,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>148</width>
+          <width>118</width>
           <height>20</height>
          </size>
         </property>
@@ -276,8 +288,51 @@
       </item>
      </layout>
     </item>
-    <item row="2" column="0">
+    <item>
      <widget class="QPlainTextEdit" name="plainTextEdit"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>178</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnValid8">
+        <property name="toolTip">
+         <string>Click to Export to file</string>
+        </property>
+        <property name="text">
+         <string>Validate</string>
+        </property>
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>278</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

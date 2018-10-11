@@ -73,7 +73,7 @@ private:
   bool m_isExpanded;
 
 public:
-  HeaderWidget(QWidget* parent = 0);
+  HeaderWidget(QWidget* parent = Q_NULLPTR);
   ~HeaderWidget();
 
   void Collapse() {m_isExpanded = false; SetIcon(m_isExpanded);}

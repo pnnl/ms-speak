@@ -11,12 +11,15 @@
 TEMPLATE = app
 TARGET = MultiSpeakerServer
 DESTDIR = ../run
-QT += core xml network gui widgets
+QT += core xml network gui widgets xmlpatterns
+#LIBS += -L/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server -ljvm
 CONFIG += debug
-DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB
-INCLUDEPATH += .
-#    . \
-#    GeneratedFiles
+DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB _MSS_
+QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant
+INCLUDEPATH += \
+    . \
+    ../Valid8or
+
 DEPENDPATH += .
 MOC_DIR += GeneratedFiles
 OBJECTS_DIR += debug
@@ -29,13 +32,29 @@ HEADERS += \
     Settings.h \
     Server.h \
     ServerWorker.h \
-    SslServer.h
+    SslServer.h \
+	../Valid8or/Valid8.h \
+    ../Valid8or/Process.h \
+    ../Valid8or/ProgressWidget.h \
+    ../Valid8or/Valid8Worker.h \
+    ../Valid8or/QSL.h \
+    ../Valid8or/Status.h
+
 SOURCES += \
     HttpResponse.cpp \
     main.cpp \
     MultiSpeakerServer.cpp \
     Server.cpp \
     ServerWorker.cpp \
-    SslServer.cpp
-FORMS += MultiSpeakerServer.ui
+    SslServer.cpp \
+	../Valid8or/Valid8.cpp \
+    ../Valid8or/Process.cpp \
+    ../Valid8or/ProgressWidget.cpp \
+    ../Valid8or/Valid8Worker.cpp
+
+FORMS += MultiSpeakerServer.ui \
+    ../Valid8or/Valid8.ui \
+    ../Valid8or/ProgressWidget.ui
+
 RESOURCES += MultiSpeakerServer.qrc
+

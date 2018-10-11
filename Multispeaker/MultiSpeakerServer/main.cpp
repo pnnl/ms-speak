@@ -64,6 +64,7 @@
 
 int main(int argc, char* argv[])
 {
+	//Q_INIT_RESOURCE(valid8); only needed if resources are in a library
 	qRegisterMetaType<QAbstractSocket::SocketError>();
 	qRegisterMetaType<QList<QSslError> >();
 

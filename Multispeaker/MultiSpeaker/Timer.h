@@ -79,7 +79,7 @@ private:
   int m_stopTime; // Current time in ms when timer last stopped
 
 public:
-  GlobalTimer(QObject* parent=0) : QObject(parent), m_pausedTime(0), m_skipForwardTime(0), m_startTime(0), m_stopTime(0) {}
+  GlobalTimer(QObject* parent=Q_NULLPTR) : QObject(parent), m_pausedTime(0), m_skipForwardTime(0), m_startTime(0), m_stopTime(0) {}
   ~GlobalTimer() {}
 
   //-------------------------------------------------------------------------------

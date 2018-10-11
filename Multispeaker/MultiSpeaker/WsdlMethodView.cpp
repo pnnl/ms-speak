@@ -70,6 +70,7 @@
 #include "TimelineEvent.h"
 #include "WsdlFile.h"
 #include "WsdlMethodView.h"
+#include "Valid8.h"
 
 const int ID_ROLE = Qt::UserRole + 2;
 const int IS_VALUE_ROLE = Qt::UserRole + 3;
@@ -82,12 +83,13 @@ WsdlMethodView::WsdlMethodView(QWidget* parent)
 	: QWidget(parent),
 	  m_timelineEvent(Q_NULLPTR)
 {
+
 	ui.setupUi(this);
 	ui.TreeHeader->SetTitle("Editor", 10);
 	ui.XmlHeader->SetTitle("Xml", 10);
 	ui.TreeView->setModel(&m_model);
 
-	// Don't show xml by default
+//	 Don't show xml by default
 	ui.XmlHeader->hide();
 	ui.XmlView->hide();
 
@@ -95,8 +97,9 @@ WsdlMethodView::WsdlMethodView(QWidget* parent)
 	connect(ui.TreeHeader, SIGNAL(SaveClicked()), this, SLOT(OnSaveClicked()));
 	connect(ui.TreeHeader, SIGNAL(EnableClicked(bool)), this, SLOT(OnEnableClicked(bool)));
 	connect(ui.XmlHeader, SIGNAL(ExportClicked()), this, SLOT(OnXmlExport()));
+	connect(ui.XmlHeader, SIGNAL(Valid8Clicked()), this, SLOT(OnValid8()));
+
 	connect(&m_model, SIGNAL(itemChanged(QStandardItem*)), this, SLOT(OnXmlItemChanged(QStandardItem*)));
-	//connect(ui.TreeHeader, SIGNAL(RestoreClicked()), this, SLOT(OnRestoreClicked(bool b=false;)));
 	QSignalMapper* signalMapper = new QSignalMapper (this) ;
 	connect(ui.TreeHeader, SIGNAL(RestoreClicked()), signalMapper, SLOT(map()));
 	signalMapper->setMapping(ui.TreeHeader, 1);
@@ -127,12 +130,25 @@ void WsdlMethodView::Init(TimelineEvent* timelineEvent, bool bIsRequest/*=true*/
 {
 	m_timelineEvent = timelineEvent;
 	m_isRequest = bIsRequest;
+	/*
+		"/home/carl/.MultiSpeaker/CD_InitiateConnectDisconnect.xml"  ====> doc.setContent [ this is m_timelineEvent->Doc() ]
+		m_doc = m_timelineEvent->Doc();
+	 */
 	m_doc = m_timelineEvent->Doc();
-	IsEnabled(m_isRequest); // OnEnableClicked(  );// init Requests as enabled, Responses not.
-	//if( IsEnabled() )
-	if( OnRestoreClicked(0) )
-		return;
+
+	QSettings s;
+	QString pktType = SK_REQ_ENABLE_FLAG;
+	if( !m_isRequest )
+		pktType = SK_RES_ENABLE_FLAG;
+	bool bEnabled = s.value(pktType, false).toBool();
+	IsEnabled(bEnabled); // OnEnableClicked(  );// init Requests as enabled, Responses not.
+
+	if( IsEnabled() )
+		if( OnRestoreClicked(0) )// //  called on dbl-click of function method
+			return;
+	m_HoldoffUpdate=true;
 	CreateTreeView(m_doc);
+	m_HoldoffUpdate=false;
 	XmlUpdate();
 }
 //------------------------------------------------------------------------------
@@ -142,10 +158,15 @@ void WsdlMethodView::XmlUpdate()
 {
 	if (!m_timelineEvent)
 		return;
+
+	// chm 10.3.18 - try not to call XmlSoap so many times...
+	if( m_HoldoffUpdate )
+		return;
 	ui.XmlHeader->show();
 	ui.XmlView->show();
 	ui.XmlView->clear();
-	ui.XmlView->setPlainText(WsdlFile::XmlSoap(*m_timelineEvent, 2));
+
+	ui.XmlView->setPlainText(WsdlFile::XmlSoap(*m_timelineEvent, 2, true));
 }
 //------------------------------------------------------------------------------
 // CreateTreeView - called on dbl-click of function method
@@ -170,31 +191,38 @@ void WsdlMethodView::CreateTreeView(const QDomDocument& doc)
 		name = name.right(name.length() - name.indexOf(":")-1);
 		QStandardItem* item = new QStandardItem(name);
 		rootItem->setChild(row++, item);
-		StuffItem(node, item);
+		StuffItem(node, item, false);// ,,bParentUnchecked
 		node = node.nextSiblingElement();
 	}
 	m_model.appendRow(rootItem);
 
 	// Expand what seems appropriate
 	if( rootItem )
-		ExpandItem(rootItem);
+		ExpandItem(rootItem, true);// ,bIsRoot
 
 	ui.TreeView->resizeColumnToContents(0);
 
 	SetItemsEnableState();
 }
 //------------------------------------------------------------------------------
-// EnableItem
+// SetEnableState
 //
-void WsdlMethodView::SetEnableState( QStandardItemModel* model, QStandardItem* item, bool bEnable )
+void WsdlMethodView::SetEnableState( QStandardItemModel* model, QStandardItem* item
+									 , bool bEnable, bool bRoot )
 {
 	item->setEnabled(bEnable);
 
-	if( bEnable )
-		if (item->data(Qt::DisplayRole).toString() == TAG_JSON_ATTR || item->data(Qt::DisplayRole).toString() == TAG_JSON_INFO || item->data(Qt::DisplayRole).toString() == TAG_JSON_NS)
+	if( bEnable || bRoot )
+		if (item->data(Qt::DisplayRole).toString() == TAG_JSON_ATTR ||
+			item->data(Qt::DisplayRole).toString() == TAG_JSON_INFO ||
+			item->data(Qt::DisplayRole).toString() == TAG_JSON_NS)
 			ui.TreeView->collapse(item->index());
-		else
-			ui.TreeView->expand(item->index());
+		else{// chm 10.1.18
+			if( item->checkState() == Qt::Checked || bRoot )
+				ui.TreeView->expand(item->index());
+			else
+				ui.TreeView->collapse(item->index());
+		}
 	else
 		ui.TreeView->collapse(item->index());
 
@@ -207,7 +235,7 @@ void WsdlMethodView::SetEnableState( QStandardItemModel* model, QStandardItem* i
 			QStandardItem *sib = model->itemFromIndex(sibidx);
 			if (sib->data(IS_VALUE_ROLE).toBool())
 			{
-				QVariant name = child->data();
+				//QVariant name = child->data();
 				sib->setEditable(bEnable);
 				if( bEnable )
 					sib->setData(QColor(Qt::lightGray), Qt::BackgroundRole);
@@ -215,44 +243,48 @@ void WsdlMethodView::SetEnableState( QStandardItemModel* model, QStandardItem* i
 					sib->setData(QColor(Qt::white), Qt::BackgroundRole);
 			}
 		}
-		SetEnableState(model,child,bEnable);
+		SetEnableState(model,child,bEnable,false); // ,,,bRoot
 	}
 }
 //------------------------------------------------------------------------------
-// SetItemsEnable
+// SetItemsEnableState
 //
 void WsdlMethodView::SetItemsEnableState()
 {
-	//QModelIndex idx = m_model.index(0, 0, QModelIndex());
 	QStandardItem* rootItem = m_model.invisibleRootItem();// = m_model.itemFromIndex( idx );
-	if (rootItem) // ""
-		;//qDebug() << rootItem->text(); // i.e., 'Request'
-	else{
+	if( !rootItem )
+	{
 		qDebug() << "Failed to Set Items Enable State";
 		return;
 	}
-	SetEnableState(&m_model, rootItem->child(0), IsEnabled());
+	SetEnableState(&m_model, rootItem->child(0), IsEnabled(), true );// ,,,bRoot
 }
 //------------------------------------------------------------------------------
 // ExpandItem
 //
-void WsdlMethodView::ExpandItem(QStandardItem* item)
+void WsdlMethodView::ExpandItem(QStandardItem* item, bool bIsRoot)
 {
-	if (item->data(Qt::DisplayRole).toString() == TAG_JSON_ATTR || item->data(Qt::DisplayRole).toString() == TAG_JSON_INFO || item->data(Qt::DisplayRole).toString() == TAG_JSON_NS)
+	if (item->data(Qt::DisplayRole).toString() == TAG_JSON_ATTR ||
+		item->data(Qt::DisplayRole).toString() == TAG_JSON_INFO ||
+		item->data(Qt::DisplayRole).toString() == TAG_JSON_NS)
 		ui.TreeView->collapse(item->index());
-	else
-		ui.TreeView->expand(item->index());
-
+	else{
+		if( item->checkState() == Qt::Checked || bIsRoot)
+			ui.TreeView->expand(item->index());
+		else
+			ui.TreeView->collapse(item->index());
+	}
 	int row = 0;
 	while (QStandardItem* child = item->child(row++)){
-		ExpandItem(child);
+		ExpandItem(child, false);// ,bIsRoot
 	}
 }
 //------------------------------------------------------------------------------
 // StuffItem
 //
-void WsdlMethodView::StuffItem(QDomElement node, QStandardItem* item)
+void WsdlMethodView::StuffItem(QDomElement node, QStandardItem* item, bool bParentUnchecked)
 {
+	bool bCheck = false;
 	QFont boldFont = item->font();
 	boldFont.setBold(true);
 
@@ -265,14 +297,18 @@ void WsdlMethodView::StuffItem(QDomElement node, QStandardItem* item)
 	item->setData(node.attribute(TAG_JSON_ID), ID_ROLE);
 
 	// Set Font to Bold if min is 1 i.e. it is required
+	// chm 10.1.18 - but only if topmost parent is required also
 	QString min = jsonInfoDoc.object().find(TAG_JSON_MIN).value().toString();
-	if (min == "1" || min.isEmpty())
+	if (min == "1" || min.isEmpty()){
+		if( !bParentUnchecked )// chm 10.1.18
+			bCheck = true;
 		item->setFont(boldFont);
-
+	}
 	if (node.hasChildNodes() && !node.isNull() && !node.text().isEmpty())
 	{
 		item->setCheckable(true);
-		item->setCheckState(jsonInfoDoc.object().find(TAG_JSON_IS_USER_CHECKED).value().toBool() ? Qt::Checked : Qt::Unchecked);
+		//item->setCheckState(jsonInfoDoc.object().find(TAG_JSON_IS_USER_CHECKED).value().toBool() ? Qt::Checked : Qt::Unchecked);
+		item->setCheckState(bCheck ? Qt::Checked : Qt::Unchecked);
 	}
 
 	int row = 0;
@@ -340,7 +376,7 @@ void WsdlMethodView::StuffItem(QDomElement node, QStandardItem* item)
 			// Set Font to Bold if use is required
 			QJsonValue val = jsonInfoAttrDoc.object().find(attr.name()).value().toObject().find(TAG_JSON_USE).value();
 			if (!val.isNull() && val.toString() == TAG_JSON_USE_REQUIRED)
-			attrNameItem->setFont(boldFont);
+				attrNameItem->setFont(boldFont);
 
 			QStandardItem* attrValueItem = new QStandardItem(attr.value());
 			attrValueItem->setData(QColor(Qt::lightGray), Qt::BackgroundRole);
@@ -373,7 +409,7 @@ void WsdlMethodView::StuffItem(QDomElement node, QStandardItem* item)
 		{
 			QStandardItem* childItem = new QStandardItem(childNode.toElement().tagName());
 			item->setChild(row++, childItem);
-			StuffItem(childNode.toElement(), childItem);
+			StuffItem(childNode.toElement(), childItem, !bCheck);// ,,bParentUnchecked
 		}
 	}
 }
@@ -450,7 +486,9 @@ void WsdlMethodView::UpdateJsonInfo(QStandardItem* parent, const QString& title,
 //
 void WsdlMethodView::OnInfoToggled()
 {
+	m_HoldoffUpdate=true;
 	CreateTreeView(m_doc);
+	m_HoldoffUpdate=false;
 	XmlUpdate();
 }
 //------------------------------------------------------------------------------
@@ -459,17 +497,16 @@ void WsdlMethodView::OnInfoToggled()
 void WsdlMethodView::OnEnableClicked(bool checked)
 {
 	Q_UNUSED(checked)
-	/*
-	QString dbgStr;
-	if( m_isRequest )
-		dbgStr = "Request Packet";
-	else
-		dbgStr = "Response Packet";
-	if( IsEnabled() )
-		dbgStr += " Is Enabled.";
-	else
-		dbgStr += " Is NOT Enabled.";
-	qDebug() << dbgStr;*/
+
+	QString pktType = SK_REQ_ENABLE_FLAG;
+	if( !m_isRequest )
+		pktType = SK_RES_ENABLE_FLAG;
+
+	IsEnabled(checked);
+
+	QSettings s;
+	s.setValue(pktType, checked);
+
 	SetItemsEnableState();
 }
 //------------------------------------------------------------------------------
@@ -485,6 +522,46 @@ void WsdlMethodView::OnSaveClicked()
 void WsdlMethodView::OnXmlExport()
 {
 	ExportXmlOrSoap( true );
+}
+//------------------------------------------------------------------------------
+// OnValid8
+//   java -cp ../bin:../lib/commons-cli-1.3.1.jar JRun
+//		-sd "/home/carl/Desktop/MS-SPEAK/V507/XSDS/EndPoints/"
+//		-ep "CD_Server"
+//		-xf "/home/carl/Desktop/MS-SPEAK/files/InitCDReq.xml"
+//		-v 2
+void WsdlMethodView::OnValid8()
+{
+	QString schema = m_timelineEvent->Namespace();
+	QRegExp rx("(\\/wsdl/)");
+	QStringList eplist = schema.split(rx);
+	if( !eplist.isEmpty() ){
+		if( eplist.size() == 2 ){
+			QString endpoint=eplist.takeAt(1);
+			//QTemporaryFile file( QDir::temp().absoluteFilePath("mprog-XXXXXX.ext") );
+			QTemporaryFile file;
+			if( !file.open() )
+			{
+				qDebug() << file.error() << file.errorString();
+				return;
+			}
+			// file.fileName() returns the unique file name
+			QByteArray bytes = WsdlFile::XmlSoap(*m_timelineEvent, 2, false);
+			file.write(bytes);
+			if (file.error() != QFileDevice::NoError)
+				qDebug() << "ERROR:" << file.error() << file.errorString();
+			file.close();
+
+			Valid8or dlg( endpoint, file.fileName(), this );
+			dlg.exec();
+		}
+		else{
+			qDebug() << "eplist size not 2: " << eplist.size();
+		}
+	}
+	else{
+		qDebug() << "eplist empty";
+	}
 }
 
 void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
@@ -555,7 +632,7 @@ void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
 		return;
 	}
 	if( bExport )
-		bytes = WsdlFile::XmlSoap(*m_timelineEvent, 2);
+		bytes = WsdlFile::XmlSoap(*m_timelineEvent, 2, false);
 	else
 		bytes = WsdlFile::Xml(m_doc, 2, true);
 
@@ -605,16 +682,19 @@ bool WsdlMethodView::OnRestoreClicked(int clicked)
 		qDebug() << file.error() << file.errorString();
 		return false;
 	}
-	QDomDocument domDocument;
+
+	ui.TreeHeader->RestoreBtn()->setToolTip(fileName);
+
+	QDomDocument domDocFromFile;
 	QString errorStr;
 	int errorLine;
 	int errorColumn;
-	if (!domDocument.setContent(&file, false, &errorStr, &errorLine, &errorColumn))
+	if (!domDocFromFile.setContent(&file, false, &errorStr, &errorLine, &errorColumn))
 	{
 		file.close();
 		QString errorStr2;
 		QTextStream out(&errorStr2);
-		out << "Failed to set DomDocument Content from file: " << errorStr << ", Line " << errorLine << ", Column " << errorColumn;
+		out << "Failed to set domDocFromFile Content from file: " << errorStr << ", Line " << errorLine << ", Column " << errorColumn;
 		qDebug() << errorStr2;
 		QMessageBox messageBox;
 		messageBox.critical(Q_NULLPTR, fileName, errorStr2);
@@ -625,41 +705,45 @@ bool WsdlMethodView::OnRestoreClicked(int clicked)
 	QHash<QString, QString> hashimoto;
 	QHash<QString,QHash<QString, QString>> attribs;
 	QHash<QString, QString>::const_iterator hitr;
-	QDomElement root = domDocument.documentElement(); // now e contains "Node" - it's a document element - means root element
-    QString startTag = root.tagName();
-	for(QDomNode n = root; !n.isNull(); n = n.nextSibling())
+	QDomElement rootFromFile = domDocFromFile.documentElement(); // now e contains "Node" - it's a document element - means root element
+	//QString startTag = rootFromFile.tagName();
+	for(QDomNode n = rootFromFile; !n.isNull(); n = n.nextSibling())
 		TraverseXmlNode( n, hashimoto, attribs );
 
-	root = m_doc.documentElement();
+	QDomElement rootFromDoc = m_doc.documentElement();
 	hitr = hashimoto.constBegin();
 	while( hitr != hashimoto.constEnd() )
 	{
-		QString tag = hitr.key();
+		QString tagFromFile = hitr.key();
 		// Find elements with tag names
-		QDomNodeList nodes = root.elementsByTagName(tag);
-		int tagCount = nodes.length();
+		QDomNodeList nodesFromDoc = rootFromDoc.elementsByTagName(tagFromFile);
+		int tagCount = nodesFromDoc.length();
+		//qDebug() << "Processing Tag: " << tagFromFile << "Count: " << tagCount;
+
 		if( tagCount == 0 )
 		{
-			qDebug() << "Error" << QString("Tag '%1' Does not Exist!").arg(tag);
+			qDebug() << "Error" << QString("File Tag '%1' Does not Exist in Doc!").arg(tagFromFile);
 			QMessageBox messageBox;
-			messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Does not Exist!").arg(tag));
+			messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Does not Exist!").arg(tagFromFile));
 			return false;
 		}
+		/* chm 10.1.18
 		if( tagCount != 1 )
 		{
-			qDebug() << "Error" << QString("Tag '%1' Exist More than Once!").arg(tag);
+			qDebug() << "Error" << QString("Tag '%1' Exist More than Once!").arg(tagFromFile);
 			QMessageBox messageBox;
-			messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Exist More than Once!").arg(tag));
+			messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Exist More than Once!").arg(tagFromFile));
 			return false;
-		}
+		}*/
 		// Iterate through all we found (should only be 1)
-		for(int i=0; i<nodes.count(); i++)
+		for(int i=0; i<nodesFromDoc.count(); i++)
 		{
-			QDomNode node = nodes.item(i);
+			QDomNode node = nodesFromDoc.item(i);
+			//qDebug() << "Processing Node: " << node.nodeName();
 			if(node.nodeType() == QDomNode::ElementNode)// Check the node is a DOM element
 			{
 				QDomElement element = node.toElement();// Access the DOM element
-				QHash<QString,QHash<QString, QString>>::const_iterator aitr = attribs.find(tag);
+				QHash<QString,QHash<QString, QString>>::const_iterator aitr = attribs.find(tagFromFile);
 				if( aitr != attribs.end() )
 				{
 					QHash<QString, QString>::const_iterator attrmoto =  aitr.value().constBegin();
@@ -672,9 +756,9 @@ bool WsdlMethodView::OnRestoreClicked(int clicked)
 						}
 						else
 						{
-							qDebug() << "Error" << QString("Tag '%1' Does not Have Attribute '%2'!").arg(tag,attrmoto.key());
+							qDebug() << "Error" << QString("Tag '%1' Does not Have Attribute '%2'!").arg(tagFromFile,attrmoto.key());
 							QMessageBox messageBox;
-							messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Does not Have Attribute '%2'!").arg(tag,attrmoto.key()));
+							messageBox.critical(Q_NULLPTR,"Error",QString("Tag '%1' Does not Have Attribute '%2'!").arg(tagFromFile,attrmoto.key()));
 							return false;
 						}
 						++attrmoto;
@@ -699,7 +783,9 @@ bool WsdlMethodView::OnRestoreClicked(int clicked)
 		}
 		++hitr;
 	}
+	m_HoldoffUpdate=true;
 	CreateTreeView(m_doc);
+	m_HoldoffUpdate=false;
 	XmlUpdate();
 	return true;
 }
@@ -742,12 +828,13 @@ void WsdlMethodView::TraverseXmlNode(const QDomNode& node, QHash<QString, QStrin
 		/*else*/if(domNode.isElement())
 		{
 			domElement = domNode.toElement();
-			//qDebug()<<"domElement tag is: " << domElement.tagName();
+			//qDebug()<<"    domElement tag is: " << domElement.tagName();
 			if(!(domElement.isNull()))
 			{
 				//qDebug() << __FUNCTION__ << "isElement" << level << QString(level, ' ').toLocal8Bit().constData() << "tagName: "  << domElement.tagName().toLocal8Bit().constData();
 				tagname = domElement.tagName().toLocal8Bit().constData();
 			}
+
 		}
 		else if(domNode.isText())
 		{
@@ -756,11 +843,11 @@ void WsdlMethodView::TraverseXmlNode(const QDomNode& node, QHash<QString, QStrin
 			{
 				if( tagname != Q_NULLPTR )
 				{
-					//qDebug() << "Tag Value is: " << domText.data() << " For Tag " << tagname;
+					//qDebug() << "        Tag Value is: " << domText.data() << " For Tag " << tagname;
 					rList[tagname] = domText.data();
 				}
 				else{
-					qDebug() << "Text Found With No Tag!";
+					qDebug() << "******* Text Found With No Tag!";
 				}
 			}
 		}
@@ -805,6 +892,12 @@ void WsdlMethodView::OnXmlItemChanged(QStandardItem* item)
 						else
 						{
 							WsdlFile::WriteJsonAttrInfo(foundNode, attrName, TAG_JSON_IS_USER_CHECKED, QJsonValue(isChecked));
+
+							// chm: mark all attributes as DONT_FILTER
+							//if( foundNode.tagName() == "com:Branch")
+							//	qDebug() << "DONT_FILTER_1 foundNode: " << foundNode.tagName() << "attrName: " << attrName;
+							WsdlFile::WriteJsonAttrInfo(foundNode, attrName, TAG_JSON_DONT_FILTER, QJsonValue(true));
+
 							if (DoShowInfo()) // Update the Json treeview items
 							{
 								// Find the __ATTR__ item
@@ -838,6 +931,10 @@ void WsdlMethodView::OnXmlItemChanged(QStandardItem* item)
 			else
 			{
 				WsdlFile::WriteJsonInfo(foundNode, TAG_JSON_IS_USER_CHECKED, QJsonValue(isChecked));
+				// chm: mark all elements as DONT_FILTER
+				//if( foundNode.tagName() == "com:Branch")
+				//	qDebug() << "DONT_FILTER_2 foundNode: " << foundNode.tagName();
+				WsdlFile::WriteJsonInfo(foundNode, TAG_JSON_DONT_FILTER, QJsonValue(true));
 			}
 			if (DoShowInfo()) // Update the Json
 			{
@@ -846,5 +943,43 @@ void WsdlMethodView::OnXmlItemChanged(QStandardItem* item)
 			}
 		}
 	}
+	// chm Oct.8, 2018 - if child checked, make sure parents are too
+	if( isChecked )
+	{
+		while( item->parent() != Q_NULLPTR ){
+			item = item->parent();
+			isChecked = (item->checkState() == Qt::Checked);
+			if( !isChecked ){
+				qint64 id = item->data(ID_ROLE).toLongLong();
+				QDomElement foundNode = WsdlFile::FindElementNodeById(m_doc.firstChildElement(), id);
+				// Found the Node...so update the info
+				if (!foundNode.isNull())
+				{
+					WsdlFile::WriteJsonInfo(foundNode, TAG_JSON_IS_USER_CHECKED, QJsonValue(true));
+					item->setCheckState(Qt::Checked);
+				}
+			}
+		}
+	}
 	XmlUpdate();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

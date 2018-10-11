@@ -61,9 +61,9 @@
 #ifndef WSDLXMLVIEWHEADERWIDGET_H
 #define WSDLXMLVIEWHEADERWIDGET_H
 
-#include "ui_WsdlXmlViewHeaderWidget.h"
-
 #include <QWidget>
+
+#include "ui_WsdlXmlViewHeaderWidget.h"
 
 class WsdlXmlViewHeaderWidget : public QWidget
 {
@@ -77,7 +77,7 @@ public:
 	QColor m_color;
 
 public:
-	WsdlXmlViewHeaderWidget(QWidget* parent=0);
+	WsdlXmlViewHeaderWidget(QWidget* parent=Q_NULLPTR);
 	~WsdlXmlViewHeaderWidget();
 
 	void SetColor(QColor color) {m_color = color;}
@@ -88,6 +88,7 @@ protected:
 
 signals:
 	void ExportClicked();
+	void Valid8Clicked();
 	//void RefreshClicked();
 	};
 

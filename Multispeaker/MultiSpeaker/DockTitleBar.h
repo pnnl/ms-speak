@@ -73,7 +73,7 @@ private:
   Ui::DockTitleBar ui;
 
 public:
-  DockTitleBar(QWidget* parent=0);
+  DockTitleBar(QWidget* parent=Q_NULLPTR);
   ~DockTitleBar();
 
   void SetFloating(bool isFloating);

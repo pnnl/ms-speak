@@ -72,6 +72,7 @@ WsdlTreeViewHeaderWidget::WsdlTreeViewHeaderWidget(QWidget* parent)
 	connect(ui.InfoBtn, SIGNAL(clicked()), this, SIGNAL(InfoToggled()));
 	connect(ui.SaveBtn, SIGNAL(clicked()), this, SIGNAL(SaveClicked()));
 	connect(ui.RestoreBtn, SIGNAL(clicked()), this, SIGNAL(RestoreClicked()));
+
 	// The toggled signal is emitted every time the check state of the checkbox changes, even if it changes through code,
 	// while the clicked signal is emited only when the user interacts with the checkbox
 	//connect(ui.EnableCheckbox, SIGNAL(toggled(bool)), this, SIGNAL(EnableClicked(bool))); using this
@@ -114,4 +115,3 @@ void WsdlTreeViewHeaderWidget::paintEvent(QPaintEvent* e)
 	p.drawRect(QRect(0, 0, w-1, h-1));
 	QWidget::paintEvent(e);
 }
-

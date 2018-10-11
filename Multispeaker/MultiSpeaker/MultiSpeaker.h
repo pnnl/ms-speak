@@ -81,77 +81,79 @@ class QSslError;
 
 class MultiSpeaker : public QMainWindow
 {
-  Q_OBJECT
+	Q_OBJECT
 private:
-  Ui::MultiSpeakerClass ui;
+	Ui::MultiSpeakerClass ui;
 
 	QShortcut m_clearSettingsShortcut;
-  FunctionBlockDock* m_functionBlockDock;
-  LogDock* m_logDock;
+	FunctionBlockDock* m_functionBlockDock;
+	LogDock* m_logDock;
 
-  MethodDock* m_methodDock;
-  LogDock* m_miniNetCmdDock;
+	MethodDock* m_methodDock;
+	LogDock* m_miniNetCmdDock;
 
-  WsdlDock* m_wsdlDock;
+	WsdlDock* m_wsdlDock;
+	static MultiSpeaker *pMainWindow;
 
 public:
-  MultiSpeaker(QWidget* parent=Q_NULLPTR);
-  ~MultiSpeaker();
+	MultiSpeaker(QWidget* parent=Q_NULLPTR);
+	~MultiSpeaker();
+	static MultiSpeaker *theApp();
 
 protected:
 	virtual void closeEvent(QCloseEvent* e);
-  virtual void resizeEvent(QResizeEvent* e) {Q_UNUSED(e); SaveState();}
+	virtual void resizeEvent(QResizeEvent* e) {Q_UNUSED(e); SaveState();}
 
 private:
-  void CreateFunctionBlockDock();
-  void CreateLogDock();
-  void CreateMethodDock();
-  void CreateMiniNetCmdDock();
-  void CreateTitleToolBar();
-  void CreateToolBar();
-  void CreateWsdlDock();
+	void CreateFunctionBlockDock();
+	void CreateLogDock();
+	void CreateMethodDock();
+	void CreateMiniNetCmdDock();
+	void CreateTitleToolBar();
+	void CreateToolBar();
+	void CreateWsdlDock();
 
-  void DisplayCertChainInfo(const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
-  void DisplayHostSslErrors(const QList<QSslError>& errors);
+	void DisplayCertChainInfo(const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
+	void DisplayHostSslErrors(const QList<QSslError>& errors);
 
-  void EditTimelineEvent(TimelineEvent& e);
+	void EditTimelineEvent(TimelineEvent& e);
 
-  FunctionBlockDock& FunctionBlockDockkRef() {if (!m_functionBlockDock) CreateFunctionBlockDock(); return *m_functionBlockDock;}
-  LogDock& LogDockRef() {if (!m_logDock) CreateLogDock(); return *m_logDock;}
+	FunctionBlockDock& FunctionBlockDockkRef() {if (!m_functionBlockDock) CreateFunctionBlockDock(); return *m_functionBlockDock;}
+	LogDock& LogDockRef() {if (!m_logDock) CreateLogDock(); return *m_logDock;}
 
-  MethodDock& MethodDockRef() {if (!m_methodDock) CreateMethodDock(); return *m_methodDock;}
-  LogDock& MiniNetCmdDockRef() {if (!m_miniNetCmdDock) CreateMiniNetCmdDock(); return *m_miniNetCmdDock;}
+	MethodDock& MethodDockRef() {if (!m_methodDock) CreateMethodDock(); return *m_methodDock;}
+	LogDock& MiniNetCmdDockRef() {if (!m_miniNetCmdDock) CreateMiniNetCmdDock(); return *m_miniNetCmdDock;}
 
-  void RestoreState();
-  void SaveState();
+	void RestoreState();
+	void SaveState();
 
-  WsdlDock& WsdlDockRef() {if (!m_wsdlDock) CreateWsdlDock(); return *m_wsdlDock;}
+	WsdlDock& WsdlDockRef() {if (!m_wsdlDock) CreateWsdlDock(); return *m_wsdlDock;}
 
 signals:
 private slots:
-  void OnAbout();
-  void OnClearSettings();
-  void OnHideTimestampLabel();
-  void OnHostDoubleClicked(int id);
-  void OnHostSceneChanged();
-  bool OnHttpOut();
-  void OnLogMsg(const QString& msg) { LogDockRef().Append(msg); }
-  void OnMiniNet();
-  void OnMiniNetMsg(const QString& msg) {LogDockRef().Append(msg);}
-  void OnScenarioOpen();
-  void OnScenarioSave();
-  void OnTimelineError(const QString& error);
-  void OnTimelineEventDoubleClicked(TimelineEvent& e) {EditTimelineEvent(e);}
-  void OnTimelineEventListViewDoubleClicked(const QModelIndex& index);
-  void OnTimelineMouseMove(int timeStamp);
-  void OnTimelineSpanBtnClicked();
-  void OnTimelineSpanChanged(int timeSpan);
-  void OnTimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
-  void OnToolBarVisibilityChanged(bool visible) { if (!visible) qobject_cast<QToolBar*>(sender())->setVisible(true); } // Prevent user from hiding the main tool bar
-  void OnWsdl() {WsdlDockRef().show();}
-  void OnWsdlFileChanged(const QString& host);
-  void OnWsdlTest();
-  void OnBrowseRoot();
+	void OnAbout();
+	void OnClearSettings();
+	void OnHideTimestampLabel();
+	void OnHostDoubleClicked(int id);
+	void OnHostSceneChanged();
+	bool OnHttpOut();
+	void OnLogMsg(const QString& msg) { LogDockRef().Append(msg); }
+	void OnMiniNet();
+	void OnMiniNetMsg(const QString& msg) {LogDockRef().Append(msg);}
+	void OnScenarioOpen();
+	void OnScenarioSave();
+	void OnTimelineError(const QString& error);
+	void OnTimelineEventDoubleClicked(TimelineEvent& e) {EditTimelineEvent(e);}
+	void OnTimelineEventListViewDoubleClicked(const QModelIndex& index);
+	void OnTimelineMouseMove(int timeStamp);
+	void OnTimelineSpanBtnClicked();
+	void OnTimelineSpanChanged(int timeSpan);
+	void OnTimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
+	void OnToolBarVisibilityChanged(bool visible) { if (!visible) qobject_cast<QToolBar*>(sender())->setVisible(true); } // Prevent user from hiding the main tool bar
+	void OnWsdl() {WsdlDockRef().show();}
+	void OnWsdlFileChanged(const QString& host);
+	void OnWsdlTest();
+	void OnBrowseRoot();
 };
 
 #endif // MULTISPEAKER_H

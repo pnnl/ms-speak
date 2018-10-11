@@ -75,7 +75,7 @@ private:
   QStandardItemModel m_model;
 
 public:
-  FunctionGroupWidget(int index, const QString& title, const QStringList& names, QWidget* parent=0);
+  FunctionGroupWidget(int index, const QString& title, const QStringList& names, QWidget* parent=Q_NULLPTR);
   ~FunctionGroupWidget();
 
 private:

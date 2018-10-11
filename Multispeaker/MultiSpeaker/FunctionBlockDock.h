@@ -66,7 +66,7 @@ class FunctionBlockDock : public QDockWidget
 {
   Q_OBJECT
 public:
-  FunctionBlockDock(const QString& name, QWidget* parent=0);
+  FunctionBlockDock(const QString& name, QWidget* parent=Q_NULLPTR);
   ~FunctionBlockDock();
 
 protected:

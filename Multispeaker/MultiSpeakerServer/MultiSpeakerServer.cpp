@@ -67,6 +67,7 @@
 #include "MultiSpeakerServer.h"
 #include "Settings.h"
 #include "SslServer.h"
+#include "Valid8.h"
 
 static int MSG_COUNTER = 0;
 
@@ -96,16 +97,18 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 	ui.EnableSslCheck->setChecked(s.value(SK_SSL_ENABLED, false).toBool());
 	ui.SslFrame->setVisible(s.value(SK_SSL_ENABLED, false).toBool());
 
+	ui.btnValid8->setEnabled(false);
+
 	QString respFile = s.value(SK_RESPONSE_FILE, QString()).toString();
 	if( respFile.isEmpty() ){
-		//OnMessage(QString("Warning, No Response File Selected.\n").toLatin1());
 		ui.respFileName->setText(QApplication::translate("MultiSpeakerServerClass", "<No Response File>", nullptr));
 	}
 	else{
-		//OnMessage(QString("Response File: %1\n").arg(respFile).toLatin1());
 		QString justname = respFile.mid(respFile.lastIndexOf("/")+1);
-		ui.respFileName->setText(justname);
+		ui.respFileName->setText("Response File: " + justname);
 	}
+	connect(ui.btnValid8, SIGNAL(clicked()), this, SLOT(OnValid8()));
+	RestoreState();
 	QTimer::singleShot(0, this, SLOT(OnInitHostAddress()));
 }
 //------------------------------------------------------------------------------
@@ -160,6 +163,9 @@ void MultiSpeakerServer::ServerClose()
 	m_server->close();
 	m_server->deleteLater();
 	ui.btnResponse->setEnabled(true);
+	if(! m_testv8 )
+		ui.btnValid8->setEnabled(false);
+
 }
 //------------------------------------------------------------------------------
 // ServerListen
@@ -228,6 +234,39 @@ void MultiSpeakerServer::ServerListen()
 	ui.btnResponse->setEnabled(false);
 }
 //------------------------------------------------------------------------------
+// OnValid8
+//
+void MultiSpeakerServer::OnValid8()
+{
+	//Test dlg(this);
+
+	//QTemporaryFile f(
+	//    QDir::temp().absoluteFilePath("mprog-XXXXXX.ext")
+	//);
+
+	//		-sd "/home/carl/Desktop/MS-SPEAK/V507/XSDS/EndPoints/"
+	//		-ep "CD_Server"
+	//		-xf "/home/carl/Desktop/MS-SPEAK/files/InitCDReq.xml"
+	if( m_testv8 )
+	{
+		Valid8or dlg( "CD_Server", "/home/carl/Desktop/MS-SPEAK/files/InitCDReq.xml", this );
+		dlg.exec();
+	}
+	else{
+		Valid8or dlg( m_xmlBuff, this );
+		dlg.exec();
+	}
+}
+//------------------------------------------------------------------------------
+// OnValid8
+//
+void MultiSpeakerServer::Valid8(const QByteArray& msg)
+{
+	m_testv8 = false;
+	m_xmlBuff = msg;
+	ui.btnValid8->setEnabled(true);
+}
+//------------------------------------------------------------------------------
 // OnInitHostAddress
 //
 void MultiSpeakerServer::OnInitHostAddress()
@@ -284,6 +323,9 @@ void MultiSpeakerServer::OnMessage(int length, const QByteArray& msg)
 	ui.plainTextEdit->appendPlainText("*** BEGIN MSG ****************\n");
 	ui.plainTextEdit->appendPlainText(msg);
 	ui.plainTextEdit->appendPlainText("*** END MSG ******************\n");
+
+	Valid8(msg);
+
 }
 //------------------------------------------------------------------------------
 // OnServerAcceptError
@@ -336,6 +378,7 @@ void MultiSpeakerServer::OnSslEnabledCheckChanged(bool checked)
 void MultiSpeakerServer::OnClear()
 {
 	ui.plainTextEdit->clear();
+	ui.btnValid8->setEnabled(false);
 }
 //------------------------------------------------------------------------------
 // OnResponse
@@ -347,16 +390,35 @@ void MultiSpeakerServer::OnResponse()
 	QString seedFile = QSettings().value(saveKey, QVariant()).toString();
 	QString fileName = QFileDialog::getOpenFileName(this, "Select Response File", seedFile, fltr);
 	if( fileName.isEmpty() ){
-		//if( !seedFile.isEmpty() ){// previously was no response file also?
-		//	//OnMessage(QString("\nWarning, No Response File Selected.\n").toLatin1());
-		//}
 		ui.respFileName->setText(QApplication::translate("MultiSpeakerServerClass", "<No Response File>", nullptr));
 	}
-	else {//if( seedFile.isEmpty() ){
-		//OnMessage(QString("\nResponse File: %1\n").arg(fileName).toLatin1());
+	else {
 		QString justname = fileName.mid(fileName.lastIndexOf("/")+1);
-		ui.respFileName->setText(justname);
+		ui.respFileName->setText("Response File: " + justname);
 	}
 	QSettings().setValue(saveKey, fileName);
 }
-
+//------------------------------------------------------------------------------
+// RestoreState
+//
+void MultiSpeakerServer::RestoreState()
+{
+	restoreGeometry(QSettings().value(SK_MAIN_GEOMETRY).toByteArray());
+	restoreState(QSettings().value(SK_MAIN_STATE).toByteArray());
+}
+//------------------------------------------------------------------------------
+// SaveState
+//
+void MultiSpeakerServer::SaveState()
+{
+	QSettings().setValue(SK_MAIN_GEOMETRY, saveGeometry());
+	QSettings().setValue(SK_MAIN_STATE, saveState());
+}
+//------------------------------------------------------------------------------
+// closeEvent
+//
+void MultiSpeakerServer::closeEvent (QCloseEvent* e)
+{
+  SaveState();
+  QMainWindow::closeEvent(e);
+}

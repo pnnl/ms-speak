@@ -69,6 +69,7 @@ const int HOST_NODE_SIZE = 50;
 const int ITEM_HTTP_ROLE = Qt::UserRole + 2; // Request or Response
 const int ITEM_TYPE_ROLE = Qt::UserRole + 3; // Header or Param
 
+TimelineEventEditor *TimelineEventEditor::pMainWindow = nullptr;
 //------------------------------------------------------------------------------
 // TimelineEventEditor
 //
@@ -78,6 +79,7 @@ TimelineEventEditor::TimelineEventEditor(const TimelineEvent& request, const Tim
 	  m_response(response)
 {
 	ui.setupUi(this);
+	pMainWindow = this;
 
 	ui.TitleHeader->SetTitle(request.Method(), 12);
 	ui.TitleHeader->SetColor(QColor(1,164,148));
@@ -130,6 +132,10 @@ TimelineEventEditor::TimelineEventEditor(const TimelineEvent& request, const Tim
 //
 TimelineEventEditor::~TimelineEventEditor()
 {
+}
+TimelineEventEditor *TimelineEventEditor::theEditor()
+{
+	return pMainWindow;
 }
 //------------------------------------------------------------------------------
 // Request

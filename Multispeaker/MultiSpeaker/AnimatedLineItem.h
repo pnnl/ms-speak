@@ -83,7 +83,7 @@ private:
   QLineF m_line;
 
 public:
-  AnimatedLineItem(HostItem* src, HostItem* dst, QGraphicsItem* parent=0);
+  AnimatedLineItem(HostItem* src, HostItem* dst, QGraphicsItem* parent=Q_NULLPTR);
   ~AnimatedLineItem();
 
   HostItem* BlockDst() {return m_blockDst;}

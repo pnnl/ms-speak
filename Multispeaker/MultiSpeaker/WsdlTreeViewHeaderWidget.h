@@ -78,6 +78,7 @@ public:
 	WsdlTreeViewHeaderWidget(QWidget* parent=Q_NULLPTR);
 	~WsdlTreeViewHeaderWidget();
 
+	QToolButton *RestoreBtn() {return ui.RestoreBtn;}
 	bool InfoChecked() {return ui.InfoBtn->isChecked();}
 	bool EnableChecked() {return ui.EnableCheckbox->isChecked();}
 	void setEnabled(bool b) {return ui.EnableCheckbox->setChecked(b);}

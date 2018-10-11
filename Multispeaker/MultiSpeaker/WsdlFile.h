@@ -81,6 +81,7 @@ const QString TAG_JSON_ID = "__ID__";
 const QString TAG_JSON_INFO = "__INFO__";
 const QString TAG_JSON_IS_ARRAY_CONTAINER = "isArrayContainer";
 const QString TAG_JSON_IS_USER_CHECKED = "isUserChecked";
+const QString TAG_JSON_DONT_FILTER = "dontFilter";
 const QString TAG_JSON_MIN = "min";
 const QString TAG_JSON_MAX = "max";
 const QString TAG_JSON_NAMESPACE = "namespace";
@@ -88,9 +89,21 @@ const QString TAG_JSON_NS = "__NS__";
 const QString TAG_JSON_PATTERN = "pattern";
 const QString TAG_JSON_TYPE = "type";
 const QString TAG_JSON_USE = "use";
-const QString TAG_JSON_USE_REQUIRED = "required";
 const QString STR_ATTRIBUTES = "Attributes";
-
+/*
+ * Required is different from optional. Optional means that the field does not need to be present in the XML.
+ * You can have a field that is optional and required, meaning that if it is present in the XML then it must be filled in.
+ *
+ * In order to set a schema element as optional, you include the minOccurs="0" attribute. In order to set a schema element as
+ * not required, you include the nillable="true" attribute.
+ *
+ * In order to set a schema attribute as optional, you do not need to add anything as attributes are optional by default;
+ * but you might prefer to include the use="optional" attribute.  In order to set a schema attribute as not optional, you must
+ * include the use="required" attribute. Attributes have no equivalent to the nillable attribute on elements. If you want an
+ * attribute to be not required, you must specify the string data type. All other data types will require the attribute to have a value.
+ */
+const QString TAG_JSON_USE_REQUIRED = "required";
+const QString TAG_JSON_USE_OPTIONAL = "optional";
 class NamespaceInfo;
 class TimelineEvent; 
 
@@ -124,18 +137,18 @@ private:
 //
 class WsdlMethod : public QObject
 {
-  Q_OBJECT
+	Q_OBJECT
 public:
-  QString Desc;
-  QString Input;
-  QString Name;
-  QString Output;
-  QString RequestHeader;
-  QString ResponseHeader;
+	QString Desc;
+	QString Input;
+	QString Name;
+	QString Output;
+	QString RequestHeader;
+	QString ResponseHeader;
 
 public:
-  WsdlMethod(const QString& name, QObject* parent=0) : QObject(parent), Desc(""), Input(""), Name(name), Output(""), RequestHeader(""), ResponseHeader("") {}
-  ~WsdlMethod() {}
+	WsdlMethod(const QString& name, QObject* parent=Q_NULLPTR) : QObject(parent), Desc(""), Input(""), Name(name), Output(""), RequestHeader(""), ResponseHeader("") {}
+	~WsdlMethod() {}
 };
 
 //------------------------------------------------------------------------------
@@ -143,96 +156,96 @@ public:
 //
 class WsdlFile : public QObject
 {
-  Q_OBJECT
+	Q_OBJECT
 private:
-  QString m_fileName; // Actual fileName
-  QString m_hostName; // The WSDL Service Host Short Name , i.e. CB MR
-  QHash<QString, QDomDocument*> m_schemaDomDocs; // key is namespace...mem owned here
-  QDomDocument m_wsdlDomDoc;
-  SchemaInfo m_wsdlInfo;
-  QHash<QString, WsdlMethod*> m_wsdlMethods; //key is ns:name
+	QString m_fileName; // Actual fileName
+	QString m_hostName; // The WSDL Service Host Short Name , i.e. CB MR
+	QHash<QString, QDomDocument*> m_schemaDomDocs; // key is namespace...mem owned here
+	QDomDocument m_wsdlDomDoc;
+	SchemaInfo m_wsdlInfo;
+	QHash<QString, WsdlMethod*> m_wsdlMethods; //key is ns:name
 
 public:
-  WsdlFile(const QString& hostName, const QString& fileName, QObject* parent=0);
-  ~WsdlFile();
+	WsdlFile(const QString& hostName, const QString& fileName, QObject* parent=Q_NULLPTR);
+	~WsdlFile();
 
-  QStringList EnabledMethodNames();
-  const QList<WsdlMethod*> EnabledMethods();
-  QString FileName() const {return m_fileName;}
-  static QDomElement FindElementNodeById(QDomElement parentNode, qint64 id);
-  QString HostName() {return m_hostName;}
+	QStringList EnabledMethodNames();
+	const QList<WsdlMethod*> EnabledMethods();
+	QString FileName() const {return m_fileName;}
+	static QDomElement FindElementNodeById(QDomElement parentNode, qint64 id);
+	QString HostName() {return m_hostName;}
 
-  static QJsonDocument JsonDoc(const QByteArray& data);
+	static QJsonDocument JsonDoc(const QByteArray& data);
 
-  WsdlMethod* Method(const QString& methodName) {return m_wsdlMethods.value(methodName, 0);}
-  QHash<QString, WsdlMethod*> Methods() {return m_wsdlMethods;}
-  QDomDocument MethodTemplate(const QString& method);
-  QDomDocument MethodTemplateRequest(const QString& method);
-  QDomDocument MethodTemplateResponse(const QString& method);
+	WsdlMethod* Method(const QString& methodName) {return m_wsdlMethods.value(methodName, Q_NULLPTR);}
+	QHash<QString, WsdlMethod*> Methods() {return m_wsdlMethods;}
+	QDomDocument MethodTemplate(const QString& method);
+	QDomDocument MethodTemplateRequest(const QString& method);
+	QDomDocument MethodTemplateResponse(const QString& method);
 
-  QString NamespaceByPrefix(const QString& prefix) const {return m_wsdlInfo.PrefixNamespaceLookup.value(prefix, "");}
+	QString NamespaceByPrefix(const QString& prefix) const {return m_wsdlInfo.PrefixNamespaceLookup.value(prefix, "");}
 
-  QDomDocument Parse(const QString& methodType);
-  void SaveMethodTemplate(const QString& method, const QDomDocument& doc);
-  static QString SchemaTag(const QString& prefix, const QString& tag) {return ((prefix.isEmpty()) ? tag : QString("%1:%2").arg(prefix, tag));}
-  void SetMethodEnabled(const QString& method, bool isChecked);
+	QDomDocument Parse(const QString& methodType);
+	void SaveMethodTemplate(const QString& method, const QDomDocument& doc);
+	static QString SchemaTag(const QString& prefix, const QString& tag) {return ((prefix.isEmpty()) ? tag : QString("%1:%2").arg(prefix, tag));}
+	void SetMethodEnabled(const QString& method, bool isChecked);
 
-  static void WriteJsonAttrEnumInfo(QDomElement node, const QString& attrName, const QString& key, QJsonValue val);
-  static void WriteJsonAttrInfo(QDomElement node, const QString& attrName, const QString& key, QJsonValue val);
-  static void WriteJsonAttrInfo(QDomElement node, const QString& attrName, QHash<QString, QJsonValue> values);
-  static void WriteJsonEnumInfo(QDomElement node, const QString& key, QJsonValue val);
-  static void WriteJsonInfo(QDomElement node, const QString& key, QJsonValue val);
-  static void WriteJsonInfo(QDomElement node, QHash<QString, QJsonValue> values);
-  static void WriteJsonNsInfo(QDomElement node, const NamespaceInfo& nsInfo);
+	static void WriteJsonAttrEnumInfo(QDomElement node, const QString& attrName, const QString& key, QJsonValue val);
+	static void WriteJsonAttrInfo(QDomElement node, const QString& attrName, const QString& key, QJsonValue val);
+	static void WriteJsonAttrInfo(QDomElement node, const QString& attrName, QHash<QString, QJsonValue> values);
+	static void WriteJsonEnumInfo(QDomElement node, const QString& key, QJsonValue val);
+	static void WriteJsonInfo(QDomElement node, const QString& key, QJsonValue val);
+	static void WriteJsonInfo(QDomElement node, QHash<QString, QJsonValue> values);
+	static void WriteJsonNsInfo(QDomElement node, const NamespaceInfo& nsInfo);
 
-  static QByteArray Xml(const QDomDocument& doc, int indent=2, bool doRemoveInfo=true);
-  static QByteArray XmlSoap(const QDomDocument& doc, int indent=2);
-  static QByteArray XmlSoap(const TimelineEvent& e, int indent=2);
+	static QByteArray Xml(const QDomDocument& doc, int indent=2, bool doRemoveInfo=true);
+	static QByteArray XmlSoap(const QDomDocument& doc, int indent=2);
+	static QByteArray XmlSoap(const TimelineEvent& e, int indent, bool b);
 
 private:
-  void Clear();
-  QDomDocument* DomDocByNameSpace(const QString& ns, const SchemaInfo& info, QString& path);
+	void Clear();
+	QDomDocument* DomDocByNameSpace(const QString& ns, const SchemaInfo& info, QString& path);
 
-  static void Filter(QDomElement& node, bool removeUnchecked=false, bool removeInfo=false);
-  QDomElement FindType(const QString& typeName, const QDomDocument* doc, const SchemaInfo& info, SchemaInfo& xsdInfo);
-  QDomElement FindType(const QString& typeName, const QDomDocument* xsd, const SchemaInfo& info);
+	static void Filter(QDomElement& node, bool removeUnchecked=false, bool removeInfo=false);
+	QDomElement FindType(const QString& typeName, const QDomDocument* doc, const SchemaInfo& info, SchemaInfo& xsdInfo);
+	QDomElement FindType(const QString& typeName, const QDomDocument* xsd, const SchemaInfo& info);
 
-  bool IsXsdPrimitiveType(const QString& type, const SchemaInfo& info);
+	bool IsXsdPrimitiveType(const QString& type, const SchemaInfo& info);
 
-  QDomDocument Join(const QString& rootNodeName, QList<QDomDocument> list);
+	QDomDocument Join(const QString& rootNodeName, QList<QDomDocument> list);
 
-  QString JsonFileName() {return WsInfo().WsdlMethodListJsonFileName(m_hostName);}
+	QString JsonFileName() {return WsInfo().WsdlMethodListJsonFileName(m_hostName);}
 
-  void ParseAnnotation(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
-  void ParseAny(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseAnyAttribute(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseAttribute(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseChoice(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseComplexContent(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseComplexType(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
-  void ParseElement(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isRoot=false);
-  void ParseEnumeration(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
-  void ParseExtension(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseFileName(const QString& fileName);
-  void ParseNamespaceInfo(QDomElement& node, SchemaInfo& info);
-  void ParsePattern(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
-  void ParsePortTypeOp(const QDomElement& srcNode);
-  void ParseRestriction(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
-  void ParseSchemaInfo(QDomDocument* doc, SchemaInfo& info);
-  void ParseSchemaInfo(const QDomElement& schema, SchemaInfo& info);
-  QDomElement ParseSchemaForElement(const QDomElement& schemaNode, const QString& elementName, const SchemaInfo& info);
-  void ParseSequence(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  void ParseSimpleContent(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
-  QString ParseSoapHeaderInOutType(const QString& method, const QString& inputOutputTag);
-  QString ParseSoapMessageType(const QString& message);
+	void ParseAnnotation(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
+	void ParseAny(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseAnyAttribute(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseAttribute(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseChoice(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseComplexContent(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseComplexType(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
+	void ParseElement(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isRoot=false);
+	void ParseEnumeration(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
+	void ParseExtension(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseFileName(const QString& fileName);
+	void ParseNamespaceInfo(QDomElement& node, SchemaInfo& info);
+	void ParsePattern(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
+	void ParsePortTypeOp(const QDomElement& srcNode);
+	void ParseRestriction(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info, bool isAttr=false, const QString& attrName=QString());
+	void ParseSchemaInfo(QDomDocument* doc, SchemaInfo& info);
+	void ParseSchemaInfo(const QDomElement& schema, SchemaInfo& info);
+	QDomElement ParseSchemaForElement(const QDomElement& schemaNode, const QString& elementName, const SchemaInfo& info);
+	void ParseSequence(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	void ParseSimpleContent(const QDomElement& srcNode, QDomElement& dstNode, const SchemaInfo& info);
+	QString ParseSoapHeaderInOutType(const QString& method, const QString& inputOutputTag);
+	QString ParseSoapMessageType(const QString& message);
 
-  void SetDomElementId(QDomElement& node);
+	void SetDomElementId(QDomElement& node);
 
 signals:
-  void WsdlFileChanged(const QString& hostName);
+	void WsdlFileChanged(const QString& hostName);
 
 private slots:
-  void OnWsdlMethodUpdate() {emit WsdlFileChanged(m_hostName);}
+	void OnWsdlMethodUpdate() {emit WsdlFileChanged(m_hostName);}
 };
 
 #endif // WSDLFILE_H

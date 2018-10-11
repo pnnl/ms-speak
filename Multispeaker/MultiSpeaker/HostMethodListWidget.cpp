@@ -99,7 +99,7 @@ HostMethodListWidget::HostMethodListWidget(int index, const QString& hostName, Q
 	Header()->SetColor(QColor(168,60,15));
 
 	Update();
-	}
+}
 //------------------------------------------------------------------------------
 // ~HostMethodListWidget
 //

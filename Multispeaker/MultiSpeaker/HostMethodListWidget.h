@@ -75,7 +75,7 @@ private:
   QStandardItemModel m_model;
 
 public:
-  HostMethodListWidget(int index, const QString& hostName, QWidget* parent=0);
+  HostMethodListWidget(int index, const QString& hostName, QWidget* parent=Q_NULLPTR);
   ~HostMethodListWidget();
 
   QString Host() {return Header()->Title();}

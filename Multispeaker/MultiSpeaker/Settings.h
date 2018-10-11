@@ -78,6 +78,8 @@ const QString SK_DEFAULT_NETWORK_CONFIG = QStringLiteral("sk_default_network_con
 
 const QString SK_HOST_ADDRESS = QStringLiteral("sk_host_address");
 
+const QString SK_REQ_ENABLE_FLAG = QStringLiteral("sk_req_enable_flag");
+const QString SK_RES_ENABLE_FLAG = QStringLiteral("sk_res_enable_flag");
 const QString SK_EXPORT_XMLREQ_FILE = "sk_export_xmlreq_file";
 const QString SK_EXPORT_XMLRES_FILE = "sk_export_xmlres_file";
 const QString SK_SAVE_EDTREQ_FILE = "sk_save_edtreq_file";

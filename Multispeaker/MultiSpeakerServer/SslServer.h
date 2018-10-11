@@ -90,7 +90,7 @@ private:
   int m_srcId;
 
 public:
-  SslServer(QObject* parent = 0);
+  SslServer(QObject* parent = Q_NULLPTR);
   ~SslServer();
 
   QString SslCertFolder() const { return m_sslCertFolder; }

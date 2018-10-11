@@ -75,8 +75,8 @@ private:
   QTimer* m_timer;
 
 public:
-  DigitalClock(QWidget* parent=0);
-  DigitalClock(int res, QWidget* parent=0);
+  DigitalClock(QWidget* parent=Q_NULLPTR);
+  DigitalClock(int res, QWidget* parent=Q_NULLPTR);
   ~DigitalClock();
 
   void Reset() {m_timer->stop(); m_tics = 0; display(QTime(0,0,0,0).addMSecs(0).toString("h:mm:ss"));}

@@ -77,10 +77,12 @@ private:
 
 	TimelineEvent m_request;
 	TimelineEvent m_response;
+	static TimelineEventEditor *pMainWindow;
 
 public:
 	TimelineEventEditor(const TimelineEvent& request, const TimelineEvent& response, QWidget* parent=Q_NULLPTR);
 	~TimelineEventEditor();
+	static TimelineEventEditor *theEditor();
 
 	int RequestTimeStamp() const {return Timer().TicsFromTimeInMSecs(ui.TimeStampEdit->time());}
 	int ResponseTimeStamp() const {return (RequestTimeStamp() + Timer().TicsFromTimeInMSecs(ui.ResponseDelayTimeEdit->time()));}

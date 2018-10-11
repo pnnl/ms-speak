@@ -75,7 +75,7 @@ private:
   int m_index;
 
 public:
-  HeaderContainerWidget(int index, const QString& title, QWidget* parent=0);
+  HeaderContainerWidget(int index, const QString& title, QWidget* parent=Q_NULLPTR);
   ~HeaderContainerWidget();
 
   void Collapse() {Container()->setVisible(false); Header()->Collapse();}

@@ -123,12 +123,18 @@ void HttpOutEditor::Init(const Host& host)
 		ui.RequestHostIpEdit->insertItem(0, ip);
 		ui.RequestHostIpEdit->setCurrentIndex(0);
 	}
+	else{
+		ui.RequestHostIpEdit->setCurrentIndex(idx);
+	}
 
 	ip = host.RespHostAddress();
 	idx = ui.ResponseHostIpEdit->findText(ip);
 	if( idx == -1 ){
 		ui.ResponseHostIpEdit->insertItem(0, ip);
 		ui.ResponseHostIpEdit->setCurrentIndex(0);
+	}
+	else{
+		ui.ResponseHostIpEdit->setCurrentIndex(idx);
 	}
 
 	// NOTE: using ui.RequestHostIpEdit->lineEdit(),SIGNAL(returnPressed()) cause SIGEV crash on slot return

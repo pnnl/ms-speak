@@ -72,7 +72,7 @@
    <item>
     <widget class="QToolButton" name="SaveBtn">
      <property name="toolTip">
-      <string>Click to Export Settings to File</string>
+      <string>Click to Save Settings to File</string>
      </property>
      <property name="text">
       <string>Save</string>

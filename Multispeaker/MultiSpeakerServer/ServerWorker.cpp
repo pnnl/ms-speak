@@ -187,7 +187,7 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 	if (m_bytesRead >= m_bufferSize)
 	{
 		//qDebug() << "Read all " << m_bytesRead << " bytes out of " << m_bufferSize;
-		emit Message(m_buffer);
+		emit Message(static_cast <qint32>(m_bytesRead), m_buffer);
 		m_buffer.clear();
 	}
 	else{

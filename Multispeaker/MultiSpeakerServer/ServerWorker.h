@@ -78,7 +78,7 @@ private:
 	QByteArray& m_responseFile;
 
 public:
-	ServerWorker(qintptr socketDescriptor, QByteArray& qba, QObject* parent=0);
+    ServerWorker(qintptr socketDescriptor, QByteArray& qba, QObject* parent=Q_NULLPTR);
 	~ServerWorker();
 
 private:

@@ -548,7 +548,7 @@ bool HostScene::WriteMiniNetConfFile()
 }
 //------------------------------------------------------------------------------
 // dragEnterEvent
-//
+// called here when drag a Function Block to the Topology
 void HostScene::dragEnterEvent(QGraphicsSceneDragDropEvent* e)
 {
 	if (qobject_cast<FunctionBlockListView*>(e->source()))
@@ -568,7 +568,7 @@ void HostScene::dragMoveEvent(QGraphicsSceneDragDropEvent* e)
 }
 //------------------------------------------------------------------------------
 // dropEvent
-//
+// called here when drop a Function Block onto the Topology
 void HostScene::dropEvent(QGraphicsSceneDragDropEvent* e)
 {
 	const QMimeData* data = e->mimeData();

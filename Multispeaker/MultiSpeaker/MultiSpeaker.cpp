@@ -92,8 +92,15 @@
 #include "WsdlFileView.h"
 
 static bool CLEAR_SETTINGS_ON_EXIT = false;
+MultiSpeaker *MultiSpeaker::pMainWindow = nullptr;
 
-// NOTE: QSettings stored @ /home/carl/.config/PNNL/MultiSpeaker.conf
+/* NOTE: QSettings stored @ /home/carl/.config/PNNL/MultiSpeaker.conf
+ *	QSettings() -
+ *		Constructs a QSettings object for accessing settings of the application
+ *  and organization set previously with a call to QCoreApplication::setOrganizationName(),
+ *  QCoreApplication::setOrganizationDomain(), and QCoreApplication::setApplicationName().
+ */
+
 //------------------------------------------------------------------------------
 // MultiSpeaker
 //
@@ -107,6 +114,8 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	m_wsdlDock(Q_NULLPTR)
 {
 	ui.setupUi(this);
+	pMainWindow = this;
+
 	Utils::CreateRootHomePath(); // Make sure the .MultiSpeaker dir exists
 
 	CreateTitleToolBar();
@@ -158,6 +167,10 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 //
 MultiSpeaker::~MultiSpeaker()
 {
+}
+MultiSpeaker *MultiSpeaker::theApp()
+{
+	return pMainWindow;
 }
 //------------------------------------------------------------------------------
 // closeEvent
@@ -536,7 +549,7 @@ void MultiSpeaker::OnHostSceneChanged()
         CreateMethodDock();
     }
 
-    // Brute force update for now....nuclear delete and readd.
+    // Brute force update for now....nuclear delete and read.
     if (m_wsdlDock)
     {
         removeDockWidget(m_wsdlDock);
