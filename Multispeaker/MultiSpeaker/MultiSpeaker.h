@@ -94,11 +94,13 @@ private:
 
 	WsdlDock* m_wsdlDock;
 	static MultiSpeaker *pMainWindow;
+	bool	m_bInitDone;
 
 public:
 	MultiSpeaker(QWidget* parent=Q_NULLPTR);
 	~MultiSpeaker();
 	static MultiSpeaker *theApp();
+	bool InitOk() {return m_bInitDone; }
 
 protected:
 	virtual void closeEvent(QCloseEvent* e);

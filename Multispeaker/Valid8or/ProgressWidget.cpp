@@ -72,6 +72,7 @@
 //#include <QDebug>
 
 #include "Valid8Worker.h"
+#include "Valid8.h"
 #include "QSL.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------
@@ -99,6 +100,7 @@ void ProgressWidget::valid8Xml( QString s, QString e, QString x )
     m_valid8Worker->moveToThread(thread);
     connect(m_valid8Worker, &Valid8Worker::finished, thread, &QThread::quit);
     connect(m_valid8Worker, &Valid8Worker::finished, this,   &ProgressWidget::valid8XmlFinished);
+    connect(m_valid8Worker, &Valid8Worker::finishedi, this,   &ProgressWidget::valid8XmlFinishedi);
     connect(m_valid8Worker, &Valid8Worker::log,      this,   &ProgressWidget::operationLog);
     connect(m_valid8Worker, &Valid8Worker::progress, this,   &ProgressWidget::operationProgress);
     connect(thread,         &QThread::started,  m_valid8Worker, &Valid8Worker::start);
@@ -110,7 +112,49 @@ void ProgressWidget::valid8Xml( QString s, QString e, QString x )
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------
-void ProgressWidget::valid8XmlFinished(const QString &msg) {
+void ProgressWidget::valid8XmlFinishedi(const int iExitCode )
+{
+	QString msg = "Validation ";
+	
+	switch (iExitCode) 
+	{
+		case (int)JReturns::EXCEPTION:
+			msg += "EXCEPTION";
+			break;
+		case (int)JReturns::VALID8_FAIL:
+			msg += "VALID8_FAIL";
+			break;
+		case (int)JReturns::INITXSD_FAIL:
+		{
+			QMessageBox messageBox;
+			QString EndPoint = m_valid8Worker->m_EndPoint;
+			QString SchemaRoot=m_valid8Worker->m_SchemaRoot;
+			QString err=QString("'%1' Could Not Be Located.\n").arg(SchemaRoot);
+			QString dirs = "\nSchema Path Hierarchy must be similar to '<path>/EndPoints'\n";
+			QString ep = QString( "    where <path>/EndPoints contains: %1/%2.wsdl and %3.xsd\n").arg(EndPoint).arg(EndPoint).arg(EndPoint);
+			dirs += ep+ "    and <path>/xsd contains *.xsd";
+			dirs += "\n    (specify the location of <path>/EndPoints)";
+			err += dirs;
+			messageBox.critical (Q_NULLPTR,"\nSchema XSD Directory Not Found", err );
+			msg += "INITXSD_FAIL";
+			break;
+		}
+		case (int)JReturns::INIT_FAIL:
+			msg += "INITXSD_FAIL";
+			break;
+		case (int)JReturns::FAIL:
+			msg += "FAIL";
+			break;
+		case (int)JReturns::SUCCESS:
+			msg += "SUCCESS";
+			break;
+	}
+	valid8XmlFinished( msg );
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------
+void ProgressWidget::valid8XmlFinished(const QString &msg)
+{
 	m_currentOperationTimer->stop();
     m_valid8Worker = nullptr;
 	operationTick();
@@ -120,7 +164,8 @@ void ProgressWidget::valid8XmlFinished(const QString &msg) {
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------
-int ProgressWidget::calculateProgressValue(const OperationInfo &operationInfo) {
+int ProgressWidget::calculateProgressValue(const OperationInfo &operationInfo)
+{
 	return operationInfo.progress * ui->progress->maximum();
 }
 

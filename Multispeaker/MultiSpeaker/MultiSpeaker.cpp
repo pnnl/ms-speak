@@ -94,7 +94,7 @@
 static bool CLEAR_SETTINGS_ON_EXIT = false;
 MultiSpeaker *MultiSpeaker::pMainWindow = nullptr;
 
-/* NOTE: QSettings stored @ /home/carl/.config/PNNL/MultiSpeaker.conf
+/* NOTE: QSettings stored @ /home/carl/.config/PNNL/MultiSpeaker.conf or HKEY_CURRENT_USER\Software\PNNL\MultiSpeaker
  *	QSettings() -
  *		Constructs a QSettings object for accessing settings of the application
  *  and organization set previously with a call to QCoreApplication::setOrganizationName(),
@@ -111,12 +111,43 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	m_logDock(Q_NULLPTR),
 	m_methodDock(Q_NULLPTR),
 	m_miniNetCmdDock(Q_NULLPTR),
-	m_wsdlDock(Q_NULLPTR)
+	m_wsdlDock(Q_NULLPTR),
+	m_bInitDone(false)
 {
 	ui.setupUi(this);
 	pMainWindow = this;
+	// check if this is first running after a fresh install, if so, clear old file settings since
+	// prior wsdl/xsd settings may not be compatible with new 
+	QString install_ver = "n/a";
+	if( QSettings().contains(SK_INSTALL_CHECK) ){ // QSettings in HKEY_CURRENT_USER\Software\PNNL\MultiSpeaker
+		install_ver = QSettings().value(SK_INSTALL_CHECK, "badhat").toString();
+	}
+	if( install_ver != SOFTWARE_VERSION ){
+		QString defDir = qApp->applicationDirPath()+"/Wsdls"; // C:\Program Files\PNNL\MultiSpeaker
+		QSettings().setValue(SK_XSD_FILE, defDir);
 
-	Utils::CreateRootHomePath(); // Make sure the .MultiSpeaker dir exists
+		QSettings().setValue(SK_INSTALL_CHECK, SOFTWARE_VERSION);
+		QDir dir(ROOT_HOME_PATH);
+		if( dir.exists() )
+		{
+			QString newName = ROOT_HOME_PATH + "_pre_" + SOFTWARE_VERSION;
+			if( !dir.rename(ROOT_HOME_PATH, newName ) ){
+				qDebug() << "Cannot rename directory " << ROOT_HOME_PATH << " to " << newName;
+				dir.rename(newName, newName + "." + QDate::currentDate().toString() );
+				dir.rmdir(newName);
+				if( !dir.rename(ROOT_HOME_PATH, newName ) )
+				{
+					QString err = "Could not rename directory ";
+					err += ROOT_HOME_PATH + " to " + newName;
+					QMessageBox::warning(this, "Error", err );
+					QTimer::singleShot(0, this, SLOT(close()));
+					return;
+				}
+			}
+		}
+	}
+
+	Utils::CreateRootHomePath(); // Make sure the .MultiSpeaker dir exists under current user, i.e.: C:/Users/d3m907/.MultiSpeaker
 
 	CreateTitleToolBar();
 	//ui.HostView->setScene(&m_scene);
@@ -161,6 +192,8 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	Timeline().Stop(); // begin in stop state as the
 
 	ui.TimelineSpanBtn->setText(QTime(0, 0, 0, 0).addMSecs(Timeline().TimelineSpan()).toString("h:mm:ss"));
+
+	m_bInitDone = true;
 }
 //------------------------------------------------------------------------------
 // ~MultiSpeaker
@@ -182,13 +215,13 @@ void MultiSpeaker::closeEvent (QCloseEvent* e)
   //	e->ignore();
   //	return;
   //}
-  SaveState();
-
-  // If the user has enabled the clear settings on exit ctrl-shift-c hot key combo, then clear them after save state called
-  if (CLEAR_SETTINGS_ON_EXIT)
-    QSettings().clear();
-
-  QMainWindow::closeEvent(e);
+	if( m_bInitDone ){
+		SaveState();
+		// If the user has enabled the clear settings on exit ctrl-shift-c hot key combo, then clear them after save state called
+		if (CLEAR_SETTINGS_ON_EXIT)
+			QSettings().clear();
+	}
+	QMainWindow::closeEvent(e);
 }
 //------------------------------------------------------------------------------
 // CreateFunctionBlockDock
@@ -252,6 +285,9 @@ void MultiSpeaker::CreateMiniNetCmdDock()
 //
 void MultiSpeaker::CreateTitleToolBar()
 {
+	// set tooltip color
+	qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
+
   // Add Filter Toolbar
   QToolBar* toolBar = new QToolBar("Speaker Tool Bar", this);
   toolBar->setObjectName("SpeakerToolBar");
@@ -294,6 +330,7 @@ void MultiSpeaker::CreateTitleToolBar()
   btn->setText("WSDLs");
 
   btn->setToolTip("Show WSDL Dock"); // chm
+  //btn->setToolTip( "<span style=\"background-color:red;\">test</span>" );
 
   connect(btn, SIGNAL(clicked()), this, SLOT(OnWsdl()));
   toolBar->addWidget(btn);
@@ -679,17 +716,13 @@ void MultiSpeaker::OnScenarioOpen()
 void MultiSpeaker::OnScenarioSave()
 {
 	QString seedFile = QSettings().value(SK_SCENARIO_FILENAME, QDir::homePath()).toString();
-
 	// Load file
 	QString fileName = QFileDialog::getSaveFileName(this, "Select File", seedFile, "MSS (*.mss);; All (*.*)");
-
 	if (fileName.isEmpty())
 		return;
-
 	QSettings().setValue(SK_SCENARIO_FILENAME, fileName);
 
 	QFile file(fileName);
-
 	if (!file.open(QIODevice::WriteOnly))
 	{
 		qDebug() << file.error() << file.errorString();

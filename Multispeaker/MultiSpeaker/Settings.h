@@ -74,10 +74,11 @@ const QString DECOUPLE_RUN_FILE = "decouple.run";
 
 const QString ROOT_HOME_PATH = QString("%1/.MultiSpeaker").arg(QDir::homePath());
 
+const QString SK_XSD_FILE = "sk_xsd_file";
+const QString SK_XML_FILE = "sk_xml_file";
+const QString SK_INSTALL_CHECK = QStringLiteral("sk_fresh_install_check");
 const QString SK_DEFAULT_NETWORK_CONFIG = QStringLiteral("sk_default_network_config");
-
 const QString SK_HOST_ADDRESS = QStringLiteral("sk_host_address");
-
 const QString SK_REQ_ENABLE_FLAG = QStringLiteral("sk_req_enable_flag");
 const QString SK_RES_ENABLE_FLAG = QStringLiteral("sk_res_enable_flag");
 const QString SK_EXPORT_XMLREQ_FILE = "sk_export_xmlreq_file";

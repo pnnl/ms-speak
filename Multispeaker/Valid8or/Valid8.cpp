@@ -65,15 +65,13 @@
 
 #include "Valid8.h"
 #include "Process.h"
+#include "Settings.h"
 #include "QSL.h"
 
 #ifdef _MS_ // MultiSpeaker, not MultiSpeakerServer ?
 //#include "MultiSpeaker.h"
 #include "TimelineEventEditor.h"
 #endif
-
-const QString SK_XSD_FILE = "sk_xsd_file";
-const QString SK_XML_FILE = "sk_xml_file";
 
 //------------------------------------------------------------------------------
 // Valid8or
@@ -225,12 +223,14 @@ void Valid8or::OnAccept()
 }
 void Valid8or::selectSchema()
 {
+	QString defDir = qApp->applicationDirPath();
+	qDebug() << "App path : " << defDir+"/Wsdls";
 	QString xsdFile = QSettings().value(SK_XSD_FILE, QVariant()).toString();
 	if( xsdFile.isEmpty() ){
 		QFileDialog dialog;
 
         m_SchemaRoot = QFileDialog::getExistingDirectory(this, tr("Select Schema XSD Directory"),
-                                                        "", QFileDialog::ShowDirsOnly );// | QFileDialog::DontResolveSymlinks
+                                                        defDir, QFileDialog::ShowDirsOnly );// | QFileDialog::DontResolveSymlinks
         if( !m_SchemaRoot.isEmpty() )
         {
 			qDebug() << dialog.selectedFiles();
@@ -310,7 +310,7 @@ void Valid8or::validate()
 void Valid8or::valid8Done( QString msg ) {
 	ui.validationStatus->setText(msg);
 	//ui.validateButton->setEnabled(true);
-	ui.validateButton->setEnabled(false);
+	//ui.validateButton->setEnabled(false);
 }
 void Valid8or::textChanged()
 {

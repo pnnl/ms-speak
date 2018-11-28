@@ -119,7 +119,7 @@ bool Valid8Worker::doValidate() {
 	const StageData &stageData(m_stages[m_stageIndex]);
 	emit log(QSL("Running JRun (%1)").arg(msToTimeEstimate(stageData.ms)), Qt::white);
 
-	QString Jarlib = qApp->applicationDirPath();// "/home/carl/MS-SPEAK/repo/Multispeaker/Debug/run"
+	QString Jarlib = qApp->applicationDirPath();// "/home/carl/MS-SPEAK/repo/Multispeaker/Debug/run", C:\Program Files\PNNL\MultiSpeaker
 
 	// Build command arguments and run command
 	static const QString runJ(QSL("%1").arg("java"));
@@ -287,8 +287,12 @@ bool Valid8Worker::stop(const Status status) {
 	bool rc = false;
 
 	int ret = m_Process->exitCode();
-	//qDebug() << "stop: ret: " << ret;
-	switch (ret) {
+	emit finishedi(ret);
+	if( (int)JReturns::SUCCESS == ret ){
+		emit progress(1.0);
+		rc = true;
+	}
+	/*switch (ret) {
 		case (int)JReturns::EXCEPTION:
 			emit finished(QSL("Validation EXCEPTION"));
 			break;
@@ -296,8 +300,24 @@ bool Valid8Worker::stop(const Status status) {
 			emit finished(QSL("Validation VALID8_FAIL"));
 			break;
 		case (int)JReturns::INITXSD_FAIL:
+		{
+
+			//args.append(QSL("%1").arg(m_SchemaRoot));
+			//args.append(QSL("%1").arg(m_EndPoint));
+			//args.append(QSL("%1").arg(m_XmlFilename));
+
+			QString dirs = "";
+			//QString endpoint="CD_Server";
+			dirs = "\nSchema Path Hierarchy must be similar to:\n";
+			QString ep = QString( "    ..\\EndPoints\\%1\\%2.wsdl & %3.xsd\n").arg(m_EndPoint).arg(m_EndPoint).arg(m_EndPoint);
+			dirs += ep+ "    ..\\xsd\\*.xsd";
+			QString err=QString("'%1'").arg(m_XmlFilename);
+			err += dirs;
+			//messageBox.critical (Q_NULLPTR,"File Could Not Be Located", err );
+
 			emit finished(QSL("Validation INITXSD_FAIL"));
 			break;
+		}
 		case (int)JReturns::INIT_FAIL:
 			emit finished(QSL("Validation INIT_FAIL"));
 			break;
@@ -309,7 +329,7 @@ bool Valid8Worker::stop(const Status status) {
 			emit progress(1.0);
 			emit finished(QSL("Validation SUCCESS"));
 			break;
-	}
+	}*/
 
 	/*qDebug() << "stop: m_status:";
 	switch (m_status) {

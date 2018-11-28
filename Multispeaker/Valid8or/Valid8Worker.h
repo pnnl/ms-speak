@@ -77,8 +77,11 @@ public:
 
 	void cancel();
 	bool start();
+	QString m_EndPoint;
+	QString m_SchemaRoot;
 
 signals:
+	void finishedi(const int ix);
 	void finished(const QString &msg);
 	void log(const QString &msg, const Qt::GlobalColor color);
 	void progress(const double progress);
@@ -106,7 +109,7 @@ private:
 	void    sleep(const int secs);
 	bool    stop(const Status status);
 	void    timeout();
-	void    updateProgress();
+	//void    updateProgress();
 
 	Process                 *m_Process{nullptr};       // Process to run
 	double                   m_progressPrevStage{0.0}; // Progress when the previous stage completed
@@ -116,8 +119,6 @@ private:
 	QVector<StageData>       m_stages;                 // Processing stages for the selected operation
 	Status                   m_status{Status::Ready};  // Operation status
 	QTimer                  *m_timer{nullptr};         // Status check and progress update timer
-	QString m_SchemaRoot;
-	QString m_EndPoint;
 	QString m_XmlFilename;
 };
 

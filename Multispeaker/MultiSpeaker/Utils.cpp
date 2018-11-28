@@ -206,28 +206,29 @@ QString Utils::ParseLongName(const QString& name)
 //
 QString Utils::ProcessErrorToString(QProcess::ProcessError error)
 {
-  QString msg;
-  switch (error)
-  {
-    case QProcess::FailedToStart: msg = "The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program."; break;
-    case QProcess::Crashed: msg = "The process crashed some time after starting successfully."; break;
-    case QProcess::Timedout: msg = "The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again."; break;
-    case QProcess::WriteError: msg = "An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel."; break;
-    case QProcess::ReadError: msg = "An error occurred when attempting to read from the process. For example, the process may not be running."; break;
-    case QProcess::UnknownError: msg = "An unknown error occurred. This is the default return value of error()."; break;
-  };
-  return msg;
+	QString msg;
+	switch (error)
+	{
+		case QProcess::FailedToStart: msg = "The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program."; break;
+		case QProcess::Crashed: msg = "The process crashed some time after starting successfully."; break;
+		case QProcess::Timedout: msg = "The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again."; break;
+		case QProcess::WriteError: msg = "An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel."; break;
+		case QProcess::ReadError: msg = "An error occurred when attempting to read from the process. For example, the process may not be running."; break;
+		case QProcess::UnknownError: msg = "An unknown error occurred. This is the default return value of error()."; break;
+	}
+	return msg;
 }
 //------------------------------------------------------------------------------
 // CreateRootHomePath
 //
 void Utils::CreateRootHomePath()
 {
-  // .Speaker
-  QDir dir(ROOT_HOME_PATH);
-  if (!dir.exists())
-  {
-    if (!dir.mkdir(ROOT_HOME_PATH))
-      qDebug() << "Can not create directory structure for " << ROOT_HOME_PATH;
-  }
+	// .MultiSpeaker
+	QDir dir(ROOT_HOME_PATH);
+	if (!dir.exists())
+	{
+		if (!dir.mkdir(ROOT_HOME_PATH))
+			qDebug() << "Can not create directory structure for " << ROOT_HOME_PATH;
+	}
 }
+

@@ -92,7 +92,8 @@ private:
 		QString  elapsedTime;   // Elapsed time
 		double   progress{0.0}; // Current value for progress
 	};
-
+	
+	void    valid8XmlFinishedi(const int iExitCode);
 	void    valid8XmlFinished(const QString &msg);
 	int     calculateProgressValue(const OperationInfo &operationInfo);
 	void    operationLog(const QString &msg, const Qt::GlobalColor color);

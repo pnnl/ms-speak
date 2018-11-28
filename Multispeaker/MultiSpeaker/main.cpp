@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
 	QApplication a(argc, argv);
 
 	MultiSpeaker w;
-	w.show();
+	if( w.InitOk() )
+		w.show();
 	return a.exec();
 }

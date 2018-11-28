@@ -62,6 +62,7 @@
 #include <QSettings>
 #include <QStandardItem>
 #include <QTimer>
+//#include <QMessageBox>
 
 #include "HeaderContainerWidget.h"
 #include "WsdlFileView.h"
@@ -111,12 +112,37 @@ void WsdlFileView::OnBrowse()
 {
 	QString seedFile = QSettings().value(WsInfo().WsdlFileNameKey(m_host), QVariant()).toString();
 
+	//QMessageBox messageBox;
+	//QString defDir = qApp->applicationDirPath()+"/Wsdls/EndPoints";
+	//QString err=QString("SeedFile'%1',  Appdir'%2'").arg(seedFile).arg(defDir);
+	//messageBox.critical (Q_NULLPTR,"Files", err );
+
+	if( seedFile.isEmpty() ){
+		// delete all prior template/setting files for the host, as may be incompatible with new xsd
+		QString path = ROOT_HOME_PATH;
+		QDir dir(path);
+		QString nf =  QString("%1_*.xml").arg(m_host);
+		dir.setNameFilters(QStringList() << nf );
+		dir.setFilter(QDir::Files);
+		foreach(QString dirFile, dir.entryList())
+		{
+			dir.remove(dirFile);
+		}
+		nf =  QString("%1*.json").arg(m_host);
+		dir.setNameFilters(QStringList() << nf );
+		dir.setFilter(QDir::Files);
+		foreach(QString dirFile, dir.entryList())
+		{
+			dir.remove(dirFile);
+		}
+		seedFile =  qApp->applicationDirPath()+"/Wsdls/EndPoints";
+	}
 	// Load file
 	QString fileName = QFileDialog::getOpenFileName(this, QString("Select %1 WSDL File").arg(m_host), seedFile, "WSDL (*.wsdl);; All (*.*)");
-
-	if (fileName.isEmpty())
+	if (fileName.isEmpty()){
+		QSettings().setValue(WsInfo().WsdlFileNameKey(m_host), "");
 		return;
-
+	}
 	ui.WsdlFileNameLabel->setText(QFileInfo(fileName).fileName());
 	ui.WsdlFileNameLabel->setToolTip(QDir::toNativeSeparators(fileName));
 
