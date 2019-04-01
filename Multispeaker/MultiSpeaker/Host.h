@@ -77,6 +77,7 @@ private:
 	bool m_ReqhostEnable;
 	bool m_ResphostEnable;
 	bool m_enableSsl;
+	bool m_useProxy;
 	QString m_name;
 	int m_id;
 	int m_appFlags;
@@ -90,6 +91,7 @@ public:
 	int AppFlags() const {return m_appFlags;}
 	void Copy(const Host& host);
 	bool EnableSsl() const { return m_enableSsl; }
+	bool UseProxy() const { return m_useProxy; }
 	QString ReqHostAddress() const  { return m_ReqhostAddress; }
 	QString RespHostAddress() const  { return m_ResphostAddress; }
 	int ReqHostPort() const { return m_ReqhostPort; }
@@ -103,6 +105,7 @@ public:
 	void SetAppFlag(Host::AppFlagEnum appFlag) {m_appFlags |= appFlag;}
 	void SetAppFlags(int flags) {m_appFlags = flags;}
 	void SetEnableSsl(bool flag) { m_enableSsl = flag; }
+	void SetUseProxy(bool flag) { m_useProxy = flag; }
 	void SetReqHostAddress(const QString& address) { m_ReqhostAddress = address; }
 	void SetRespHostAddress(const QString& address) { m_ResphostAddress = address; }
 	void SetReqHostPort(int port) { m_ReqhostPort = port; }

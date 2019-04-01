@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>283</width>
-    <height>28</height>
+    <width>293</width>
+    <height>47</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,6 +47,9 @@
      </item>
      <item>
       <widget class="QToolButton" name="btnValid8">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Click to Export to file</string>
        </property>
@@ -70,6 +73,22 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="chkXmlOnly">
+       <property name="toolTip">
+        <string>Check to omit top 3 lines</string>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Xml Only</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QToolButton" name="btnExport">

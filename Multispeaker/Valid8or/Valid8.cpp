@@ -96,6 +96,7 @@ xmlns:tns
 Valid8or::Valid8or(QString ep, QString f, QWidget* parent)
 		: QDialog(parent),
 		m_SchemaRoot(QString::null),
+		m_JCP(QString::null),
 	    m_EndPoint(ep),
 	    m_XmlFilename(f)
 {
@@ -108,6 +109,7 @@ Valid8or::Valid8or(QString ep, QString f, QWidget* parent)
 Valid8or::Valid8or(const QByteArray& msg, QWidget* parent)
 		: QDialog(parent),
 		m_SchemaRoot(QString::null),
+		m_JCP(QString::null),
 		m_EndPoint("CD_Server"),
 		m_XmlFilename(QString::null)
 {
@@ -175,6 +177,7 @@ bool Valid8or::initialize(QWidget* parent) {
 	ui.validationStatus->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
 
 	ui.resetXsd->setCheckState(Qt::Unchecked);
+	ui.resetJcp->setCheckState(Qt::Unchecked);
 	ui.resetXml->setCheckState(Qt::Unchecked);
 
 	ui.buttonBox->button(QDialogButtonBox::Ok)->setText("Close");
@@ -185,10 +188,13 @@ bool Valid8or::initialize(QWidget* parent) {
 	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(OnAccept()));
 	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 	connect(ui.resetXsd, SIGNAL(clicked()), SLOT(resetXsd()));
+	connect(ui.resetJcp, SIGNAL(clicked()), SLOT(resetJcp()));
+	connect(ui.resetXml, SIGNAL(clicked()), SLOT(resetXml()));
 	connect(ui.progressWidget, &ProgressWidget::valid8Done, this, &Valid8or::valid8Done);
 
 	selectSchema();
-	loadXml();
+	selectJcp();
+	loadXml(m_XmlFilename);
 	// Finish laying out widgets after the window is shown so the sizes are correct
 	QTimer::singleShot(0, this, &Valid8or::initializeWidgets);
 	m_initialized = true;
@@ -196,6 +202,16 @@ bool Valid8or::initialize(QWidget* parent) {
 }
 //----------------------------------------------------------------------------------------------------------------------------------
 void Valid8or::initializeWidgets() {
+	/*
+	create splitter containing items in Qt Designer :
+		create an HLayout for each reset line on top half
+		create a VLayout with them and the ProgressBox below
+		do the same for bottom half
+		select both top and bottom halves (but not button box) and
+		right click,  Lay Out Vertically in Splitter.
+		Then make sure to top most QWidget has a VLayout so everything fills the form.
+	*/
+
 	QSettings s;
 	// size the top and bottom halves of the window
     /*QList<int>Sizes = ui.splitter->sizes();
@@ -224,9 +240,10 @@ void Valid8or::OnAccept()
 void Valid8or::selectSchema()
 {
 	QString defDir = qApp->applicationDirPath();
-	qDebug() << "App path : " << defDir+"/Wsdls";
-	QString xsdFile = QSettings().value(SK_XSD_FILE, QVariant()).toString();
-	if( xsdFile.isEmpty() ){
+	//qDebug() << "App path : " << defDir + "/Wsdls";
+	qDebug() << "App path : " << defDir + "/EndPoints"; // 18.12.17
+	QString xsdDir = QSettings().value(SK_XSD_FILE, QVariant()).toString();
+	if(xsdDir.isEmpty() ){
 		QFileDialog dialog;
 
         m_SchemaRoot = QFileDialog::getExistingDirectory(this, tr("Select Schema XSD Directory"),
@@ -241,7 +258,7 @@ void Valid8or::selectSchema()
 		}
 	}
 	else
-		m_SchemaRoot = xsdFile;
+		m_SchemaRoot = xsdDir;
 
 	if (m_SchemaRoot.isEmpty()){
 		ui.schemaSelection->setText(tr("No Schema Folder Selected"));
@@ -252,6 +269,46 @@ void Valid8or::selectSchema()
 	textChanged();
 
 }
+void Valid8or::selectJcp()
+{
+	QString defDir = qApp->applicationDirPath();
+	QString jcpDir = QSettings().value(SK_JCP_FILE, QVariant()).toString();
+	if (jcpDir.isEmpty()) {
+		QFileDialog dialog;
+
+		m_JCP = QFileDialog::getExistingDirectory(this, tr("Select Java Class Path Directory"),
+			defDir, QFileDialog::ShowDirsOnly);
+		if (!m_JCP.isEmpty())
+		{
+			qDebug() << dialog.selectedFiles();
+			QSettings().setValue(SK_JCP_FILE, m_JCP);
+		}
+		else {
+			qDebug() << "Cancelled.";
+		}
+	}
+	else
+		m_JCP = jcpDir;
+
+	if (m_JCP.isEmpty()) {
+		ui.javaCP->setText(tr("No Class Path Selected"));
+		return;
+	}
+	ui.javaCP->setText("Using Class Path " + m_JCP);
+
+}
+QString Valid8or::selectXml()
+{
+	QString fileName = QSettings().value(SK_XML_FILE, QVariant()).toString();
+	if(fileName.isEmpty() ){
+		fileName = QFileDialog::getOpenFileName(this, "Select XML File", "", "XML (*xml);; All (*.*)");
+		QSettings().setValue(SK_XML_FILE, fileName);
+	}
+	if (fileName.isEmpty()){
+		ui.instanceSelection->setText(tr("No XML File Selected"));
+	}
+	return fileName;
+}
 /* notes on resource files:
  * The resource files listed in the .qrc file are files that are part of the application's source tree.
  * The specified paths are relative to the directory containing the .qrc file. Note that the listed
@@ -259,24 +316,9 @@ void Valid8or::selectSchema()
  *
  * reset;grep -rio --include='*.xsd' --include='*.xml' -e 'targetNamespace="[^"]*"'
  */
-void Valid8or::loadXml()
+void Valid8or::loadXml(QString fileName)
 {
 
-	QString fileName = m_XmlFilename;
-	/*
-	QString xmlFile = QSettings().value(SK_XML_FILE, QVariant()).toString();
-	if( xmlFile.isEmpty() ){
-		fileName = QFileDialog::getOpenFileName(this, "Select XML File", ""
-												, "XML (*xml);; All (*.*)");
-		QSettings().setValue(SK_XML_FILE, fileName);
-	}
-	else
-		fileName = xmlFile;
-	if (fileName.isEmpty()){
-        ui.instanceSelection->setText(tr("No XML File Selected"));
-		return;
-	}
-	*/
 	QFile instanceFile(fileName);
     if (!instanceFile.open(QIODevice::ReadOnly)) {
         qWarning() << "Cannot open" << QDir::toNativeSeparators(fileName)
@@ -297,14 +339,14 @@ void Valid8or::loadXml()
 	}
 	else
 		ui.validateButton->setEnabled(true);
-
+	m_XmlFilename = fileName;
 }
 
 void Valid8or::validate()
 {
 	//ui.validateButton->setEnabled(false);
 	ui.validationStatus->setText("Validating...");
-	ui.progressWidget->valid8Xml(m_SchemaRoot, m_EndPoint, m_XmlFilename);
+	ui.progressWidget->valid8Xml(m_SchemaRoot, m_JCP, m_EndPoint, m_XmlFilename);
 }
 //----------------------------------------------------------------------------------------------------------------------------------
 void Valid8or::valid8Done( QString msg ) {
@@ -322,13 +364,21 @@ void Valid8or::resetXsd()
 	QSettings().setValue(SK_XSD_FILE, "");
 	selectSchema();
 }
-/*
+void Valid8or::resetJcp()
+{
+	QSettings().setValue(SK_JCP_FILE, "");
+	selectJcp();
+}
+
 void Valid8or::resetXml()
 {
 	QSettings().setValue(SK_XML_FILE, "");
-	loadXml();
+	QString xmlFile = selectXml();
+	if( !xmlFile.isEmpty() ){
+		loadXml(xmlFile);
+	}
 }
-*/
+
 //----------------------------------------------------------------------------------------------------------------------------------
 void Valid8or::closeEvent(QCloseEvent *event) {
 	bool accept = false;

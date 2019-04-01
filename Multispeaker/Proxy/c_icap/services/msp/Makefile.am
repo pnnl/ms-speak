@@ -1,0 +1,12 @@
+
+pkglib_LTLIBRARIES=srv_msp.la
+
+AM_CPPFLAGS=-I$(top_srcdir)/ -I$(top_srcdir)/include/ -I$(top_builddir)/include/
+
+srv_msp_la_LIBADD = @MODULES_LIBADD@
+srv_msp_la_CFLAGS=  @MODULES_CFLAGS@
+srv_msp_la_LDFLAGS= -module -avoid-version
+srv_msp_la_SOURCES = srv_msp.c
+
+
+EXTRA_DIST= makefile.w32 srv_msp.def

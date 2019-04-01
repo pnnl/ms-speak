@@ -70,6 +70,7 @@ WsdlXmlViewHeaderWidget::WsdlXmlViewHeaderWidget(QWidget* parent)
 {
 	ui.setupUi(this);
 	connect(ui.btnExport, SIGNAL(clicked()), this, SIGNAL(ExportClicked()));
+	connect(ui.chkXmlOnly, SIGNAL(clicked(bool)), this, SIGNAL(XmlOnlyClicked(bool)));
 	connect(ui.btnValid8, SIGNAL(clicked()), this, SIGNAL(Valid8Clicked()));
 	//connect(ui.RefreshBtn, SIGNAL(clicked()), this, SIGNAL(RefreshClicked()));
 }

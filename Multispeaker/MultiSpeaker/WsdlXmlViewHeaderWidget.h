@@ -88,6 +88,7 @@ protected:
 
 signals:
 	void ExportClicked();
+	void XmlOnlyClicked(bool);
 	void Valid8Clicked();
 	//void RefreshClicked();
 	};

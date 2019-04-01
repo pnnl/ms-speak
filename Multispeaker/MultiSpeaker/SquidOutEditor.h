@@ -50,82 +50,66 @@
 */
 //-------------------------------------------------------------------------------
 //	History
-//		2017 - Created By: Lance Irvine.
-//		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2019 - Carl Miller <carl.miller@pnnl.gov>
 //-------------------------------------------------------------------------------
 //
-// Summary: TimelineEventSendWorker.cpp
+// Summary: SquidOutEditor.h
 //-------------------------------------------------------------------------------
 
-#include <QTcpSocket>
+#ifndef SQUIDOUTEDITOR_H
+#define SQUIDOUTEDITOR_H
 
-#include "TimelineEventSendWorker.h"
-#include "WsdlFile.h"
+#include "ui_SquidOutEditor.h"
 
-//------------------------------------------------------------------------------
-// TimelineEventSendWorker
-//
-TimelineEventSendWorker::TimelineEventSendWorker(const QHostAddress& hostAddress, int hostPort, TimelineEvent& e, QObject* parent)
-  : QObject(parent),
-	m_hostAddress(hostAddress),
-	m_hostPort(hostPort),
-	m_timelineEvent(e)
-{
-}
-//------------------------------------------------------------------------------
-// ~TimelineEventSendWorker
-//
-TimelineEventSendWorker::~TimelineEventSendWorker()
-{
-}
-//------------------------------------------------------------------------------
-// PerformFinishedCleanup
-//
-void TimelineEventSendWorker::PerformFinishedCleanup(QTcpSocket* socket)
-{
-	socket->close();
-	socket->deleteLater();
-	emit Finished();
-}
-//------------------------------------------------------------------------------
-// OnConnected
-//
-void TimelineEventSendWorker::OnConnected()
-{
-	if (QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender()))
-	{
-		QByteArray content = WsdlFile::XmlSoap(m_timelineEvent, 2, true);
-		QDataStream os(socket);
-		os.setByteOrder(QDataStream::BigEndian); // network byte order
-		os << (qint32) m_timelineEvent.SrcHostId();
-		os << (qint32) m_timelineEvent.DstHostId();
-		//os << (qint32) content.size(); // This overloaded operator will write the size (4 bytes) before the content
-		os << content;
-		if (!socket->waitForBytesWritten())
-			emit Error(socket->error(), socket->errorString());
-		PerformFinishedCleanup(socket);
-	}
-}
-//------------------------------------------------------------------------------
-// OnError
-//
-void TimelineEventSendWorker::OnError(QAbstractSocket::SocketError socketError)
-{
-	if (QTcpSocket* socket = qobject_cast<QTcpSocket*>(sender()))
-	{
-		emit Error(socketError, socket->errorString());
-		PerformFinishedCleanup(socket);
-	}
-}
-//------------------------------------------------------------------------------
-// OnStart
-//
-// Start processing data.
-void TimelineEventSendWorker::OnStart()
-{
-	QTcpSocket* socket = new QTcpSocket(this); // Create socket in new thread
-	connect(socket, SIGNAL(connected()), this, SLOT(OnConnected()));
-	connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(OnError(QAbstractSocket::SocketError)));
+#include <QDialog>
 
-	socket->connectToHost(m_hostAddress, m_hostPort);
-}
+class SquidOutEditor : public QDialog
+{
+	Q_OBJECT
+private:
+	Ui::SquidOutEditor ui;
+	QString m_ProxyUserName;
+	QString m_ProxyPassWord;
+	QString m_ProxyAddress;
+	bool m_ProxyIpChanged;
+	bool m_useProxy;
+	bool m_useCreds;
+	int m_ProxyPort;
+
+public:
+	SquidOutEditor(QWidget* parent = Q_NULLPTR);
+	~SquidOutEditor();
+
+	QStringList getIpAddresses();
+	QString ProxyIp() { return ui.ProxyIpEdit->currentText(); }
+	QString ProxyUserName() { return ui.editUserName->text(); }
+	QString ProxyPassWord() { return ui.editPassword->text(); }
+	bool ProxyEnabled() { return ui.ProxyGroup->isChecked(); }
+	bool ProxyUseCreds() { return ui.UseCreds->isChecked(); }
+	int ProxyPort() { return ui.ProxyPortSpin->value(); }
+
+	bool ProxyIpChanged() const {return m_ProxyIpChanged;}
+	void ProxyIpChanged(bool b) { m_ProxyIpChanged = b; }
+	void UseCreds(bool b) { m_useCreds = b; }
+	bool UseCreds() { return m_useCreds; }
+
+	void ChangeProxyAddress(const QString& text) { SetProxyAddress(text); }
+
+	bool UseProxy() const { return m_useProxy; }
+	QString ProxyAddress() const { return m_ProxyAddress; }
+
+	void SetUseProxy(bool flag) { m_useProxy = flag; }
+	void SetProxyAddress(const QString& address) { m_ProxyAddress = address; }
+	void Init();
+
+private slots:
+
+	void OnAccept();
+	void OnEnableProxyCheck(bool checked);
+	void OnUseCredsCheck(bool checked);
+	bool eventFilter(QObject *object, QEvent *event);
+	void OnEditingFinished();
+};
+
+#endif // SQUIDOUTEDITOR_H
+

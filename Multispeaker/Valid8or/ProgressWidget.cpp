@@ -93,9 +93,9 @@ ProgressWidget::~ProgressWidget() {
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------
-void ProgressWidget::valid8Xml( QString s, QString e, QString x )
+void ProgressWidget::valid8Xml(QString s, QString cp, QString e, QString x )
 {
-	m_valid8Worker = new Valid8Worker( s, e, x );
+	m_valid8Worker = new Valid8Worker( s, cp, e, x );
 	QThread *thread      = new QThread;
     m_valid8Worker->moveToThread(thread);
     connect(m_valid8Worker, &Valid8Worker::finished, thread, &QThread::quit);
@@ -129,13 +129,13 @@ void ProgressWidget::valid8XmlFinishedi(const int iExitCode )
 			QMessageBox messageBox;
 			QString EndPoint = m_valid8Worker->m_EndPoint;
 			QString SchemaRoot=m_valid8Worker->m_SchemaRoot;
-			QString err=QString("'%1' Could Not Be Located.\n").arg(SchemaRoot);
+			QString err=QString("'%1' Components Could Not Be Located.\n").arg(SchemaRoot);
 			QString dirs = "\nSchema Path Hierarchy must be similar to '<path>/EndPoints'\n";
 			QString ep = QString( "    where <path>/EndPoints contains: %1/%2.wsdl and %3.xsd\n").arg(EndPoint).arg(EndPoint).arg(EndPoint);
 			dirs += ep+ "    and <path>/xsd contains *.xsd";
 			dirs += "\n    (specify the location of <path>/EndPoints)";
 			err += dirs;
-			messageBox.critical (Q_NULLPTR,"\nSchema XSD Directory Not Found", err );
+			messageBox.critical (Q_NULLPTR,"\nSchema Root Path Not Found", err );
 			msg += "INITXSD_FAIL";
 			break;
 		}

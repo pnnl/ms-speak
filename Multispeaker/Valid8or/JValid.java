@@ -75,11 +75,11 @@ public class JValid {//extends JParseSOAP{
 	
 	// return array of Files
 	// Note, the server xsd files import relative to ../../xsd
-	//		this routine expects to be passed a path such as '..../Endpoints'
+	//		this routine expects to be passed a path such as '..../EndPoints'
     // 		which holds server folders, such as 'CD_Server', 'MR_Server' etc.
     //		each of which holds an xsd file.
-    //		It also assumes that the 'EndPoints' folder will have an additional
-    //		folder in it called 'xsd' which holds the xsd files that the server
+    //		It also assumes that the path to 'EndPoints' folder will have an additional
+    //		folder in it called 'xsd' (at the same 'level' as /EndPoints which holds the xsd files that the server
     //		xsds import, i.e.,:
     //			~/MS-SPEAK/V507/XSDS
     //					/EndPoints
@@ -89,38 +89,26 @@ public class JValid {//extends JParseSOAP{
     //						MultiSpeak.xsd, mspCommonTypes.xsd, soapEnvelope.xsd ....
     //		Note the inclusion of soapEnvelope.xsd, it must be added to the xsd folder.
     //
+	// path	C:/Users/D3M907/Documents/projects/MS-Speak/multispeaker/multispeaker/WSDLs/EndPoints
 	//@SuppressWarnings("unused")
+	@SuppressWarnings({ })
 	private File[] get_xsd_files (String path, String endpoint)
 	{
-		String currdir="";
-		
-		File XsdPath=new File(path);
+	    String HdrPath = "";
+		File XsdPath=new File(path+"/../xsd/");
 		if( XsdPath.isDirectory() ) {
-			File cd=new File(".");
-			try {
-				currdir = cd.getCanonicalPath();
+		    try {
+			    HdrPath = XsdPath.getCanonicalPath();
+				//System.out.println("Absolute Path: " + HdrPath);// /home/carl/MS-SPEAK/V507/XSDS/xsd
 			} catch (IOException e) {
 				e.printStackTrace();
 				return null;
 			}
-			System.setProperty("user.dir", path);
 		}
 		else {
-			System.out.println("--->JValid::Path must be to a directory: " +path);
+			System.out.println("--->JValid::Path must be to a directory: " +XsdPath);
 			return null;
 		}
-		
-	    File xfile = new File("../xsd/");
-	    String HdrPath = "";
-	    try {
-		    HdrPath = xfile.getCanonicalPath();
-			//System.out.println("Absolute Path: " + HdrPath);// /home/carl/MS-SPEAK/V507/XSDS/xsd
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.setProperty("user.dir", currdir);
-			return null;
-		}
-		// 9.15.18 - add in MsgHeader and envelope xsds
 		File reqfile = new File(HdrPath+"/MultiSpeakWebServicesRequestMsgHeader.xsd");
 		File resfile = new File(HdrPath+"/MultiSpeakWebServicesResponseMsgHeader.xsd");
 		File envfile = new File(HdrPath+"/soapEnvelope.xsd");
@@ -130,7 +118,7 @@ public class JValid {//extends JParseSOAP{
 		xsds.add(resfile);
 		xsds.add(envfile);
 		
-		File xsdfolder = new File(path);// should be pointing to ../Endpoints
+		File xsdfolder = new File(path);// should be pointing to ../EndPoints
 		File[] EndPointServers = xsdfolder.listFiles();
 		for (int i = 0; i < EndPointServers.length; i++) {
 			if (EndPointServers[i].isFile()) {
@@ -185,7 +173,6 @@ public class JValid {//extends JParseSOAP{
 				}
 			}
 		}
-		System.setProperty("user.dir", currdir);
 		return listOfFiles;
 	}
 

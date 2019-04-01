@@ -62,6 +62,11 @@
 
 #include <QString>
 
+// note: the following three need to stay in sync with MultiSpeaker/settings...
+const QString SK_XSD_FILE = "sk_xsd_file";
+const QString SK_XML_FILE = "sk_xml_file";
+const QString SK_JCP_FILE = "sk_jcp_file";
+
 const QString SK_IGNORE_SSL_SELF_CERT_ERROR = QStringLiteral("sk_ignore_ssl_self_cert_error");
 const QString SK_SSL_ENABLED = QStringLiteral("sk_ssl_enabled");
 const QString SK_SSL_CERT_FILE = QStringLiteral("sk_ssl_cert_file");

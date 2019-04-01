@@ -3,7 +3,23 @@ import java.io.*;
 import org.apache.commons.cli.*;
 
 /*
-java -cp "../lib/*" JRun -sd "/home/carl/Desktop/MS-SPEAK/V507/XSDS/EndPoints/" -ep "CD_Server" -xf "/home/carl/Desktop/MS-SPEAK/files/InitCDReq.xml" -v 2
+ java -cp "../lib/*" JRun 
+	-sd C:/Users/D3M907/Documents/projects/MS-Speak/multispeaker/multispeaker/WSDLs/EndPoints
+	-ep CD_Server
+	-xf C:/Users/D3M907/Documents/projects/MS-Speak/multispeaker/multispeaker/WSDLs/LancesCD.xml
+	-v 3 
+ 
+	-sd /home/carl/Desktop/MS-SPEAK/Multispeaker/WSDLs/EndPoints
+	-ep CD_Server
+	-xf /home/carl/Desktop/MS-SPEAK/Multispeaker/WSDLs/LancesCD.xml
+	-v 3 
+
+ * to debug in eclipse, build on cmdline using javac, then copy the .class files to
+ * the bin folder under the eclipse workspace, also, add the lib jars as external
+ * jar files under the classpath, then run, do not try to build from within eclipse
+ *  doesn't work, breakpoints not being hit -  actually does, if you tell it to break at main.
+ *  easier to point to the cmdline bin folder, via create directory...
+ *or https://stackoverflow.com/questions/5987694/how-to-run-javac-from-eclipse
  */
 public class JRun  { // extends JReturn
 	private static JValid m_v5JV;

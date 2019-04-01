@@ -1,0 +1,13 @@
+!include <win32.mak>
+
+all: srv_msp.Dll
+
+.c.obj:
+	$(cc) /I..\..\include /I..\..\ $(cdebug) $(cflags) $(cvarsdll) -I. -DCI_BUILD_MODULE -DUNICODE $*.c
+
+srv_msp.Dll: srv_msp.obj
+	$(link) $(linkdebug) $(dlllflags) /LIBPATH:..\..\ c_icap.lib -def:srv_msp.def -out:$*.Dll $** $(DLL_ENTRY)  $(EXTRA_LIBS)
+
+clean:
+	del *.obj *.exe *.lib
+

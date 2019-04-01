@@ -57,7 +57,7 @@
 // Summary: WsdlFileView.cpp
 //-------------------------------------------------------------------------------
 
-#include <QDebug>
+#include <QDebug> 
 #include <QFileDialog>
 #include <QSettings>
 #include <QStandardItem>
@@ -113,7 +113,7 @@ void WsdlFileView::OnBrowse()
 	QString seedFile = QSettings().value(WsInfo().WsdlFileNameKey(m_host), QVariant()).toString();
 
 	//QMessageBox messageBox;
-	//QString defDir = qApp->applicationDirPath()+"/Wsdls/EndPoints";
+	//QString defDir = qApp->applicationDirPath()+"/EndPoints"; // 18.12.17
 	//QString err=QString("SeedFile'%1',  Appdir'%2'").arg(seedFile).arg(defDir);
 	//messageBox.critical (Q_NULLPTR,"Files", err );
 
@@ -135,7 +135,8 @@ void WsdlFileView::OnBrowse()
 		{
 			dir.remove(dirFile);
 		}
-		seedFile =  qApp->applicationDirPath()+"/Wsdls/EndPoints";
+		//seedFile = qApp->applicationDirPath() + "/Wsdls/EndPoints";
+		seedFile = qApp->applicationDirPath() + "/EndPoints"; // 18.12.17
 	}
 	// Load file
 	QString fileName = QFileDialog::getOpenFileName(this, QString("Select %1 WSDL File").arg(m_host), seedFile, "WSDL (*.wsdl);; All (*.*)");

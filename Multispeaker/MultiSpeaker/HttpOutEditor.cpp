@@ -100,6 +100,10 @@ void HttpOutEditor::Init(const Host& host)
 {
 	ui.setupUi(this);
 
+	ui.EnableProxyCheck->setEnabled(false);
+	bool UseProxy = QSettings().value(SK_USE_PROXY, false).toBool();
+	ui.EnableProxyCheck->setChecked(UseProxy);
+
 	//ui.RequestHostIpEdit->installEventFilter(this);
 	//ui.ResponseHostIpEdit->installEventFilter(this);
 
@@ -160,6 +164,9 @@ void HttpOutEditor::Init(const Host& host)
 	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 	connect(ui.EnableSslCheck, SIGNAL(toggled(bool)), this, SLOT(OnEnableSslCheck(bool)));
 
+
+	ui.EnableProxyCheck->setChecked(false);
+	connect(ui.EnableProxyCheck, SIGNAL(toggled(bool)), this, SLOT(OnEnableProxyCheck(bool)));
 }
 //------------------------------------------------------------------------------
 // eventFilter
@@ -197,6 +204,13 @@ void HttpOutEditor::OnAccept()
 	accept();
 }
 
+//------------------------------------------------------------------------------
+// OnEnableProxyCheck
+void HttpOutEditor::OnEnableProxyCheck(bool checked)
+{
+	// eventual, dialog to get host, port, username and password
+	m_host.SetUseProxy(checked);
+}
 //------------------------------------------------------------------------------
 // OnEditingFinished
 //	emitted when the Return or Enter key is pressed or the line edit loses focus.

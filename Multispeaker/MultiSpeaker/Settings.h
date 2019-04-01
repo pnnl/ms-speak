@@ -74,8 +74,11 @@ const QString DECOUPLE_RUN_FILE = "decouple.run";
 
 const QString ROOT_HOME_PATH = QString("%1/.MultiSpeaker").arg(QDir::homePath());
 
+// note: the following three need to stay in sync with MultiSpeakerServer/settings...
 const QString SK_XSD_FILE = "sk_xsd_file";
 const QString SK_XML_FILE = "sk_xml_file";
+const QString SK_JCP_FILE = "sk_jcp_file";
+
 const QString SK_INSTALL_CHECK = QStringLiteral("sk_fresh_install_check");
 const QString SK_DEFAULT_NETWORK_CONFIG = QStringLiteral("sk_default_network_config");
 const QString SK_HOST_ADDRESS = QStringLiteral("sk_host_address");
@@ -143,6 +146,14 @@ const QString SK_TEE_RESPONSE_SPLIT = QStringLiteral("sk_tee_response_split");
 
 const QString SK_ID_COUNTER = "sk_id_counter";
 
+// Squid
+const QString SK_USE_PROXY = QStringLiteral("sk_use_proxy_flag");
+const QString SK_USE_PROXYCREDS = QStringLiteral("sk_proxy_creds_flag");
+const QString SK_PROXY_IP = QStringLiteral("sk_proxy_ip_flag");
+const QString SK_PROXY_PORT = QStringLiteral("sk_proxy_port_flag");
+const QString SK_PROXY_UN = QStringLiteral("sk_proxy_username");
+const QString SK_PROXY_PW = QStringLiteral("sk_proxy_password");
+
 // HttpOut
 const QString SK_HTTP_OUT_REQ_FLAG = QStringLiteral("sk_http_out_req_flag");
 const QString SK_HTTP_OUT_REQ_IP = QStringLiteral("sk_http_out_req_ip");
@@ -151,6 +162,7 @@ const QString SK_HTTP_OUT_RES_FLAG = QStringLiteral("sk_http_out_res_flag");
 const QString SK_HTTP_OUT_RES_IP = QStringLiteral("sk_http_out_res_ip");
 const QString SK_HTTP_OUT_RES_PORT = QStringLiteral("sk_http_out_res_port");
 const QString SK_HTTP_OUT_SSL = QStringLiteral("sk_http_out_ssl");
+const QString SK_HTTP_OUT_PROXY = QStringLiteral("sk_http_out_proxy");
 const QString SK_HTTP_OUT_HOSTS = QStringLiteral("sk_http_out_hosts");
 
 const QString SK_IGNORE_SSL_SELF_CERT_ERROR = QStringLiteral("sk_ignore_ssl_self_cert_error");

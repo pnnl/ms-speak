@@ -68,8 +68,9 @@
 #include "Valid8.h"
 
 //----------------------------------------------------------------------------------------------------------------------------------
-Valid8Worker::Valid8Worker( QString s, QString e, QString x ) :
+Valid8Worker::Valid8Worker( QString s, QString cp, QString e, QString x ) :
 		m_SchemaRoot(s),
+		m_JCP(cp),
 		m_EndPoint(e),
 		m_XmlFilename(x)
 {
@@ -119,12 +120,13 @@ bool Valid8Worker::doValidate() {
 	const StageData &stageData(m_stages[m_stageIndex]);
 	emit log(QSL("Running JRun (%1)").arg(msToTimeEstimate(stageData.ms)), Qt::white);
 
-	QString Jarlib = qApp->applicationDirPath();// "/home/carl/MS-SPEAK/repo/Multispeaker/Debug/run", C:\Program Files\PNNL\MultiSpeaker
+	//QString Jarlib = qApp->applicationDirPath();// "/home/carl/MS-SPEAK/repo/Multispeaker/Debug/run", C:\Program Files\PNNL\MultiSpeaker
 
 	// Build command arguments and run command
 	static const QString runJ(QSL("%1").arg("java"));
 	QStringList args{ QSL("-cp") };
-	args.append(QSL("%1/*").arg(Jarlib));
+	//args.append(QSL("%1/*").arg(Jarlib));
+	args.append(QSL("%1/*").arg(m_JCP));
 	args.append(QSL("JRun"));
 	args.append(QSL("-sd"));
 	args.append(QSL("%1").arg(m_SchemaRoot));

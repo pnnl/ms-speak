@@ -85,6 +85,7 @@ private:
 	TimelineEvent* m_timelineEvent;
 	bool m_isRequest;
 	bool m_HoldoffUpdate{false};
+	bool m_XmlOnly{ false };
 
 public:
 	WsdlMethodView(QWidget* parent=Q_NULLPTR);
@@ -119,6 +120,7 @@ private slots:
 	void OnEnableClicked(bool checked);
 	bool OnRestoreClicked(int clicked);
 	void OnXmlExport();
+	void OnXmlOnly(bool checked);
 	void OnValid8();
 	void OnXmlItemChanged(QStandardItem* item);
 };

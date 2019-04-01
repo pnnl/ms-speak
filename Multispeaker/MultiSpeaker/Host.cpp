@@ -70,11 +70,12 @@ Host::Host(int id, const QString& name, int appFlags, QObject* parent)
 	: QObject(parent),
 	  m_ReqhostAddress(QSettings().value(SK_HTTP_OUT_REQ_IP, QHostAddress(QHostAddress::LocalHost).toString()).toString()),
 	  m_ResphostAddress(QSettings().value(SK_HTTP_OUT_RES_IP, QHostAddress(QHostAddress::LocalHost).toString()).toString()),
-	  m_ReqhostPort(QSettings().value(SK_HTTP_OUT_REQ_PORT, 8888).toInt()),
+	  m_ReqhostPort(QSettings().value(SK_HTTP_OUT_REQ_PORT, 8080).toInt()),
 	  m_ResphostPort(QSettings().value(SK_HTTP_OUT_RES_PORT, 7777).toInt()),
 	  m_ReqhostEnable(QSettings().value(SK_HTTP_OUT_REQ_FLAG, false).toBool()),
 	  m_ResphostEnable(QSettings().value(SK_HTTP_OUT_RES_FLAG, false).toBool()),
 	  m_enableSsl(QSettings().value(SK_HTTP_OUT_SSL, false).toBool()),
+	  m_useProxy(QSettings().value(SK_HTTP_OUT_PROXY, false).toBool()),
 	  m_name(name),
 	  m_id(id),
 	  m_appFlags(appFlags)
@@ -92,6 +93,7 @@ Host::Host(const Host& host)
 	  m_ReqhostEnable(host.ReqHostEnable()),
 	  m_ResphostEnable(host.RespHostEnable()),
 	  m_enableSsl(host.EnableSsl()),
+	  m_useProxy(host.UseProxy()),
 	  m_name(host.Name()),
 	  m_id(host.Id()),
 	  m_appFlags(host.AppFlags())
@@ -116,6 +118,7 @@ void Host::Copy(const Host& host)
 	m_appFlags = host.AppFlags();
 	m_id = host.Id();
 	m_enableSsl = host.EnableSsl();
+	m_useProxy = host.UseProxy();
 	m_ReqhostEnable = host.ReqHostEnable();
 	m_ResphostEnable = host.RespHostEnable();
 }

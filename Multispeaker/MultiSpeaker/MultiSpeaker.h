@@ -68,6 +68,7 @@
 #include <QProcess>
 #include <QShortcut>
 #include <QToolBar>
+#include <QNetworkProxy>
 
 #include "FunctionBlockDock.h"
 #include "LogDock.h"
@@ -95,18 +96,33 @@ private:
 	WsdlDock* m_wsdlDock;
 	static MultiSpeaker *pMainWindow;
 	bool	m_bInitDone;
+	QString m_proxyUserName;
+	QString m_proxyPassWord;
+	QString m_proxyAddress;
+	QString m_proxyPortStr;
+	quint16 m_proxyPort;
+	bool m_useProxy;
+	bool m_useCreds;
 
 public:
 	MultiSpeaker(QWidget* parent=Q_NULLPTR);
 	~MultiSpeaker();
 	static MultiSpeaker *theApp();
 	bool InitOk() {return m_bInitDone; }
+	bool ProxyEnabled() { return m_useProxy; }
+	QString ProxyAddress() { return m_proxyAddress; }
+	quint16 ProxyPort() { return m_proxyPort; }
 
 protected:
 	virtual void closeEvent(QCloseEvent* e);
 	virtual void resizeEvent(QResizeEvent* e) {Q_UNUSED(e); SaveState();}
 
 private:
+	void setupProxy();
+	QString ProxyIp() { return m_proxyAddress; }
+	bool ProxyUseCreds() { return m_useCreds; }
+	QString ProxyUserName() { return m_proxyUserName; }
+	QString ProxyPassWord() { return m_proxyAddress; }
 	void CreateFunctionBlockDock();
 	void CreateLogDock();
 	void CreateMethodDock();
@@ -138,6 +154,7 @@ private slots:
 	void OnHideTimestampLabel();
 	void OnHostDoubleClicked(int id);
 	void OnHostSceneChanged();
+	bool OnSquidOut();
 	bool OnHttpOut();
 	void OnLogMsg(const QString& msg) { LogDockRef().Append(msg); }
 	void OnMiniNet();
@@ -156,6 +173,8 @@ private slots:
 	void OnWsdlFileChanged(const QString& host);
 	void OnWsdlTest();
 	void OnBrowseRoot();
+	void showProxy();
+
 };
 
 #endif // MULTISPEAKER_H

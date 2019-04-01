@@ -8,8 +8,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F58A5A61-D60E-4B83-AD6D-5D7E99B500B5}}
 AppName=MultiSpeaker
-AppVersion=18.11.16
-;AppVerName=MultiSpeaker 18.11.16
+AppVersion=19.01.06
+;AppVerName=MultiSpeaker 19.01.06
 AppPublisher=Pacific Northwest National Laboratory
 AppPublisherURL=http://www.pnnl.gov
 AppSupportURL=http://www.pnnl.gov
@@ -23,12 +23,12 @@ AppUpdatesURL=http://www.pnnl.gov
 ArchitecturesInstallIn64BitMode=x64
 DefaultDirName={pf}\PNNL\MultiSpeaker
 DefaultGroupName=PNNL\MultiSpeaker
-OutputBaseFilename=MultiSpeaker-18.11.16-win7-setup
+OutputBaseFilename=MultiSpeaker-19.01.06-win7-setup
 Compression=lzma
 SolidCompression=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
-VersionInfoVersion=18.11.16
+VersionInfoVersion=19.01.06
 VersionInfoCompany=Pacific Northwest National Laboratory
 
 [Languages]
@@ -59,7 +59,7 @@ Source: "..\x64\Release\MultiSpeaker.ico"; DestDir: "{app}"; check: Is64BitInsta
 Source: "..\Valid8or\lib\commons-cli-1.3.1.jar"; DestDir: "{app}\lib"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\Valid8or\lib\Valid8.jar"; DestDir: "{app}\lib"; check: Is64BitInstallMode; Flags: ignoreversion; AfterInstall: WriteToFile
 Source: "..\WSDLs\EndPoints\*"; DestDir: "{app}\EndPoints"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
-Source: "..\WSDLs\Xsds\*"; DestDir: "{app}\xsd"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
+Source: "..\WSDLs\xsd\*"; DestDir: "{app}\xsd"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 ; MyFile.txt is an empty text file
 ;Source: "MyFile.txt"; DestDir: "{app}"; Attribs: hidden; AfterInstall: WriteToFile
 

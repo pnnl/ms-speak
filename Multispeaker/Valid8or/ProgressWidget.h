@@ -81,7 +81,7 @@ public:
 	~ProgressWidget();
 
 	bool    running() const;
-	void    valid8Xml(QString s, QString e, QString x);
+	void    valid8Xml(QString s, QString cp, QString e, QString x);
 
 signals:
 	void valid8Done(QString m);

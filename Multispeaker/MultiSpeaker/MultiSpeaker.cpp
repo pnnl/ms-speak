@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2019 - Added Squid.
 //-------------------------------------------------------------------------------
 //
 // Summary: MultiSpeaker.cpp
@@ -81,6 +82,7 @@
 #include "MiniNetEditor.h"
 #include "MultiSpeaker.h"
 #include "Settings.h"
+#include "SquidOutEditor.h"
 #include "SslErrorDlg.h"
 #include "TimelineEventEditor.h"
 #include "TimelineScene.h"
@@ -113,9 +115,21 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	m_miniNetCmdDock(Q_NULLPTR),
 	m_wsdlDock(Q_NULLPTR),
 	m_bInitDone(false)
+	, m_proxyUserName(QSettings().value(SK_PROXY_UN, "MSTest").toString())
+	, m_proxyPassWord(QSettings().value(SK_PROXY_PW, "P@SSW0RD").toString())
+	, m_proxyAddress(QSettings().value(SK_PROXY_IP, QHostAddress(QHostAddress::LocalHost).toString()).toString())
+	// quint16 is just a typedef for unsigned short - so you can simply use QString::toUShort
+	, m_proxyPortStr(QSettings().value(SK_PROXY_PORT, 3128).toString())
+	, m_proxyPort(0)
+	, m_useProxy(QSettings().value(SK_USE_PROXY, false).toBool())
+	, m_useCreds(QSettings().value(SK_USE_PROXYCREDS, false).toBool())
 {
 	ui.setupUi(this);
 	pMainWindow = this;
+
+	// quint16 is just a typedef for unsigned short - so you can simply use QString::toUShort
+	m_proxyPort = m_proxyPortStr.toUShort();
+
 	// check if this is first running after a fresh install, if so, clear old file settings since
 	// prior wsdl/xsd settings may not be compatible with new 
 	QString install_ver = "n/a";
@@ -123,7 +137,8 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 		install_ver = QSettings().value(SK_INSTALL_CHECK, "badhat").toString();
 	}
 	if( install_ver != SOFTWARE_VERSION ){
-		QString defDir = qApp->applicationDirPath()+"/Wsdls"; // C:\Program Files\PNNL\MultiSpeaker
+		//QString defDir = qApp->applicationDirPath()+"/Wsdls"; // C:\Program Files\PNNL\MultiSpeaker
+		QString defDir = qApp->applicationDirPath() + "/EndPoints"; // 18.12.17
 		QSettings().setValue(SK_XSD_FILE, defDir);
 
 		QSettings().setValue(SK_INSTALL_CHECK, SOFTWARE_VERSION);
@@ -193,7 +208,9 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 
 	ui.TimelineSpanBtn->setText(QTime(0, 0, 0, 0).addMSecs(Timeline().TimelineSpan()).toString("h:mm:ss"));
 
+	setupProxy();
 	m_bInitDone = true;
+	QTimer::singleShot(500, this, SLOT(showProxy()));
 }
 //------------------------------------------------------------------------------
 // ~MultiSpeaker
@@ -204,6 +221,51 @@ MultiSpeaker::~MultiSpeaker()
 MultiSpeaker *MultiSpeaker::theApp()
 {
 	return pMainWindow;
+}
+//------------------------------------------------------------------------------
+// setupProxy
+//
+void MultiSpeaker::setupProxy ()
+{
+	// Network proxy is not used if the address used in connectToHost(), bind() or listen() is
+	// equivalent to QHostAddress::LocalHost or QHostAddress::LocalHostIPv6.
+	// QNetworkProxy proxy(QNetworkProxy::HttpProxy, "Irene.tst.pnl", 3128, "my_user", "my_password"); // this works, somewhat too...
+	if (m_useProxy) {
+		QNetworkProxy proxy;
+		proxy.setType(QNetworkProxy::HttpProxy);
+		proxy.setHostName(m_proxyAddress);
+		proxy.setPort(m_proxyPort);
+		if (m_useCreds) {
+			proxy.setUser(m_proxyUserName);
+			proxy.setPassword(m_proxyPassWord);
+		}
+		QNetworkProxy::setApplicationProxy(proxy);
+	}
+}
+
+//------------------------------------------------------------------------------
+// showProxy
+//  show all data, in hex:  sudo tcpdump -i lo tcp and dst port 3128 -s0 -vv -X -c 1000
+//
+void MultiSpeaker::showProxy ()
+{
+	QString proxcfg = "This Application is Not Configured to use a Proxy.";
+	QString proxcfg2 = "";
+	if (m_useProxy) {
+		proxcfg = "This Application is Currently Configured to use a Proxy.";
+		QString prt = QString::number(m_proxyPort);
+		proxcfg2 = "\nCurrent Settings:\n   Host: " + m_proxyAddress + ",  Port: " + prt;
+	}
+	QMessageBox msgBox;
+	msgBox.setText(proxcfg);
+	proxcfg = "To Change the Proxy Configuration, Modify Proxy Settings and Restart this Application.";
+	if (m_useProxy){
+		proxcfg += proxcfg2;
+	}
+	msgBox.setInformativeText(proxcfg);
+	msgBox.setStandardButtons(QMessageBox::Ok);
+	msgBox.exec();
+
 }
 //------------------------------------------------------------------------------
 // closeEvent
@@ -350,6 +412,22 @@ void MultiSpeaker::CreateTitleToolBar()
   //connect(btn, SIGNAL(clicked()), this, SLOT(OnMiniNet()));
   //toolBar->addWidget(btn);
 
+  // chm 3.11.19
+  // Proxy Settings
+  // squid
+  QIcon iconSquidOut; iconSquidOut.addFile(QStringLiteral(":/MultiSpeaker/Resources/squid.png"), QSize(), QIcon::Normal, QIcon::Off);
+  btn = new QToolButton(toolBar);
+  btn->setObjectName(QStringLiteral("SquidOutBtn"));
+  btn->setIcon(iconSquidOut);
+  btn->setIconSize(QSize(24, 24));
+  btn->setPopupMode(QToolButton::DelayedPopup);
+  btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  btn->setAutoRaise(true);
+  btn->setText("Proxy");
+  btn->setToolTip("Configure Proxy Settings");
+  connect(btn, SIGNAL(clicked()), this, SLOT(OnSquidOut()));
+  toolBar->addWidget(btn);
+
   // chm 7.30.18, use
   // Don't need this functionality at the moment
   // HttpOut
@@ -457,11 +535,11 @@ void MultiSpeaker::CreateWsdlDock()
 //
 void MultiSpeaker::DisplayCertChainInfo(const QSslCipher& cipher, const QList<QSslCertificate>& certChain)
 {
-  CertInfoDlg dlg;
-  QSslCipher theCipher;
-  dlg.SetCertificateChain(certChain);
-  dlg.SetCipherInfo((theCipher = cipher));
-  dlg.exec();
+	CertInfoDlg dlg;
+	QSslCipher theCipher;
+	dlg.SetCertificateChain(certChain);
+	dlg.SetCipherInfo((theCipher = cipher));
+	dlg.exec();
 }
 //-------------------------------------------------------------------------------
 // DisplayHostSslErrors
@@ -607,25 +685,63 @@ void MultiSpeaker::OnHostDoubleClicked(int id)
 	}
 }
 //------------------------------------------------------------------------------
+// OnSquidOut
+bool MultiSpeaker::OnSquidOut()
+{
+	SquidOutEditor dlg(this);
+	if (dlg.exec())
+	{
+		m_proxyAddress = dlg.ProxyIp();
+		m_proxyPort = dlg.ProxyPort();
+		m_useProxy = dlg.ProxyEnabled();
+		m_useCreds = dlg.ProxyUseCreds();
+		m_proxyUserName = dlg.ProxyUserName();
+		m_proxyPassWord = dlg.ProxyPassWord();
+
+		QSettings s;
+		if (m_useProxy)
+		{
+			s.setValue(SK_PROXY_IP, m_proxyAddress);
+			s.setValue(SK_PROXY_PORT, m_proxyPort);
+			s.setValue(SK_USE_PROXYCREDS, m_useCreds);
+			s.setValue(SK_PROXY_UN, m_proxyUserName);
+			s.setValue(SK_PROXY_PW, m_proxyPassWord);
+		}
+		s.setValue(SK_USE_PROXY, m_useProxy);
+
+		if (QMessageBox::Yes == QMessageBox::warning(this,
+				 "Close MultiSpeaker Now?",
+				"To Effect these Proxy Configuration Changes, You Must Restart this Application.",
+				QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
+		{
+			QTimer::singleShot(0, this, SLOT(close()));
+			return true;
+		}
+
+		return true;
+	}
+	return false;
+}
+//------------------------------------------------------------------------------
 // OnHttpOut
 bool MultiSpeaker::OnHttpOut()
-{ 
+{
 	HttpOutEditor dlg(this);
 	if (dlg.exec())
 	{
 		// Remember a few Settings for convenience
 		QSettings s;
-		QStringList ipList = dlg.getIpAddresses();
+		//QStringList ipList = dlg.getIpAddresses();
 		s.setValue(SK_HTTP_OUT_SSL, dlg.HttpSslEnabled());
 
-		if( dlg.HttpRequestEnabled() ){
+		if (dlg.HttpRequestEnabled()) {
 			//if( !ipList.contains(dlg.HttpRequestIp()) )  save even if is loopback...
 			s.setValue(SK_HTTP_OUT_REQ_IP, dlg.HttpRequestIp());
 			s.setValue(SK_HTTP_OUT_REQ_PORT, dlg.HttpRequestPort());
 		}
 		s.setValue(SK_HTTP_OUT_REQ_FLAG, dlg.HttpRequestEnabled());
 
-		if( dlg.HttpResponseEnabled() ){
+		if (dlg.HttpResponseEnabled()) {
 			//if( !ipList.contains(dlg.HttpResponseIp()) )
 			s.setValue(SK_HTTP_OUT_RES_IP, dlg.HttpResponseIp());
 			s.setValue(SK_HTTP_OUT_RES_PORT, dlg.HttpResponsePort());

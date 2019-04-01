@@ -73,12 +73,13 @@ class QTimer;
 class Valid8Worker : public QObject {
 	Q_OBJECT
 public:
-	explicit Valid8Worker(QString s, QString e, QString x);
+	explicit Valid8Worker(QString s, QString cp, QString e, QString x);
 
 	void cancel();
 	bool start();
-	QString m_EndPoint;
 	QString m_SchemaRoot;
+	QString m_JCP;
+	QString m_EndPoint;
 
 signals:
 	void finishedi(const int ix);

@@ -6,7 +6,7 @@
 #  nautilus, The behavior is occurring because newer ubuntu distros set GCC default link
 #  flag -pie, which marks e_type as ET_DYN on the binary file. Consequently, the Operating System
 #  recognizes as Shared Library.
-#QMAKE_LFLAGS += -no-pie
+//QMAKE_LFLAGS += -no-pie
 
 TEMPLATE = app
 TARGET = MultiSpeaker
@@ -51,11 +51,12 @@ HEADERS += \
     NamespaceInfo.h \
     scTextEdit.h \
     Settings.h \
+    SquidOutEditor.h \
     SslErrorDlg.h \
     TimelineEvent.h \
     TimelineEventEditor.h \
     TimelineEventItem.h \
-    TimelineEventSendWorker.h \
+#    TimelineEventSendWorker.h \
     TimelineHeaderWidget.h \
     TimelineScene.h \
     TimelineView.h \
@@ -104,11 +105,12 @@ SOURCES += \
     MethodDock.cpp \
     MultiSpeaker.cpp \
     scTextEdit.cpp \
+    SquidOutEditor.cpp \
     SslErrorDlg.cpp \
     TimelineEvent.cpp \
     TimelineEventEditor.cpp \
     TimelineEventItem.cpp \
-    TimelineEventSendWorker.cpp \
+#    TimelineEventSendWorker.cpp \
     TimelineHeaderWidget.cpp \
     TimelineScene.cpp \
     TimelineView.cpp \
@@ -141,6 +143,7 @@ FORMS += \
     LogDock.ui \
     MultiSpeaker.ui \
     MiniNetEditor.ui \
+    SquidOutEditor.ui \
     SslErrorDlg.ui \
     TimelineEventEditor.ui \
     TimelineHeaderWidget.ui \

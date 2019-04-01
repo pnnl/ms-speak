@@ -67,7 +67,6 @@
 
 Q_DECLARE_METATYPE(QSslCipher)
 
-
 int main(int argc, char* argv[])
 {
 	qRegisterMetaType<QAbstractSocket::SocketError>();
@@ -79,10 +78,12 @@ int main(int argc, char* argv[])
 	QCoreApplication::setOrganizationDomain("pnnl.gov");
 	QCoreApplication::setApplicationName("MultiSpeaker");
 
-	QApplication a(argc, argv);
+	QApplication app(argc, argv);
 
-	MultiSpeaker w;
-	if( w.InitOk() )
-		w.show();
-	return a.exec();
+	MultiSpeaker ms;
+	if (ms.InitOk()) {
+		ms.show();
+	}
+
+	return app.exec();
 }

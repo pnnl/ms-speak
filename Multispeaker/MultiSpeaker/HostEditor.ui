@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>291</width>
-    <height>131</height>
+    <height>188</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,11 +102,22 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="EnableSslCheck">
-        <property name="text">
-         <string>Enable SSL</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QCheckBox" name="EnableSslCheck">
+          <property name="text">
+           <string>Enable SSL</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="EnableProxyCheck">
+          <property name="text">
+           <string>Use Proxy</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>

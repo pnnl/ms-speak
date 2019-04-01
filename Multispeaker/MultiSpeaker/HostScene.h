@@ -88,6 +88,7 @@ private:
   QProcess m_miniNetCmdProcess;
   QNetworkAccessManager* m_netAccessManager;
   QWidget* m_parentWidget; // Widget used for owner of modal dialogs
+  QNetworkProxy *m_proxy;
 
 public:
   HostScene(QObject* parent);
@@ -107,12 +108,12 @@ public:
   QPixmap CreateHostPixmap(const Host& host, int size, bool isSelected=false);
 
   //const QHostAddress& HostAddress() const {return m_host;}
-  Host* HostById(int id) {return ((m_hosts.contains(id)) ? m_hosts.value(id) : 0);}
+  Host* HostById(int id) {return ((m_hosts.contains(id)) ? m_hosts.value(id) : Q_NULLPTR);}
   QStringList HostEndPoints() const;
   QStringList HostIdsByAppMode(Host::AppFlagEnum mode) const;
   HostItem* HostItemById(int id) const;
   QString HostIp() const {return QSettings().value(SK_MINI_NET_HOST_IP, QHostAddress(QHostAddress::LocalHost).toIPv4Address()).toString();}
-  int HostPort() const {return QSettings().value(SK_MINI_NET_HOST_PORT, 8888).toInt();}
+  int HostPort() const {return QSettings().value(SK_MINI_NET_HOST_PORT, 8080).toInt();}
   QStringList HostRoles() const;
 
   QString MiniNetApp() const {return QSettings().value(SK_MINI_NET_APP, "python").toString();}
@@ -167,6 +168,12 @@ signals:
 
 
 private slots:
+  void slotAuthenticationRequired(QNetworkReply *, QAuthenticator * );
+  void slotProxyAuthenticationRequired(const QNetworkProxy &proxy, QAuthenticator *authenticator );
+  void slotNetworkSessionConnected();
+  void slotAuthenticationRequired2(QNetworkReply *, QAuthenticator * );
+  void slotProxyAuthenticationRequired2(const QNetworkProxy &proxy, QAuthenticator *authenticator );
+  void slotNetworkSessionConnected2();
   void OnManagerEncrypted(QNetworkReply* reply);
   void OnManagerReplyFinished(QNetworkReply* reply);
   void OnManagerSslErrors(QNetworkReply* reply, const QList<QSslError>& errors);
@@ -179,6 +186,9 @@ private slots:
   void OnReplyAboutToClose();
   void OnReplyDestroyed(QObject* obj);
   void OnReplyEncrypted();
+  void OnGetReplyError(QNetworkReply::NetworkError error);
+  void OnGetReplyFinished();
+  void OnNamReplyFinished(QNetworkReply *pReply);
   void OnReplyError(QNetworkReply::NetworkError error);
   void OnReplyFinished();
   void OnReplySslErrors(const QList<QSslError>& errors);

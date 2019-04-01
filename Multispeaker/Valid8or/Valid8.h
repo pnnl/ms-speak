@@ -85,6 +85,7 @@ class Valid8or :  public QDialog
 private:
 	Ui::Valid8 ui;
 	QString m_SchemaRoot;
+	QString m_JCP;
 	QString m_EndPoint;
 	QString m_XmlFilename;
 	bool    m_initialized{false};         // True if windows finished initializing
@@ -100,13 +101,16 @@ private Q_SLOTS:
     void textChanged();
 	void OnAccept();
 	void resetXsd();
-	//void resetXml();
+	void resetJcp();
+	void resetXml();
 	void closeEvent(QCloseEvent *event) override;
 	void valid8Done(QString m);
 
 private:
 	void selectSchema();
-    void loadXml();
+	void selectJcp();
+	QString selectXml();
+	void loadXml(QString f);
 	bool initialize(QWidget* parent);
 	void initializeWidgets();
 };

@@ -81,11 +81,12 @@
 #include "Settings.h"
 #include "TimelineScene.h"
 #include "TimelineEvent.h"
-#include "TimelineEventSendWorker.h"
+//#include "TimelineEventSendWorker.h"
 #include "Timer.h"
 #include "Utils.h"
 #include "WebServiceInfo.h"
 #include "WsdlFile.h"
+#include "MultiSpeaker.h"
 
 //const QString PYTHON_APP = "python";
 
@@ -95,7 +96,8 @@
 HostScene::HostScene(QObject* parent)
 	: QGraphicsScene(parent),
 	m_netAccessManager(Q_NULLPTR),
-	m_parentWidget(Q_NULLPTR)
+	m_parentWidget(Q_NULLPTR),
+    m_proxy(Q_NULLPTR)
 {
 	connect(&m_miniNetCmdProcess, SIGNAL(error(QProcess::ProcessError)), this, SLOT(OnMiniNetError(QProcess::ProcessError)));
 	connect(&m_miniNetCmdProcess, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(OnMiniNetFinished(int, QProcess::ExitStatus)));
@@ -533,7 +535,7 @@ bool HostScene::WriteMiniNetConfFile()
 	out << "[EndPoints]" << endl;
 	out << endl;
 	out << "# Add MultiSpeak 'EndPoints' to this section" << endl;
-	out << "# for each server role in your topoloty" << endl;
+	out << "# for each server role in your topology" << endl;
 	out << endl;
 	out << HostEndPoints().join("\n");
 	out << endl;
@@ -741,11 +743,36 @@ void HostScene::OnReplyEncrypted()
 //
 void HostScene::OnReplyError(QNetworkReply::NetworkError error)
 {
-    Q_UNUSED(error);
+    // Q_UNUSED(error);
+	switch( error ){
+		case QNetworkReply::ProxyConnectionRefusedError:
+			qDebug() << "  ** ProxyConnectionRefusedError **";
+			break;
+		case QNetworkReply::ProxyConnectionClosedError:
+			qDebug() << "  ** ProxyConnectionClosedError **";
+			break;
+		case QNetworkReply::ProxyNotFoundError:
+			qDebug() << "  ** ProxyNotFoundError **";
+			break;
+		case QNetworkReply::ProxyTimeoutError:
+			qDebug() << "  ** ProxyTimeoutError **";
+			break;
+		case QNetworkReply::ProxyAuthenticationRequiredError:
+			qDebug() << "  ** ProxyAuthenticationRequiredError **";
+			break;
+		default:
+			qDebug() << "** Error: " << error;
+			break;
+	}
+
     if (QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender()))
     {
         qDebug() << "HostScene::OnReplyError()" << reply->errorString();
     }
+	else
+	{
+		qDebug() << "else HostScene::OnReplyError: " << error;
+	}
 }
 //------------------------------------------------------------------------------
 // OnReplyFinished
@@ -767,9 +794,10 @@ void HostScene::OnReplyFinished()
 		emit LogMsg(QString("\n%1\n\n").arg(headerStrings.join("\n")));
 		*/
 		QByteArray content = reply->readAll();
-		if( !content.isEmpty() )
+		if( !content.isEmpty() ){
 			emit LogMsg(QString("\n%1").arg(QString(content)));
-
+			//qDebug() << content;
+		}
 		reply->close();
 		reply->deleteLater();
 		//m_netAccessManager->deleteLater();
@@ -798,6 +826,7 @@ void HostScene::OnReplySslErrors(const QList<QSslError>& errors)
 //
 void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 {
+	MultiSpeaker *theApp = MultiSpeaker::theApp();
 	AnimateMessageSent(e.SrcHostId(), e.DstHostId()); // Animate
 
 	//QSettings s;
@@ -824,6 +853,19 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 			if (!m_netAccessManager)
 			{
 				m_netAccessManager = new QNetworkAccessManager(this);
+				if( theApp->ProxyEnabled() )
+				{
+					connect(m_netAccessManager, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*)),
+							 this, SLOT(slotAuthenticationRequired(QNetworkReply*,QAuthenticator*)));
+					connect(m_netAccessManager, SIGNAL(proxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)),
+							 this, SLOT(slotProxyAuthenticationRequired(QNetworkProxy,QAuthenticator*)));
+					connect(m_netAccessManager, SIGNAL(networkSessionConnected()),
+							this, SLOT(slotNetworkSessionConnected()));
+					//QNetworkReply* reply = m_netAccessManager->get(QNetworkRequest(QUrl("http://www.google.com")));
+					//connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(OnReplyError(QNetworkReply::NetworkError)));
+					//connect(reply, SIGNAL(finished()), this, SLOT(OnReplyFinished()));
+					//return;
+				}
 			}
 
 			QByteArray content = WsdlFile::XmlSoap(e.Doc());
@@ -834,16 +876,21 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 			QNetworkRequest request;
 			//request.setUrl(QUrl("http://64.184.186.24:8080/")); // this works!!!
 			//if (s.value(SK_HTTP_OUT_SSL, false).toBool())
-			if( host->EnableSsl() )
+
+			if( host->EnableSsl() ){
 				request.setUrl(QUrl(QString("https://%1:%2/").arg(host->ReqHostAddress()).arg(host->ReqHostPort())));
-			else
+			}
+			else{
 				request.setUrl(QUrl(QString("http://%1:%2/").arg(host->ReqHostAddress()).arg(host->ReqHostPort())));
+			}
 
 			request.setRawHeader("Accept", "application / soap + xml, application / dime, multipart / related, text/*");
 			request.setRawHeader("Host", QString("%1:%2").arg(host->ReqHostAddress()).arg(host->ReqHostPort()).toLatin1());
 			request.setRawHeader("Content-Type", "text/xml;charset=utf-8");
 			request.setRawHeader("Content-Length", QString::number(content.length()).toLatin1());
 			request.setRawHeader("SOAPAction", QString("%1/%2").arg(e.Namespace(), e.Method()).toLatin1());
+			//request.setRawHeader("User-Agent", "My app name v0.1");
+			//request.setRawHeader("X-Custom-User-Agent", "My app name v0.1");
 
 			//DisplayRequestHeaders(request); // Debugging
 			QNetworkReply* reply = m_netAccessManager->post(request, content);
@@ -892,6 +939,126 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 			connect(reply, SIGNAL(destroyed(QObject*)), this, SLOT(OnReplyDestroyed(QObject*)));
 		}
 	}
+}
+//------------------------------------------------------------------------------
+// OnReplyError
+//
+void HostScene::OnGetReplyError(QNetworkReply::NetworkError error)
+{
+	switch( error ){
+		case QNetworkReply::ProxyConnectionRefusedError:
+			qDebug() << "  ** ProxyConnectionRefusedError **";
+			break;
+		case QNetworkReply::ProxyConnectionClosedError:
+			qDebug() << "  ** ProxyConnectionClosedError **";
+			break;
+		case QNetworkReply::ProxyNotFoundError:
+			qDebug() << "  ** ProxyNotFoundError **";
+			break;
+		case QNetworkReply::ProxyTimeoutError:
+			qDebug() << "  ** ProxyTimeoutError **";
+			break;
+		case QNetworkReply::ProxyAuthenticationRequiredError:
+			qDebug() << "  ** ProxyAuthenticationRequiredError **";
+			break;
+		default:
+			qDebug() << "** Get Error: " << error;
+			break;
+	}
+
+    if (QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender()))
+    {
+        qDebug() << "HostScene::OnGetReplyError()" << reply->errorString();
+    }
+	else
+	{
+		qDebug() << "else HostScene::OnGetReplyError: " << error;
+	}
+}
+//------------------------------------------------------------------------------
+// OnNamReplyFinished
+//
+void HostScene::OnNamReplyFinished(QNetworkReply *pReply)
+{
+	qDebug() << "HostScene::OnNamReplyFinished()";
+	QNetworkAccessManager *pNam = qobject_cast<QNetworkAccessManager*>(sender());
+	if (pNam)
+	{
+		qDebug() << "Got a Nam";
+	}
+	if (pReply)
+	{
+		QByteArray content = pReply->readAll();
+		if( !content.isEmpty() )
+			emit LogMsg(QString("\n%1").arg(QString(content)));
+
+		pReply->close();
+		pReply->deleteLater();
+  }
+}
+//------------------------------------------------------------------------------
+// OnGetReplyFinished
+//
+void HostScene::OnGetReplyFinished()
+{
+	qDebug() << "HostScene::OnGetReplyFinished()";
+	if (QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender()))
+	{
+		QByteArray content = reply->readAll();
+		if( !content.isEmpty() )
+			emit LogMsg(QString("\n%1").arg(QString(content)));
+
+		reply->close();
+		reply->deleteLater();
+  }
+}
+void HostScene::slotAuthenticationRequired(QNetworkReply *reply, QAuthenticator *aut )
+{
+	Q_UNUSED(reply);
+	Q_UNUSED(aut);
+	// create a dialog to allow user to type usename and password
+	//aut->setUser("Username");
+    //aut->setPassword("Password");
+	qDebug() << "HostScene::slotAuthenticationRequired()";
+}
+void HostScene::slotProxyAuthenticationRequired(const QNetworkProxy &proxy,
+												QAuthenticator *authenticator )
+{
+	Q_UNUSED(proxy);
+	Q_UNUSED(authenticator);
+
+	// create a dialog to allow user to type usename and password
+	//authenticator->setUser(/*username*/);
+	//authenticator->setPassword(/*password*/);
+	qDebug() << "HostScene::slotProxyAuthenticationRequired()";
+}
+void HostScene::slotNetworkSessionConnected()
+{
+	qDebug() << "HostScene::slotNetworkSessionConnected()";
+}
+void HostScene::slotAuthenticationRequired2(QNetworkReply *reply, QAuthenticator *aut )
+{
+	Q_UNUSED(reply);
+	Q_UNUSED(aut);
+	// create a dialog to allow user to type usename and password
+	//aut->setUser("Username");
+    //aut->setPassword("Password");
+	qDebug() << "HostScene::slotAuthenticationRequired2()";
+}
+void HostScene::slotProxyAuthenticationRequired2(const QNetworkProxy &proxy,
+												QAuthenticator *authenticator )
+{
+	Q_UNUSED(proxy);
+	Q_UNUSED(authenticator);
+
+	// create a dialog to allow user to type usename and password
+	//authenticator->setUser(/*username*/);
+	//authenticator->setPassword(/*password*/);
+	qDebug() << "HostScene::slotProxyAuthenticationRequired2()";
+}
+void HostScene::slotNetworkSessionConnected2()
+{
+	qDebug() << "HostScene::slotNetworkSessionConnected2()";
 }
 //------------------------------------------------------------------------------
 // OnTimelineEventSendError

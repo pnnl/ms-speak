@@ -97,6 +97,7 @@ WsdlMethodView::WsdlMethodView(QWidget* parent)
 	connect(ui.TreeHeader, SIGNAL(SaveClicked()), this, SLOT(OnSaveClicked()));
 	connect(ui.TreeHeader, SIGNAL(EnableClicked(bool)), this, SLOT(OnEnableClicked(bool)));
 	connect(ui.XmlHeader, SIGNAL(ExportClicked()), this, SLOT(OnXmlExport()));
+	connect(ui.XmlHeader, SIGNAL(XmlOnlyClicked(bool)), this, SLOT(OnXmlOnly(bool)));
 	connect(ui.XmlHeader, SIGNAL(Valid8Clicked()), this, SLOT(OnValid8()));
 
 	connect(&m_model, SIGNAL(itemChanged(QStandardItem*)), this, SLOT(OnXmlItemChanged(QStandardItem*)));
@@ -521,8 +522,17 @@ void WsdlMethodView::OnSaveClicked()
 //
 void WsdlMethodView::OnXmlExport()
 {
-	ExportXmlOrSoap( true );
+	ExportXmlOrSoap(true);
 }
+//------------------------------------------------------------------------------
+// OnXmlOnly
+//
+void WsdlMethodView::OnXmlOnly(bool checked)
+{
+	m_XmlOnly = checked;
+	qDebug() << "XmlOnly: " << checked;
+}
+
 //------------------------------------------------------------------------------
 // OnValid8
 //   java -cp ../bin:../lib/commons-cli-1.3.1.jar JRun
@@ -631,11 +641,12 @@ void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
 		qDebug() << file.error() << file.errorString();
 		return;
 	}
-	if( bExport )
-		bytes = WsdlFile::XmlSoap(*m_timelineEvent, 2, false);
-	else
+	if (bExport) {
+		bytes = WsdlFile::XmlSoap(*m_timelineEvent, 2, !m_XmlOnly);
+	}
+	else {
 		bytes = WsdlFile::Xml(m_doc, 2, true);
-
+	}
 	file.write(bytes);
 	if (file.error() != QFileDevice::NoError)
 		qDebug() << "ERROR:" << file.error() << file.errorString();
