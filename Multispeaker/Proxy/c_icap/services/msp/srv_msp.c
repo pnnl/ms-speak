@@ -52,8 +52,34 @@
 //	History
 //		2019 - Created By: Cullen Tollbom, from	https://sourceforge.net/projects/c-icap/
 //		03/23/2019 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		04/01/2019 - CHM: added logging.
 //-------------------------------------------------------------------------------
-// Summary: srv_msp.c
+// Summary: /home/msspeak/Packages/c_icap-0.5.5/services/msp/srv_msp.c
+//		to build:
+//			cd /home/msspeak/Packages/c_icap-0.5.5
+//			automake   (in the case of a fresh install, ./configure.ac has changed, or a ‘make clean’ has been run)
+//			./configure   # only need do once otherwise
+//			NOTE: if you run automake, it will replace the Squid.conf file(/usr/local/squid/etc/squid.conf), so
+//					in that case, you need to replace it with a version that allows only IPV4 addresses and
+//					also sets port 8080 as a safeport (that version is in the repo @../Multispeaker/Proxy/squid). 
+//				  if you run automake, it will replace the msp Makefile, so if the required changes to include glib 
+//					are needed, copy Makefile.msp(@../Multispeaker/Proxy/c_icap/services/msp/) as Makefile afterwards.
+//					(NOTE: it is best to add the Makefile changes to Makefile.am, to avoid this)
+//			if only modifying srv_msp.c after initial install of icap, just do the follwing:
+//				make
+//				sudo make install
+//		to run Squid:
+//			sudo /usr/local/squid/sbin/squid [ -N -D -d 1 ]
+//		to run Icap:
+//			sudo /usr/local/bin/c-icap [ -N -D -d 1 ]
+//		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist,
+//				  and must be recreated:
+//					make install (from /home/msspeak/Packages/c_icap-0.5.5)
+//							OR
+//				  	sudo mkdir /run/c-icap
+//				  	sudo mkdir /var/run/c-icap
+//				NOTE: the icap daemon will create the actual lock file in the directory when started.
+//
 //-------------------------------------------------------------------------------
 
 #include "common.h"
@@ -66,12 +92,15 @@
 
 #include <stdio.h>
 #include <stdlib.h> 
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <time.h>
 
+// prototypes
+void WriteLog( int loglevel, FILE *pFile, const char *format, ... );
 int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
 int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
 void msp_close_service();
@@ -233,6 +262,7 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 
 const char delim[2] = "/";
 char theCopy [200];
+char str[800];
 
 GError *error = NULL;
 GKeyFileFlags flags = G_KEY_FILE_NONE;
@@ -253,6 +283,7 @@ int	  *pBizdata;
 int currtemp;  // NOTE: can force change of temp by sending CD_Server method other than InitiateConnectDisconnect
 int currday;
 int hour;
+int MainThread = 0;
 
 // note: the order of these is reliant on the order of elements in Keys[]
 typedef struct _bizdata {
@@ -264,7 +295,8 @@ typedef struct _bizdata {
 	unsigned int m_RequestNo; // NOTE: can force reset to 0 by sending an Endpoint other than CD_Server
 } BIZ_DATA; 
 
-BIZ_DATA TheBizData; // todo: make generic,dynamic
+BIZ_DATA TheBizData={ WILDCARD,WILDCARD,WILDCARD,WILDCARD,WILDCARD,0}; // todo: make generic,dynamic
+FILE *LogFile = NULL;
 
 /*
  * This function called exactly when the service is loaded by c-icap.
@@ -301,10 +333,16 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 	 param srv_xdata   - Pointer to the ci_service_xadata_t object of this service
 	 param server_conf - Pointer to the struct holds the main c-icap server configuration
 	 return CI_OK on success, CI_ERROR on any error. 
+	 
+	 TODO: all this really only needs to be done by the 'main' thread (the one that will
+			handle the preview check).
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata,
                     struct ci_server_conf *server_conf)
 {
+	const char *LogPath;
+	gchar *val;
+	
 	ci_debug_printf(2, "msp_post_init_service()\n");
 	ci_debug_printf(1, "Loading Business Rules from '%s'\n", BizFile);
 	
@@ -324,12 +362,9 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
 
 	ci_debug_printf(1, "Storing Endpoint Method Rules for %s/%s ...\n", EndPoint,Method);
 
-
 	slen = strlen(EndPoint);
-	if( slen + strlen(Method) < MAX_GROUPLEN-2 ){
+	if( slen + strlen(Method) < MAX_GROUPLEN-1 ){
 		strcpy(MethodGroup, EndPoint);
-		MethodGroup[slen] = '_';
-		MethodGroup[slen+1] = 0x00;
 		strcat(MethodGroup, Method);
 	}
 	else{
@@ -343,7 +378,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
 	}	
 	else
 	{
-		//ci_debug_printf(1, "Found Group '%s'\n", MethodGroup);
+		//ci_debug_printf(0, "Found Group '%s'\n", MethodGroup);
 		/*
 		 * TODO: we could treat any missing keys as a wildcard to 'allow', i.e.
 		 *		if there is no rule for min temp, set the value to -1 and allow any
@@ -353,7 +388,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
 		for( idx = 0; idx<NumKeys; idx++ )
 		{
 			gchar *pKey = Keys[idx];
-			gchar *val = g_key_file_get_value (BizCfgFile, MethodGroup, pKey, &error);
+			val = g_key_file_get_value (BizCfgFile, MethodGroup, pKey, &error);
 			if( val == NULL )
 			{
 				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
@@ -382,22 +417,58 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
 				pBizdata++;
 			}
 		}// end for
-		ci_debug_printf(1, "   NumReq: %d, MinTemp: %d, MaxTemp: %d, MinHour: %d, MaxHour: %d\n",
-								TheBizData.m_numReg,
-								TheBizData.m_minTemp,
-								TheBizData.m_maxTemp,
-								TheBizData.m_minHour,
-								TheBizData.m_maxHour );
-		TheBizData.m_RequestNo = 0;
+		val = g_key_file_get_value (BizCfgFile, "Settings", "LogFile", &error);
+		if( val == NULL )
+		{
+			if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
+			{
+				LogPath = "/var/log/srv_msp.log";
+				error = NULL;
+			}
+			else
+			{
+				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND) )
+				{
+					ci_debug_printf(0, "Group Error While Getting Value for Key '%s': %s\n", "LogFile", error->message);
+				}
+				else{
+					ci_debug_printf(0, "Unexpected Error(%s) While Getting Value for Key '%s'\n", error->message, "LogFile");
+				}
+				return CI_ERROR;
+			}
+		}
+		else
+		{
+			LogPath = val;
+		}
+
 		time_t currtime = time(NULL);
 		struct tm *tm_struct = localtime(&currtime);
+		srand(currtime); 
+		//currtemp = (rand() % (90 - 32 + 1)) + 32;
+		currtemp = 38;
+		
+		LogFile = fopen(LogPath, "a");
+		if (LogFile == NULL) 
+		{ 
+			ci_debug_printf(0, "Log File (%s) Could not be opened.\n", LogPath);
+		}
+		else{
+			WriteLog( 0, LogFile, "   NumReq: %d, MinTemp: %d, MaxTemp: %d, MinHour: %d, MaxHour: %d\n\t Logfile: %s",
+					TheBizData.m_numReg,
+					TheBizData.m_minTemp,
+					TheBizData.m_maxTemp,
+					TheBizData.m_minHour,
+					TheBizData.m_maxHour,
+					LogPath );
+		}
+	
+		TheBizData.m_RequestNo = 0;
 		hour = tm_struct->tm_hour;
 		currday = tm_struct->tm_mday;
-		//ci_debug_printf(1, "\nCurrent Hour is %d\n", hour);
-		ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
-		srand(currtime); 
-		currtemp = (rand() % (90 - 32 + 1)) + 32;
-		ci_debug_printf(1, "Current Temperature is %d\n", currtemp);
+		//ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
+		ci_debug_printf(1, "Current local time: %s", asctime(tm_struct));
+		WriteLog( 1, LogFile, "Current Temperature is %d\n", currtemp);
 	}
 		
 	return CI_OK;
@@ -429,7 +500,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
  */
 int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_request_t * req)
 {
-	ci_debug_printf(4,"Call @ msp_check_preview_handler().\n");
+	MainThread = 1; // TODO: only the 'main' thread need do all the ini file processing in msp_post_init_service ...
 
 	const int REQ_TYPE = ci_req_type(req);
 	//const char * METHOD_TYPE = ci_method_string(REQ_TYPE);
@@ -501,7 +572,8 @@ int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_reque
     		else{
 		 		if( strcmp(Method, currmethod) != 0 ){
 					ci_debug_printf( 0, "No Business Rules Defined for Method '%s', allowing....\n", currmethod);			
-					currtemp = (rand() % (90 - 32 + 1)) + 32;
+					//currtemp = (rand() % (90 - 32 + 1)) + 32;
+					currtemp = 55;
 					ci_debug_printf(1, "Current Temperature is %d\n", currtemp);
 					return CI_MOD_ALLOW204;
 				}
@@ -513,14 +585,11 @@ int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_reque
 				currday = tm_struct->tm_mday;
 				TheBizData.m_RequestNo = 0;
 			}
-			else{
-				TheBizData.m_RequestNo++;
-			}
 			// TODO: handle WILDCARDs for temp and time too
-			if(	(TheBizData.m_numReg != WILDCARD) && (TheBizData.m_RequestNo > TheBizData.m_numReg) ){
-				ci_debug_printf( 0, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n", 
-								currmethod, TheBizData.m_RequestNo, ep);
-				ci_debug_printf( 0, "   Only %d requests per day are allowed.\n", TheBizData.m_numReg);
+			if(	(TheBizData.m_numReg != WILDCARD) && (TheBizData.m_RequestNo >= TheBizData.m_numReg) ){
+				WriteLog( 0, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
+									  "   Only %d requests per day are allowed.",
+							currmethod, TheBizData.m_RequestNo, ep, TheBizData.m_numReg);
 				/*
 				 * all user-defined headers MUST follow the "X-" naming convention ("X-Extension-Header: Foo").
 				 * ci_http_response_create(req, 1, 1);
@@ -540,56 +609,93 @@ int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_reque
 				return CI_ERROR; // CI_MOD_DONE
 			}
 			else if( (hour>TheBizData.m_maxHour) || (hour<TheBizData.m_minHour) ){
-				ci_debug_printf( 0, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n",
-						currmethod, TheBizData.m_RequestNo, ep) ;
-				ci_debug_printf( 0, "   These type of requests are only allowed between the hours of %d and %d.\n",
-								TheBizData.m_minHour, TheBizData.m_maxHour);
-				ci_debug_printf(1, "\nCurrent Hour is %d\n", hour);
+				WriteLog( 0, LogFile, "### REJECTing '%s' request from %s Endpoint on Time Violation:\n"
+									  "   These type of requests are only allowed between the hours of %d and %d.",
+							currmethod, ep, TheBizData.m_minHour, TheBizData.m_maxHour) ;
+				WriteLog( 1, LogFile, "Current Hour is %d\n", hour);
 				return CI_ERROR;
 			}
 			else if( (currtemp>TheBizData.m_maxTemp) || (currtemp<TheBizData.m_minTemp) ){
-				ci_debug_printf( 0, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n", 
-							currmethod, TheBizData.m_RequestNo, ep) ;
-				ci_debug_printf( 0, "   These type of requests are only allowed when the temperature is between %d and %d degrees.\n",
-								TheBizData.m_minTemp, TheBizData.m_maxTemp);
-				ci_debug_printf(1, "Current Temperature is %d\n", currtemp);
+				WriteLog( 0, LogFile, "### REJECTing '%s' request from %s Endpoint on Temperature Violation:\n"
+									  "   These type of requests are only allowed when the temperature is between %d and %d degrees.",
+							currmethod, ep, TheBizData.m_minTemp, TheBizData.m_maxTemp) ;
+				WriteLog( 1, LogFile, "Current Temperature is %d\n", currtemp);
 				return CI_ERROR;
 			}
 			else{
-				ci_debug_printf( 0, "*** ACCEPTing '%s' request #%d from %s Endpoint ***\n", 
-								currmethod, TheBizData.m_RequestNo, ep);			
+				TheBizData.m_RequestNo++;
+				WriteLog( 0, LogFile, "*** ACCEPTing '%s' request #%d from %s Endpoint ***", 
+						 currmethod, TheBizData.m_RequestNo, ep);
 				return CI_MOD_ALLOW204;
 			}	
 		}
 		else{
-			ci_debug_printf( 0, "WARNING bad http header, can not get URL, Content-Type and Content-Length.\n" );
+			WriteLog( 0, LogFile, "WARNING bad http header, can not get URL, Content-Type and Content-Length." );
 			return CI_ERROR;
 		}
 	}
 	else if (REQ_TYPE == ICAP_RESPMOD)
 	{
-		ci_debug_printf(0, "got ICAP_RESPMOD, ignoring...\n");
+		WriteLog( 0, LogFile, "got ICAP_RESPMOD, ignoring...");
 	}
 	else if (REQ_TYPE == ICAP_OPTIONS)
 	{
-		ci_debug_printf(0, "ICAP OPTIONS: ignoring...");
+		WriteLog( 0, LogFile, "ICAP OPTIONS: ignoring...");
 	}
 	else
 	{
 		//UNKNOWN ICAP METHOD
-		ci_debug_printf(0, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
+		WriteLog( 0, LogFile, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
 	}
 	// Nothing to do just return an allow204 (No modification) to terminate the ICAP transaction
-	ci_debug_printf(4, "Allow 204...\n");
+	WriteLog( 4, LogFile, "Allow 204...");
 
 	return CI_MOD_ALLOW204;
 
 }
 void msp_close_service()
 {
-	ci_debug_printf(0,"MSP Service shutdown!\n");
-	/*Nothing to do*/
+	if( LogFile ){
+		if( MainThread ) // huh, this doesn't work, still see 4 of the below msgs:
+			WriteLog( 0, LogFile, "The MSP Service is Shutting Down...");
+		fclose( LogFile );
+	}
 }
+
+// Write formatted output to Log File (if loglevel = 0)
+void WriteLog( int loglevel, FILE *pFile, const char *format, ... )
+{
+	char *pStr;
+	int len;
+	
+	// WARNING, THERE IS NO CHECK THAT THE # OF ARGS MATCHES THE NUMBER OF FORMAT SPECIFIERS
+	//		A MISMATCH WILL CAUSE A SEGMENTATION FAULT
+	va_list args;
+	va_start (args, format);
+	
+	if( pFile && (loglevel == 0) )
+	{
+		time_t currtime = time(NULL);
+		struct tm *tm_struct = localtime(&currtime);
+		pStr = asctime(tm_struct);
+		// asctime seems to append a <CR> so overwrite it by using len-1
+		len =  strlen( pStr )-1;
+		strncpy( str, pStr, len );
+		strcpy( &str[len], ": " );
+		vsnprintf( &str[len+2], 800-(len+2), format, args);
+		fprintf(pFile, "\n%s", str);
+		fflush( pFile );
+		ci_debug_printf(loglevel, "%s\n", &str[len+1] );
+	}
+	else{
+		vsprintf(str, format, args);
+		ci_debug_printf(loglevel, "%s\n", str );
+	}
+	
+	va_end (args);
+	return;
+}
+
 /*
  * This function should inititalize the data and structures required for serving the request.
 		param req - a pointer to the related ci_request_t structure
@@ -707,3 +813,4 @@ void msp_dumphex(FILE *mds, char *data, int len)
 	}
 }
 */
+

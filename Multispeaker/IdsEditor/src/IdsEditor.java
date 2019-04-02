@@ -42,23 +42,25 @@ class BizRuleEditor extends JDialog
     public Wini BizRulesIni; 
     public  Wini IdsCfgIni; 
 	public String CfgLocation = "";
+	public String LogLocation = "";
 	public String BizRulesCfg = "";
-    
-    public BizRuleEditor(Frame aFrame, IdsEditor parent) {
+	public String BizRulesLog = "";
+
+	public BizRuleEditor(Frame aFrame, IdsEditor parent) {
         super(aFrame, true);
         dlgParent = parent;
 
         setTitle("Business Rule Editor");
         currSlideValue.setVisible(false);
-        
+
         minSlider = new JSlider(0, 100, 0);
         minSlider.setMinorTickSpacing(5);
         minSlider.setMajorTickSpacing(10);
         minSlider.setPaintTicks(true);
         minSlider.setPaintLabels(true);
-        
+
 		try {
-			
+
 	    	//System.out.println("user.dir: " + System.getProperty("user.dir"));		
 			
    			File f = new File("Ids.cfg");
@@ -90,6 +92,13 @@ class BizRuleEditor extends JDialog
 				f.createNewFile();
 			}
 			BizRulesIni = new Wini(f);
+			
+			BizRulesLog = getIniValueS( BizRulesIni, "Settings", "LogFile" );
+			if( BizRulesLog == null ){
+				LogLocation = System.getProperty("user.dir");
+				BizRulesLog = LogLocation + File.separator + "srv_msp.log";
+				setIniValue( BizRulesIni, "Settings", "LogFile", BizRulesLog );
+			}
 		}
 		catch(FileNotFoundException e) {
 	    	System.out.println("Cfg File Not Found @: " + CfgLocation);
@@ -315,9 +324,10 @@ class BizRuleEditor extends JDialog
             optionPane.setValue(JOptionPane.UNINITIALIZED_VALUE);
             int retVal = ((Integer)selectedValue).intValue();
             currSlideValue.setText("");
-            
+
         	//System.out.println("Selected Method '" + dlgParent.cfgdMethod + "' for Endpoint '" + dlgParent.cfgdEp + "'");
-        	String sectionID = dlgParent.cfgdEp + "_" + dlgParent.cfgdMethod;
+        	//String sectionID = dlgParent.cfgdEp + "_" + dlgParent.cfgdMethod;
+        	String sectionID = dlgParent.cfgdEp + dlgParent.cfgdMethod;
            	//System.out.println("Ini Section: " + sectionID);
             switch (retVal) {            
 	            case JOptionPane.OK_OPTION:
@@ -393,7 +403,8 @@ public class IdsEditor extends JPanel {
 	private static final int PREF_H = 300;
 	
 	
-    JTextArea log;
+    JTextArea IdsLogPane;
+    JTextArea LogLogPane;
     //Specify the look and feel to use.  Valid values:
     //null (use the default), "Metal", "System", "Motif", "GTK+"
     final static String LOOKANDFEEL = null;
@@ -442,12 +453,12 @@ public class IdsEditor extends JPanel {
 
         bizRuleDlg = new BizRuleEditor(frame, this);
         bizRuleDlg.pack();
-        
+
         //Create the components.
         JPanel bizTabPanel = createBizRulesTab();
-        JPanel netTabPanel = createNetTab();
-        JPanel logTabPanel = createLogTab();
+        //JPanel netTabPanel = createNetTab();
         JPanel idsTabPanel = createIdsTab();
+        JPanel logTabPanel = createLogTab();
         label = new JLabel("Click the \"Set\" button"
                            + " to bring up the Corresponding Business Rule Editor.",
                            JLabel.CENTER);
@@ -455,15 +466,15 @@ public class IdsEditor extends JPanel {
         //Lay them out.
         Border padding = BorderFactory.createEmptyBorder(20,20,5,20);
         bizTabPanel.setBorder(padding);
-        netTabPanel.setBorder(padding);
-        logTabPanel.setBorder(padding);
         idsTabPanel.setBorder(padding);
+        logTabPanel.setBorder(padding);
+        //netTabPanel.setBorder(padding);
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Business Rules", null, bizTabPanel, BizRuleTabTip); //tooltip text
-        tabbedPane.addTab("Networking", null, netTabPanel, NetWorkTabTip);
-        tabbedPane.addTab("Logging", null, logTabPanel, LoggingTabTip);
         tabbedPane.addTab("IDS", null, idsTabPanel,IdsTabTip);
+        tabbedPane.addTab("Logging", null, logTabPanel, LoggingTabTip);
+        //tabbedPane.addTab("Networking", null, netTabPanel, NetWorkTabTip);
         tabbedPane.addChangeListener(new ChangeListener() {
         	public void stateChanged(ChangeEvent e) {
         		//System.out.println("Tab: " + tabbedPane.getSelectedIndex());
@@ -474,15 +485,15 @@ public class IdsEditor extends JPanel {
 			    				+ " to bring up the Corresponding Business Rule Editor.");
 			    		break;
 			    	case 1 :
-       					label.setText("Click the \"Configure\" button"
-                           + " to bring up the Corresponding Network Editor.");
+       					label.setText("View or Specify Configuration File");
 			    		break;
 			    	case 2 :
        					label.setText("Click the \"Configure\" button"
-                           + " to bring up the Corresponding Logging Editor.");
+                           + " to bring up the Logging Editor.");
 			    		break;
 			    	case 3 :
-       					label.setText("View or Specify Configuration File");
+       					label.setText("Click the \"Configure\" button"
+                           + " to bring up the Network Editor.");
 			    		break;
 			    }
         	}
@@ -682,7 +693,7 @@ public class IdsEditor extends JPanel {
 					cfgdMethod = dropdowns[idxMethods].getSelectedItem().toString();
 			}
 		});
-		    
+
 		
 		// Handle 'Set' button
         cfgButton.addActionListener(new ActionListener() {
@@ -691,17 +702,17 @@ public class IdsEditor extends JPanel {
                 String command = group.getSelection().getActionCommand();
                 if (command == timeWinCommand)
                 {
-                	bizRuleDlg.ConfigureSliders( "Time", cfgdEp + "_" + cfgdMethod );
+                	bizRuleDlg.ConfigureSliders( "Time", cfgdEp + cfgdMethod );
                 	bizRuleDlg.setTitle("Time Constraint Configuration");
                     //setLabel("Time Window Set.");
                 }
                 else if (command == tempWinCommand)
                 {
-               		bizRuleDlg.ConfigureSliders( "Temperature", cfgdEp + "_" + cfgdMethod );
+               		bizRuleDlg.ConfigureSliders( "Temperature", cfgdEp + cfgdMethod );
                 	bizRuleDlg.setTitle("Temperature Constraint Configuration");
                 } else if (command == maxReqCommand)
                 {
-               		bizRuleDlg.ConfigureSliders( "Requests", cfgdEp + "_" + cfgdMethod );
+               		bizRuleDlg.ConfigureSliders( "Requests", cfgdEp + cfgdMethod );
                 	bizRuleDlg.setTitle("Maximum Daily Request Configuration");
                 }
                 bizRuleDlg.setLocationRelativeTo(topFrame);
@@ -795,8 +806,8 @@ public class IdsEditor extends JPanel {
 		bizPane.add(cmbPanel);
         return bizPane;
     }
-    
-    /** Creates the panel shown by the second tab. */
+
+    /** Creates the net panel */
     private JPanel createNetTab() {
         final int numButtons = 2;
         JRadioButton[] radioButtons = new JRadioButton[numButtons];
@@ -864,89 +875,23 @@ public class IdsEditor extends JPanel {
     }
  
     /*
-     */
-    private JPanel createLogTab() {
-        final int numButtons = 2;
-        JRadioButton[] radioButtons = new JRadioButton[numButtons];
-        final ButtonGroup group = new ButtonGroup();
-
-        JButton cfgButton = null;
-
-        final String logOption1 = "logOption1";
-        final String logOption2 = "logOption2";
-
-        radioButtons[0] = new JRadioButton("Log Configuration Option 1");
-        radioButtons[0].setActionCommand(logOption1);
-
-        radioButtons[1] = new JRadioButton("Log Configuration Option 2");
-        radioButtons[1].setActionCommand(logOption2);
-
-        for (int i = 0; i < numButtons; i++) {
-            group.add(radioButtons[i]);
-        }
-        radioButtons[0].setSelected(true);
-
-        cfgButton = new JButton("Configure");
- 		cfgButton.setPreferredSize(new Dimension(40, 40));
-		cfgButton.setMaximumSize(new Dimension(40, 40));
-		cfgButton.setMinimumSize(new Dimension(40, 40));
-        cfgButton.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        		String command = group.getSelection().getActionCommand();
-        		if (command == logOption1) {
-        			JOptionPane optionPane = new JOptionPane(new JLabel("Under Construction",JLabel.CENTER));
-        			JDialog dialog = optionPane.createDialog("Log Option 1");
-        			dialog.setModal(true);
-        			dialog.setVisible(true);  		
-        		} else if (command == logOption2) {
-         			JOptionPane optionPane = new JOptionPane(new JLabel("Under Construction",JLabel.CENTER));
-        			JDialog dialog = optionPane.createDialog("Log Option 2");
-        			dialog.setModal(true);
-        			dialog.setVisible(true);  		
-        		}
-        	}
-        });
-        return createLogPanel(LoggingTabTip + ":", radioButtons, cfgButton);
-    }
- 
-    private JPanel createLogPanel(String description, JRadioButton[] radioButtons, JButton showButton)
-    {
-
-		int numChoices = radioButtons.length;
-		JPanel radioPanel = new JPanel();
-		JLabel label = new JLabel(description);
-		
-		radioPanel.setLayout(new BoxLayout(radioPanel, BoxLayout.PAGE_AXIS));
-		radioPanel.add(label);
-		
-		for (int i = 0; i < numChoices; i++) {
-			radioPanel.add(radioButtons[i]);
-		}
-		
-		JPanel pane = new JPanel(new BorderLayout());
-		pane.add(radioPanel, BorderLayout.PAGE_START);
-		pane.add(showButton, BorderLayout.PAGE_END);
-		return pane;
-    }
-
-    /*
-     * Creates the panel shown by the 4th tab.
+     * Creates the IDS pane
      */
     private JPanel createIdsTab() {
         //JButton cfgButton = null;
         final JButton selectButton = new JButton("Select Configuration File Location...");
         final JButton viewButton = new JButton("View Configuration File");
  
-        //Create the log first, because the action listeners
+        //Create the IdsLogPane first, because the action listeners
         //need to refer to it.
-        log = new JTextArea(5,20);
-        log.setMargin(new Insets(5,5,5,5));
-        log.setEditable(false);
-        JScrollPane logScrollPane = new JScrollPane(log);
-        
+        IdsLogPane = new JTextArea(5,20);
+        IdsLogPane.setMargin(new Insets(5,5,5,5));
+        IdsLogPane.setEditable(false);
+        JScrollPane logareaScrollPane = new JScrollPane(IdsLogPane);
+
         //Create a file chooser
         //fc = new JFileChooser();
-        //System.out.println("Working Directory = " +  System.getProperty("user.dir"));        		
+        //System.out.println("Working Directory = " +  System.getProperty("user.dir"));
         //fc = new JFileChooser(System.getProperty(bizRuleDlg.CfgLocation));
         //Uncomment one of the following lines to try a different
         //file selection mode.  The first allows just directories
@@ -956,7 +901,7 @@ public class IdsEditor extends JPanel {
         //then the default mode (FILES_ONLY) will be used.
         //
         //fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        //fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);        
+        //fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         selectButton.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		JFileChooser fc;
@@ -985,13 +930,13 @@ public class IdsEditor extends JPanel {
                 			System.exit(-1);
                 			return;
                    		}
-                    	log.append("\nIni file directory set to: " + bizRuleDlg.CfgLocation);
+                    	IdsLogPane.append("\nIni file directory set to: " + bizRuleDlg.CfgLocation);
                 	}
                 	else {
-                		log.append("\nIni file directory still: " + bizRuleDlg.CfgLocation);
+                		IdsLogPane.append("\nIni file directory still: " + bizRuleDlg.CfgLocation);
                 	}
                 } else {
-                    log.append("\nOperation cancelled by user." + newline);
+                    IdsLogPane.append("\nOperation cancelled by user." + newline);
                 }
              };
         });
@@ -1001,8 +946,8 @@ public class IdsEditor extends JPanel {
                 int returnVal = JFileChooser.APPROVE_OPTION;
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     File file = new File(bizRuleDlg.BizRulesCfg);
-                    log.setText("");
-                	log.append("Ini file: " + bizRuleDlg.BizRulesCfg + ".\n");
+                    IdsLogPane.setText("");
+                	IdsLogPane.append("Ini file: " + bizRuleDlg.BizRulesCfg + ".\n");
                     try {
                     	StringBuffer buffer;
                 	    buffer = new StringBuffer();
@@ -1017,20 +962,20 @@ public class IdsEditor extends JPanel {
                             }
                         }
                         reader.close();
-                        log.append(buffer.toString());
+                        IdsLogPane.append(buffer.toString());
                     } catch (FileNotFoundException ex) {
                         System.err.println("FileNotFoundException.");
                         ex.printStackTrace();
                     } catch (IOException ex) {
                         System.err.println("IOException.");
                         ex.printStackTrace();
-                    }                    
+                    }
                 } else {
-                    log.append("Operation cancelled by user." + newline);
+                    IdsLogPane.append("Operation cancelled by user." + newline);
                 }
              };
         });
-        return createIdsPanel(IdsTabTip + ":", selectButton, viewButton, logScrollPane);
+        return createIdsPanel(IdsTabTip + ":", selectButton, viewButton, logareaScrollPane);
     }
  
     private JPanel createIdsPanel(String description, JButton selectButton, JButton viewButton, JScrollPane logPane)
@@ -1048,7 +993,97 @@ public class IdsEditor extends JPanel {
 		return pane;
     }
 
-    private static void initLookAndFeel() {
+     /*
+      * Creates the logging panel
+      */
+    private JPanel createLogTab() {
+        final JButton selectButton = new JButton("Select Log File Location...");
+        final JButton viewButton = new JButton("View Log File");
+ 
+        LogLogPane = new JTextArea(5,20);
+        LogLogPane.setMargin(new Insets(5,5,5,5));
+        LogLogPane.setEditable(false);
+        JScrollPane logScrollPane = new JScrollPane(LogLogPane);
+
+        selectButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		JFileChooser fc;
+                fc = new JFileChooser(bizRuleDlg.LogLocation);
+                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                fc.setDialogTitle("Select Log File Folder");
+                int returnVal = fc.showOpenDialog(IdsEditor.this);
+                if (returnVal == JFileChooser.APPROVE_OPTION){
+                	String temp = fc.getSelectedFile().getAbsolutePath();
+                	if( !bizRuleDlg.LogLocation.equalsIgnoreCase(temp) ) {
+                    	bizRuleDlg.LogLocation = temp;
+                    	bizRuleDlg.BizRulesLog = bizRuleDlg.LogLocation + File.separator + "srv_msp.log";
+                    	bizRuleDlg.setIniValue( bizRuleDlg.BizRulesIni, "Settings", "LogFile", 
+                    							bizRuleDlg.BizRulesLog );
+                    	LogLogPane.append("\nLog file set to: " + bizRuleDlg.BizRulesLog);
+                	}
+                	else {
+                		LogLogPane.append("\nLog file still: " + bizRuleDlg.BizRulesLog);
+                	}
+                } else {
+                    LogLogPane.append("\nOperation cancelled by user." + newline);
+                }
+             };
+        });
+
+        viewButton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+                int returnVal = JFileChooser.APPROVE_OPTION;
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = new File(bizRuleDlg.BizRulesLog);
+                    LogLogPane.setText("");
+                	LogLogPane.append("Log file: " + bizRuleDlg.BizRulesLog + ".\n");
+                    try {
+                    	StringBuffer buffer;
+                	    buffer = new StringBuffer();
+                	    FileReader reader=new FileReader(file);
+                        int i=1;
+                        while(i!=-1)
+                        {
+                            i=reader.read();
+                            if( i != -1 ) {
+	                            char ch=(char) i;
+	                            buffer.append(ch);
+                            }
+                        }
+                        reader.close();
+                        LogLogPane.append(buffer.toString());
+                    } catch (FileNotFoundException ex) {
+                        //System.err.println("FileNotFoundException.");
+                        //ex.printStackTrace();
+                        LogLogPane.append("Log file has not yet been created.\n");
+                    } catch (IOException ex) {
+                        System.err.println("IOException.");
+                        ex.printStackTrace();
+                    }
+                } else {
+                    LogLogPane.append("Operation cancelled by user." + newline);
+                }
+             };
+        });
+        return createLogPanel(IdsTabTip + ":", selectButton, viewButton, logScrollPane);
+    }
+ 
+    private JPanel createLogPanel(String description, JButton selectButton, JButton viewButton, JScrollPane logPane)
+    {
+
+        JPanel buttonPanel = new JPanel(); //use FlowLayout
+        buttonPanel.add(selectButton);
+        buttonPanel.add(viewButton);
+    	
+		JPanel pane = new JPanel(new BorderLayout());
+		//pane.add(showButton, BorderLayout.PAGE_END);
+		pane.add(buttonPanel, BorderLayout.PAGE_START);
+		pane.add(logPane, BorderLayout.CENTER);
+
+		return pane;
+    }
+
+	private static void initLookAndFeel() {
         String lookAndFeel = null;
 
         if (LOOKANDFEEL != null) {
@@ -1109,7 +1144,7 @@ public class IdsEditor extends JPanel {
         //frame.getContentPane().add(mainPanel);
         frame.pack();
         frame.setLocationByPlatform(true);
-        frame.setVisible(true);        
+        frame.setVisible(true);
         
     }
 
