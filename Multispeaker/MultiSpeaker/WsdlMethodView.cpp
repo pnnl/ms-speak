@@ -129,6 +129,7 @@ void WsdlMethodView::Init(QDomDocument doc)
 //
 void WsdlMethodView::Init(TimelineEvent* timelineEvent, bool bIsRequest/*=true*/)
 {
+
 	m_timelineEvent = timelineEvent;
 	m_isRequest = bIsRequest;
 	/*
@@ -142,10 +143,10 @@ void WsdlMethodView::Init(TimelineEvent* timelineEvent, bool bIsRequest/*=true*/
 	if( !m_isRequest )
 		pktType = SK_RES_ENABLE_FLAG;
 	bool bEnabled = s.value(pktType, false).toBool();
-	IsEnabled(bEnabled); // OnEnableClicked(  );// init Requests as enabled, Responses not.
+	IsEnabled(bEnabled); // OnEnableClicked(true);// init Requests are enabled, Responses are not.
 
 	if( IsEnabled() )
-		if( OnRestoreClicked(0) )// //  called on dbl-click of function method
+		if( OnRestoreClicked(0) )// called on dbl-click of function method
 			return;
 	m_HoldoffUpdate=true;
 	CreateTreeView(m_doc);
@@ -611,13 +612,13 @@ void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )
 		if( m_isRequest ){
 			saveKey = SK_SAVE_EDTREQ_FILE;
 			methodKey = SK_RESTORE_EDTREQ_METHOD;
-			fltr = "REQ (*req);; All (*.*)";
+			fltr = "REQ (*.req);; All (*.*)";
 			suffix = "req";
 		}
 		else{
 			saveKey = SK_SAVE_EDTRES_FILE;
 			methodKey = SK_RESTORE_EDTRES_METHOD;
-			fltr = "RES (*res);; All (*.*)";
+			fltr = "RES (*.res);; All (*.*)";
 			suffix = "res";
 		}
 		QSettings().setValue(methodKey, m_timelineEvent->Method());
@@ -664,12 +665,12 @@ bool WsdlMethodView::OnRestoreClicked(int clicked)
 	if( m_isRequest ){
 		saveKey = SK_RESTORE_EDTREQ_FILE;
 		methodKey = SK_RESTORE_EDTREQ_METHOD;
-		fltr = "REQ (*req);; All (*.*)";
+		fltr = "REQ (*.req);; All (*.*)";
 	}
 	else{
 		saveKey = SK_RESTORE_EDTRES_FILE;
 		methodKey = SK_RESTORE_EDTRES_METHOD;
-		fltr = "RES (*res);; All (*.*)";
+		fltr = "RES (*.res);; All (*.*)";
 	}
 	QString seedFile = QSettings().value(saveKey, QVariant()).toString();
 	if( !clicked ){

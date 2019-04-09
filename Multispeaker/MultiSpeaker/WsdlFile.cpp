@@ -187,7 +187,7 @@ QStringList WsdlFile::EnabledMethodNames()
 	return methodNames;
 }
 //------------------------------------------------------------------------------
-// EnabledMethods
+// EnabledMethods -  called when drop an endpoint into topology
 //
 const QList<WsdlMethod*> WsdlFile::EnabledMethods()
 {
@@ -297,7 +297,8 @@ QDomDocument WsdlFile::MethodTemplateResponse(const QString& method)
 	QDomElement templateRoot = MethodTemplate(method).documentElement();
 	QDomElement root = doc.createElement(STR_RESPONSE);
 	doc.appendChild(root);
-	/*
+	// 04-APR-2019 - not sure why this is commented, maybe help with bug that response is not showing in the editor.
+	//		YES!  this got it restored (talking about the response msg when you dbl-click an endpoint method...
 	QDomElement templateNode = templateRoot.firstChildElement();
 	QDomElement node = templateNode.cloneNode().toElement();// RES Header
 	Filter(node, true, false);
@@ -306,7 +307,7 @@ QDomDocument WsdlFile::MethodTemplateResponse(const QString& method)
 	node = templateNode.nextSibling().cloneNode().toElement(); // RES Body
 	Filter(node, true, false);
 	root.appendChild(node);
-	*/
+	// * /
 	return doc;
 }
 //------------------------------------------------------------------------------
