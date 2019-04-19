@@ -488,9 +488,8 @@ public class IdsEditor extends JPanel {
        					label.setText("View or Specify Configuration File");
 			    		break;
 			    	case 2 :
-       					label.setText("Click the \"Configure\" button"
-                           + " to bring up the Logging Editor.");
-			    		break;
+						label.setText("View or Specify Log File");
+ 			    		break;
 			    	case 3 :
        					label.setText("Click the \"Configure\" button"
                            + " to bring up the Network Editor.");

@@ -292,10 +292,11 @@ typedef struct _bizdata {
 	int m_maxTemp;
 	int m_minHour;
 	int m_maxHour;
-	unsigned int m_RequestNo; // NOTE: can force reset to 0 by sending an Endpoint other than CD_Server
+	unsigned int m_ValidRequestNum; // NOTE: can force reset to 0 by sending an Endpoint other than CD_Server
+	unsigned int m_TotalRequestNum;
 } BIZ_DATA; 
 
-BIZ_DATA TheBizData={ WILDCARD,WILDCARD,WILDCARD,WILDCARD,WILDCARD,0}; // todo: make generic,dynamic
+BIZ_DATA TheBizData={ WILDCARD,WILDCARD,WILDCARD,WILDCARD,WILDCARD,0,0}; // todo: make generic,dynamic
 FILE *LogFile = NULL;
 
 /*
@@ -446,7 +447,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
 		struct tm *tm_struct = localtime(&currtime);
 		srand(currtime); 
 		//currtemp = (rand() % (90 - 32 + 1)) + 32;
-		currtemp = 38;
+		currtemp = 45;
 		
 		LogFile = fopen(LogPath, "a");
 		if (LogFile == NULL) 
@@ -463,7 +464,8 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata,
 					LogPath );
 		}
 	
-		TheBizData.m_RequestNo = 0;
+		TheBizData.m_ValidRequestNum = 0;
+		TheBizData.m_TotalRequestNum = 0;
 		hour = tm_struct->tm_hour;
 		currday = tm_struct->tm_mday;
 		//ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
@@ -565,16 +567,16 @@ int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_reque
 			
     		if( strcmp(EndPoint, ep) != 0 ){
 				ci_debug_printf( 0, "No Business Rules Defined for Endpoint '%s', allowing....\n", ep);
-				TheBizData.m_RequestNo = 0;		
-				ci_debug_printf(1, "Reset Number of Requests Received so far to 0.\n");
+				//TheBizData.m_ValidRequestNum = 0;
+				//ci_debug_printf(1, "Reset Number of Requests Received so far to 0.\n");
 				return CI_MOD_ALLOW204;
     		}
     		else{
 		 		if( strcmp(Method, currmethod) != 0 ){
 					ci_debug_printf( 0, "No Business Rules Defined for Method '%s', allowing....\n", currmethod);			
 					//currtemp = (rand() % (90 - 32 + 1)) + 32;
-					currtemp = 55;
-					ci_debug_printf(1, "Current Temperature is %d\n", currtemp);
+					//currtemp = 55;
+					//ci_debug_printf(1, "Current Temperature is %d\n", currtemp);
 					return CI_MOD_ALLOW204;
 				}
 	   		}
@@ -583,13 +585,15 @@ int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_reque
 			hour = tm_struct->tm_hour;
 			if( currday != tm_struct->tm_mday ){
 				currday = tm_struct->tm_mday;
-				TheBizData.m_RequestNo = 0;
+				TheBizData.m_ValidRequestNum = 0;
+				TheBizData.m_TotalRequestNum = 0;
 			}
+			TheBizData.m_TotalRequestNum++;
 			// TODO: handle WILDCARDs for temp and time too
-			if(	(TheBizData.m_numReg != WILDCARD) && (TheBizData.m_RequestNo >= TheBizData.m_numReg) ){
+			if(	(TheBizData.m_numReg != WILDCARD) && (TheBizData.m_ValidRequestNum >= TheBizData.m_numReg) ){
 				WriteLog( 0, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
 									  "   Only %d requests per day are allowed.",
-							currmethod, TheBizData.m_RequestNo, ep, TheBizData.m_numReg);
+							currmethod, TheBizData.m_TotalRequestNum, ep, TheBizData.m_numReg);
 				/*
 				 * all user-defined headers MUST follow the "X-" naming convention ("X-Extension-Header: Foo").
 				 * ci_http_response_create(req, 1, 1);
@@ -609,23 +613,23 @@ int msp_check_preview_handler(char *preview_data, int preview_data_len, ci_reque
 				return CI_ERROR; // CI_MOD_DONE
 			}
 			else if( (hour>TheBizData.m_maxHour) || (hour<TheBizData.m_minHour) ){
-				WriteLog( 0, LogFile, "### REJECTing '%s' request from %s Endpoint on Time Violation:\n"
+				WriteLog( 0, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n"
 									  "   These type of requests are only allowed between the hours of %d and %d.",
-							currmethod, ep, TheBizData.m_minHour, TheBizData.m_maxHour) ;
+							currmethod, TheBizData.m_TotalRequestNum, ep, TheBizData.m_minHour, TheBizData.m_maxHour) ;
 				WriteLog( 1, LogFile, "Current Hour is %d\n", hour);
 				return CI_ERROR;
 			}
 			else if( (currtemp>TheBizData.m_maxTemp) || (currtemp<TheBizData.m_minTemp) ){
-				WriteLog( 0, LogFile, "### REJECTing '%s' request from %s Endpoint on Temperature Violation:\n"
+				WriteLog( 0, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n"
 									  "   These type of requests are only allowed when the temperature is between %d and %d degrees.",
-							currmethod, ep, TheBizData.m_minTemp, TheBizData.m_maxTemp) ;
+							currmethod, TheBizData.m_TotalRequestNum, ep, TheBizData.m_minTemp, TheBizData.m_maxTemp) ;
 				WriteLog( 1, LogFile, "Current Temperature is %d\n", currtemp);
 				return CI_ERROR;
 			}
 			else{
-				TheBizData.m_RequestNo++;
-				WriteLog( 0, LogFile, "*** ACCEPTing '%s' request #%d from %s Endpoint ***", 
-						 currmethod, TheBizData.m_RequestNo, ep);
+				TheBizData.m_ValidRequestNum++;
+				WriteLog( 0, LogFile, "*** ACCEPTing %d of %d daily '%s' requests from %s Endpoint ***", 
+						 TheBizData.m_ValidRequestNum, TheBizData.m_numReg, currmethod, ep);
 				return CI_MOD_ALLOW204;
 			}	
 		}
