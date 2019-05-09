@@ -70,7 +70,7 @@ Host::Host(int id, const QString& name, int appFlags, QObject* parent)
 	: QObject(parent),
 	  m_ReqhostAddress(QSettings().value(SK_HTTP_OUT_REQ_IP, QHostAddress(QHostAddress::LocalHost).toString()).toString()),
 	  m_ResphostAddress(QSettings().value(SK_HTTP_OUT_RES_IP, QHostAddress(QHostAddress::LocalHost).toString()).toString()),
-	  m_ReqhostPort(QSettings().value(SK_HTTP_OUT_REQ_PORT, 8080).toInt()),
+	  m_ReqhostPort(QSettings().value(SK_HTTP_OUT_REQ_PORT, 8888).toInt()),
 	  m_ResphostPort(QSettings().value(SK_HTTP_OUT_RES_PORT, 7777).toInt()),
 	  m_ReqhostEnable(QSettings().value(SK_HTTP_OUT_REQ_FLAG, false).toBool()),
 	  m_ResphostEnable(QSettings().value(SK_HTTP_OUT_RES_FLAG, false).toBool()),

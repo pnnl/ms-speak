@@ -297,17 +297,20 @@ QDomDocument WsdlFile::MethodTemplateResponse(const QString& method)
 	QDomElement templateRoot = MethodTemplate(method).documentElement();
 	QDomElement root = doc.createElement(STR_RESPONSE);
 	doc.appendChild(root);
-	// 04-APR-2019 - not sure why this is commented, maybe help with bug that response is not showing in the editor.
-	//		YES!  this got it restored (talking about the response msg when you dbl-click an endpoint method...
-	QDomElement templateNode = templateRoot.firstChildElement();
-	QDomElement node = templateNode.cloneNode().toElement();// RES Header
+
+	QDomElement templateNode = templateRoot.firstChildElement(); // REQ Header
+	templateNode = templateNode.nextSiblingElement(); // REQ Body
+	templateNode = templateNode.nextSiblingElement(); // RES Header
+	QDomElement node = templateNode.cloneNode().toElement();
 	Filter(node, true, false);
 	root.appendChild(node);
 
-	node = templateNode.nextSibling().cloneNode().toElement(); // RES Body
+	templateNode = templateNode.nextSiblingElement(); // RES Body
+	node = templateNode.cloneNode().toElement();
 	Filter(node, true, false);
+
 	root.appendChild(node);
-	// * /
+
 	return doc;
 }
 //------------------------------------------------------------------------------
