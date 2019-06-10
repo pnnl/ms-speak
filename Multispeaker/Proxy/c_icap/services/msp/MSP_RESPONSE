@@ -1,0 +1,25 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:res="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:cd="http://www.multispeak.org/V5.0/wsdl/CD_Server">
+  <soapenv:Header>
+    <res:MultiSpeakResponseMsgHeader MessageID="%MSGID" TimeStamp="%MSTIME">
+      <res:MultiSpeakVersion>
+        <com:MajorVersion>5</com:MajorVersion>
+        <com:MinorVersion>1</com:MinorVersion>
+        <com:Build>0</com:Build>
+      </res:MultiSpeakVersion>
+      <res:Caller>
+        <com:AppName>%MSAPP</com:AppName>
+        <com:Company>%MSCMPY</com:Company>
+      </res:Caller>
+      <res:Result>
+        <com:resultIdentifier>
+          <com:replyCodeCategory>6</com:replyCodeCategory>
+          <com:index>1</com:index>
+          <com:resultIdentifier>
+            <com:resultDescription>Process cancelled due to business rule violation.</com:resultDescription>
+          </res:Result>
+    </res:MultiSpeakResponseMsgHeader>
+  </soapenv:Header>
+  <soapenv:Body>
+    <cd:InitiateConnectDisconnectResponse/>
+  </soapenv:Body>
+</soapenv:Envelope>
