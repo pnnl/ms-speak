@@ -56,7 +56,21 @@
 //
 // Summary: HttpResponse.cpp
 //-------------------------------------------------------------------------------
+/* https://stackoverflow.com/questions/34633396/the-value-of-the-http-header-soapaction-was-not-recognized-by-the-server
+	SOAP Version 1.1 requires a HTTP header in your SOAP request to specify the SOAP action. It's not in the actual XML, 
+	it's part of the request (in the HTTP header), so that is why you are not seeing any difference between your SoapUI 
+	request xml, and the request you're sending using the WebServiceTemplate. Soap 1.2 allows you to set it as an attribute
+	on the media type, but that is not valid for a 1.1 server. Note that according to the specification, the value you use 
+	doesn't have to be resolvable.
 
+	SOAP places no restrictions on the format or specificity of the URI or that it is resolvable. An HTTP client MUST use 
+	this header field when issuing a SOAP HTTP Request.
+
+	Usually, it's specified in your WSDL, something like (taken from here):
+		<soap:operation
+			soapAction="http://www5v80.elsyarres.net/searchFlights"
+		style="document" />
+*/
 #include "HttpResponse.h"
 
 HttpResponse::HttpResponse(QTcpSocket* socket)

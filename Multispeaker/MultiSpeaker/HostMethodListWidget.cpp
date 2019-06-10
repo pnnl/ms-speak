@@ -125,7 +125,7 @@ void HostMethodListWidget::Update()
 	m_model.appendColumn(items);
 }
 //------------------------------------------------------------------------------
-// OnListViewDoubleClicked
+// OnListViewDoubleClicked - brings up the request/response packet editor
 //
 void HostMethodListWidget::OnListViewDoubleClicked(const QModelIndex& index)
 {

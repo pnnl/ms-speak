@@ -69,7 +69,7 @@
 #include "SslServer.h"
 #include "Valid8.h"
 
-static int MSG_COUNTER = 0;
+//static int MSG_COUNTER = 0;
 
 //------------------------------------------------------------------------------
 // MultiSpeakerServer
@@ -97,7 +97,10 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 	ui.EnableSslCheck->setChecked(s.value(SK_SSL_ENABLED, false).toBool());
 	ui.SslFrame->setVisible(s.value(SK_SSL_ENABLED, false).toBool());
 
+	ui.btnValid8->setVisible(false);
 	ui.btnValid8->setEnabled(false);
+	ui.btnResponse->setVisible(false);
+	ui.respFileName->setVisible(false);
 
 	QString respFile = s.value(SK_RESPONSE_FILE, QString()).toString();
 	if( respFile.isEmpty() ){
@@ -197,11 +200,13 @@ void MultiSpeakerServer::ServerListen()
 	{
 		m_server = new Server(this);
 	}
-
+	/*
 	QString respFile = s.value(SK_RESPONSE_FILE, QString()).toString();
 	if( !respFile.isEmpty() )
 		if (!m_server->SetResponseFile(respFile))
-			OnMessage(QString("Error Reading Response File, %1\n").arg(respFile).toLatin1());
+	*/
+	if (!m_server->SetResponseFile("none"))
+		OnMessage(QString("Error Reading Response File, %1\n").arg("none").toLatin1());
 
 	connect(m_server, SIGNAL(acceptError(QAbstractSocket::SocketError)), this, SLOT(OnServerAcceptError(QAbstractSocket::SocketError)));
 	connect(m_server, SIGNAL(Message(const QByteArray&)), this, SLOT(OnMessage(const QByteArray&)));
@@ -317,12 +322,13 @@ void MultiSpeakerServer::OnMessage(const QByteArray& msg)
 //
 void MultiSpeakerServer::OnMessage(int length, const QByteArray& msg)
 {
-	ui.plainTextEdit->appendPlainText("*****************************\n");
+	Q_UNUSED(length);
+	/*ui.plainTextEdit->appendPlainText("*****************************\n");
 	ui.plainTextEdit->appendPlainText(QString("**** MSG: %1 ****\n").arg(++MSG_COUNTER));
 	ui.plainTextEdit->appendPlainText(QString("**** Content Length: %1 ****\n").arg(length));
-	ui.plainTextEdit->appendPlainText("*** BEGIN MSG ****************\n");
+	ui.plainTextEdit->appendPlainText("*** BEGIN MSG ****************\n");*/
 	ui.plainTextEdit->appendPlainText(msg);
-	ui.plainTextEdit->appendPlainText("*** END MSG ******************\n");
+	//ui.plainTextEdit->appendPlainText("*** END MSG ******************\n");
 
 	Valid8(msg);
 

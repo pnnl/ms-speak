@@ -94,7 +94,8 @@ ServerWorker::~ServerWorker()
 //		 the message data itself.
 void ServerWorker::ReadMessage(QTcpSocket* socket)
 {
-	QByteArray Header = "\n*** HTTP Header ***\n";
+	//QByteArray Header = "\n*** HTTP Header ***\n";
+	QByteArray Header = "\n";
 	QString errString = "Failed to read Header.";
 	bool ContentLenRead = false;
 	quint16 content_len=0;
@@ -167,8 +168,8 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 	}
 	if( bytesAvailable == 0 )
 		return;
-	Header = "*** Message Content ***\n"; // note: reusing 'Header' string
-	emit Message(Header);
+	//Header = "*** Message Content ***\n"; // note: reusing 'Header' string
+	//emit Message(Header);
 	QByteArray block;
 	if (m_bufferSize == 0) // buffer size of 0 means we are streaming
 	{
@@ -207,8 +208,8 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 	SendResponse(200, respdata, socket);
 
 	//  reset;sudo tcpdump -i lo -v	# capture loopback traffic
-	//  show all data, in hex:  sudo tcpdump -i lo tcp and dst port 3128 -s0 -vv -X -c 1000
-	// reset;sudo tcpdump -i lo tcp and dst port 3128 -s0 -A -c 100 -q -t -v >= 400
+	//  show all data, in hex:  sudo tcpdump -i lo tcp and dst port 8888 -s0 -vv -X -c 1000
+	// reset;sudo tcpdump -i lo tcp and dst port 8888 -s0 -A -c 100 -q -t -v >= 400
 }
 //------------------------------------------------------------------------------
 // SendResponse
@@ -220,12 +221,27 @@ void ServerWorker::SendResponse( int code, QByteArray& data, QTcpSocket* socket 
 	if( code != 200 ){
 		response.setStatusFromCode(code );
 	}
+	/*
+		what Multispeaker sends is:
+			POST / HTTP/1.1
+			SOAPAction: http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect
 
+			request.setRawHeader("Accept", "application / soap + xml, application / dime, multipart / related, text/ *");
+			request.setRawHeader("Host", QString("%1:%2").arg(host->ReqHostAddress()).arg(host->ReqHostPort()).toLatin1());
+			request.setRawHeader("Content-Type", "text/xml;charset=utf-8");
+			request.setRawHeader("Content-Length", QString::number(content.length()).toLatin1());
+			request.setRawHeader("SOAPAction", QString("%1/%2").arg(e.Namespace(), e.Method()).toLatin1());
+			
+
+		what MultispeakerSerer sends is:
+			SOAPAction: CD/InitiateConnectDiscnnectResponse
+	*/
 	response.setHeader("Content-Type", response.getContentType(0));
 	response.setHeader("Content-Length",QByteArray::number(data.size()));
 	response.setHeader("Connection","keep-alive"); // "close"
 	response.setHeader("Server","MultiSpeakerServer");
-	response.setHeader("SOAPAction", "CD/InitiateConnectDisconnectResponse");
+	//response.setHeader("SOAPAction", "CD/InitiateConnectDisconnectResponse");
+	response.setHeader("SOAPAction", "http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect");
 
 	response.write(data,true);
 

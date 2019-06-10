@@ -106,10 +106,71 @@ void Server::incomingConnection(qintptr socketDescriptor)
 //
 bool Server::SetResponseFile(const QString& path)
 {
+	Q_UNUSED(path);
+
+	/*
 	QFile responseFile(path);
 	if (!responseFile.open(QIODevice::ReadOnly))
 		return false;
-
+	// QByteArray m_responseFile;
 	m_responseFile = responseFile.readAll();
+	*/
+	
+	const char  *pResponse =
+		"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:res=\"http://www.multispeak.org/V5.0/ws/response\" xmlns:com=\"http://www.multispeak.org/V5.0/commonTypes\" xmlns:cd=\"http://www.multispeak.org/V5.0/wsdl/CD_Server\">"
+		"<soapenv:Header>"
+		"<res:MultiSpeakResponseMsgHeader MessageID = \"FE92A1A2-5255-4830-98CD-7403C45588F6\" TimeStamp=\"2019-06-06 14:11:00.970\">"
+		"<res:MultiSpeakVersion>"
+		"<com:MajorVersion>5</com:MajorVersion>"
+		"<com:MinorVersion>1</com:MinorVersion>"
+		"<com:Build>0</com:Build>"
+		"</res:MultiSpeakVersion>"
+		"<res:Caller>"
+		"<com:AppName>MS-Server</com:AppName>"
+		"<com:Company>Pacific Northwest National Laboratory</com:Company>"
+		"</res:Caller>"
+		"<res:Result>"
+		"<com:resultIdentifier>"
+		"<com:replyCodeCategory>0</com:replyCodeCategory>"
+		"<com:index>0</com:index>"
+		"<com:resultIdentifier>"
+		"<com:resultDescription>Success/ no errors.</com:resultDescription>"
+		"</res:Result>"
+		"</res:MultiSpeakResponseMsgHeader>"
+		"</soapenv:Header>"
+		"<soapenv:Body>"
+		"<cd:InitiateConnectDisconnectResponse/>"
+		"</soapenv:Body>"
+		"</soapenv:Envelope>";
+	m_responseFile = QByteArray(pResponse, -1);
+
 	return true;
 }
+/*
+<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:res="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:cd="http://www.multispeak.org/V5.0/wsdl/CD_Server">
+   <soapenv:Header>
+      <res:MultiSpeakResponseMsgHeader MessageID="FE92A1A2-5255-4830-98CD-7403C45588F6" TimeStamp="2019-06-06 14:11:00.970">
+         <res:MultiSpeakVersion>
+            <com:MajorVersion>5</com:MajorVersion>
+           <com:MinorVersion>1</com:MinorVersion>
+            <com:Build>0</com:Build>
+         </res:MultiSpeakVersion>
+         <res:Caller>
+            <com:AppName>MS-Server</com:AppName>
+            <com:Company>Pacific Northwest National Laboratory</com:Company>
+         </res:Caller>
+         <res:Result>
+            <com:resultIdentifier>
+               <com:replyCodeCategory>0</com:replyCodeCategory>
+               <com:index>0</com:index>
+          <com:resultIdentifier>
+          <com:resultDescription>Success/ no errors.</com:resultDescription>
+         </res:Result>
+      </res:MultiSpeakResponseMsgHeader>
+   </soapenv:Header>
+   <soapenv:Body>
+      <cd:InitiateConnectDisconnectResponse/>
+   </soapenv:Body>
+</soapenv:Envelope>
+*/
