@@ -51,89 +51,224 @@
 /*
 -------------------------------------------------------------------------------
 	History
-		2019 - Created By: Cullen Tollbom, from	https://sourceforge.net/projects/c-icap/
-		03/23/2019 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+		03/23/2019 - inital modification from examples @ https://sourceforge.net/projects/c-icap/: Carl Miller <carl.miller@pnnl.gov>
 		04/01/2019 - CHM: added logging.
 		05/13/2019 - CHM: return MS response on business rule violation.
-		06/04/2019 - CHM: generalize BizData.
+		06/04/2019 - CHM: generalize BizData (start to at least...).
 		06/05/2019 - CHM: only increment m_ValidRequestNum upon seeing a response.
+		06/20/2019 - CHM: ingest the complete packet, so can parse the well-formed xml inside.
+		06/29/2019 - CHM: support all methods/endpoints.
 -------------------------------------------------------------------------------
-	ECAP:  https://www.e-cap.org/
-			https://answers.launchpad.net/ecap/+question/238792
-			https://answers.launchpad.net/ecap/+faq/2516
+	NOTE:  the following build instructions apply to a linux debian 9 system
 
- Summary: /home/msspeak/Packages/c_icap-0.5.5/services/msp/srv_msp.c
-		to change squid configuration:
-			/usr/local/squid/etc/squid.conf
-				#
-				# Enable and configure the ICAP client in Squid
-				#
-				icap_enable on
-				icap_preview_enable on
-				icap_preview_size 1024
-				icap_send_client_ip on
-				icap_service service_msp_req reqmod_precache icap ://127.0.0.1:1344/msp
-				icap_service service_msp_resp respmod_precache icap ://127.0.0.1:1344/msp
-				#
-				# Define what the squid content adaptation layer class maps
-				#
-				adaptation_access service_msp_req allow all
-				adaptation_access service_msp_resp allow all
+	to build squid:
+		download the most recent nightly build of Squid from http://www.squid-cache.org/Versions/v4/
+			i.e., squid-4.7-20190507-r2e17b0261.tar.gz to /home/msspeak/Packages and unpack it:
+				cd /home/msspeak/Packages
+				tar xzf squid-4.7-20190507-r2e17b0261.tar.gz
+				for convenience, rename the squid-4.7-20190507-r2e17b0261 directory:
+					mv squid-4.7-20190507-r2e17b0261 squid-4.7
+		build:
+			cd /home/msspeak/Packages/squid-4.7
+			./configure		// note: this will generate Makefile from the existing Makefile.in
+							//		 no need to run automake to generate the Makefile.in)
+			make			// this will take about 20 minutes
 
-			error_directory - /home/msspeak/Packages/c_icap-0.5.5/services/msp/errors
-				default error file location:
-					/usr/local/squid/share/errors/en
-				This directive specifies the location of Squid’s error message files.
-				If you want to customize the error messages, you should put them into a nondefault directory.
-				Otherwise, they may be overwritten if you run make install in the future
+			// before running make install, modify ./src/squid.conf.default as below
+			// then run: and verify the changes are in /usr/local/squid/etc/squid.conf
+			sudo make install
 
+		modify squid configuration file (/usr/local/squid/etc/squid.conf) as follows:
+				(or copy squid.conf from the msp sources as ./src/squid.conf.default)
+			//// start of squid.conf changes ////////////////////////////////////////////////
+			#
+			# Enable and configure the ICAP client in Squid
+			#
+			icap_enable on
+			icap_preview_enable on
+			icap_preview_size 0
+			icap_send_client_ip on
+			icap_service service_msp_req reqmod_precache icap ://127.0.0.1:1344/msp
+			icap_service service_msp_resp respmod_precache icap ://127.0.0.1:1344/msp
 
-		to build:
-			cd /home/msspeak/Packages/c_icap-0.5.5
-			automake   (in the case of a fresh install, ./configure.ac has changed, or a ‘make clean’ has been run)
-			./configure   # only need do once otherwise
+			# This directive specifies the location of Squid’s error message files.
+			# If you want to customize the error messages, you should put them into a nondefault directory.
+			# Otherwise, they may be overwritten if you run make install in the future
+			# point to our MSP error files
+			error_directory /home/msspeak/Packages/c_icap-0.5.5/services/msp/errors
+
+			#
+			# Define what the squid content adaptation layer class maps
+			#
+			adaptation_access service_msp_req allow all
+			adaptation_access service_msp_resp allow all
+
+			#
+			#
+			# adaptation_service_set class_msp service_msp_req service_msp_respmod
+			#
+			#
+			# This is the traffic match ACL for ICAP.   It currently funnels everything to icap for inspection.
+			# This should change to an ACL that matches multispeak traffic, if possible.  Otherwise, msp will
+			# will have to perform all filtering work.
+			#
+			#adaptation_access class_msp allow all
+
+			# Example rule allowing access from your local networks.
+			# Adapt to list your (internal) IP networks from where browsing
+			# should be allowed
+			#acl localnet src 0.0.0.1-0.255.255.255	# RFC 1122 "this" network (LAN)
+			#acl localnet src 10.0.0.0/8		# RFC 1918 local private network (LAN)
+			#acl localnet src 100.64.0.0/10		# RFC 6598 shared address space (CGN)
+			#acl localnet src 169.254.0.0/16 	# RFC 3927 link-local (directly plugged) machines
+			#acl localnet src 192.168.0.0/16	# RFC 1918 local private network (LAN)
+			#acl localnet src fc00::/7       	# RFC 4193 local private network range
+			#acl localnet src fe80::/10      	# RFC 4291 link-local (directly plugged) machines
+			acl localnet src 172.20.219.0/24	# RFC 1918 local private network (LAN)
+
+			// add
+			acl Safe_ports port 8080	# http
+
+			# Squid normally listens to port 3128
+			# http_port 3128 - set to listen for ipv4 only:
+			http_port 0.0.0.0:3128
+			//// end of squid.conf changes ////////////////////////////////////////////////
+			
 			NOTE: if you run automake, it will replace the Squid.conf file(/usr/local/squid/etc/squid.conf), so
-					in that case, you need to replace it with a version that allows only IPV4 addresses and
-					also sets port 8080 as a safeport (that version is in the repo @../Multispeaker/Proxy/squid). 
-				  if you run automake, it will replace the msp Makefile, so if the required changes to include glib 
-					are needed, copy Makefile.msp(@../Multispeaker/Proxy/c_icap/services/msp/) as Makefile afterwards.
-					(NOTE: it is best to add the Makefile changes to Makefile.am, to avoid this)
-					"no rule to make target 'glib-2.0', needed by 'srv_msp.la'. Stop"
+			in that case, you need to replace it with a version that allows only IPV4 addresses and
+			also sets port 8080 as a safeport, as above (that version is in the repo @../Multispeaker/Proxy/squid).
+				
+		to run Squid:
+			// Before running squid, install c-icap as below
 
-			to modify c-icap configuration:
-				/usr/local/etc/c-icap.conf
-				these lines must be in c-icap.conf:
-					Service msp srv_msp.so
-					TemplateDir /usr/local/share/c-icap/templates
-				and this file must be present:
-					/usr/local/share/c-icap/templates/msp/en-US/MSP_RESPONSE
+			sudo /usr/local/squid/sbin/squid -h		// to list all options
 
-			if only modifying srv_msp.c after initial install of icap, just do the follwing:
+			sudo /usr/local/squid/sbin/squid -N -d 1
+			if you see this error:
+				logfileHandleWrite: daemon:/var/logs/access.log: error writing ((32) Broken pipe)
+			add your user to the staff group:
+				usermod -a -G staff username
+				(then shutdown, restart)
+			cd /usr/local
+				sudo chmod 777 squid -R
+		to reconfigure Squid on the fly:
+			sudo /usr/local/squid/sbin/squid -k reconfigure
+
+				
+	to build c-icap:
+		download c_icap-0.5.5 from http://c-icap.sourceforge.net/download.html
+			i.e., c_icap-0.5.5.tar.gz to /home/msspeak/Packages and unpack it:
+				cd /home/msspeak/Packages
+				tar xzf c_icap-0.5.5.tar.gz
+
+			cd /home/msspeak/Packages/c_icap-0.5.5
+				add 'services/msp/Makefile' to the 'configure' script file 'ac_config_files' variable
+				create directory under ./c_icap-0.5.5/services called 'msp' with the following files(from msp source) in it:
+					sudo mkdir services/msp
+					Makefile.am, Makefile.in, makefile.w32, srv_msp.c, srv_msp_body.c, srv_msp_body.h & srv_msp.def
+				also copy the 'errors' folder from the msp source  there
+			
+				change the line in ./services/Makefile.am and /services/Makefile.in from
+					SUBDIRS = echo ex-206 
+						 to
+					SUBDIRS = echo ex-206 msp
+			
+			create /usr/local/share/c_icap/templates/msp/en
+				sudo mkdir /usr/local/share/c_icap/templates/msp
+				sudo mkdir /usr/local/share/c_icap/templates/msp/en			
+			copy MSP_RESPONSE from the msp sources to :
+				sudo cp MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en
+
+			./configure		// note: this will generate Makefile from the existing Makefile.in
+							//		 no need to run automake to generate the Makefile.in)
+			make			// this will take a minute or 2
+
+			// before running make install, modify ./c_icap-0.5.5/c-icap.conf.in as below
+			// then run: and verify the changes are in /usr/local/etc/c-icap.conf
+			sudo make install // generates /usr/local/etc/c-icap.conf from 'c-icap.conf.in'
+
+			modify the following section in './c_icap-0.5.5/c-icap.conf.in':
+				######################################################
+				# External modules comming with core c-icap server
+				#
+				# Module: echo
+				# Description:
+				#	Simple test service
+				# Example:
+				#	Service echo srv_echo.so
+				Service echo srv_echo.so		<== change this
+				Service msp srv_msp.so  		<== to this				
+				
+			to verify c-icap configuration:
+				these lines must be in /usr/local/etc/c-icap.conf:
+				Service msp srv_msp.so
+				TemplateDir /usr/local/share/c_icap/templates
+				(NOTE: do not place a slash at the end)
+					
+
+			if you are only modifying srv_msp.c after initial install of icap, just do the follwing from /home/msspeak/Packages/c_icap-0.5.5:
 				make
 				sudo make install
+						
 			if adding a new source file to msp, add it to Makefile.am and 
 				run
-					automake
+					automake (requies Makefile.am)
 					./configure
 				then do 
 					make
 					sudo make install
+					
 			NOTES:
 				automake uses Makefile.am to generate Makefile.in
 				./configure uses Makefile.in to generate Makefile
 
-		to run Squid:
-			sudo /usr/local/squid/sbin/squid [& -N -D -d 1 ]
-		to run Icap:
-			sudo /usr/local/bin/c-icap [ -N -D -d 1 ]
-		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist,
-				  and must be recreated:
-					make install (from /home/msspeak/Packages/c_icap-0.5.5)
-							OR
-				  	sudo mkdir /run/c-icap
-				  	sudo mkdir /var/run/c-icap
-				NOTE: the icap daemon will create the actual lock file in the directory when started.
 
+		to run Squid:
+			sudo /usr/local/squid/sbin/squid -N -d 1
+		to run c-icap:  ( http://c-icap.sourceforge.net/install.html )
+			sudo /usr/local/bin/c-icap [ -N -D -d 1 ]
+			NOTE: if you see this error:
+				/usr/local/bin/c-icap: error while loading shared libraries: libicapapi.so.5: cannot open shared object file: No such file or directory
+				do:
+					sudo ldconfig
+			
+		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist,
+				  and must be recreated: you may see the following error when starting c-icap:
+						Cannot open the pid file: /var/run/c-icap/c-icap.pid or c-icap.ctl
+					do:
+						sudo mkdir /var/run/c-icap
+				this happens because /var/run is a tmpfs filesystem, so it
+				is emptied at each boot, to have a directory created in it each
+				boot, add a .conf file to /run/tmpfiles.d:
+					/usr/lib/tmpfiles.d/c-icap.conf
+						d /var/run/c-icap 0755 - - -
+
+				NOTE: the icap daemon will create the actual lock file in the directory when started.
+				
+		test on a single machine using:
+			NOTE:  I believe QT does not pass loopback requests to a proxy, so can use the following:
+				http_proxy=127.0.0.1:3128
+				export http_proxy
+
+				/usr/local/bin/c-icap-client -i 127.0.0.1 -s msp -p 1344 -req use-any-url
+
+							or
+
+				wget --post-file=TestConnDiscReq.xml -S http://127.0.0.1:8080
+					 --header="Content-Type: text/xml"
+					 --header="SOAPAction: \"http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect\"" -O response.xml
+
+
+
+	to build the business rule editor:
+		TODO....
+		see ~/.bash_history from Irene
+
+	others packages that may need to be installed:
+		sudo apt-get install libglib2.0-dev
+		sudo apt-get install libxml2
+		sudo apt-get install libxml2-dev
+		sudo apt-get install uuid-dev
 -----------------------------------------------------------------------------------------------*/
 #include <string.h>
 #include <stdio.h>
@@ -144,6 +279,10 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <time.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
+#include <uuid/uuid.h> 
+
 #include "common.h"
 #include "c-icap.h"
 #include "service.h"
@@ -155,17 +294,13 @@
 #include "txtTemplate.h"
 #include "srv_msp_body.h"
 
-// prototypes
-int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
-int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
-void msp_close_service();
-void *msp_init_request_data(ci_request_t * );
-void msp_release_request_data(void *);
-int msp_preview_handler(char *, int, ci_request_t *);
-int msp_end_of_data_handler(ci_request_t * );
-int msp_io(char *, int *, char *, int *, int,	ci_request_t * );
-
 /*
+
+ci_stat_uint64_inc(UC_CNT_REQUESTS, 1);
+int UC_CNT_REQUESTS = -1;
+UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "Service url_check");
+
+
  * ICAP defines three methods:
 	REQMOD - for Request Modification
 	RESPMOD - for Response Modification
@@ -227,129 +362,131 @@ int msp_io(char *, int *, char *, int *, int,	ci_request_t * );
  * 
  * 		debug as:  sudo c-icap -N -D -d 1
  */
-CI_DECLARE_MOD_DATA ci_service_module_t service = {
-    "msp",                         // mod_name: The service name
-    "MultiSpeak Parser Service",   // mod_short_descr: Service short description
-    ICAP_REQMOD | ICAP_RESPMOD,    // mod_type: service implements only and request modification
-    msp_init_service,              // mod_init_service: function called when the service is loaded.
-    msp_post_init_service, 		   // mod_post_init_service: function which is called after c-icap
-                                   // is initialized, but before it starts serving requests.
-    msp_close_service,             // mod_close_service: Called when c-icap server shuts down.
-	msp_init_request_data,         // mod_init_request_data: function called when a new request for this services arrives at the c-icap server.
-	msp_release_request_data,      // mod_release_request_data: function which releases the service data.
-    msp_preview_handler,     	   // mod_check_preview_handler: function which is used to preview the ICAP client request
-	msp_end_of_data_handler,						   // mod_end_of_data_handler: function called when the icap client has sent all the data to the service
-	msp_io,                          // mod_service_io: function called to read/send body data from/to icap client.
-    NULL,						   // mod_conf_table: config table of the service
-    NULL						   // mod_data: This field is not used. Set it to NULL.
-};
 
 #define CI_MAXMSGIDLEN 256
 #define CI_MAXTIMESTAMPLEN 256
 #define CI_MAXAPPNAMELEN 256
 #define CI_MAXCOMPANYLEN 256
-#define CI_MAXINFOLEN 256 // should be set to the largest of above
+#define CI_MAXMETHODLEN 256
+#define CI_MAXENDPOINTLEN 256
+#define CI_MAXNSLEN 256
+#define CI_MAXXACTIDLEN 256
 
 #define MSP_NO_STATUS   0
 #define MSP_OK          1
 #define MSP_BIZ_VIO		2 // business rule violation
 #define MSP_ERROR		3
 
-struct srv_msp_msg_info {
-	char msgid[CI_MAXMSGIDLEN + 1];
-	char timestamp[CI_MAXTIMESTAMPLEN + 1];
-	char appname[CI_MAXAPPNAMELEN + 1];
-	char company[CI_MAXCOMPANYLEN + 1];
-};
-
-/*
-The srv_msp_data structure will store the data required to serve an ICAP request.
-*/
-static int MSP_DATA_POOL = -1;
-int EARLY_RESPONSES = 1;
-
-struct srv_msp_data {
-	struct body_data body;
-	struct srv_msp_msg_info msginfo;
-};
-
-/*
-RFC 3507                          ICAP                        April 2003
-4.8.2  Response
-
-The response from the ICAP server back to the ICAP client(i.e. Squid) may take
-one of four forms:
-	-  An error indication.
-	-  A 204 indicating that the ICAP client's request requires no
-		adaptation (see Section 4.6 for limitations of this response).
-	-  An encapsulated, adapted version of the ICAP client's request.
-	-  An encapsulated HTTP error response.  Note that Request
-		Modification requests may only be satisfied with HTTP responses in
-		cases when the HTTP response is an error (e.g., 403 Forbidden).
-*/
-#define MAX_GROUPLEN 200
+#define MAX_GROUPLEN 80
 #define WILDCARD_STR "-1"
 #define WILDCARD -1
 #define LOG_URL_SIZE 256
 #define LOW_BUFF 256
 
+/*
+ * The srv_msp_data structure will store the data required to serve an ICAP request.
+ */
+struct srv_msp_msg_info {
+	char xmlnspace[CI_MAXNSLEN + 1];
+	char method[CI_MAXMETHODLEN + 1];
+	char endpoint[CI_MAXENDPOINTLEN + 1];
+	char xactid[CI_MAXXACTIDLEN + 1];
+	char appname[CI_MAXAPPNAMELEN + 1];
+	char company[CI_MAXCOMPANYLEN + 1];
+	//char msgid[CI_MAXMSGIDLEN + 1];
+	//char timestamp[CI_MAXTIMESTAMPLEN + 
+};
+
+struct srv_msp_data {
+	struct body_data body;
+	struct srv_msp_msg_info msginfo;
+	int64_t maxBodyData;
+	int64_t expectedData;
+	/*flag for marking the eof*/
+	int eof;
+	int isReqmod;
+};
+
+typedef struct _bizdata {
+	gint64 m_numReq;
+	gint64 m_minTemp;
+	gint64 m_maxTemp;
+	gint64 m_minHour;
+	gint64 m_maxHour;
+	gint64 m_ValidRequestNum;
+	gint64 m_TotalRequestNum;
+	gchar  m_Method[MAX_GROUPLEN];
+	gchar *m_EndPoint;
+} BIZ_DATA;
+
+int fmt_srv_msp_namespace(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_msgid(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_timestamp(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_appname(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_company(ci_request_t *, char *, int, const char *);
+int fmt_srv_msp_method(ci_request_t *, char *, int, const char *);
+int fmt_srv_msp_transactionid(ci_request_t *, char *, int, const char *);
 struct ci_fmt_entry MspFmtTable [] = {
-    {"%MSGID", "MessageID", fmt_srv_msp_msgid},
-    {"%MSTIME", "TimeStamp", fmt_srv_msp_timestamp},
-    {"%MSAPP", "AppName", fmt_srv_msp_appname},
-    {"%MSCMPY", "Company", fmt_srv_msp_company},
+	{ "%MSNS", "Namespace", fmt_srv_msp_namespace },
+	{ "%MSGID", "MessageID", fmt_srv_msp_msgid },
+	{ "%MSTIME", "TimeStamp", fmt_srv_msp_timestamp},
+	{ "%MSAPP", "AppName", fmt_srv_msp_appname},
+	{ "%MSCMPY", "Company", fmt_srv_msp_company},
+	{ "%MSMTHD", "Method", fmt_srv_msp_method },
+	{ "%MSTXID", "XActID", fmt_srv_msp_transactionid },
     { NULL, NULL, NULL}
 };
 
-const char delim[2] = "/";
-char theCopy [200];
-char str[800];
+// module prototypes
+int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
+int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
+void msp_close_service();
+void *msp_init_request_data(ci_request_t *);
+void msp_release_request_data(void *);
+int msp_preview_handler(char *, int, ci_request_t *);
+int msp_end_of_data_handler(ci_request_t *);
+int msp_io(char *, int *, char *, int *, int, ci_request_t *);
+CI_DECLARE_MOD_DATA ci_service_module_t service = {
+	"msp",                         // mod_name: The service name
+	"MultiSpeak Parser Service",   // mod_short_descr: Service short description
+	ICAP_REQMOD | ICAP_RESPMOD,    // mod_type: service implements only and request modification
+	msp_init_service,              // mod_init_service: function called when the service is loaded.
+	msp_post_init_service, 		   // mod_post_init_service: function which is called after c-icap
+								   // is initialized, but before it starts serving requests.
+	msp_close_service,             // mod_close_service: Called when c-icap server shuts down.
+	msp_init_request_data,         // mod_init_request_data: function called when a new request for this services arrives at the c-icap server.
+	msp_release_request_data,      // mod_release_request_data: function which releases the service data.
+	msp_preview_handler,     	   // mod_check_preview_handler: function which is used to preview the ICAP client request
+	msp_end_of_data_handler,	   // mod_end_of_data_handler: function called when the icap client has sent all the data to the service
+	msp_io,                        // mod_service_io: function called to read/send body data from/to icap client.
+	NULL,						   // mod_conf_table: config table of the service
+	NULL						   // mod_data: This field is not used. Set it to NULL.
+};
 
-GError *error = NULL;
-GKeyFileFlags flags = G_KEY_FILE_NONE;
-GKeyFile *BizCfgFile;
-//gchar *EndPoint;
-//gchar *Method;
-gchar *BizFile = "/home/msspeak/BizRules.cfg";
-size_t slen;
-int currtemp;  // NOTE: can force change of temp by sending CD_Server method other than InitiateConnectDisconnect
+// general prototypes
+int handle_request_preview(BIZ_DATA *);
+int handle_response_preview(BIZ_DATA *);
+void WriteLog(int, FILE *, const char *, ...);
+void msp_dumphex(char *, int);
+BIZ_DATA *GetBusinessRecord(struct srv_msp_data *, int *);
+static ci_membuf_t *generate_error_page(ci_request_t *);
+static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
+static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
+xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
+
+// globals
+char str[800];
+int currtemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
 int currday;
 int hour;
 int MainThread = 0;
-
-// note: the order of these is reliant on the order of elements in Keys[]
-// ultimately, there should be one of these, and a rule file, for each different
-// endpoint ip address....
-typedef struct _bizdata {
-	int m_numReg;
-	int m_minTemp;
-	int m_maxTemp;
-	int m_minHour;
-	int m_maxHour;
-	unsigned int m_ValidRequestNum; // NOTE: can force reset to 0 by sending an Endpoint other than CD_Server
-	unsigned int m_TotalRequestNum;
-	gchar *m_EndPoint;
-	gchar *m_Method;
-} BIZ_DATA;
-
-
-// prototypes
-int handle_request_preview( ci_request_t *);
-int handle_response_preview( ci_request_t *);
-int get_msg_info(char *, int , struct srv_msp_msg_info *);
-void WriteLog( int, FILE *, const char *, ... );
-static ci_membuf_t *generate_error_page(ci_request_t *);
-char *GetRetStr(int );
-void msp_dumphex(char *, int );
-bool find_keyval(char const*, char const*, char, char *, int );
-BIZ_DATA * GetBusinessRecord(ci_request_t *, int *);
-
-BIZ_DATA TheBizData={ WILDCARD,WILDCARD,WILDCARD,WILDCARD,WILDCARD,0,0}; // todo: make generic,dynamic and per-connection
+int NumBizRecs;
 FILE *LogFile = NULL;
+BIZ_DATA *pBizRecords;
+
+// statics
+static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
+static int MSP_DATA_POOL = -1;
 
 /*
  * This function called exactly when the service is loaded by c-icap.
@@ -363,9 +500,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 {
 	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v2.0 ***\n");
 
-	// Tell to the icap clients that we can support up to 1024 size of preview data
-	//ci_service_set_preview(srv_xdata, 0); // not sure why url_check sets this to 0....
-	// ... but with it set to 0, am getting 0 bytes of preview data - duh!
+	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
 
 	unsigned int xops = CI_XCLIENTIP | CI_XSERVERIP;
@@ -377,8 +512,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 	ci_service_enable_206(srv_xdata);
 
 	/*initialize mempools          */
-	MSP_DATA_POOL = ci_object_pool_register("srv_msp_data",
-		sizeof(struct srv_msp_data));
+	MSP_DATA_POOL = ci_object_pool_register("srv_msp_data", sizeof(struct srv_msp_data));
 	if (MSP_DATA_POOL < 0)
 		return CI_ERROR;
 
@@ -387,7 +521,6 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 
 
 	//ci_debug_printf(1, "Instantiating Business Rules Key File\n");
-	BizCfgFile = g_key_file_new ();
 	
 	return CI_OK;
 }
@@ -403,150 +536,200 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	const char *LogPath;
-	gchar *val;
-	gchar MethodGroup[MAX_GROUPLEN];
-	gint8  idx;
+	gchar    *BizFile = "/home/msspeak/BizRules.cfg";
+	gsize num_groups, num_keys;
+	gchar **keys=NULL, *curr_key;
+	gchar *str_value, *curr_grp;
+	guint64	value64;
+	gsize length;
+	BIZ_DATA *pBzd;
+	size_t 	size;
+	const char *LogPath="";
+	guint group, key;
 
+	GError   *error = NULL;
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
 	
-	if (!g_key_file_load_from_file (BizCfgFile, BizFile, flags, &error))
+	GKeyFile *BizCfgFile = g_key_file_new();
+	if (!g_key_file_load_from_file (BizCfgFile, BizFile, G_KEY_FILE_NONE, &error))
 	{
 		if( !g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT) ){
-			ci_debug_printf(0, "    Error loading key file: %s", error->message);
+			ci_debug_printf(0, "    Error loading Business Rule file: %s", error->message);
 		}
 		else{
-			ci_debug_printf(0, "    Key File Load Failed.\n");
+			ci_debug_printf(0, "    Business Rule File Load Failed.\n");
 		}
-		return CI_ERROR;
+		g_critical("%s", error->message);
+		g_key_file_free(BizCfgFile);
+		exit( -2 );
+		//return CI_ERROR;
 	}
-	ci_debug_printf(2, "    Successfully Loaded Key File.\n");
-
+	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
+	if( CI_DEBUG_LEVEL >= 3 ){
+		printf("  %s\n", g_key_file_to_data(BizCfgFile, &length, &error));
+	}
 	/*
-	* TODO:
-	*		eventually we should loop through the entire CfgFile, making a BizData for
-	*		each 'MethodGroup' (section) in it...
-	*
-	*		Also, we would change the editor to store the section as "CD_Server-InitiateConnectDisconnect"
-	*		instead of "CD_ServerInitiateConnectDisconnect" so we can parse out the endpoint and method
-	*/
-	TheBizData.m_EndPoint = "CD_Server";
-	TheBizData.m_Method = "InitiateConnectDisconnect";
-	//EndPoint = "CD_Server";
-	//Method = "InitiateConnectDisconnect";
-	ci_debug_printf(1, "    Storing Endpoint Method Rules for %s/%s ...\n", TheBizData.m_EndPoint, TheBizData.m_Method);
+	[Settings]
+	LogFile = /home/msspeak/srv_msp.log
 
-	slen = strlen(TheBizData.m_EndPoint);
-	if( slen + strlen(TheBizData.m_Method) < MAX_GROUPLEN-1 ){
-		strcpy(MethodGroup, TheBizData.m_EndPoint);
-		strcat(MethodGroup, TheBizData.m_Method);
-	}
-	else{
-		ci_debug_printf(0, "    Endpoint/Method Size exceeded.\n");
-		return CI_ERROR;
-	}
-	if( !g_key_file_has_group( BizCfgFile, MethodGroup ) )
+	[GetCDSupportedMeters@CD_Server]
+	minHour = 5
+	maxHour = 17
+	minTemp = 32
+	maxTemp = 90
+	numReq = 6
+
+	[InitiateConnectDisconnect@CD_Server]
+	minTemp = 32
+	maxTemp = 83
+	numReq = 7
+	minHour = 8
+	maxHour = 14
+
+	[GetLatestMeterReadings@MR_Server]
+	minHour = 0
+	maxHour = 23
+	minTemp = 32
+	maxTemp = 100
+	numReq = 23
+
+	[ChangeMeterData@CB_Server]
+	numReq = 10
+
+	[InitiateEndDevicePings@OD_Server]
+	numReq = 12
+	minHour = 9
+	maxHour = 17	
+	*/
+
+	time_t currtime = time(NULL);
+	struct tm *tm_struct = localtime(&currtime);
+	gchar   **pgGroups;
+
+
+	srand(currtime);
+	//currtemp = (rand() % (90 - 32 + 1)) + 32;
+	currtemp = 45;
+
+	pgGroups = g_key_file_get_groups(BizCfgFile, &num_groups);
+	NumBizRecs = num_groups-1; //deduct "Settings" group
+	size = NumBizRecs * sizeof(BIZ_DATA);
+
+	pBizRecords = (BIZ_DATA *)malloc(size);
+	memset(pBizRecords, WILDCARD, size);// preset any missing fields
+	pBzd = pBizRecords;
+	for(group = 0;group < num_groups;group++)
 	{
-		ci_debug_printf(0, "    Group '%s' not in cfg file.\n", MethodGroup);
-		return CI_ERROR;
-	}	
-	else
-	{
-		//ci_debug_printf(0, "Found Group '%s'\n", MethodGroup);
-		/*
-		 * TODO: we could treat any missing keys as a wildcard to 'allow', i.e.
-		 *		if there is no rule for min temp, set the value to -1 and allow any
-		 *		minimum temperature, etc.
-		 */
-		int *pBizValues =(int *)&TheBizData;
-		gchar *Keys[] = { "numReq", "minTemp", "maxTemp", "minHour", "maxHour" };
-		for( idx = 0; idx<5; idx++ )
-		{
-			gchar *pKey = Keys[idx];
-			val = g_key_file_get_value (BizCfgFile, MethodGroup, pKey, &error);
-			if( val == NULL )
+		error = NULL;
+		curr_grp = pgGroups[group];
+		if( strlen(curr_grp) > MAX_GROUPLEN-1){
+			g_critical("Group Name '%s' exceeds max. length.", curr_grp);
+			exit( -1 );
+		}
+
+		if( !strcmp(curr_grp, "Settings")){
+			str_value = g_key_file_get_value (BizCfgFile, "Settings", "LogFile", &error);
+			if( str_value == NULL )
 			{
 				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
 				{
-					//ci_debug_printf(0, "Key Error While Getting Value for Key '%s': %s\n", pKey, error->message);
-					ci_debug_printf(0, "    %s, setting WILDCARD value.", error->message);
-					val = WILDCARD_STR;
+					LogPath = "/var/log/srv_msp.log";
 					error = NULL;
 				}
 				else
 				{
 					if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND) )
 					{
-						ci_debug_printf(0, "    Group Error While Getting Value for Key '%s': %s\n", pKey, error->message);
+						g_critical( "Group Error While Getting Value for Key '%s': %s\n", "LogFile", error->message);
 					}
 					else{
-						ci_debug_printf(0, "    Unexpected Error(%s) While Getting Value for Key '%s'\n", error->message, pKey);
+						g_critical( "Unexpected Error(%s) While Getting Value for Key '%s'\n", error->message, "LogFile");
 					}
-					return CI_ERROR;
+					exit(-1);
 				}
 			}
 			else
 			{
-				//ci_debug_printf(0, "'%s': '%s'\n", pKey, val);
-				*pBizValues = atoi(val);
-				pBizValues++;
+				LogPath = str_value;
 			}
-		}// end for
-		val = g_key_file_get_value (BizCfgFile, "Settings", "LogFile", &error);
-		if( val == NULL )
-		{
-			if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
-			{
-				LogPath = "/var/log/srv_msp.log";
-				error = NULL;
-			}
-			else
-			{
-				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND) )
-				{
-					ci_debug_printf(0, "    Group Error While Getting Value for Key '%s': %s\n", "LogFile", error->message);
-				}
-				else{
-					ci_debug_printf(0, "    Unexpected Error(%s) While Getting Value for Key '%s'\n", error->message, "LogFile");
-				}
-				return CI_ERROR;
-			}
-		}
-		else
-		{
-			LogPath = val;
+			continue;
 		}
 
-		time_t currtime = time(NULL);
-		struct tm *tm_struct = localtime(&currtime);
-		srand(currtime); 
-		//currtemp = (rand() % (90 - 32 + 1)) + 32;
-		currtemp = 45;
-		
-		LogFile = fopen(LogPath, "a");
-		if (LogFile == NULL) 
-		{ 
-			ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LogPath);
+		pBzd->m_ValidRequestNum = 0;
+		pBzd->m_TotalRequestNum = 0;
+
+		keys = g_key_file_get_keys(BizCfgFile, curr_grp, &num_keys, &error);
+		for(key = 0;key < num_keys;key++)
+		{
+			curr_key = keys[key];
+			/*
+				If key cannot be found then 0 is returned and error is set to G_KEY_FILE_ERROR_KEY_NOT_FOUND.
+				Likewise, if the value associated with key cannot be interpreted as an integer, or is out of
+				range for a gint, then 0 is returned and error is set to G_KEY_FILE_ERROR_INVALID_VALUE.
+			*/
+			value64 = g_key_file_get_uint64(BizCfgFile, curr_grp, curr_key, &error);
+			if( value64 == 0 )
+			{
+				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
+				{
+					g_critical( "Sanity Failure Getting Key Value: '%s'\n", error->message);
+					exit(-1);
+				}
+				else if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE) )
+				{
+					g_critical( "Invalid Key Value, Error: '%s'\n", error->message);
+					exit(-1);
+				}
+				// else must be a valid value of zero
+			}
+			// Note, any non-existant keys will have already been preset to WILDCARD
+			if( !strcmp(curr_key, "numReq")){
+				pBzd->m_numReq = value64;
+			}
+			else if( !strcmp(curr_key, "minTemp")){
+				pBzd->m_minTemp = value64;
+			}
+			else if( !strcmp(curr_key, "maxTemp")){
+				pBzd->m_maxTemp = value64;
+			}
+			else if( !strcmp(curr_key, "minHour")){
+				pBzd->m_minHour = value64;
+			}
+			else if( !strcmp(curr_key, "maxHour")){
+				pBzd->m_maxHour = value64;
+			}
+			else{
+				g_critical( "Key Lookup Sanity Failure: %s\n", curr_key);
+				exit(-1);
+			}
+		} //  for keys in group
+
+		strncpy( pBzd->m_Method, curr_grp, MAX_GROUPLEN-1 );
+		pBzd->m_Method[MAX_GROUPLEN-1] = 0x00;
+		strtok(pBzd->m_Method, "@");
+		pBzd->m_EndPoint = strtok(NULL, "@");
+		if( pBzd->m_EndPoint == (gchar *)WILDCARD ) {
+		   g_critical("%s", "Failed to get Method/Endpoint\n");
+		   exit(-1);
 		}
-		else{
-			WriteLog( 0, LogFile, "    NumReq: %d, MinTemp: %d, MaxTemp: %d, MinHour: %d, MaxHour: %d\n\t Logfile: %s",
-					TheBizData.m_numReg,
-					TheBizData.m_minTemp,
-					TheBizData.m_maxTemp,
-					TheBizData.m_minHour,
-					TheBizData.m_maxHour,
-					LogPath );
-		}
-	
-		TheBizData.m_ValidRequestNum = 0;
-		TheBizData.m_TotalRequestNum = 0;
-		hour = tm_struct->tm_hour;
-		currday = tm_struct->tm_mday;
-		//ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
-		ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
-		WriteLog( 1, LogFile, "    Current Temperature is %d\n", currtemp);
+		pBzd++;
+	} //  for groups in keyfile
+	g_strfreev(keys);
+	g_strfreev(pgGroups);
+	g_key_file_free(BizCfgFile);
+
+	LogFile = fopen(LogPath, "a");
+	if (LogFile == NULL)
+	{
+		ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LogPath);
+		exit( -2 );
 	}
+	hour = tm_struct->tm_hour;
+	currday = tm_struct->tm_mday;
+	//ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
+	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
+	WriteLog( 1, LogFile, "    Current Temperature is %d\n", currtemp);
 		
 	return CI_OK;
 }
@@ -564,6 +747,7 @@ void msp_close_service()
 		fclose(LogFile);
 	}
 	ci_object_pool_unregister(MSP_DATA_POOL); // per url_check
+	free( pBizRecords );
 }
 
 /*
@@ -579,6 +763,11 @@ void *msp_init_request_data(ci_request_t * req) // first call
 	ci_debug_printf(3, "\n*** msp_init_request_data:: ***\n");
 	struct srv_msp_data *mspd = ci_object_pool_alloc(MSP_DATA_POOL);
 	memset(&mspd->body, 0, sizeof(struct body_data));
+	memset(&mspd->msginfo, 0, sizeof(struct srv_msp_msg_info));
+	mspd->isReqmod = 0;
+	mspd->maxBodyData = 0;
+	mspd->expectedData = 0;
+	mspd->eof = 0;
 	return mspd;      /*Get from a pool of pre-allocated structs better...... */
 }
 
@@ -630,50 +819,206 @@ void msp_release_request_data(void *data)
  */
 int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t * req)
 {
-	int icRet = CI_NO_STATUS;
-	int msRet = MSP_NO_STATUS;
+	ci_off_t content_len;
+	int showHeader = 0;
 
-	ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
-		
+	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
+	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
 	MainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_DATA struct ...
 
+	//return CI_MOD_CONTINUE;
+	// If there is no body data in HTTP encapsulated object but only headers
+	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
+	if (!ci_req_hasbody(req)) {
+		ci_debug_printf(0, "msp_preview_handler::no body data, will not process further...\n");
+		return CI_ERROR;
+	}
+
+	struct srv_msp_data *mspd = ci_service_data(req);
+	mspd->maxBodyData = MaxBodyData;
+	mspd->isReqmod = 0;
+
+	/*
+		from the wake forest pcap data (MS v3) this is what the Post Header contains:
+			POST /omsservices/services/OA_ServerSoap HTTP/1.0
+			Content-Type: text/xml; charset=utf-8
+			SOAPAction: "http://www.multispeak.org/Version_3.0/PingURL"
+			...
+		but the response does not have the SOAPAction:
+			HTTP/1.1 200 OK
+			Content-Type: text/xml;charset=utf-8
+
+		so, we can't rely on the http header information to extract the endpoint & method, need to 
+		read the whole message (not just preview data) and parse the whole, well-formed xml.
+	*/
+
+	// Extract the HTTP header from the request/response
+	ci_headers_list_t *pHeader = NULL;
+
 	const int REQ_TYPE = ci_req_type(req);
-	//const char * METHOD_TYPE = ci_method_string(REQ_TYPE);
-	//ci_debug_printf(1, "    Message Type: %s\n",METHOD_TYPE);
-
-#ifdef _INSPECT_DEEP
-	/* Get the content length header */
-	content_length = ci_http_content_length(req);
-	if ((content_length > 0) && (maxsize > 0) && (content_length >= maxsize)) {
-		ci_debug_printf(2, "     No antivir check, content-length upper than maxsize (%" PRINTF_OFF_T " > %d)\n", (CAST_OFF_T)content_length, (int)maxsize);
-		return CI_MOD_ALLOW204;
+	if (REQ_TYPE == ICAP_REQMOD) {	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
+		mspd->isReqmod = 1;
+		pHeader = ci_http_request_headers(req);
+	}
+	else {
+		pHeader = ci_http_response_headers(req);
+	}
+	if (!pHeader) {
+		ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
+		return CI_ERROR; 
 	}
 
-	/* No data, so nothing to scan */
-	if (!data || !ci_req_hasbody(req)) {
-		ci_debug_printf(2, "     No body data, allow 204\n");
-		return CI_MOD_ALLOW204;
-	}
-#endif
-	//identify reqmod or respmod or else
-	// it appears that preview_data is the content, not starting with the http header...
-	if (REQ_TYPE == ICAP_REQMOD)
-	{
-		//ci_debug_printf(0, "*** got ICAP_REQMOD:");
-		//msp_dumphex(preview_data, preview_data_len);
-		msRet = handle_request_preview(req);
-		if(msRet == MSP_BIZ_VIO){
-			struct srv_msp_data *mspd = ci_service_data(req);
-			if (!get_msg_info(preview_data, preview_data_len, &mspd->msginfo)) { /*Unknown method or something else...*/
-				ci_debug_printf(4, "    --->Can not get required information to process request. Firstline: %s\n", ci_http_request(req));
-				return CI_ERROR;
-			}
-			ci_membuf_t *err_page = generate_error_page(req);
-			body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
+	if (REQ_TYPE == ICAP_REQMOD) {	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
+		/*
+		what Multispeaker sends is:
+		POST / HTTP/1.1
+		SOAPAction: http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect
+		but what is in (one of) the wsdl is:
+		soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateConnectDisconnect"
 
+		It appears that using the SoapAction is NOT a reliable way to extract the Endpoint and Method,
+		so we now don't use the preview data, but wait to get the full packet and then parse the well-formed
+		xml data to extract this info....
+
+		Also, i DON'T think it is a requirement that the response contain a SoapAction....
+
+		const char *soap_action;
+		if (!(soap_action = ci_headers_value(pHeader, "SOAPAction"))) // uses strncasecmp, ignores case....
+		{
+			ci_debug_printf(0, "ERROR Getting Soap Action.\n");
+			return CI_ERROR; // must not be a Multispeak Request
+		}
+		*/
+		;
+	}
+	else {
+		if (showHeader) {
+			char buf[1000];
+			size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+			ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
+			msp_dumphex(buf, len);
+		}
+	}
+
+	// If the content type is not xml do not process 
+	/*
+	const char *content_type = ci_http_response_get_header(req, "Content-Type");
+	if( !content_type && REQ_TYPE == ICAP_REQMOD )
+		content_type = ci_http_request_get_header(req, "Content-Type");
+	*/
+	const char *content_type = ci_headers_value(pHeader, "Content-Type");
+	if( !content_type ){
+		ci_debug_printf(0, "msp_preview_handler::no content type in header\n");
+		return CI_ERROR; // TODO: should we throw an error or allow?
+	}
+	if( strstr(content_type, "text/xml") == NULL ){
+		ci_debug_printf(0, "msp_preview_handler content type %s will not be processed...\n", content_type);
+		return CI_ERROR; // TODO: should we throw an error or allow?
+	}
+	
+	// If there is a Content-Length header, check it since we do not want to
+	//		process body data with more than MaxBodyData size
+	content_len = ci_http_content_length(req);
+	ci_debug_printf(4, "msp_preview_handler::expected length: %"PRINTF_OFF_T"\n", (CAST_OFF_T)content_len);
+	mspd->expectedData = content_len;
+
+	/*If we do not have content len, for simplicity do not proccess it*/
+	if (content_len <= 0) {
+		ci_debug_printf(0, "msp_preview_handler::no Content-Length, will not process\n");
+		return CI_ERROR;
+	}
+
+	if (content_len > mspd->maxBodyData) {
+		ci_debug_printf(0, "msp_preview_handler::content-length=%"PRINTF_OFF_T" > %ld will not process\n", (CAST_OFF_T)content_len, mspd->maxBodyData);
+		return CI_ERROR;
+	}
+
+	body_data_init(&mspd->body, MEMORY, content_len, NULL);
+
+	/*if we have preview data and we want to proceed with the request processing
+	  we should store the preview data. There are cases where all the body
+	  data of the encapsulated HTTP object is included in preview data.
+	  Use the ci_req_hasalldata macro to identify these cases.
+	*/
+	if (preview_data_len) {
+		ci_debug_printf(0, "msp_preview_handler::preview_data_len\n");
+		
+		body_data_write(&mspd->body, preview_data, preview_data_len, ci_req_hasalldata(req));
+		mspd->eof = ci_req_hasalldata(req);
+	}
+
+	return CI_MOD_CONTINUE;
+}
+
+/*
+* This function will be called if we returned CI_MOD_CONTINUE in
+*  msp_check_preview_handler function, after we read all the
+* data from the ICAP client.  Called when the ICAP client has sent all its data.
+param req - pointer to the related ci_request struct
+returns   -  CI_MOD_DONE if all are OK, CI_MOD_ALLOW204 if the ICAP client request supports 204 responses
+* and we are not planning to modify anything, or CI_ERROR on errors.
+* The service must not return CI_MOD_ALLOW204 if has already send some data to the client, or the
+* client does not support allow204 responses. To examine if client supports 204 responses the
+* developer should use the ci_req_allow204 macro
+*/
+int msp_end_of_data_handler(ci_request_t * req)
+{
+	int icRet = CI_NO_STATUS;
+	int msRet = MSP_NO_STATUS;
+	const int REQ_TYPE = ci_req_type(req);
+	struct srv_msp_data *mspd = ci_service_data(req);
+
+	ci_debug_printf(3, "\n*** msp_end_of_data_handler:: ***\n");
+
+	/*if (mspd->abort) {
+		// We had already start sending data....
+		mspd->eof = 1;
+		return CI_MOD_DONE;
+	}*/
+	if (mspd->isReqmod) {
+		ci_debug_printf(0, "All REQUEST data received, going to process!\n");
+		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
+		if (REQ_TYPE != ICAP_REQMOD) {
+			ci_debug_printf(0, "*** SANITY CHECK FAILURE: REQ_TYPE != ICAP_REQMOD!\n");
 			unlock_data(req);
-			ci_debug_printf(4, "        returning %s\n", "CI_MOD_CONTINUE");
-			return CI_MOD_CONTINUE;
+			return CI_ERROR;
+		}
+	}
+	else
+	{
+		ci_debug_printf(4, "All RESPONSE data received, going to process!\n");
+	}
+
+	//const char * METHOD_TYPE = ci_method_string(REQ_TYPE);
+	//ci_debug_printf(0, "    Message Type: %s\n", ci_method_string(REQ_TYPE));
+
+	int ErrRet;
+	BIZ_DATA *pBizData = GetBusinessRecord(mspd, &ErrRet);
+	if (!pBizData)
+	{
+		if (ErrRet != MSP_OK){
+			WriteLog(0, LogFile, "Error Looking up Request Business Record.");
+			unlock_data(req);
+			return CI_ERROR;
+		}
+		// 'No Business Rules Defined for Endpoint', allow to send
+		unlock_data(req);
+		return CI_MOD_ALLOW204;
+	}
+
+	if (REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
+	{
+		msRet = handle_request_preview(pBizData);
+		if(msRet == MSP_BIZ_VIO)
+		{		
+			if (!ci_req_sent_data(req)) {
+				ci_membuf_t *err_page = generate_error_page(req);
+				body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
+			}
+			else{
+				ci_debug_printf(0, "*** ci_req_ALREADY_sent_data ...\n");
+			}
+			icRet = CI_MOD_DONE;
 		}
 		else if (msRet == MSP_ERROR) {
 			icRet = CI_ERROR;
@@ -688,10 +1033,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	}
 	else if (REQ_TYPE == ICAP_RESPMOD)
 	{
-		//ci_debug_printf(0, "*** got ICAP_RESPMOD:");
-		//msp_dumphex(preview_data, preview_data_len);
-
-		msRet = handle_response_preview(req);
+		ci_debug_printf(0, "*** handling_response_preview ...\n");
+		msRet = handle_response_preview(pBizData);
 		if (msRet == MSP_ERROR) {
 			icRet = CI_ERROR;
 		}
@@ -713,29 +1056,14 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		WriteLog( 0, LogFile, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
 		icRet = CI_MOD_ALLOW204;
 	}
+	
+	// mark the eof
+	mspd->eof = 1;
+	// Unlock the request body data so the c-icap server can send data
+	ci_req_unlock_data(req);
+
 	return icRet;
 
-}
-
-/*
-* This function will be called if we returned CI_MOD_CONTINUE in
-*  msp_check_preview_handler function, after we read all the
-* data from the ICAP client.  Called when the ICAP client has sent all its data.
-param req - pointer to the related ci_request struct
-returns   -  CI_MOD_DONE if all are OK, CI_MOD_ALLOW204 if the ICAP client request supports 204 responses
-* and we are not planning to modify anything, or CI_ERROR on errors.
-* The service must not return CI_MOD_ALLOW204 if has already send some data to the client, or the
-* client does not support allow204 responses. To examine if client supports 204 responses the
-* developer should use the ci_req_allow204 macro
-*/
-int msp_end_of_data_handler(ci_request_t * req)
-{
-	ci_debug_printf(3, "\n*** msp_end_of_data_handler:: ***\n");
-	/*
-	printf("Buffer size=%d, Data size=%d\n ",
-	((struct membuf *)b)->bufsize,((struct membuf *)b)->endpos);
-	*/
-	return CI_MOD_DONE;
 }
 
 /*
@@ -755,26 +1083,39 @@ int msp_end_of_data_handler(ci_request_t * req)
 	 param iseof - has non zero value if the data in rbuf buffer are the last data from the ICAP client.
 	 param req   - pointer to the related ci_request struct
 	return Return CI_OK if all are OK or CI_ERROR on errors
+
+	NOTE: this routine also gets called after returning CI_MOD_DONE from msp_end_of_data_handler in order 
+			to put the (potentially modified) data into Squid's receive buffer.
 */
 int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
             ci_request_t * req)
 {
 	ci_debug_printf(3, "\n*** msp_io:: ***\n");
-	int ret;
+	int ret = CI_OK;
 	struct srv_msp_data *mspd = ci_service_data(req);
 
-	if (!mspd->body.type) {
-		ci_debug_printf(5, "    !mspd->body.type\n");
+	if( !mspd->body.type ){
+		ci_debug_printf(0, "    !mspd->body.type\n");
 		// probably 206 response.
 		*wlen = CI_EOF;
 		return CI_OK;
 	}
-
-	ret = CI_OK;
-
+	//write the data read from icap_client(i.e., Squid) to the mspd->body
 	if (rlen && rbuf) {
-		ci_debug_printf(5, "    rlen && rbuf\n");
-		
+		if (mspd->body.store.ring == NULL &&
+		    (mspd->body.size + *rlen) > mspd->maxBodyData) {
+			ci_debug_printf(0, "msp_io::content-length: %" PRIu64 " bigger than maxBodyData: %" PRId64 "\n",
+			                (mspd->body.size + *rlen), mspd->maxBodyData);
+			ci_debug_printf(0, "TODO: call srv_cf_body_to_ring\n");
+
+			//if (!srv_cf_body_to_ring(&mspd->body))
+			    return CI_ERROR;
+			//ci_debug_printf(5, "Srv_Content_Filtering Stop buffering data, reverted to ring mode, and sent early response\n");
+			/*We will not process body data. More data size than expected.*/
+			//mspd->abort = 1;
+			//ci_req_unlock_data(req);
+		}
+
 		*rlen = body_data_write(&mspd->body, rbuf, *rlen, iseof);
 		if (*rlen == CI_ERROR){
 			ret = CI_ERROR;
@@ -784,33 +1125,36 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 			;// msp_dumphex(rbuf, *rlen);
 		}
 	}
-	else if (iseof){
-		ci_debug_printf(5, "    iseof\n");
-		body_data_write(&mspd->body, NULL, 0, iseof); /*should return ret = CI_OK*/
+	/*
+	else if (iseof) {
+	//if (iseof) {
+		ci_debug_printf(0, "    iseof\n");
+		//msp_dumphex(wbuf, *wlen);
+		body_data_write(&mspd->body, NULL, 0, iseof); // should return ret = CI_OK
 	}
-	
-	if (mspd->body.type && wbuf && wlen) {
+	else
+		ci_debug_printf(0, "   NOT iseof\n");
+	*/
+	/*Do not send any data if we do not receive all of the data*/
+	if( !mspd->eof /*&& !srv_content_filtering_data->abort*/ )
+		return ret;
+
+	// read some data from the srv_content_filtering_data->body and put them to the
+	// write buffer to be send to the ICAP client
+	if( /*mspd->body.type &&*/ wbuf && wlen) {
 		ci_debug_printf(5, "    mspd->body.type && wbuf && wlen\n");
-		if (EARLY_RESPONSES || body_data_haseof((&mspd->body))) {
-			ci_debug_printf(5, "    EARLY_RESPONSES\n");
-			*wlen = body_data_read(&mspd->body, wbuf, *wlen);
-			if (*wlen == CI_ERROR){
-				ci_debug_printf(5, "    *wlen == CI_ERROR\n");
-				ret = CI_ERROR;
-			}
-			else {
-				;// msp_dumphex(wbuf, *wlen);
-			}
+		*wlen = body_data_read(&mspd->body, wbuf, *wlen);
+		if (*wlen == CI_ERROR){
+			ci_debug_printf(5, "    *wlen == CI_ERROR\n");
+			ret = CI_ERROR;
 		}
 		else {
-			ci_debug_printf(5, "    Does not allow early responses, wait for eof before send data\n");
-			*wlen = 0;
+			;// msp_dumphex(wbuf, *wlen);
 		}
 	}
-	else {
-		ci_debug_printf(5, "    returning %s\n", GetRetStr(ret));
+	if( *wlen==0 && mspd->eof==1 )
+		*wlen = CI_EOF;
 
-	}
 	return ret;
 }
 
@@ -819,18 +1163,10 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 /*
 * handle_request_preview
 */
-int handle_request_preview(ci_request_t * req)
+int handle_request_preview(BIZ_DATA *pBizData)
 {
-	int ErrRet;
 
 	ci_debug_printf(4, "    --->handle_request_preview::\n");
-	BIZ_DATA *pBizData = GetBusinessRecord(req, &ErrRet);
-	if (!pBizData)
-	{
-		if( ErrRet != MSP_OK )
-			WriteLog(0, LogFile, "Error Looking up Request Business Record.");
-		return ErrRet;
-	}
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
@@ -842,10 +1178,10 @@ int handle_request_preview(ci_request_t * req)
 	}
 	pBizData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
 	// TODO: handle WILDCARDs for temp and time too
-	if ((pBizData->m_numReg != WILDCARD) && (pBizData->m_ValidRequestNum >= pBizData->m_numReg)) {
+	if ((pBizData->m_numReq != WILDCARD) && (pBizData->m_ValidRequestNum >= pBizData->m_numReq)) {
 		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
 		    "   Only %d requests per day are allowed.",
-		    pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint, pBizData->m_numReg);
+		    pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint, pBizData->m_numReq);
 		return MSP_BIZ_VIO;
 	}
 	else if ((hour>pBizData->m_maxHour) || (hour<pBizData->m_minHour)) {
@@ -867,7 +1203,7 @@ int handle_request_preview(ci_request_t * req)
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
 		//pBizData->m_ValidRequestNum++;
 		WriteLog(1, LogFile, "*** ACCEPTing %d of %d daily '%s' requests(%d attempts) from '%s' Endpoint ***",
-		    pBizData->m_ValidRequestNum+1, pBizData->m_numReg, pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint);
+		    pBizData->m_ValidRequestNum+1, pBizData->m_numReq, pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint);
 		return MSP_OK;
 	}
 }
@@ -875,9 +1211,8 @@ int handle_request_preview(ci_request_t * req)
 /*
 * handle_response_preview
 */
-int handle_response_preview(ci_request_t * req)
+int handle_response_preview(BIZ_DATA *pBizData)
 {
-	int ErrRet;
 	ci_debug_printf(4, "    --->handle_response_preview::\n");
 	/* TODO: get ip address and lookup the right BIZ_DATA per IP....
 	 * ultimately, we'd want to index the src/dest ips to find the BIZ_DATA
@@ -885,98 +1220,199 @@ int handle_response_preview(ci_request_t * req)
 	 */
 	//WriteLog(4, LogFile, "got ICAP_RESPMOD, ignoring...");
 	
-	BIZ_DATA *pBizData = GetBusinessRecord(req, &ErrRet);
-	if (!pBizData)
-	{
-		if( ErrRet != MSP_OK )
-			WriteLog(0, LogFile, "Error Looking up Response Business Record.");
-		return ErrRet;
-	}
 	pBizData->m_ValidRequestNum++;
-	WriteLog(1, LogFile, "*** ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
-		pBizData->m_Method, pBizData->m_ValidRequestNum, pBizData->m_numReg, pBizData->m_EndPoint);
+	WriteLog(1, LogFile, "*** handle_response_preview::ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
+		pBizData->m_Method, pBizData->m_ValidRequestNum, pBizData->m_numReq, pBizData->m_EndPoint);
 
 	return MSP_OK; // always pass the response on to client;
 }
 
 /*
-* GetBusinessRecord
+    "<?xml version=\"1.0\"?>"
+    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" 
+					   xmlns:res=\"http://www.multispeak.org/V5.0/ws/response\" 
+					   xmlns:com=\"http://www.multispeak.org/V5.0/commonTypes\" 
+					   xmlns:cd=\"http://www.multispeak.org/V5.0/wsdl/CD_Server\">"
+        "<soapenv:Header>"
+            "<MultiSpeakResponseMsgHeader MessageID = \"FE92A1A2-5255-4830-98CD-7403C45588F6\" TimeStamp=\"2019-06-06 14:11:00.970\">"
+                "<MultiSpeakVersion>"
+                    "<MajorVersion>5</MajorVersion>"
+                    "<MinorVersion>1</MinorVersion>"
+                    "<Build>0</Build>"
+                "</MultiSpeakVersion>"
+                "<Caller>"
+                    "<AppName>MS-Server</AppName>"
+                    "<Company>Pacific Northwest National Laboratory</Company>"
+                "</Caller>"
+                "<Result>"
+                    "<resultIdentifier>"
+                        "<replyCodeCategory>0</replyCodeCategory>"
+                        "<index>0</index>"
+                    "</resultIdentifier>"
+                    "<resultDescription>Success/ no errors.</resultDescription>"
+                "</Result>"
+            "</MultiSpeakResponseMsgHeader>"
+        "</soapenv:Header>"
+        "<Body>"
+            "<InitiateConnectDisconnectResponse/>"
+        "</Body>"
+    "</soapenv:Envelope>";
 */
-BIZ_DATA * GetBusinessRecord(ci_request_t *req, int *pErrRet)
+BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 {
-	// Extract the HTTP header from the request/response
-	ci_headers_list_t *pHeader = NULL;
-	if (!(pHeader = ci_http_response_headers(req))) {
-		/* Then maybe is a reqmod request, try to get request headers */
-		if (!(pHeader = ci_http_request_headers(req))){
-			ci_debug_printf(0, "GetBusinessRecord::ERROR Getting http_headers\n");
+	char *pMethod=NULL;
+	char *pEndpoint=NULL;
+	int showData = 0;
+	int i=0;
+	xmlNodePtr root;
+	xmlDocPtr xmlDoc;
+
+	char *buf = body_data_buf( &mspd->body );
+	if( !buf ){
+		ci_debug_printf(0, "\n*** msp_end_of_data_handler:: FAILED TO GET BODY BUFFER ! ***\n");
+		*pErrRet = MSP_ERROR;
+		return NULL;
+	}
+
+	if (showData) {
+		if (!mspd->isReqmod) {
+			msp_dumphex(buf, mspd->expectedData);
+		}
+	}
+	xmlDoc = xmlParseMemory(buf, mspd->expectedData);
+	if (xmlDoc == NULL) {
+		ci_debug_printf(0, "XML Document not parsed successfully.\n");
+		*pErrRet = MSP_ERROR;
+		return NULL;
+	}
+	root = xmlDocGetRootElement(xmlDoc);
+	if (root == NULL) {
+		ci_debug_printf(0, "Failed to get XML ROOT\n");
+		xmlFreeDoc(xmlDoc);
+		*pErrRet = MSP_ERROR;
+		return NULL;
+	}
+	if (xmlStrcmp(root->name, (const xmlChar *)"Envelope")) {
+		ci_debug_printf(0, "\ndocument of the wrong type, root node != 'Envelope'\n");
+		xmlFreeDoc(xmlDoc);
+		*pErrRet = MSP_ERROR;
+		return NULL;
+	}
+
+	// Initialize msginfo struct
+	struct srv_msp_msg_info *pMsgInfo = &mspd->msginfo;
+	memset(pMsgInfo, 0x00, sizeof(struct srv_msp_msg_info));
+
+	/*
+	currNode = getFromXML(root, (const xmlChar *)"Body", (const xmlChar *)NULL);
+	if (currNode == NULL) {
+		ci_debug_printf(0, "ERROR Getting XML Method\n");
+		xmlFreeDoc(xmlDoc);
+		*pErrRet = MSP_ERROR;
+		return NULL;
+	}
+	pMethod = (char *)currNode->name;
+	if( currNode->ns ){
+		pNsRef =  currNode->ns->href;
+		ci_debug_printf(3, "Namespace: %s\n", pNsRef);
+		pEndpoint = strrchr ((char *)pNsRef,'/');
+		if( pEndpoint ){
+			pEndpoint = pEndpoint+1;
+			ci_debug_printf(3, "**** Method Endpoint is %s\n",pEndpoint);
+		}
+		else{
+			ci_debug_printf(0, "ERROR: Namespace Has No Endpoint.\n");
+			xmlFreeDoc(xmlDoc);
 			*pErrRet = MSP_ERROR;
 			return NULL;
 		}
 	}
-	//char buf[1000];
-	//size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
-	//msp_dumphex(buf, len);
-
-	////////// TEST //////////////////////////////////////////
-	// return &TheBizData;
-	////////// TEST //////////////////////////////////////////
-
-	/* Get the soap action */
-	const char *soap_action;
-	if (!(soap_action = ci_headers_value(pHeader, "SOAPAction")))
-	{
-		ci_debug_printf(0, "ERROR Getting Soap Action.\n");
+	else{
+		ci_debug_printf(0, "ERROR: Node Has No Namespace.\n");
+		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
-	// SOAPAction: http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect
-	char *ep, *currmethod;
-	char *wem = strstr(soap_action, "wsdl/");
-	if (wem != NULL) {
-		strcpy(theCopy, wem);
-		ep = strtok(theCopy, delim);// consume 'wsdl'
-		ep = strtok(NULL, delim);
-		currmethod = strtok(NULL, delim);
-		//ci_debug_printf( 1, "Got '%s' method from %s Endpoint.\n", currmethod, ep);
+	*/
+	
+	if (get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
+	{
+		pMethod = pMsgInfo->method;
+		pEndpoint = pMsgInfo->endpoint;
+		ci_debug_printf(4, "Namespace is: '%s'\n", pMsgInfo->xmlnspace);
+		ci_debug_printf(4, "Method is: '%s'\n", pMethod);
+		ci_debug_printf(4, "Endpoint is: '%s'\n", pEndpoint);
+		if (*pMsgInfo->xactid != 0x00)
+			// MessageID should be unique, not reused by a Request, if we want to 
+			// correlate a response to a request, use transactionID
+			ci_debug_printf(3, "TransactionID is: '%s'\n", pMsgInfo->xactid);
 	}
 	else {
-		ci_debug_printf(0, "ERROR Getting Soap Action\n");
+		ci_debug_printf(0, "ERROR getting Method info\n");
+		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
 
-	// TODO, find pBizData from IP Addresses (src/dest)
-	BIZ_DATA *pBizData = &TheBizData;
-	// TODO: for set of BIZ_DATA for a give IP pair, find the
-	//		one for our Endpoint / Method
-	gchar *EndPoint = pBizData->m_EndPoint;
-	gchar *Method   = pBizData->m_Method;
-	if (strcmp(EndPoint, ep) != 0) {
-		ci_debug_printf(0, "No Business Rules Defined for Endpoint '%s', allowing....\n", ep);
-		//TheBizData.m_ValidRequestNum = 0;
-		//ci_debug_printf(1, "Reset Number of Requests Received so far to 0.\n");
+	ci_debug_printf(3, "Current XML Method is: '%s@%s'\n", pMethod, pEndpoint);
+
+	// TODO, find pBizData from IP Addresses (src/dest) ??
+	//		we may not need to do that, if each separate connection is handled by a separate
+	//		c-icap thread, with it's own copy of BIZ_DATA....
+
+	BIZ_DATA *pBizData = pBizRecords;
+	for(i = 0; i < NumBizRecs; i++)
+	{
+		if( !strcmp( pBizData->m_EndPoint, pEndpoint) )
+		{
+			if( !strcmp( pBizData->m_Method, pMethod) ){
+				ci_debug_printf(3, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
+				break;
+			}
+			else{
+				ci_debug_printf(3, "Checking Business Record for %s@%s:\n",
+				                pBizData->m_Method,  pBizData->pEndpoint);
+			}
+		}
+		pBizData++;
+	}
+	if( i == NumBizRecs )
+	{
+		ci_debug_printf(0, "\nNo Business Rules Defined for %s@%s:\n", pMethod, pEndpoint );
 		*pErrRet = MSP_OK;
 		pBizData = NULL;
 	}
 	else {
-		if (strcmp(Method, currmethod) != 0) {
-			ci_debug_printf(0, "No Business Rules Defined for Method '%s', allowing....\n", currmethod);
-			//currtemp = (rand() % (90 - 32 + 1)) + 32;
-			//currtemp = 55;
-			//ci_debug_printf(1, "Current Temperature is %d\n", currtemp);
-			*pErrRet = MSP_OK;
-			pBizData = NULL;
+		if (mspd->isReqmod) {
+			// while we have the xml parsed into memory, squirrel some info that might be needed 
+			// for returning a business rule violation error page
+			if( !get_caller_info(root, pMsgInfo) ) // squirrel away some info needed for returning a business rule violation error page
+			{
+				ci_debug_printf(0, "*** ERROR getting caller information ...\n");
+				*pErrRet = MSP_ERROR;
+				pBizData = NULL;
+			}
+			else {
+				*pErrRet = MSP_OK;
+				pBizData = pBizData;
+			}
 		}
-		*pErrRet = MSP_OK;
-		pBizData = pBizData;
+		else {
+			*pErrRet = MSP_OK;
+			pBizData = pBizData;
+		}
 	}
+
+	// freeing BOTH of these cause death later on
+	//xmlFree((void *)pMethod);
+	xmlFreeDoc(xmlDoc); 
+
 	return pBizData;
 }
 
 /*
-* generate template_page, /usr/share/c_icap/templates/msp/en/MSP_RESPONSE
-* look for TemplateDir /usr/local/share/c_icap/templates/ in config file
+ * generate template_page,/usr/local/share/c_icap/templates/msp/en/MSP_RESPONSE
+* look for 'TemplateDir' in config file
 *
 * It does not seem to matter what is put before and after the code,
 * Squid must be looking up each piece based on the code: ie.
@@ -992,8 +1428,19 @@ static ci_membuf_t *generate_error_page(ci_request_t *req)
 	const char *lang;
 	ci_membuf_t *err_page;
 	ci_http_response_create(req, 1, 1); /*Build the response headers */
-	ci_http_response_add_header(req, "HTTP/1.0 403 Forbidden"); /*Send an 403 Forbidden http responce to web client */
-	ci_http_response_add_header(req, "Server: C-ICAP");
+	/*
+	if (ci_http_response_headers(req)) {
+		ci_http_response_reset_headers(req);
+	}
+	else {
+		ci_http_request_remove_header(req, "Content-Encoding");
+		ci_http_request_remove_header(req, "Content-Length");
+		//ci_http_response_create(ci_request_t * req, int has_reshdr, int has_body)
+		ci_http_response_create(req, 1, 1);
+	}
+	*/
+	ci_http_response_add_header(req, "HTTP/1.0 403 Forbidden"); /*Send an 403 Forbidden http response to web client */
+	//ci_http_response_add_header(req, "Server: C-ICAP");
 	ci_http_response_add_header(req, "Content-Type: text/html");
 	ci_http_response_add_header(req, "Connection: close");
 
@@ -1014,23 +1461,53 @@ static ci_membuf_t *generate_error_page(ci_request_t *req)
 /************************** UTILITY ROUTINES ***********************************************/
 
 /*
+ * fmt_srv_msp_namespace - handle %MSNS format specifier
+ */
+int fmt_srv_msp_namespace(ci_request_t *req, char *buf, int len, const char *param)
+{
+	ci_debug_printf(5, "*** fmt_srv_msp_namespace ***\n");
+	struct srv_msp_data *uc = ci_service_data(req);
+	if (uc) {
+		return snprintf(buf, len, "%s", uc->msginfo.xmlnspace);
+	}
+	return snprintf(buf, len, "%s", "ERR");
+}
+
+/*
  * fmt_srv_msp_msgid - handle %MSGID format specifier
  */
 int fmt_srv_msp_msgid(ci_request_t *req, char *buf, int len, const char *param)
 {
-	ci_debug_printf(5, "*** fmt_srv_msp_msgid ***\n");
-	struct srv_msp_data *uc = ci_service_data(req);
-	return snprintf(buf, len, "%s", uc->msginfo.msgid);
+	/* typedef unsigned char uuid_t[16];*/
+	uuid_t uuid;
+
+	// generate
+	uuid_generate_time_safe(uuid);
+
+	// unparse (to string)
+	char uuid_str[37];      // ex. "1b4e28ba-2fa1-11d2-883f-0016d3cca427" + "\0"
+	uuid_unparse_lower(uuid, uuid_str);
+	printf("generated uuid=%s\n", uuid_str);
+
+	//ci_debug_printf(5, "*** fmt_srv_msp_msgid ***\n");
+	//struct srv_msp_data *uc = ci_service_data(req);
+	//return snprintf(buf, len, "%s", uc->msginfo.msgid);
+	return snprintf(buf, len, "%s", uuid_str);
 }
 
 /*
  * fmt_srv_msp_timestamp - handle %MSTIME format specifier
+ *		TimeStamp="2019-06-26 07:10:10.018"
  */
 int fmt_srv_msp_timestamp(ci_request_t *req, char *buf, int len, const char *param)
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_timestamp ***\n");
-	struct srv_msp_data *uc = ci_service_data(req);
-	return snprintf(buf, len, "%s", uc->msginfo.timestamp);
+	char buffer[100];
+
+	time_t now = time(0);
+	strftime(buffer, 100, "%Y-%m-%d %H:%M:%S.000", localtime(&now));
+
+	return snprintf(buf, len, "%s", buffer);
 }
 
 /*
@@ -1040,7 +1517,10 @@ int fmt_srv_msp_appname(ci_request_t *req, char *buf, int len, const char *param
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_appname ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	return snprintf(buf, len, "%s", uc->msginfo.appname);
+	if (uc) {
+		return snprintf(buf, len, "%s", uc->msginfo.appname);
+	}
+	return snprintf(buf, len, "%s", "ERR");
 }
 
 /*
@@ -1050,165 +1530,141 @@ int fmt_srv_msp_company(ci_request_t *req, char *buf, int len, const char *param
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_company ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	return snprintf(buf, len, "%s", uc->msginfo.company);
+	if (uc) {
+		return snprintf(buf, len, "%s", uc->msginfo.company);
+	}
+	return snprintf(buf, len, "%s", "ERR");
 }
 
-int get_msg_info(char *preview_data, int preview_data_len, struct srv_msp_msg_info *msginfo)
+/*
+ * fmt_srv_msp_method - handle %MSMTHD format specifier
+ */
+int fmt_srv_msp_method(ci_request_t *req, char *buf, int len, const char *param)
 {
-	ci_debug_printf(4, "        --->get_msg_info::\n");
-
-	/*Initialize msginfo struct*/
-	memset(msginfo->msgid, 0x00, sizeof(msginfo->msgid) );
-	memset(msginfo->timestamp, 0x00, sizeof(msginfo->timestamp) );
-	memset(msginfo->appname, 0x00, sizeof(msginfo->appname) );
-	memset(msginfo->company, 0x00, sizeof(msginfo->company) );
-
-	char* keys[4] = { "MessageID=\"", "TimeStamp=\"", ":AppName>", ":Company>" };
-	char  terms[4] = { '\"', '\"', '<', '<' };
-	char term;
-	char* key;
-
-	preview_data[preview_data_len - 1] = 0x00;// make into a null-terminated string
-	int i = 0;
-	key = keys[i];
-	term = terms[i++];
-	bool found = find_keyval(preview_data, key, term, msginfo->msgid, CI_MAXMSGIDLEN);
-	if(found)
-	{
-		ci_debug_printf(3, "***  the value of keyword '%s' is '%s'\n", key, msginfo->msgid);
+	ci_debug_printf(5, "*** fmt_srv_msp_method ***\n");
+	struct srv_msp_data *uc = ci_service_data(req);
+	if (uc) {
+		return snprintf(buf, len, "%s", uc->msginfo.method);
 	}
-	else
-	{
-		ci_debug_printf(0, "***  did not find next word after '%s' terminated with '%c'\n", key, term);
-		strncpy(msginfo->msgid, "----", CI_MAXMSGIDLEN);
-	}
-
-	key = keys[i];
-	term = terms[i++];
-	found = find_keyval(preview_data, key, term, msginfo->timestamp, CI_MAXTIMESTAMPLEN);
-	if (found)
-	{
-		ci_debug_printf(3, "***  the value of keyword '%s' is '%s'\n", key, msginfo->timestamp);
-	}
-	else
-	{
-		ci_debug_printf(0, "***  did not find next word after '%s' terminated with '%c'\n", key, term);
-		strncpy(msginfo->timestamp, "----", CI_MAXTIMESTAMPLEN);
-	}
-
-	key = keys[i];
-	term = terms[i++];
-	found = find_keyval(preview_data, key, term, msginfo->appname, CI_MAXAPPNAMELEN);
-	if (found)
-	{
-		ci_debug_printf(3, "***  the value of keyword '%s' is '%s'\n", key, msginfo->appname);
-	}
-	else
-	{
-		ci_debug_printf(0, "***  did not find next word after '%s' terminated with '%c'\n", key, term);
-		strncpy(msginfo->appname, "----", CI_MAXAPPNAMELEN);
-	}
-
-	key = keys[i];
-	term = terms[i++];
-	found = find_keyval(preview_data, key, term, msginfo->company, CI_MAXCOMPANYLEN);
-	if (found)
-	{
-		ci_debug_printf(3, "***  the value of keyword '%s' is '%s'\n", key, msginfo->company);
-	}
-	else
-	{
-		ci_debug_printf(0, "***  did not find next word after '%s' terminated with '%c'\n", key, term);
-		strncpy(msginfo->company, "----", CI_MAXCOMPANYLEN);
-	}
-	return 1;
+	return snprintf(buf, len, "%s", "ERR");
 }
 
-bool find_keyval(char const *strbuf, char const *substr, char terminator, char *result, int reslen)
+/*
+ * fmt_srv_msp_transactionid - handle %MSTXID format specifier
+ */
+int fmt_srv_msp_transactionid(ci_request_t *req, char *buf, int len, const char *param)
 {
+	ci_debug_printf(5, "*** fmt_srv_msp_transactionid ***\n");
+	struct srv_msp_data *uc = ci_service_data(req);
+	if (uc) {
+		if (*uc->msginfo.xactid != 0x00) {
+			return snprintf(buf, len, "<tns:transactionID>%s</tns:transactionID>", uc->msginfo.xactid);
+		}
+		return 0;
+	}
+	return snprintf(buf, len, "%s", "ERR");
+}
 
-	bool found_nxt = false;
-
-	if(!strbuf)
+//
+//////////////
+static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
+{
+	xmlNodePtr pReturnedNode = getChildNode(root->children, (const xmlChar *)"Body");
+	if (pReturnedNode)
 	{
-		printf("ERROR: empty buffer passed.\n");
-		return NULL;
-	}
-	if(!result)
-	{
-		printf("ERROR: empty result buffer passed.\n");
-		return NULL;
-	}
-	if(!substr)
-	{
-		printf("ERROR: NULL string passed.\n");
-		return NULL;
-	}
-	if(strlen(substr) == 0 )
-	{
-		printf("ERROR: empty string passed.\n");
-		return NULL;
-	}
-
-	char* pos = strstr(strbuf, substr);
-	if(pos)
-	{
-		//printf("-->found the string '%s' in '%s' at position: %ld\n", substr, strbuf, pos - strbuf);
-		;//printf("-->found the string '%s' at position: %ld\n", substr, pos - strbuf);
-	}
-	else
-	{
-		//printf("-->the string '%s' was not found\n", substr);
-		return pos;
-	}
-	// run through found string until find the terminator
-	int sublen = strlen(substr);
-	int remaining_len = strlen(strbuf) - (pos - strbuf) - sublen;
-	pos += sublen;
-	char const* start=pos;
-	//printf("-->searching for next word in '%s', len %d\n", pos, remaining_len);
-	for( int i=0; i<remaining_len; i++ )
-	{
-		//printf("-->comparing terminator '%c' to '%c' ...\n", terminator, *pos);
-		if( *pos == terminator )
+		xmlNodePtr chld_node = pReturnedNode->xmlChildrenNode;
+		while (chld_node != NULL)
 		{
-			if( i != 0 ) // case first str terminated with same terminator as sought string
-			{
-				int cpylen = pos - start;
-				//printf("Found it.\n");
-				if (cpylen > reslen)
-					cpylen = reslen;
-				memcpy(result, start, cpylen);
-				found_nxt = true;
+			if (chld_node->type == XML_ELEMENT_NODE) {
 				break;
 			}
-			else{
-				start +=1;
+			chld_node = chld_node->next;
+		}
+		if (chld_node) {
+			strncpy(pMsgInfo->method, (char *)chld_node->name, CI_MAXMETHODLEN);
+			if (chld_node->ns) {
+				const xmlChar *pNsRef = chld_node->ns->href;
+				strncpy(pMsgInfo->xmlnspace, (char *)pNsRef, CI_MAXNSLEN);
+				char *p = strrchr((char *)pNsRef, '/');
+				if (p) {
+					strncpy(pMsgInfo->endpoint, p + 1, CI_MAXENDPOINTLEN);
+				}
+			}
+			xmlNodePtr body_chld = NULL;
+			for (body_chld = chld_node->children; body_chld; body_chld = body_chld->next) {
+				if (body_chld->type == XML_ELEMENT_NODE) {
+					if ((!xmlStrcasecmp(body_chld->name, (const xmlChar *)"transactionID"))) {
+						strncpy(pMsgInfo->xactid, (char *)xmlNodeGetContent(body_chld), CI_MAXXACTIDLEN);
+						break;
+					}
+				}
 			}
 		}
-		pos +=1;
+		else {
+			printf("Failed to get child node element for '%s'\n", "Body");
+		}
 	}
-	return found_nxt;
+	else {
+		printf("Failed to get child node '%s' for '%s'\n", "Body", "root");
+	}
+
+	if (*pMsgInfo->xmlnspace != 0x00 && *pMsgInfo->method != 0x00 && *pMsgInfo->endpoint != 0x00)
+		return true;
+	else
+		return false;
 }
 
-char *GetRetStr(int iRet) {
-	switch (iRet)
-	{
-		case CI_MOD_NOT_READY:
-			return "CI_MOD_NOT_READY";
-		case CI_MOD_DONE:
-			return "CI_MOD_DONE";
-		case CI_MOD_CONTINUE:
-			return "CI_MOD_CONTINUE";
-		case CI_MOD_ALLOW204:
-			return "CI_MOD_ALLOW204";
-		case CI_MOD_ALLOW206:
-			return "CI_MOD_ALLOW206";
-		case CI_MOD_ERROR:
-			return "CI_MOD_ERROR";
-		default:
-			return "ERROR: INVALID TYPE";
-	}
+//
+//////////////
+static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
+{
+	xmlNodePtr cur_node = NULL;
+	xmlNodePtr nxt_node = NULL;
+	xmlNodePtr chld_node = NULL;
+	int num_needed = 2;
+	int num_gotten = 0;
+	bool bFound = false;
+
+	for (cur_node = root; cur_node; cur_node = cur_node->next) {
+		if (bFound)
+			return false;
+		if (cur_node->type == XML_ELEMENT_NODE)
+		{
+			if ((!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")))
+			{
+				for (chld_node = cur_node->children; chld_node; chld_node = chld_node->next) {
+					if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"AppName")))
+					{
+						strncpy(pMsgInfo->appname, (char *)xmlNodeGetContent(chld_node), CI_MAXAPPNAMELEN);
+						num_gotten++;
+					}
+					else if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"Company")))
+					{
+						strncpy(pMsgInfo->company, (char *)xmlNodeGetContent(chld_node), CI_MAXCOMPANYLEN);
+						num_gotten++;
+					}
+					if (num_gotten == num_needed) {
+						bFound = true;
+						break;
+					}
+				}
+				nxt_node = NULL;
+			}
+			else {
+				nxt_node = cur_node->children;
+			}
+		}//  for 
+		else {
+			nxt_node = cur_node->children;
+		}
+		if (!bFound)
+			get_caller_info(nxt_node, pMsgInfo);
+	}// for
+
+	if (*pMsgInfo->appname != 0x00 && *pMsgInfo->company != 0x00)
+		return true;
+	else
+		return false;
 }
 
 void msp_dumphex(  char *data, int len )
@@ -1239,6 +1695,34 @@ void msp_dumphex(  char *data, int len )
 		printf("\n");
 		current += 16;
 	}
+}
+// 
+///////////////////////////////////////////////////////////////////////////////
+xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem)
+{
+	xmlNodePtr pRet;
+	xmlNodePtr n;
+
+	//if( !currnode )
+	//	return NULL;
+	for (n = currnode; n; n = n->next)
+	{
+		if (n->type == XML_ELEMENT_NODE)
+		{
+			if ((!xmlStrcasecmp(n->name, elem)))
+			{
+				//printf("Found element '%s'\n", elem);
+				return n;
+			}
+			else {
+				//printf("Not Found element '%s' @ '%s'\n", elem, n->name);
+				pRet = getChildNode(n->next, elem);
+				if (pRet)
+					return pRet;
+			}
+		}
+	}
+	return NULL;
 }
 
 // Write formatted output to Log File (if loglevel = 0)

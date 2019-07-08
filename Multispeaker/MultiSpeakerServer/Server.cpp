@@ -116,61 +116,37 @@ bool Server::SetResponseFile(const QString& path)
 	m_responseFile = responseFile.readAll();
 	*/
 	
-	const char  *pResponse =
-		"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:res=\"http://www.multispeak.org/V5.0/ws/response\" xmlns:com=\"http://www.multispeak.org/V5.0/commonTypes\" xmlns:cd=\"http://www.multispeak.org/V5.0/wsdl/CD_Server\">"
+	//const char  *pResponse =
+	m_responseFile =
+		"<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+		"<soapenv:Envelope xmlns:tns=\"%1\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:res=\"http://www.multispeak.org/V5.0/ws/response\" xmlns:com=\"http://www.multispeak.org/V5.0/commonTypes\">"
 		"<soapenv:Header>"
-		"<res:MultiSpeakResponseMsgHeader MessageID = \"FE92A1A2-5255-4830-98CD-7403C45588F6\" TimeStamp=\"2019-06-06 14:11:00.970\">"
+		"<res:MultiSpeakResponseMsgHeader MessageID = \"%2\" TimeStamp=\"%3\">"
 		"<res:MultiSpeakVersion>"
 		"<com:MajorVersion>5</com:MajorVersion>"
 		"<com:MinorVersion>1</com:MinorVersion>"
 		"<com:Build>0</com:Build>"
 		"</res:MultiSpeakVersion>"
 		"<res:Caller>"
-		"<com:AppName>MS-Server</com:AppName>"
-		"<com:Company>Pacific Northwest National Laboratory</com:Company>"
+		"<com:AppName>%4</com:AppName>"
+		"<com:Company>%5</com:Company>"
 		"</res:Caller>"
 		"<res:Result>"
 		"<com:resultIdentifier>"
 		"<com:replyCodeCategory>0</com:replyCodeCategory>"
 		"<com:index>0</com:index>"
-		"<com:resultIdentifier>"
-		"<com:resultDescription>Success/ no errors.</com:resultDescription>"
+		"</com:resultIdentifier>"
+		"<com:resultDescription>Success / no errors.</com:resultDescription>"
 		"</res:Result>"
 		"</res:MultiSpeakResponseMsgHeader>"
 		"</soapenv:Header>"
 		"<soapenv:Body>"
-		"<cd:InitiateConnectDisconnectResponse/>"
+		"<tns:%6 xmlns:tns=\"%7\" xmlns:arrays=\"http://www.multispeak.org/V5.0/commonArrays\" xmlns:enum=\"http://www.multispeak.org/V5.0/enumerations\" xmlns:msp=\"http://www.multispeak.org/V5.0\" xmlns:soap12=\"http://schemas.xmlsoap.org/wsdl/soap12/\" xmlns:http=\"http://schemas.xmlsoap.org/wsdl/http/\" xmlns:mime=\"http://schemas.xmlsoap.org/wsdl/mime/\" xmlns:response=\"http://www.multispeak.org/V5.0/ws/response\" xmlns:tm=\"http://microsoft.com/wsdl/mime/textMatching/\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:request=\"http://www.multispeak.org/V5.0/ws/request\" xmlns:com=\"http://www.multispeak.org/V5.0/commonTypes\" xmlns:prim=\"http://www.multispeak.org/V5.0/primitives\" xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" xmlns:ns9=\"http://www.w3.org/2005/08/addressing\" xmlns:ns8=\"http://docs.oasis-open.org/wsrf/bf-2\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\">"
+			"%8"
+		"</tns:%9>"
 		"</soapenv:Body>"
 		"</soapenv:Envelope>";
-	m_responseFile = QByteArray(pResponse, -1);
+	//m_responseFile = QByteArray(pResponse, -1);
 
 	return true;
 }
-/*
-<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:res="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:cd="http://www.multispeak.org/V5.0/wsdl/CD_Server">
-   <soapenv:Header>
-      <res:MultiSpeakResponseMsgHeader MessageID="FE92A1A2-5255-4830-98CD-7403C45588F6" TimeStamp="2019-06-06 14:11:00.970">
-         <res:MultiSpeakVersion>
-            <com:MajorVersion>5</com:MajorVersion>
-           <com:MinorVersion>1</com:MinorVersion>
-            <com:Build>0</com:Build>
-         </res:MultiSpeakVersion>
-         <res:Caller>
-            <com:AppName>MS-Server</com:AppName>
-            <com:Company>Pacific Northwest National Laboratory</com:Company>
-         </res:Caller>
-         <res:Result>
-            <com:resultIdentifier>
-               <com:replyCodeCategory>0</com:replyCodeCategory>
-               <com:index>0</com:index>
-          <com:resultIdentifier>
-          <com:resultDescription>Success/ no errors.</com:resultDescription>
-         </res:Result>
-      </res:MultiSpeakResponseMsgHeader>
-   </soapenv:Header>
-   <soapenv:Body>
-      <cd:InitiateConnectDisconnectResponse/>
-   </soapenv:Body>
-</soapenv:Envelope>
-*/

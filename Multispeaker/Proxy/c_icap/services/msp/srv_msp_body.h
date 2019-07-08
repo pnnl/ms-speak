@@ -51,24 +51,60 @@
  -------------------------------------------------------------------------------
  History
  05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
+ 06/19/2019 - CHM - added MEMORY body_type, mem_buff to store union.
  ---------------------------------------------------------------------------------
  */
 #include "body.h"
 
-enum body_type {NO_BODY_TYPE=0, CACHED, RING, ERROR_PAGE};
+enum body_type { NO_BODY_TYPE=0, CACHED, RING, ERROR_PAGE, MEMORY };
+/*
 
+	typedef struct ci_cached_file {
+		ci_off_t endpos;
+		ci_off_t readpos;
+		int      bufsize;
+		int flags;
+		ci_off_t unlocked;
+		char *buf;
+		int fd;
+		char filename[CI_FILENAME_LEN+1];
+		ci_array_t *attributes;
+	} ci_cached_file_t;
+
+	typedef struct ci_ring_buf {
+		char *buf;
+		char *end_buf;
+		char *read_pos;
+		char *write_pos;
+		int full;
+	} ci_ring_buf_t;
+
+	typedef struct ci_membuf {
+		int endpos;
+		int readpos;
+		int bufsize;
+		int unlocked;
+		unsigned int flags;
+		char *buf;
+		ci_array_t *attributes;
+	} ci_membuf_t;
+
+*/
 struct body_data {
     union {
         ci_cached_file_t *cached;
-        ci_ring_buf_t *ring;
-        ci_membuf_t *error_page;
-    } store;
+        ci_ring_buf_t    *ring;
+		ci_membuf_t      *error_page;
+		ci_membuf_t      *mem_buff;
+	} store;
     enum body_type type;
     int eof;
+	int64_t size;
 };
 
 #define body_data_haseof(body) (body->eof)
 int body_data_init(struct body_data *bd, enum body_type type,  int size, ci_membuf_t *err_page);
-void body_data_destroy(struct body_data *body);
 int body_data_write(struct body_data *body, char *buf, int len, int iseof);
 int body_data_read(struct body_data *body, char *buf, int len);
+void body_data_destroy(struct body_data *body);
+char *body_data_buf(struct body_data *body);

@@ -52,6 +52,7 @@
 -------------------------------------------------------------------------------
 History
 05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
+06/19/2019 - CHM - added body_data_buf.
 ---------------------------------------------------------------------------------
 */
 
@@ -87,12 +88,17 @@ int body_data_init(struct body_data *bd, enum body_type type,  int size, ci_memb
             return 0;
         }
     }
+	else if (type == MEMORY) {
+		ci_debug_printf(5, "            type %s\n", "MEMORY");
+		bd->store.mem_buff = ci_membuf_new_sized(size);
+	}
     else {
 		ci_debug_printf(0, "            BUG in srv_msp, body_data_init: invalid body type:%d\n", type);
         return 0;
     }
     bd->type = type;
-    bd ->eof = 0;
+    bd->eof = 0;
+	bd->size = 0;
     return 1;
 }
 
@@ -114,6 +120,11 @@ void body_data_destroy(struct body_data *body)
 		ci_membuf_free(body->store.error_page);
         body->store.error_page = NULL;
     }
+	else if (body->type == MEMORY) {
+		ci_debug_printf(5, "        ci_membuf_free: %s\n", "MEMORY");
+		ci_membuf_free(body->store.mem_buff);
+		body->store.mem_buff = NULL;
+	}	
     else {
         ci_debug_printf(0, "        BUG in srv_msp, body_data_destroy: invalid body type:%d\n", body->type);
     }
@@ -123,7 +134,14 @@ void body_data_destroy(struct body_data *body)
 
 int body_data_write(struct body_data *body, char *buf, int len, int iseof)
 {
+	int wlen=0;
 	ci_debug_printf(5, "    --->body_data_write::write client(Squid) data to a buffer...\n");
+
+	if ( !body ){
+		ci_debug_printf(0, "ERROR: no body passed into body_data_write.\n");
+		return 0;
+	}
+
 	if( iseof)
         body->eof = 1;
 
@@ -136,9 +154,9 @@ int body_data_write(struct body_data *body, char *buf, int len, int iseof)
     }
     else if(body->type == RING  ){
         if( len && buf)
-            return ci_ring_buf_write(body->store.ring, buf, len);
-        else if( iseof)
-            return CI_EOF;
+			wlen = ci_ring_buf_write(body->store.ring, buf, len);
+		//else if( iseof)
+		//    return CI_EOF;
         /*else ERROR*/
     }
     else if(body->type == ERROR_PAGE) {
@@ -157,12 +175,17 @@ int body_data_write(struct body_data *body, char *buf, int len, int iseof)
 		}
         /*else ERROR*/
     }
-    else {
+	else if (body->type == MEMORY) {
+		wlen =  ci_membuf_write(body->store.mem_buff, buf, len, iseof);
+	}
+	else {
         ci_debug_printf(0, "        invalid body type:%d\n", body->type);
         return CI_ERROR;
     }
-
-    return CI_ERROR;
+	if (wlen > 0)
+		body->size += wlen;
+	return wlen;
+	//return CI_ERROR;
 }
 
 int body_data_read(struct body_data *body, char *buf, int len)
@@ -193,8 +216,31 @@ int body_data_read(struct body_data *body, char *buf, int len)
             return CI_EOF;
         return len;
     }
-    else {
+	else if (body->type == MEMORY) {
+		return ci_membuf_read(body->store.mem_buff, buf, len);
+	}
+	else {
         ci_debug_printf(0, "        invalid body type:%d\n", body->type);
         return CI_ERROR;
     }
+}
+
+char *body_data_buf(struct body_data *body)
+{
+    if( body->type == CACHED ){
+	    return body->store.cached->buf;
+    }
+    else if(body->type == RING  ){
+	    return body->store.ring->buf;
+    }
+    else if(body->type == ERROR_PAGE) {
+	    return body->store.error_page->buf;
+    }
+    else if (body->type == MEMORY) {
+	    return body->store.mem_buff->buf;
+    }
+    else {
+        ci_debug_printf(0, "body_data_buf::invalid body type:%d\n", body->type);
+		return NULL;
+	}
 }

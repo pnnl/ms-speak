@@ -8,8 +8,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F58A5A61-D60E-4B83-AD6D-5D7E99B500B5}}
 AppName=MultiSpeaker
-AppVersion=19.05.07
-;AppVerName=MultiSpeaker 19.05.07
+AppVersion=19.06.16
+;AppVerName=MultiSpeaker 19.06.16
 AppPublisher=Pacific Northwest National Laboratory
 AppPublisherURL=http://www.pnnl.gov
 AppSupportURL=http://www.pnnl.gov
@@ -28,7 +28,7 @@ Compression=lzma
 SolidCompression=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
-VersionInfoVersion=19.05.07
+VersionInfoVersion=19.06.16
 VersionInfoCompany=Pacific Northwest National Laboratory
 
 [Languages]

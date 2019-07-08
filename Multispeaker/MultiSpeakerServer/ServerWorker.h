@@ -75,15 +75,16 @@ private:
 	qint64 m_bytesYettoRead;
 	bool m_headerRead;
 	qintptr m_socketDescriptor;
-	QByteArray& m_responseFile;
+	//QByteArray& m_responseFile;
+	QString& m_responseFile;
 
 public:
-    ServerWorker(qintptr socketDescriptor, QByteArray& qba, QObject* parent=Q_NULLPTR);
+    ServerWorker(qintptr socketDescriptor, QString& qba, QObject* parent=Q_NULLPTR);// QByteArray& qba
 	~ServerWorker();
 
 private:
 	void ReadMessage(QTcpSocket* socket);
-	void SendResponse( int code, QByteArray& data, QTcpSocket* socket );
+	void SendResponse( int, QString&, QTcpSocket*, QByteArray& );
 
 signals:
 	void Finished();
