@@ -740,7 +740,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 */
 void msp_close_service()
 {
-	ci_debug_printf(3, "\n*** msp_close_service::\n");
+	ci_debug_printf(5, "\n*** msp_close_service::\n");
 	if (LogFile) {
 		if (MainThread) // huh, this doesn't work, still see 4 of the below msgs:
 			WriteLog(0, LogFile, "The MSP Service is Shutting Down...");
@@ -760,7 +760,7 @@ void msp_close_service()
 */
 void *msp_init_request_data(ci_request_t * req) // first call
 {
-	ci_debug_printf(3, "\n*** msp_init_request_data:: ***\n");
+	ci_debug_printf(5, "\n*** msp_init_request_data:: ***\n");
 	struct srv_msp_data *mspd = ci_object_pool_alloc(MSP_DATA_POOL);
 	memset(&mspd->body, 0, sizeof(struct body_data));
 	memset(&mspd->msginfo, 0, sizeof(struct srv_msp_msg_info));
@@ -777,7 +777,7 @@ void *msp_init_request_data(ci_request_t * req) // first call
 */
 void msp_release_request_data(void *data)
 {
-	ci_debug_printf(3, "\n*** msp_release_request_data:: ***\n");
+	ci_debug_printf(5, "\n*** msp_release_request_data:: ***\n");
 	/*The data points to the echo_req_data struct we allocated in function echo_init_service */
 	struct srv_msp_data *mspd = data;
 	if (mspd->body.type) {
@@ -968,7 +968,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	const int REQ_TYPE = ci_req_type(req);
 	struct srv_msp_data *mspd = ci_service_data(req);
 
-	ci_debug_printf(3, "\n*** msp_end_of_data_handler:: ***\n");
+	ci_debug_printf(5, "\n*** msp_end_of_data_handler:: ***\n");
 
 	/*if (mspd->abort) {
 		// We had already start sending data....
@@ -976,7 +976,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 		return CI_MOD_DONE;
 	}*/
 	if (mspd->isReqmod) {
-		ci_debug_printf(0, "All REQUEST data received, going to process!\n");
+		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
 		if (REQ_TYPE != ICAP_REQMOD) {
 			ci_debug_printf(0, "*** SANITY CHECK FAILURE: REQ_TYPE != ICAP_REQMOD!\n");
@@ -986,7 +986,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	}
 	else
 	{
-		ci_debug_printf(4, "All RESPONSE data received, going to process!\n");
+		ci_debug_printf(5, "All RESPONSE data received, going to process!\n");
 	}
 
 	//const char * METHOD_TYPE = ci_method_string(REQ_TYPE);
@@ -1033,7 +1033,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	}
 	else if (REQ_TYPE == ICAP_RESPMOD)
 	{
-		ci_debug_printf(0, "*** handling_response_preview ...\n");
+		ci_debug_printf(5, "*** handling_response_preview ...\n");
 		msRet = handle_response_preview(pBizData);
 		if (msRet == MSP_ERROR) {
 			icRet = CI_ERROR;
@@ -1090,7 +1090,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
             ci_request_t * req)
 {
-	ci_debug_printf(3, "\n*** msp_io:: ***\n");
+	ci_debug_printf(5, "\n*** msp_io:: ***\n");
 	int ret = CI_OK;
 	struct srv_msp_data *mspd = ci_service_data(req);
 
@@ -1166,7 +1166,7 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 int handle_request_preview(BIZ_DATA *pBizData)
 {
 
-	ci_debug_printf(4, "    --->handle_request_preview::\n");
+	ci_debug_printf(5, "    --->handle_request_preview::\n");
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
@@ -1213,7 +1213,7 @@ int handle_request_preview(BIZ_DATA *pBizData)
 */
 int handle_response_preview(BIZ_DATA *pBizData)
 {
-	ci_debug_printf(4, "    --->handle_response_preview::\n");
+	ci_debug_printf(5, "    --->handle_response_preview::\n");
 	/* TODO: get ip address and lookup the right BIZ_DATA per IP....
 	 * ultimately, we'd want to index the src/dest ips to find the BIZ_DATA
 	 * then check if the method is part of that connection's BIZ_DATA...
@@ -1303,38 +1303,6 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	struct srv_msp_msg_info *pMsgInfo = &mspd->msginfo;
 	memset(pMsgInfo, 0x00, sizeof(struct srv_msp_msg_info));
 
-	/*
-	currNode = getFromXML(root, (const xmlChar *)"Body", (const xmlChar *)NULL);
-	if (currNode == NULL) {
-		ci_debug_printf(0, "ERROR Getting XML Method\n");
-		xmlFreeDoc(xmlDoc);
-		*pErrRet = MSP_ERROR;
-		return NULL;
-	}
-	pMethod = (char *)currNode->name;
-	if( currNode->ns ){
-		pNsRef =  currNode->ns->href;
-		ci_debug_printf(3, "Namespace: %s\n", pNsRef);
-		pEndpoint = strrchr ((char *)pNsRef,'/');
-		if( pEndpoint ){
-			pEndpoint = pEndpoint+1;
-			ci_debug_printf(3, "**** Method Endpoint is %s\n",pEndpoint);
-		}
-		else{
-			ci_debug_printf(0, "ERROR: Namespace Has No Endpoint.\n");
-			xmlFreeDoc(xmlDoc);
-			*pErrRet = MSP_ERROR;
-			return NULL;
-		}
-	}
-	else{
-		ci_debug_printf(0, "ERROR: Node Has No Namespace.\n");
-		xmlFreeDoc(xmlDoc);
-		*pErrRet = MSP_ERROR;
-		return NULL;
-	}
-	*/
-	
 	if (get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
 	{
 		pMethod = pMsgInfo->method;
@@ -1345,7 +1313,7 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		if (*pMsgInfo->xactid != 0x00)
 			// MessageID should be unique, not reused by a Request, if we want to 
 			// correlate a response to a request, use transactionID
-			ci_debug_printf(3, "TransactionID is: '%s'\n", pMsgInfo->xactid);
+			ci_debug_printf(4, "TransactionID is: '%s'\n", pMsgInfo->xactid);
 	}
 	else {
 		ci_debug_printf(0, "ERROR getting Method info\n");
@@ -1354,7 +1322,7 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		return NULL;
 	}
 
-	ci_debug_printf(3, "Current XML Method is: '%s@%s'\n", pMethod, pEndpoint);
+	ci_debug_printf(4, "Current XML Method is: '%s@%s'\n", pMethod, pEndpoint);
 
 	// TODO, find pBizData from IP Addresses (src/dest) ??
 	//		we may not need to do that, if each separate connection is handled by a separate
@@ -1366,19 +1334,19 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		if( !strcmp( pBizData->m_EndPoint, pEndpoint) )
 		{
 			if( !strcmp( pBizData->m_Method, pMethod) ){
-				ci_debug_printf(3, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
+				ci_debug_printf(4, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
 				break;
 			}
 			else{
-				ci_debug_printf(3, "Checking Business Record for %s@%s:\n",
-				                pBizData->m_Method,  pBizData->pEndpoint);
+				ci_debug_printf(4, "Checking Business Record for %s@%s:\n",
+				                pBizData->m_Method,  pBizData->m_Method);
 			}
 		}
 		pBizData++;
 	}
 	if( i == NumBizRecs )
 	{
-		ci_debug_printf(0, "\nNo Business Rules Defined for %s@%s:\n", pMethod, pEndpoint );
+		ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s:\n", pMethod, pEndpoint );
 		*pErrRet = MSP_OK;
 		pBizData = NULL;
 	}
