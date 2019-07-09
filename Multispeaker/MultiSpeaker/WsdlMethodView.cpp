@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		09-JUL-2019 CHM:  Don't call SetItemsEnableState(), it can cause significant delays in loading MethodViews.
 //-------------------------------------------------------------------------------
 //
 // Summary: WsdlMethodView.cpp
@@ -204,7 +205,7 @@ void WsdlMethodView::CreateTreeView(const QDomDocument& doc)
 
 	ui.TreeView->resizeColumnToContents(0);
 
-	SetItemsEnableState();
+	//SetItemsEnableState();
 }
 //------------------------------------------------------------------------------
 // SetEnableState
@@ -509,7 +510,7 @@ void WsdlMethodView::OnEnableClicked(bool checked)
 	QSettings s;
 	s.setValue(pktType, checked);
 
-	SetItemsEnableState();
+	//SetItemsEnableState();
 }
 //------------------------------------------------------------------------------
 // OnSaveClicked
