@@ -566,7 +566,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		//return CI_ERROR;
 	}
 	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	if( CI_DEBUG_LEVEL >= 3 ){
+	if( CI_DEBUG_LEVEL >= 1 ){
 		printf("  %s\n", g_key_file_to_data(BizCfgFile, &length, &error));
 	}
 	/*
@@ -1221,7 +1221,7 @@ int handle_response_preview(BIZ_DATA *pBizData)
 	//WriteLog(4, LogFile, "got ICAP_RESPMOD, ignoring...");
 	
 	pBizData->m_ValidRequestNum++;
-	WriteLog(1, LogFile, "*** handle_response_preview::ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
+	WriteLog(1, LogFile, "*** Response ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
 		pBizData->m_Method, pBizData->m_ValidRequestNum, pBizData->m_numReq, pBizData->m_EndPoint);
 
 	return MSP_OK; // always pass the response on to client;
@@ -1346,7 +1346,12 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	}
 	if( i == NumBizRecs )
 	{
-		ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s:\n", pMethod, pEndpoint );
+		if (mspd->isReqmod) {
+			ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Request.\n", pMethod, pEndpoint );
+		}
+		//else{
+		//	ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Response.\n", pMethod, pEndpoint );
+		//}
 		*pErrRet = MSP_OK;
 		pBizData = NULL;
 	}
@@ -1455,7 +1460,7 @@ int fmt_srv_msp_msgid(ci_request_t *req, char *buf, int len, const char *param)
 	// unparse (to string)
 	char uuid_str[37];      // ex. "1b4e28ba-2fa1-11d2-883f-0016d3cca427" + "\0"
 	uuid_unparse_lower(uuid, uuid_str);
-	printf("generated uuid=%s\n", uuid_str);
+	//printf("generated uuid=%s\n", uuid_str);
 
 	//ci_debug_printf(5, "*** fmt_srv_msp_msgid ***\n");
 	//struct srv_msp_data *uc = ci_service_data(req);
