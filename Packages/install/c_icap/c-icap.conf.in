@@ -302,16 +302,16 @@ SupportBuggyClients off
 # Description:
 #	The location of modules
 # Default:
-#	ModulesDir /usr/local/lib/c_icap
-ModulesDir /usr/local/lib/c_icap
+#	ModulesDir @PKGLIBDIR@
+ModulesDir @PKGLIBDIR@
 
 # TAG: ServicesDir
 # Format: ServicesDir dir
 # Description:
 #	The location of services
 # Default:
-#	ServicesDir /usr/local/lib/c_icap
-ServicesDir /usr/local/lib/c_icap
+#	ServicesDir @PKGLIBDIR@
+ServicesDir @PKGLIBDIR@
 
 # TAG: TemplateDir
 # Format: TemplateDir dir
@@ -321,7 +321,7 @@ ServicesDir /usr/local/lib/c_icap
 # Default:
 #	No value
 # Example:
-TemplateDir /usr/local/share/c-icap/templates
+TemplateDir /usr/local/share/c_icap/templates
 
 # TAG: TemplateDefaultLanguage
 # Format: TemplateDefaultLanguage lang
@@ -343,8 +343,8 @@ TemplateDefaultLanguage en
 #	for more informations.
 #	It can be used more than once to use multiple magic files.
 # Default:
-#	LoadMagicFile /usr/local/etc/c-icap.magic
-LoadMagicFile /usr/local/etc/c-icap.magic
+#	LoadMagicFile @SYSCONFDIR@/c-icap.magic
+LoadMagicFile @SYSCONFDIR@/c-icap.magic
 
 # TAG: RemoteProxyUsers
 # Format: RemoteProxyUsers onoff
@@ -602,8 +602,8 @@ RemoteProxyUserHeaderEncoded on
 #	store debugging information, errors and other
 #	information about the c-icap server.
 # Default:
-#	ServerLog /usr/local/var/log/server.log
-ServerLog /usr/local/var/log/server.log
+#	ServerLog @prefix@/var/log/server.log
+ServerLog @prefix@/var/log/server.log
 
 # TAG: AccessLog
 # Format: AccessLog LogFile [LogFormat] [[!]acl1] [[!]acl2] [...]
@@ -615,10 +615,10 @@ ServerLog /usr/local/var/log/server.log
 #	This directive can be used more than once to specify more than
 #	one access log files
 # Default:
-#	AccessLog /usr/local/var/log/access.log
+#	AccessLog @prefix@/var/log/access.log
 # Example:
-#	AccessLog /usr/local/var/log/access.log MyFormat all
-AccessLog /usr/local/var/log/access.log
+#	AccessLog @prefix@/var/log/access.log MyFormat all
+AccessLog @prefix@/var/log/access.log
 
 # TAG: Logger
 # Format: Logger LoggerName
@@ -708,6 +708,7 @@ AccessLog /usr/local/var/log/access.log
 #	Simple test service
 # Example:
 #	Service echo srv_echo.so
+#Service echo srv_echo.so
 Service msp srv_msp.so
 
 # Module: sys_logger
