@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #  retrieve this file from the repository:
-#		wget https://github.com/pnnl/ms-speak/tree/Phase2/Multispeaker/mspInstall.sh
+#		wget https://raw.githubusercontent.com/pnnl/ms-speak/Phase2/Multispeaker/mspInstall.sh
 #
 # required packages
 echo "The Following Packages are required and will now be installed:"
