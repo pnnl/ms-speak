@@ -7,6 +7,28 @@
 ORIG_DIR=
 NEW_DIR=
 
+if [ $# -ne 0 ]; then
+	echo -e "to run Squid use the following command:"
+	echo -e "     sudo /usr/local/squid/sbin/squid -N -d 1"
+	echo -e "  if you see this error:"
+	echo -e "      logfileHandleWrite: daemon:/var/logs/access.log: error writing ((32) Broken pipe"
+	echo -e "  do the following:"
+	echo -e "      add your user to the staff group:"
+	echo -e "         sudo usermod -a -G staff yourusername"
+	echo -e "            (then shutdown, restart)"
+	echo -e "      sudo chmod 777 /usr/local/squid -R"
+	
+	echo -e "\nto run c-icap use the following command:"
+	echo -e "     sudo /usr/local/bin/c-icap -N -D -d 1"
+	echo -e "  if you see this error:"
+	echo -e "      /usr/local/bin/c-icap: error while loading shared libraries libicapapi.so.5:"
+	echo -e "               cannot open shared object file: No such file or directory"
+	echo -e "  do the following:"
+	echo -e "      sudo ldconfig"
+	echo -e "  then run c-icap again."
+	return 0
+fi
+
 # required packages
 echo -e "The Following required packages will now be installed:"
 echo -e "    libglib2.0-dev, libxml2-dev, libxml2 & uuid-dev"
@@ -55,29 +77,30 @@ fi
 ORIG_DIR=$(pwd)
 
 echo "Enter the directory name to install Squid & c-icap to [default: /home/msspeak]:"
+echo "  *** WARNING: any existing files in this directory will be deleted. ***"
 read NEW_DIR
 if [ -z "$NEW_DIR" ]; then
 	NEW_DIR="/home/msspeak"
 fi
 
-if [ ! -d "$NEW_DIR" ]; then
-	mkdir -p $NEW_DIR
-fi
-
-echo -e "Installing to $NEW_DIR"
-cd $NEW_DIR
-retval=$?
-if [ $retval -ne 0 ]; then
-	echo -e "Failed to change to $NEW_DIR"
-	return -1
-else
-	cd ../
-	retval=$?
-	if [ $retval -ne 0 ]; then
-		echo -e "Failed to change to parent of $NEW_DIR"
-		return -1
-	fi
-fi
+#if [ ! -d "$NEW_DIR" ]; then
+#	mkdir -p $NEW_DIR
+#fi
+#
+#echo -e "Installing to $NEW_DIR"
+#cd $NEW_DIR
+#retval=$?
+#if [ $retval -ne 0 ]; then
+#	echo -e "Failed to change to $NEW_DIR"
+#	return -1
+#else
+#	cd ../
+#	retval=$?
+#	if [ $retval -ne 0 ]; then
+#		echo -e "Failed to change to parent of $NEW_DIR"
+#		return -1
+#	fi
+#fi
 
 #echo -e "Press [Enter] key to continue with the Installation, else 'N' to terminate:"
 #read DO_INSTALL
@@ -103,6 +126,14 @@ if [ ! -z "$DO_INSTALL" ]; then
 		return -1
 	fi
 else
+	if [ ! -d "$NEW_DIR" ]; then
+		mkdir -p $NEW_DIR
+	else
+		sudo rm -rf $NEW_DIR
+		mkdir -p $NEW_DIR
+	fi
+	cd $NEW_DIR
+	cd ../
 	git clone --branch Install https://github.com/pnnl/ms-speak $NEW_DIR
 	retval=$?
 	if [ $retval -ne 0 ]; then
@@ -116,36 +147,36 @@ fi
 cd $NEW_DIR/Packages
 
 #Extract Packages:
-echo -e "\nSquid & c-icap will now be extracted to $NEW_DIR/Packages"
-echo -e "Press [Enter] to extract, 'S' to skip this step, or 'N' to terminate completely:"
-read DO_INSTALL
-if [ ! -z "$DO_INSTALL" ]; then
-	echo -e "Extraction of Tarballs Cancelled."
-	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
-		echo -e "Skipping this step."
+#echo -e "\nSquid & c-icap will now be extracted to $NEW_DIR/Packages"
+#echo -e "Press [Enter] to extract, 'S' to skip this step, or 'N' to terminate completely:"
+#read DO_INSTALL
+#if [ ! -z "$DO_INSTALL" ]; then
+#	echo -e "Extraction of Tarballs Cancelled."
+#	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
+#		echo -e "Skipping this step."
+#	else
+#		echo -e "Installation Terminated.\n"
+#		cd $ORIG_DIR
+#		return -1
+#	fi
+#else
+if tar xzf install/squid/squid-4.7.tar.gz; then
+	mv squid-4.7-20190507-r2e17b0261 squid-4.7
+	if tar xzf install/c_icap/c_icap-0.5.5.tar.gz; then
+		echo -e "Packages Extracted Successfully.."
 	else
-		echo -e "Installation Terminated.\n"
-		cd $ORIG_DIR
-		return -1
-	fi
-else
-	if tar xzf install/squid/squid-4.7.tar.gz; then
-		mv squid-4.7-20190507-r2e17b0261 squid-4.7
-		if tar xzf install/c_icap/c_icap-0.5.5.tar.gz; then
-			echo -e "Packages Extracted Successfully.."
-		else
-			echo -e "Failed to extract i-cap Package, can not continue"
-			read -p "Press [Enter] to exit."
-			cd $ORIG_DIR
-			return -1
-		fi
-	else
-		echo -e "Failed to extract Squid Package, can not continue"
+		echo -e "Failed to extract i-cap Package, can not continue"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
 		return -1
 	fi
+else
+	echo -e "Failed to extract Squid Package, can not continue"
+	read -p "Press [Enter] to exit."
+	cd $ORIG_DIR
+	return -1
 fi
+#fi
 
 #SQUID:
 echo -e "\nSquid will now be installed to $NEW_DIR/Packages"
@@ -168,6 +199,7 @@ else
 			if sudo make install; then
 				cd ../
 				if sudo cp install/squid/squid.conf /usr/local/squid/etc/; then
+					sudo chmod 777 /usr/local/squid -R
 					echo -e "Squid Installed Successfully."
 				else
 					echo -e "Failed to copy squid.conf to local directory."
@@ -247,9 +279,12 @@ else
 						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en	; then		
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
+								sudo cp install/BizRules.cfg $NEW_DIR
+								sudo mkdir -p /var/run/c-icap
 								retval=$?
 							else
 								retval=$?
+							fi
 						else
 							retval=$?
 						fi
@@ -279,5 +314,21 @@ else
 fi
 
 echo -e "\n*** Installation Completed Successfully."
+echo -e "to run squid use the following command:"
+echo -e "     sudo /usr/local/squid/sbin/squid -N -d 1"
+echo -e "to run c-icap use the following command:"
+echo -e "     sudo /usr/local/bin/c-icap -N -D -d 1"
+echo -e "\nFor help with these commands, run this script with the '-h' option:"
+echo -e "   . mspInstall.sh -h\n"
 cd $ORIG_DIR
 return 0
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
