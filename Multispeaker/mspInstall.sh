@@ -76,12 +76,13 @@ fi
 
 ORIG_DIR=$(pwd)
 
-echo "Enter the directory name to install Squid & c-icap to [default: /home/msspeak]:"
-echo "  *** WARNING: any existing files in this directory will be deleted. ***"
-read NEW_DIR
-if [ -z "$NEW_DIR" ]; then
-	NEW_DIR="/home/msspeak"
-fi
+#echo "Enter the directory name to install Squid & c-icap to [default: /home/msspeak]:"
+#echo "  *** WARNING: any existing files in this directory will be deleted. ***"
+#read NEW_DIR
+#if [ -z "$NEW_DIR" ]; then
+#	NEW_DIR="/home/msspeak"
+#fi
+NEW_DIR="/home/msspeak"
 
 #if [ ! -d "$NEW_DIR" ]; then
 #	mkdir -p $NEW_DIR
@@ -114,6 +115,7 @@ fi
 #fi
 
 echo -e "\nThe MS-SPEAK source repository will now be cloned to" $NEW_DIR
+echo "  *** WARNING: any existing files in this directory will be deleted. ***"
 echo -e "Press [Enter] to clone, 'S' to skip this step, or 'N' to terminate completely:"
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
