@@ -1,9 +1,13 @@
-#!/bin/bash -x
-#
+#!/bin/bash -x -e
+#   -x runs in debug mode, -e exits if any command fails
 #  retrieve this file from the repository:
 #		wget https://raw.githubusercontent.com/pnnl/ms-speak/Phase2/Multispeaker/mspInstall.sh
 #
-
+#	if ERROR: The certificate of ‘raw.githubusercontent.com’ is not trusted.
+#	   ERROR: The certificate of ‘raw.githubusercontent.com’ hasn't got a known issuer.
+#			If you are using Debian or Ubuntu operating system please install the package
+#   			sudo apt-get install ca-certificates
+#
 ORIG_DIR=
 NEW_DIR=
 
@@ -31,7 +35,7 @@ fi
 
 # required packages
 echo -e "The Following required packages will now be installed:"
-echo -e "    libglib2.0-dev, libxml2-dev, libxml2 & uuid-dev"
+echo -e "    g++, libglib2.0-dev, libxml2-dev, libxml2 & uuid-dev git"
 echo -e "\nPress just the [Enter] key to continue with this Installation, or"
 echo -e "  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:"
 read DO_INSTALL
@@ -45,25 +49,35 @@ if [ ! -z "$DO_INSTALL" ]; then
 	fi
 else
 	echo -e "Installing Required Packages..."
-	if sudo apt-get install libglib2.0-dev; then
-		if sudo apt-get install libxml2; then
-			if sudo apt-get install libxml2-dev; then
-				if sudo apt-get install uuid-dev; then
-					echo -e "\n*** Successfully Installed required packages"
+	if sudo apt-get install g++; then
+		if sudo apt-get install libglib2.0-dev; then
+			if sudo apt-get install libxml2; then
+				if sudo apt-get install libxml2-dev; then
+					if sudo apt-get install uuid-dev; then
+						if sudo apt-get install git; then
+							echo -e "\n*** Successfully Installed required packages"
+						else
+							echo -e "Failed to Install git, can not continue"
+							false
+						fi
+					else
+						echo -e "Failed to Install uuid-dev, can not continue"
+						false
+					fi
 				else
-					echo -e "Failed to Install uuid-dev, can not continue"
+					echo -e "Failed to Install libxml2-dev, can not continue"
 					false
 				fi
 			else
-				echo -e "Failed to Install libxml2-dev, can not continue"
+				echo -e "Failed to Install libxml2, can not continue"
 				false
 			fi
 		else
-			echo -e "Failed to Install libxml2, can not continue"
+			echo -e "Failed to Install libglib2.0-dev, can not continue"
 			false
 		fi
 	else
-		echo -e "Failed to Install libglib2.0-dev, can not continue"
+		echo -e "Failed to Install g++, can not continue"
 		false
 	fi
 	retval=$?
@@ -75,33 +89,35 @@ else
 fi
 
 ORIG_DIR=$(pwd)
+SUBDIR="msspeak"
+echo "Enter the sub-directory name to install Squid & c-icap to [default: $SUBDIR]:"
+echo "   NOTE: files will be installed as a sub-directory of the current folder: $(pwd)"
+echo "  *** WARNING: any existing files in this directory will be deleted. ***"
+read SUBDIR
+if [ -z "$SUBDIR" ]; then
+	SUBDIR="msspeak"
+fi
+NEW_DIR="$(pwd)/msspeak"
+#NEW_DIR="/home/msspeak"
 
-#echo "Enter the directory name to install Squid & c-icap to [default: /home/msspeak]:"
-#echo "  *** WARNING: any existing files in this directory will be deleted. ***"
-#read NEW_DIR
-#if [ -z "$NEW_DIR" ]; then
-#	NEW_DIR="/home/msspeak"
-#fi
-NEW_DIR="/home/msspeak"
-
-#if [ ! -d "$NEW_DIR" ]; then
-#	mkdir -p $NEW_DIR
-#fi
+if [ ! -d "$NEW_DIR" ]; then
+	mkdir -p $NEW_DIR
+fi
 #
-#echo -e "Installing to $NEW_DIR"
-#cd $NEW_DIR
-#retval=$?
-#if [ $retval -ne 0 ]; then
-#	echo -e "Failed to change to $NEW_DIR"
-#	return -1
-#else
-#	cd ../
-#	retval=$?
-#	if [ $retval -ne 0 ]; then
-#		echo -e "Failed to change to parent of $NEW_DIR"
-#		return -1
-#	fi
-#fi
+echo -e "Installing to $NEW_DIR"
+cd $NEW_DIR
+retval=$?
+if [ $retval -ne 0 ]; then
+	echo -e "Failed to change to $NEW_DIR"
+	return -1
+else
+	cd ../
+	retval=$?
+	if [ $retval -ne 0 ]; then
+		echo -e "Failed to change to parent of $NEW_DIR"
+		return -1
+	fi
+fi
 
 #echo -e "Press [Enter] key to continue with the Installation, else 'N' to terminate:"
 #read DO_INSTALL
@@ -114,6 +130,7 @@ NEW_DIR="/home/msspeak"
 #	return -1
 #fi
 
+SKIP=0;
 echo -e "\nThe MS-SPEAK source repository will now be cloned to" $NEW_DIR
 echo "  *** WARNING: any existing files in this directory will be deleted. ***"
 echo -e "Press [Enter] to clone, 'S' to skip this step, or 'N' to terminate completely:"
@@ -122,6 +139,7 @@ if [ ! -z "$DO_INSTALL" ]; then
 	echo -e "Cloning of Repository Cancelled."
 	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
 		echo -e "Skipping this step."
+		SKIP=1;
 	else
 		echo -e "Installation Terminated.\n"
 		cd $ORIG_DIR
@@ -162,21 +180,23 @@ cd $NEW_DIR/Packages
 #		return -1
 #	fi
 #else
-if tar xzf install/squid/squid-4.7.tar.gz; then
-	mv squid-4.7-20190507-r2e17b0261 squid-4.7
-	if tar xzf install/c_icap/c_icap-0.5.5.tar.gz; then
-		echo -e "Packages Extracted Successfully.."
+if [ $SKIP -eq 0 ]; then
+	if tar xzf install/squid/squid-4.7.tar.gz; then
+		mv squid-4.7-20190507-r2e17b0261 squid-4.7
+		if tar xzf install/c_icap/c_icap-0.5.5.tar.gz; then
+			echo -e "Packages Extracted Successfully.."
+		else
+			echo -e "Failed to extract i-cap Package, can not continue"
+			read -p "Press [Enter] to exit."
+			cd $ORIG_DIR
+			return -1
+		fi
 	else
-		echo -e "Failed to extract i-cap Package, can not continue"
+		echo -e "Failed to extract Squid Package, can not continue"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
 		return -1
 	fi
-else
-	echo -e "Failed to extract Squid Package, can not continue"
-	read -p "Press [Enter] to exit."
-	cd $ORIG_DIR
-	return -1
 fi
 #fi
 
@@ -214,9 +234,9 @@ else
 			retval=$?
 		fi
 	else
-		retval=$?
+		retval=1
 	fi
-	retval=$?
+	#retval=$?
 	if [ $retval -ne 0 ]; then
 		echo -e "Failed to Successfully Install Squid, can not continue"
 		read -p "Press [Enter] to exit."
@@ -283,6 +303,7 @@ else
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
 								sudo cp install/BizRules.cfg $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
+								sudo ln -s $NEW_DIR /home/msspeak
 								retval=$?
 							else
 								retval=$?
@@ -312,6 +333,7 @@ else
 		return -1
 	else
 		echo -e "c-icap Installed Successfully."
+		sudo ldconfig
 	fi
 fi
 
@@ -324,6 +346,9 @@ echo -e "\nFor help with these commands, run this script with the '-h' option:"
 echo -e "   . mspInstall.sh -h\n"
 cd $ORIG_DIR
 return 0
+# cd /usr/local/bin
+# sudo ln -s /home/carl/mspInstall/msspeak /home/msspeak
+# sudo ln -s $NEW_DIR /home/msspeak
 
 	
 	
