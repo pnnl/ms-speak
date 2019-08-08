@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>IdsEditorClass</class>
+ <widget class="QMainWindow" name="IdsEditorClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>IDS Editor</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="IdsEditor.qrc">
+    <normaloff>:/IdsEditor/Resources/icon.png</normaloff>:/IdsEditor/Resources/icon.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Business Rules</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QToolButton" name="NewBtn">
+        <property name="toolTip">
+         <string>New Business Rule</string>
+        </property>
+        <property name="text">
+         <string>New</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="EditBtn">
+        <property name="toolTip">
+         <string>Edit Selected Business Rule</string>
+        </property>
+        <property name="text">
+         <string>Edit</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="DeleteBtn">
+        <property name="toolTip">
+         <string>Delete Selected Business Rule</string>
+        </property>
+        <property name="text">
+         <string>Delete</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QTreeView" name="RulesTreeView"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="MenuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>600</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="FileMenu">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="FileNewAct"/>
+    <addaction name="FileOpenAct"/>
+    <addaction name="FileSaveAct"/>
+    <addaction name="FileSaveAsAct"/>
+    <addaction name="separator"/>
+    <addaction name="QuitAct"/>
+    <addaction name="separator"/>
+    <addaction name="LogAct"/>
+   </widget>
+   <widget class="QMenu" name="HelpMenu">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="HelpAct"/>
+    <addaction name="HelpAboutAct"/>
+    <addaction name="HelpLicensingAct"/>
+   </widget>
+   <addaction name="FileMenu"/>
+   <addaction name="HelpMenu"/>
+  </widget>
+  <widget class="QStatusBar" name="StatusBar"/>
+  <action name="FileNewAct">
+   <property name="text">
+    <string>&amp;New</string>
+   </property>
+  </action>
+  <action name="FileOpenAct">
+   <property name="text">
+    <string>&amp;Open</string>
+   </property>
+  </action>
+  <action name="FileSaveAct">
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="FileSaveAsAct">
+   <property name="text">
+    <string>Save &amp;As</string>
+   </property>
+  </action>
+  <action name="QuitAct">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+  </action>
+  <action name="LogAct">
+   <property name="text">
+    <string>&amp;Log</string>
+   </property>
+  </action>
+  <action name="HelpAct">
+   <property name="text">
+    <string>&amp;Help</string>
+   </property>
+  </action>
+  <action name="HelpAboutAct">
+   <property name="text">
+    <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="HelpLicensingAct">
+   <property name="text">
+    <string>&amp;Licensing</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="IdsEditor.qrc"/>
+ </resources>
+ <connections/>
+</ui>

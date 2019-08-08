@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="IdsEditor">
+      <file>Resources/fileopen.png</file>
+      <file>Resources/icon.png</file>
+      <file>Resources/refresh.png</file>
+      <file>Resources/userguide.pdf</file>
+    </qresource>
+</RCC>
