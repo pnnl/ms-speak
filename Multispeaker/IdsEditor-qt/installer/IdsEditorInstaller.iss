@@ -7,18 +7,18 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{5959F35E-1AC0-4AE2-A9B2-ED0F2DBC5FBE}}
 AppName=IdsEditor
-AppVersion=19.08.08
-AppVerName=IdsEditor - 19.08.08
+AppVersion=19.08.09
+AppVerName=IdsEditor - 19.08.09
 AppPublisher=LMI Developments, LLC
 ArchitecturesInstallIn64BitMode=x64
 DefaultDirName={pf}\LMIDevelopments\IdsEditor
 DefaultGroupName=LMIDevelopments\IdsEditor
-OutputBaseFilename=IdsEditor-19.08.08-win10-setup
+OutputBaseFilename=IdsEditor-19.08.09-win10-setup
 Compression=lzma
 SolidCompression=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
-VersionInfoVersion=19.08.08
+VersionInfoVersion=19.08.09
 VersionInfoCompany=LMIDevelopments, LLC
 SetupIconFile="..\x64\Release\icon.ico"
 

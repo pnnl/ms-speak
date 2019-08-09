@@ -16,7 +16,7 @@
 #include <QStringList>
 
 // Version
-const QString SOFTWARE_VERSION = QStringLiteral("19.08.08");
+const QString SOFTWARE_VERSION = QStringLiteral("19.08.09");
 const QString SOFTWARE_ABOUT = QString("<center><h2>IDS Editor - MS-SPEAK</h2><h4>Copyright 2019</h4><h4>LMI Developments, LLC</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
 // Log Consts
@@ -41,12 +41,12 @@ const QString METERING_MANAGEMENT = QStringLiteral("Metering Management");
 const QString OUTAGE_MANAGEMENT = QStringLiteral("Outage Management");
 
 // EndPoints
-const QString CB_SERVER = QStringLiteral("CB Server");
-const QString CD_SERVER = QStringLiteral("CD Server");
-const QString MDM_SERVER = QStringLiteral("MDM Server");
-const QString MR_SERVER = QStringLiteral("MR Server");
-const QString OD_SERVER = QStringLiteral("OD Server");
-const QString PG_SERVER = QStringLiteral("PG Server");
+const QString CB_SERVER = QStringLiteral("CB_Server");
+const QString CD_SERVER = QStringLiteral("CD_Server");
+const QString MDM_SERVER = QStringLiteral("MDM_Server");
+const QString MR_SERVER = QStringLiteral("MR_Server");
+const QString OD_SERVER = QStringLiteral("OD_Server");
+const QString PG_SERVER = QStringLiteral("PG_Server");
 
 // CB Methods
 const QString CHANGE_CUSTOMER_DATA = QStringLiteral("ChangeCustomerData");
