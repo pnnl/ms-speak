@@ -1,9 +1,0 @@
-
-to start the pipeline
-    cd ./JabbaPipe
-    see Runas.txt
-
-
-to start the V5 Server and/or the V3 Client (in lieu of running MultiSpeaker):
-    cd ./Jitm
-    see Runas.txt 
