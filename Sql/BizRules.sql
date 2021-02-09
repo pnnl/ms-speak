@@ -2,6 +2,10 @@
 --     sqlite3 BizRules.db < BizRules.sql
 --	dot commands are allowed, but must be lowercase
 
+-- can wrap commands around Begin/Commit:
+--		BEGIN;
+--		COMMIT;
+
 -- create tester table
 CREATE TABLE [Testers] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
@@ -83,25 +87,19 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), "InitiateEndDevicePings"); 
 
 -- create rules table
+--    Check that rule to be inserted has method EP id == the Endpoint ID
 CREATE TABLE [Rules] ( 
-	[Id] INTEGER NOT NULL, 
+	[Id] INTEGER NOT NULL PRIMARY KEY, 
 	[Tester] INTEGER NOT NULL, 
 	[Endpoint] INTEGER NOT NULL, 
 	[Method] INTEGER NOT NULL, 
-	[maxTemp] INTEGER NOT NULL,
-	[minTemp] INTEGER NOT NULL,
-	[maxHour] INTEGER NOT NULL,
-	[minHour] INTEGER NOT NULL,
-	[numReq] INTEGER NOT NULL,
-	[email] NVARCHAR(50) NOT NULL,
-	PRIMARY KEY(Tester,Endpoint,Method)
+	[maxTemp] INTEGER,
+	[minTemp] INTEGER,
+	[maxHour] INTEGER,
+	[minHour] INTEGER,
+	[numReq] INTEGER,
+	[email] NVARCHAR(50),
+	UNIQUE(Tester,Endpoint,Method)
 ); 
 
--- .open BizRules.db
-.tables
-select * from Testers;
-select * from Functions;
-select * from EndPoints;
-select * from Methods;
-select * from Rules;
 .exit
