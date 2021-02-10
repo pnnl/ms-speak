@@ -52,10 +52,13 @@
 //	History
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
+//		02.09.2021 CHM - Populate from Sqlite DB.
 //-------------------------------------------------------------------------------
 //
 // Summary: IdsEditor.cpp
 //-------------------------------------------------------------------------------
+// https://doc.qt.io/qt-5/sql-programming.html
+// https://doc.qt.io/qt-5/examples-sql.html
 
 #include <QDesktopServices>
 #include <QDir>
@@ -70,7 +73,7 @@
 
 #include "IdsEditor.h"
 #include "IdsSettings.h"
-#include "LogDockWidget.h"
+//#include "LogDockWidget.h"
 #include "Rule.h"
 #include "RuleConst.h"
 #include "RuleEditor.h"
@@ -83,9 +86,10 @@ bool CLEAR_SETTINGS_ON_EXIT = false; // Used for the clear settings shortcut fea
 IdsEditor::IdsEditor(QWidget* parent)
 	: QMainWindow(parent),
 	  m_clearSettingsShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+C")), this, SLOT(OnClearSettings())),
-	  m_iniFileName(QSettings().value(SK_INI_FILE_NAME, INI_FILE_NAME).toString()),
-	  m_logDock(Q_NULLPTR),
-	  m_logFileName(QSettings().value(SK_LOG_FILE_NAME, LOG_FILE_NAME).toString())
+	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString()),
+	  m_iniFileName(QSettings().value(SK_INI_FILE_NAME, INI_FILE_NAME).toString())
+	  //,m_logDock(Q_NULLPTR),
+	  //m_logFileName(QSettings().value(SK_LOG_FILE_NAME, LOG_FILE_NAME).toString())
 {
 	ui.setupUi(this);
 	setWindowTitle(QStringLiteral("IDS Editor %1").arg(SOFTWARE_VERSION));
@@ -97,17 +101,22 @@ IdsEditor::IdsEditor(QWidget* parent)
 	ui.RulesTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
 	ui.RulesTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-	statusBar()->addWidget(&m_iniFileNameLabel);
-	m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
+	//statusBar()->addWidget(&m_iniFileNameLabel);
+	//m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
+	statusBar()->addWidget(&m_dbFileNameLabel);
+	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 
-	connect(ui.FileNewAct, SIGNAL(triggered()), this, SLOT(OnFileNew()));
 	connect(ui.FileOpenAct, SIGNAL(triggered()), this, SLOT(OnFileOpen()));
 	connect(ui.FileSaveAct, SIGNAL(triggered()), this, SLOT(OnFileSave()));
-	connect(ui.FileSaveAsAct, SIGNAL(triggered()), this, SLOT(OnFileSaveAs()));
+	/* not supporting creating new DBs
+	//connect(ui.FileNewAct, SIGNAL(triggered()), this, SLOT(OnFileNew()));
+	//connect(ui.FileSaveAsAct, SIGNAL(triggered()), this, SLOT(OnFileSaveAs()));
+	*/
+
 	connect(ui.HelpAboutAct, SIGNAL(triggered()), this, SLOT(OnAbout()));
 	connect(ui.HelpAct, SIGNAL(triggered()), this, SLOT(OnHelp()));
 	connect(ui.HelpLicensingAct, SIGNAL(triggered()), this, SLOT(OnAboutQt()));
-	connect(ui.LogAct, SIGNAL(triggered()), this, SLOT(OnLogDock()));
+	//connect(ui.LogAct, SIGNAL(triggered()), this, SLOT(OnLogDock()));
 	connect(ui.QuitAct, SIGNAL(triggered()), this, SLOT(OnQuit()));
 
 	connect(ui.DeleteBtn, SIGNAL(clicked()), this, SLOT(OnRuleDelete()));
@@ -117,7 +126,7 @@ IdsEditor::IdsEditor(QWidget* parent)
 	connect(ui.RulesTreeView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(OnRulesTreeViewDoubleClicked(const QModelIndex&)));
 
 	QTimer::singleShot(100, this, SLOT(OnRestoreState())); // Restore State after Docks Created
-	QTimer::singleShot(100, this, SLOT(OnReadIniFile()));
+	QTimer::singleShot(100, this, SLOT(OnReadDbFile()));  // OnReadIniFile
 }
 //-------------------------------------------------------------------------------
 // ~IdsEditor
@@ -127,36 +136,17 @@ IdsEditor::~IdsEditor()
 	qDeleteAll(m_sections);
 	m_sections.clear();
 }
-//------------------------------------------------------------------------------
-// closeEvent
-//
-void IdsEditor::closeEvent(QCloseEvent* e)
-{
-	SaveState();
 
-	// If the user has enabled the clear settings on exit ctrl-shift-c hot key combo, then clear them after save state called
-	if (CLEAR_SETTINGS_ON_EXIT)
-		QSettings().clear();
-
-	if (!WriteIniFile(m_iniFileName))
-	{
-		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 QStringLiteral("Unable to Save File: %1").arg(m_iniFileName),
-							 QMessageBox::Ok,
-							 QMessageBox::Ok);
-	}
-
-	QMainWindow::closeEvent(e);
-}
 //------------------------------------------------------------------------------
 // CreateLogDock
-//
+/*
 void IdsEditor::CreateLogDock()
 {
 	m_logDock = new LogDockWidget(QStringLiteral("Log"), m_logFileName, this);
 	connect(m_logDock, SIGNAL(LogFileChanged(const QString&)), this, SLOT(OnLogFileChanged(const QString&)));
 	addDockWidget(Qt::BottomDockWidgetArea, m_logDock);
-}
+}*/
+
 //------------------------------------------------------------------------------
 // Edit
 //
@@ -190,6 +180,7 @@ void IdsEditor::Edit(const QModelIndex& index)
 		}
 	}
 }
+
 //------------------------------------------------------------------------------
 // ModelIndexByKeyAndRole
 //
@@ -205,9 +196,23 @@ QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& section, int role)
 	else
 		return QModelIndex();
 }
+
+//------------------------------------------------------------------------------
+// ReadDbFile
+//
+void IdsEditor::ReadDbFile(const QString& fileName)
+{
+	qDeleteAll(m_sections);
+	m_sections.clear();
+
+	if( !fileName.isEmpty() )
+		UpdateSectionModel();
+
+}
+
 //------------------------------------------------------------------------------
 // ReadIniFile
-//
+/*
 void IdsEditor::ReadIniFile(const QString& fileName)
 {
 	qDeleteAll(m_sections);
@@ -277,6 +282,8 @@ void IdsEditor::ReadIniFile(const QString& fileName)
 	}
 	UpdateSectionModel();
 }
+*/
+
 //------------------------------------------------------------------------------
 // RestoreGeometry
 //
@@ -284,6 +291,7 @@ void IdsEditor::RestoreGeometry()
 {
 	restoreGeometry(QSettings().value(SK_MAIN_GEOMETRY).toByteArray());
 }
+
 //------------------------------------------------------------------------------
 // RestoreState
 //
@@ -291,6 +299,7 @@ void IdsEditor::RestoreState()
 {
 	restoreState(QSettings().value(SK_MAIN_STATE).toByteArray());
 }
+
 //------------------------------------------------------------------------------
 // RuleItem
 //
@@ -298,6 +307,7 @@ QStandardItem* IdsEditor::RuleItem(const QString& ruleKey)
 {
 	return m_sectionModel.itemFromIndex(ModelIndexByKeyAndRole(ruleKey, ROLE_RULE_KEY));
 }
+
 //------------------------------------------------------------------------------
 // SaveGeometry
 //
@@ -305,6 +315,7 @@ void IdsEditor::SaveGeometry()
 {
 	QSettings().setValue(SK_MAIN_GEOMETRY, saveGeometry());
 }
+
 //------------------------------------------------------------------------------
 // SaveState
 //
@@ -312,6 +323,7 @@ void IdsEditor::SaveState()
 {
 	QSettings().setValue(SK_MAIN_STATE, saveState());
 }
+
 //------------------------------------------------------------------------------
 // SectionItem
 //
@@ -319,6 +331,7 @@ QStandardItem* IdsEditor::SectionItem(const QString& ruleKey)
 {
 	return m_sectionModel.itemFromIndex(ModelIndexByKeyAndRole(ruleKey, ROLE_SECTION_KEY));
 }
+
 //------------------------------------------------------------------------------
 // UpdateSectionModel
 //
@@ -339,19 +352,21 @@ void IdsEditor::UpdateSectionModel()
 		}
 	}
 }
+
 //------------------------------------------------------------------------------
 // WriteIniFile
 //
 bool IdsEditor::WriteIniFile(const QString& fileName)
 {
+	// TODO: write ini file from DB, append Testername etc.
 	QFile file(fileName);
 	if (file.open(QIODevice::WriteOnly))
 	{
 		QTextStream out(&file);
 
 		// Log File
-		out << SETTINGS_GROUP << Qt::endl;
-		out << QStringLiteral("%1 = %2").arg(SETTINGS_LOG_FILE, m_logFileName) << Qt::endl << Qt::endl;
+		//out << SETTINGS_GROUP << Qt::endl;
+		//out << QStringLiteral("%1 = %2").arg(SETTINGS_LOG_FILE, m_logFileName) << Qt::endl << Qt::endl;
 
 		// Rules
 		for (RuleSection* section : m_sections)
@@ -361,6 +376,7 @@ bool IdsEditor::WriteIniFile(const QString& fileName)
 	}
 	return false;
 }
+
 //------------------------------------------------------------------------------
 // OnAbout
 //
@@ -368,6 +384,7 @@ void IdsEditor::OnAbout()
 {
 	QMessageBox::about(this, QStringLiteral("IDS Editor"), SOFTWARE_ABOUT);
 }
+
 //------------------------------------------------------------------------------
 // OnAboutQt
 //
@@ -375,6 +392,7 @@ void IdsEditor::OnAboutQt()
 {
 	QMessageBox::aboutQt(this, QStringLiteral("Qt License"));
 }
+
 //------------------------------------------------------------------------------
 // OnClearSettings
 //
@@ -386,28 +404,30 @@ void IdsEditor::OnClearSettings()
 		CLEAR_SETTINGS_ON_EXIT = true;
 	}
 }
-//------------------------------------------------------------------------------
-// OnFileNew
-//
-void IdsEditor::OnFileNew()
-{
-	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Biz Rules Config File"),
-													m_iniFileName, QStringLiteral("Config File (*.cfg);; All (*.*)"));
 
-	if (fileName.isEmpty())
-		return;
-
-	m_iniFileName = fileName;
-	ReadIniFile(m_iniFileName);
-	UpdateSectionModel();
-
-	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
-	m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
-}
 //------------------------------------------------------------------------------
 // OnFileOpen
 //
 void IdsEditor::OnFileOpen()
+{
+	QString fileName = QFileDialog::getOpenFileName(this, QStringLiteral("Business Rules Database"),
+													m_dbFileName, QStringLiteral("Sqlite DB File (*.db)"));
+
+	if (fileName.isEmpty())
+		return;
+
+	m_dbFileName = fileName;
+	ReadDbFile(m_dbFileName);
+	UpdateSectionModel();
+
+	QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
+	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
+}
+
+//------------------------------------------------------------------------------
+// OnFileOpenIni
+/*
+void IdsEditor::OnFileOpenIni()
 {
 	QString fileName = QFileDialog::getOpenFileName(this, QStringLiteral("Biz Rules Config File"),
 													m_iniFileName, QStringLiteral("Config File (*.cfg);; All (*.*)"));
@@ -421,17 +441,39 @@ void IdsEditor::OnFileOpen()
 
 	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
 	m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
-}
+}*/
+
 //------------------------------------------------------------------------------
 // OnFileSave
 //
-void IdsEditor::OnFileSave()
+bool IdsEditor::OnFileSave()
 {
-	WriteIniFile(m_iniFileName);
+	// Todo: save DB, or update as we go along?
+	return WriteIniFile(m_iniFileName);
 }
+
+//------------------------------------------------------------------------------
+// OnFileNew
+/*
+void IdsEditor::OnFileNew()
+{
+	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Biz Rules Config File"),
+													m_iniFileName, QStringLiteral("Config File (*.cfg);; All (*.*)"));
+
+	if (fileName.isEmpty())
+		return;
+
+	m_iniFileName = fileName;
+	ReadIniFile(m_iniFileName);
+	UpdateSectionModel();
+
+	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
+	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
+}*/
+
 //------------------------------------------------------------------------------
 // OnFileSaveAs
-//
+/*
 void IdsEditor::OnFileSaveAs()
 {
 	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Biz Rules Config File"),
@@ -443,8 +485,33 @@ void IdsEditor::OnFileSaveAs()
 	m_iniFileName = fileName;
 
 	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
-	m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
+	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
+}*/
+
+//------------------------------------------------------------------------------
+// closeEvent
+//
+void IdsEditor::closeEvent(QCloseEvent* e)
+{
+	SaveState();
+
+	// If the user has enabled the clear settings on exit ctrl-shift-c hot key combo, then clear them after save state called
+	if (CLEAR_SETTINGS_ON_EXIT)
+		QSettings().clear();
+
+	//if (!WriteIniFile(m_iniFileName))
+	if( !OnFileSave() )
+	{
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 //QStringLiteral("Unable to Save File: %1").arg(m_iniFileName),
+							 QStringLiteral("Unable to Save File: %1").arg(m_dbFileName),
+							 QMessageBox::Ok,
+							 QMessageBox::Ok);
+	}
+
+	QMainWindow::closeEvent(e);
 }
+
 //------------------------------------------------------------------------------
 // OnHelp
 //
@@ -452,13 +519,15 @@ void IdsEditor::OnHelp()
 {
 	QDesktopServices::openUrl(QUrl(QStringLiteral("file:///%1").arg(IDS_EDITOR_HELP_PDF), QUrl::TolerantMode));
 }
+
 //------------------------------------------------------------------------------
 // OnLogDock
-//
+/*
 void IdsEditor::OnLogDock()
 {
 	LogDock().show();
 }
+
 //------------------------------------------------------------------------------
 // OnLogFileChanged
 //
@@ -467,7 +536,8 @@ void IdsEditor::OnLogFileChanged(const QString& fileName)
 	m_logFileName = fileName;
 	QSettings().setValue(SK_LOG_FILE_NAME, m_logFileName);
 	WriteIniFile(m_iniFileName);
-}
+}*/
+
 //------------------------------------------------------------------------------
 // OnRuleDelete
 //
@@ -486,6 +556,7 @@ void IdsEditor::OnRuleDelete()
 		}
 	}
 }
+
 //------------------------------------------------------------------------------
 // OnRuleEdit
 //
@@ -498,6 +569,7 @@ void IdsEditor::OnRuleEdit()
 		break; // Only want first one
 	}
 }
+
 //------------------------------------------------------------------------------
 // OnRuleNew
 //
@@ -516,6 +588,7 @@ void IdsEditor::OnRuleNew()
 		UpdateSectionModel();
 	}
 }
+
 //------------------------------------------------------------------------------
 // OnRulesTreeViewDoubleClicked
 //
@@ -523,6 +596,7 @@ void IdsEditor::OnRulesTreeViewDoubleClicked(const QModelIndex& index)
 {
 	Edit(index);
 }
+
 //------------------------------------------------------------------------------
 // OnToolBarVisibilityChanged
 //

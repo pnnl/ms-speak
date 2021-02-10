@@ -1,12 +1,63 @@
+/*-------------------------------------------------------------------------------
+
+  Multi-Speak - Secure Protocol Enterprise Access Kit(MS_SPEAK)
+  Copyright © 2021, Battelle Memorial Institute
+  All rights reserved.
+  1.	Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or
+		entity lawfully obtaining a copy of this software and associated documentation files
+		(hereinafter “the Software”) to redistribute and use the Software in source and binary forms,
+		with or without modification.  Such person or entity may use, copy, modify, merge, publish,
+		distribute, sublicense, and/or sell copies of the Software, and may permit others to do so,
+		subject to the following conditions:
+		•	Redistributions of source code must retain the above copyright notice, this list of
+			conditions and the following disclaimers.
+		•	Redistributions in binary form must reproduce the above copyright notice, this list of
+			conditions and the following disclaimer in the documentation and/or other materials
+			provided with the distribution.
+		•	Other than as used herein, neither the name Battelle Memorial Institute or Battelle may
+			be used in any form whatsoever without the express written consent of Battelle.
+
+  2.	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+		OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+		AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL BATTELLE OR CONTRIBUTORS
+		BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+		(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+		OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+		CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+		OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+  This material was prepared as an account of work sponsored by an agency of the United States Government.
+  Neither the United States  Government nor the United States Department of Energy, nor Battelle, nor
+  any of their employees, nor any jurisdiction or organization  that has cooperated in the development
+  of these materials, makes any warranty, express or implied, or assumes any legal liability or
+  responsibility for the accuracy, completeness, or usefulness or any information, apparatus, product,
+  software, or process disclosed, or represents that its use would not infringe privately owned rights.
+  Reference herein to any specific commercial product, process, or service by trade name, trademark,
+  manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or
+  favoring by the United States Government or any agency thereof, or Battelle Memorial Institute. The
+  views and opinions of authors expressed herein do not necessarily state or reflect those of the
+  United States Government or any agency thereof.
+									 PACIFIC NORTHWEST NATIONAL LABORATORY
+												operated by
+												  BATTELLE
+												  for the
+									  UNITED STATES DEPARTMENT OF ENERGY
+									   under Contract DE-AC05-76RL01830
+
+
+	This notice including this sentence must appear on any copies of this computer software.
+*/
 //-------------------------------------------------------------------------------
-// This code created by LMI Developments, LLC
+//	History
+//		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
+//                  Lance Irvine, LMI Developments, LLC.
+//		02.09.2021 CHM - Populate from Sqlite DB, added m_dbFileName.
+//-------------------------------------------------------------------------------
 //
-// Copyright 2019.  All Rights Reserved.
-//
-//  Created By: Lance Irvine
-//
-//  IdsEditor
-// 
+// Summary: IdsEditor.cpp
+//-------------------------------------------------------------------------------
+
 
 #ifndef IDSEDITOR_H
 #define IDSEDITOR_H
@@ -26,10 +77,11 @@ class IdsEditor : public QMainWindow
 private:
 	Ui::IdsEditorClass ui;
 	QShortcut m_clearSettingsShortcut;
+	QString m_dbFileName;
 	QString m_iniFileName;
-	QLabel m_iniFileNameLabel;
-	LogDockWidget* m_logDock;
-	QString m_logFileName;
+	QLabel m_dbFileNameLabel; // m_iniFileNameLabel
+	//LogDockWidget* m_logDock;
+	//QString m_logFileName;
 	QStandardItemModel m_sectionModel;
 	QHash<QString, RuleSection*> m_sections; // Key is section Name
 
@@ -45,11 +97,12 @@ protected:
 private:
 	void CreateLogDock();
 	void Edit(const QModelIndex& index);
-	LogDockWidget& LogDock() { if (!m_logDock) CreateLogDock(); return *m_logDock; }
+	//LogDockWidget& LogDock() { if (!m_logDock) CreateLogDock(); return *m_logDock; }
 
 	QModelIndex ModelIndexByKeyAndRole(const QString& key, int role);
 
-	void ReadIniFile(const QString& fileName);
+	void ReadDbFile(const QString& fileName);
+	//void ReadIniFile(const QString& fileName);
 	void RestoreGeometry();
 	void RestoreState();
 	QStandardItem* RuleItem(const QString& ruleKey);
@@ -63,15 +116,16 @@ private slots:
 	void OnAbout();
 	void OnAboutQt();
 	void OnClearSettings();
-	void OnFileNew();
+	//void OnFileNew();
+	//void OnFileSaveAs();  maybe make this OnFileExport to save as ini file
+	//void OnLogDock();
+	//void OnLogFileChanged(const QString& fileName);
+	//void OnReadIniFile() { ReadIniFile(m_iniFileName); }
 	void OnFileOpen();
-	void OnFileSave();
-	void OnFileSaveAs();
+	bool OnFileSave();
 	void OnHelp();
-	void OnLogDock();
-	void OnLogFileChanged(const QString& fileName);
 	void OnQuit() { close(); }
-	void OnReadIniFile() { ReadIniFile(m_iniFileName); }
+	void OnReadDbFile() { ReadDbFile(m_dbFileName); }
 	void OnRestoreState() { RestoreState(); }
 	void OnRuleDelete();
 	void OnRuleEdit();

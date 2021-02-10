@@ -69,8 +69,8 @@ const QString SOFTWARE_VERSION = QStringLiteral("21.02.07");
 const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Business Rule Editor</h3><h4>Copyright 2021</h4><h4>Pacific Northwest National Laboratory</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
 // Log Consts
-const QString SETTINGS_GROUP = QStringLiteral("[Settings]");
-const QString SETTINGS_LOG_FILE = QStringLiteral("LogFile");
+//const QString SETTINGS_GROUP = QStringLiteral("[Settings]");
+//const QString SETTINGS_LOG_FILE = QStringLiteral("LogFile");
 
 // Rule Types
 const QString RULE_TYPE_MAX_VALUE = QStringLiteral("MaxValue");
