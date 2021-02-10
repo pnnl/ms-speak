@@ -6,10 +6,15 @@
 --		BEGIN;
 --		COMMIT;
 
--- create tester table
+-- note: may want to have the DB be ephemeral, exist only
+--		in memory so as to not leave a digital signature.
+--		except then the testers would have to recreate all their rules each time
+
+-- create tester table, should these actually be IPs ?
 CREATE TABLE [Testers] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Name] NVARCHAR(50) NOT NULL  
+	[Name] NVARCHAR(50) NOT NULL,
+	UNIQUE(Name)
 ); 
 insert into Testers (Name) VALUES ('Carl');
 insert into Testers (Name) VALUES ('Tom M');
@@ -18,7 +23,8 @@ insert into Testers (Name) VALUES ('Tom Valdez');
 -- create Functions table
 CREATE TABLE [Functions] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Name] NVARCHAR(50) NOT NULL  
+	[Name] NVARCHAR(50) NOT NULL,
+	UNIQUE(Name)	
 ); 
 insert into Functions (Name) VALUES ("Customer Billing");
 insert into Functions (Name) VALUES ("Metering Management");
@@ -28,7 +34,8 @@ insert into Functions (Name) VALUES ("Outage Management");
 CREATE TABLE [EndPoints] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
 	[Function] INTEGER NOT NULL, 
-	[Name] NVARCHAR(50) NOT NULL  
+	[Name] NVARCHAR(50) NOT NULL,
+	UNIQUE(Name)	
 ); 
 -- set function keys
 INSERT INTO EndPoints (Function, Name ) VALUES 
@@ -47,8 +54,10 @@ INSERT INTO EndPoints (Function, Name ) VALUES
 -- create Methods table
 CREATE TABLE [Methods] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[EndPoint] INTEGER NOT NULL, 
-	[Name] NVARCHAR(50) NOT NULL  
+	[EndPoint] INTEGER NOT NULL,
+	[Name] NVARCHAR(50) NOT NULL,
+	UNIQUE(EndPoint, Name)
+	
 ); 
 -- set endpoint keys
 INSERT INTO Methods (EndPoint, Name ) VALUES 
@@ -57,7 +66,10 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), "ChangeMeterData"); 
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), "ChangeStreetLightData"); 
-INSERT INTO Methods (EndPoint, Name ) VALUES 
+INSERT INTO Methods (EndPoint, Name ) VALUES
+	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), "PingURL"); 	
+
+INSERT INTO Methods (EndPoint, Name ) VALUES
 	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), "GetCDSupportedMeters"); 	
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), "InitiateConnectDisconnect"); 	
@@ -67,39 +79,57 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), "SetCDDevicesDisabled"); 	
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), "SetCDDevicesEnabled"); 	
+INSERT INTO Methods (EndPoint, Name ) VALUES
+	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), "PingURL"); 	
+
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), "InitiateBillingDeterminants"); 
+INSERT INTO Methods (EndPoint, Name ) VALUES
+	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), "PingURL"); 	
+
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "GetLatestMeterReadings"); 
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "GetMeterReadingsByBillingCycle"); 
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "GetEndDeviceEventsByMeterIDs"); 
+INSERT INTO Methods (EndPoint, Name ) VALUES
+	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "PingURL"); 	
+
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), "ChangePaymentTransactions"); 
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), "ChangeRecurringPaymentConfiguration"); 
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), "ProcessPaymentTransactions"); 
+INSERT INTO Methods (EndPoint, Name ) VALUES
+	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), "PingURL"); 	
+
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), "GetMeterIDsByEndDeviceStateTypes"); 
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), "InitiateEndDevicePings"); 
+--INSERT INTO Methods (EndPoint, Name ) VALUES
+--	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), "PingURL"); 	
 
--- create rules table
---    Check that rule to be inserted has method EP id == the Endpoint ID
+
+-- create rules table - not sure if even need to have Id
+-- convert IPs:
+-- 	select (ip >> 24) || '.' || ((ip >> 16) & 255) || '.' || ((ip >> 8) &
+-- 		255) || '.' || (ip & 255) from mytable;
 CREATE TABLE [Rules] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
 	[Tester] INTEGER NOT NULL, 
 	[Endpoint] INTEGER NOT NULL, 
 	[Method] INTEGER NOT NULL, 
-	[maxTemp] INTEGER,
-	[minTemp] INTEGER,
-	[maxHour] INTEGER,
-	[minHour] INTEGER,
+	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),
+	[minTemp] INTEGER CHECK(minTemp >= -1 AND minTemp<150),
+	[maxHour] INTEGER CHECK(maxHour >= -1 AND maxHour<=23),
+	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),
 	[numReq] INTEGER,
 	[email] NVARCHAR(50),
-	UNIQUE(Tester,Endpoint,Method)
+	UNIQUE(Tester,Endpoint,Method),
+	CHECK (maxTemp > minTemp AND maxHour > minHour)
 ); 
 
 .exit
