@@ -68,6 +68,33 @@
 const QString SOFTWARE_VERSION = QStringLiteral("21.02.07");
 const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Business Rule Editor</h3><h4>Copyright 2021</h4><h4>Pacific Northwest National Laboratory</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
+// Rule Keys
+const QString RULE_KEY_MAXTEMP = QStringLiteral("maxTemp");
+const QString RULE_KEY_MAXTIME = QStringLiteral("maxHour");
+const QString RULE_KEY_MINTEMP = QStringLiteral("minTemp");
+const QString RULE_KEY_MINTIME = QStringLiteral("minHour");
+const QString RULE_KEY_NUMREQ = QStringLiteral("numReq");
+
+// Database
+// --- Tables
+const QString DB_TABLE_TESTERS = QStringLiteral("Testers");
+const QString DB_TABLE_FUNCTIONS = QStringLiteral("Functions");
+const QString DB_TABLE_ENDPOINTS = QStringLiteral("EndPoints");
+const QString DB_TABLE_METHODS = QStringLiteral("Methods");
+const QString DB_TABLE_RULES = QStringLiteral("Rules");
+// --- Columns
+const QString DB_COLUMN_ID = QStringLiteral("Id");
+const QString DB_COLUMN_NAME = QStringLiteral("Name");
+const QString DB_COLUMN_TESTER = QStringLiteral("Tester");
+const QString DB_COLUMN_ENDPOINT = QStringLiteral("EndPoint");
+const QString DB_COLUMN_METHOD = QStringLiteral("Method");
+const QString DB_COLUMN_MAXTEMP = RULE_KEY_MAXTEMP;
+const QString DB_COLUMN_MINTEMP = RULE_KEY_MINTEMP;
+const QString DB_COLUMN_MAXTIME = RULE_KEY_MAXTIME;
+const QString DB_COLUMN_MINTIME = RULE_KEY_MINTIME;
+const QString DB_COLUMN_NUMREQ = RULE_KEY_NUMREQ;
+const QString DB_COLUMN_EMAIL = QStringLiteral("Email");
+
 // Log Consts
 //const QString SETTINGS_GROUP = QStringLiteral("[Settings]");
 //const QString SETTINGS_LOG_FILE = QStringLiteral("LogFile");
@@ -76,13 +103,6 @@ const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Busines
 const QString RULE_TYPE_MAX_VALUE = QStringLiteral("MaxValue");
 const QString RULE_TYPE_TEMP_RANGE = QStringLiteral("TempRange");
 const QString RULE_TYPE_TIME_RANGE = QStringLiteral("TimeRange");
-
-// Rule Keys
-const QString RULE_KEY_MAXTEMP = QStringLiteral("maxTemp");
-const QString RULE_KEY_MAXTIME = QStringLiteral("maxHour");
-const QString RULE_KEY_MINTEMP = QStringLiteral("minTemp");
-const QString RULE_KEY_MINTIME = QStringLiteral("minHour");
-const QString RULE_KEY_NUMREQ = QStringLiteral("numReq");
 
 // Functions
 const QString CUSTOMER_BILLING = QStringLiteral("Customer Billing");

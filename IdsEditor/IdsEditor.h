@@ -67,8 +67,11 @@
 #include <QMainWindow>
 #include <QShortcut>
 #include <QStandardItemModel>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
-class LogDockWidget;
+//class LogDockWidget;
 class RuleSection;
 
 class IdsEditor : public QMainWindow
@@ -84,6 +87,7 @@ private:
 	//QString m_logFileName;
 	QStandardItemModel m_sectionModel;
 	QHash<QString, RuleSection*> m_sections; // Key is section Name
+	QSqlDatabase m_db;
 
 public:
 	IdsEditor(QWidget* parent = Q_NULLPTR);

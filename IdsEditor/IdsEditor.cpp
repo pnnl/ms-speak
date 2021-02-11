@@ -57,8 +57,6 @@
 //
 // Summary: IdsEditor.cpp
 //-------------------------------------------------------------------------------
-// https://doc.qt.io/qt-5/sql-programming.html
-// https://doc.qt.io/qt-5/examples-sql.html
 
 #include <QDesktopServices>
 #include <QDir>
@@ -200,14 +198,72 @@ QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& section, int role)
 //------------------------------------------------------------------------------
 // ReadDbFile
 //
+// https://doc.qt.io/qt-5/sql-programming.html
+// https://doc.qt.io/qt-5/examples-sql.html
+// By default, SQLite operates in auto-commit mode. It means that for each command,
+// SQLite starts, processes, and commits the transaction automatically.
 void IdsEditor::ReadDbFile(const QString& fileName)
 {
 	qDeleteAll(m_sections);
 	m_sections.clear();
 
-	if( !fileName.isEmpty() )
-		UpdateSectionModel();
+	if( !fileName.isEmpty() ){
+		// Create database connetion.
+		m_db = QSqlDatabase::addDatabase("QSQLITE", "BizConn");
+		if( !m_db.isValid() ) {
+			qDebug("Error occurred adding the database.");
+			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			return;
+		}
+		/*m_db.setHostName("acidalia");
+		m_db.setDatabaseName("customdb");
+		m_db.setUserName("mojito");
+		m_db.setPassword("J0a1m8");*/
+		m_db.setDatabaseName(fileName);
+		if (!m_db.open()) {
+			qDebug("Error occurred opening the database.");
+			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			return;
+		}
+		QSqlQuery query(m_db);
 
+		/* Insert row.
+		query.prepare("INSERT INTO test VALUES (null, ?)");
+		query.addBindValue("Some text");
+		if (!query.exec()) {
+			qDebug("Error occurred inserting.");
+			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			return;
+		}
+		// Insert row.
+		query.prepare("INSERT INTO test VALUES (null, ?)");
+		query.addBindValue("Some text");
+		if (!query.exec()) {
+			qDebug("Error occurred inserting.");
+			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			return;
+		}
+		*/
+
+		// Query.
+		QString strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_TESTERS);
+		query.prepare(strQuery);
+		if (!query.exec()) {
+			qDebug("Error occurred querying.");
+			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			m_db.close();
+			return;
+		}
+		qint16 i=0;
+		while (query.next()) {
+			i++;
+			qDebug("Tester %d: id = %d, text = %s.", i, query.value(0).toInt(),
+			qPrintable(query.value(1).toString()));
+		}
+		m_db.close();
+		UpdateSectionModel();
+	}
+	//QSqlDatabase::removeDatabase("BizConn");
 }
 
 //------------------------------------------------------------------------------
