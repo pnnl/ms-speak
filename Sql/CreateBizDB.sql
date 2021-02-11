@@ -10,6 +10,7 @@
 --		in memory so as to not leave a digital signature.
 --		except then the testers would have to recreate all their rules each time
 
+PRAGMA foreign_keys = 1;
 -- create tester table, should these actually be IPs ?
 CREATE TABLE [Testers] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
@@ -31,11 +32,12 @@ insert into Functions (Name) VALUES ("Metering Management");
 insert into Functions (Name) VALUES ("Outage Management");
 
 -- create EndPoints table
-CREATE TABLE [EndPoints] ( 
-	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Function] INTEGER NOT NULL, 
+CREATE TABLE [EndPoints] (
+	[Id] INTEGER NOT NULL PRIMARY KEY,
+	[Function] INTEGER NOT NULL,
 	[Name] NVARCHAR(50) NOT NULL,
-	UNIQUE(Name)	
+	UNIQUE(Name),
+	FOREIGN KEY(Function) REFERENCES Functions(Id)
 ); 
 -- set function keys
 INSERT INTO EndPoints (Function, Name ) VALUES 
@@ -52,12 +54,12 @@ INSERT INTO EndPoints (Function, Name ) VALUES
 	((SELECT Id FROM Functions WHERE Name ='Outage Management'), "OD_Server"); 
 
 -- create Methods table
-CREATE TABLE [Methods] ( 
-	[Id] INTEGER NOT NULL PRIMARY KEY, 
+CREATE TABLE [Methods] (
+	[Id] INTEGER NOT NULL PRIMARY KEY,
 	[EndPoint] INTEGER NOT NULL,
 	[Name] NVARCHAR(50) NOT NULL,
-	UNIQUE(EndPoint, Name)
-	
+	UNIQUE(EndPoint, Name),
+	FOREIGN KEY(EndPoint) REFERENCES EndPoints(Id)
 ); 
 -- set endpoint keys
 INSERT INTO Methods (EndPoint, Name ) VALUES 
@@ -129,7 +131,10 @@ CREATE TABLE [Rules] (
 	[numReq] INTEGER,
 	[email] NVARCHAR(50),
 	UNIQUE(Tester,Endpoint,Method),
-	CHECK (maxTemp > minTemp AND maxHour > minHour)
+	CHECK (maxTemp > minTemp AND maxHour > minHour),
+	FOREIGN KEY(Tester) REFERENCES Testers(Id),
+	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),
+	FOREIGN KEY(Method) REFERENCES Methods(Id)
 ); 
 
 .exit
