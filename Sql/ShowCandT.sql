@@ -11,7 +11,7 @@
 .print
 .width 10 4 10 28 7 7 7 7 7 35
 .print
-.print == Remove Rule ==
+.print == Tom & Carl's Rules ==
 SELECT testers.Name as who ,rules.id as Rule, endpoints.name as EndPoint, methods.name as Method,
 rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.email
 FROM rules

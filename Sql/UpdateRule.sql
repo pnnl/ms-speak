@@ -8,10 +8,10 @@
 .print == Update IsCDSupported Rule ==
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='CD_Server')
 UPDATE Rules 
-SET maxHour = 22, minHour = 02
+SET maxHour = 22, minHour = 02, maxHour = 25, minHour = -2
 WHERE( Tester = (SELECT Id FROM Testers WHERE Name ='Carl') AND
 	   EndPoint = (SELECT * from EpId) AND	   
        Method = (SELECT Id FROM Methods WHERE Name ='IsCDSupported')
 	   );
-.print	
+.print
 .quit
