@@ -78,14 +78,17 @@ class RuleEditor : public QDialog
 private:
 	Ui::RuleEditor ui;
 
-	QHash<QString, QStringList*> m_methods;
+	//QHash<QString, QStringList*> m_methods;
 	RuleSection m_ruleSection;
-	QHash<QString, RuleSection*>& m_ruleSections;
 	IdsEditor *m_parent;
+	QHash<QString, RuleSection*>& m_ruleSections;
+	DB_HASH& m_functions; // key is a function, value a list of endpoints
+	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
+	bool m_bClosed;
+
 public:
 	RuleEditor(const RuleSection& ruleSection,
-			   QHash<QString, RuleSection*>& ruleSections,
-			   QWidget* parent = Q_NULLPTR);
+			   IdsEditor* parent = Q_NULLPTR);
 	~RuleEditor();
 
 	const RuleSection& Section() const { return m_ruleSection; }
@@ -94,9 +97,7 @@ protected:
 	virtual void resizeEvent(QResizeEvent* e) { QWidget::resizeEvent(e); SaveGeometry(); }
 
 private:
-	bool m_bClosed;
-	void InitCombos();
-	void InitMethods();
+	void InitFunctions();
 	void RestoreGeometry();
 	void SaveGeometry();
 	void UpdateUi();
@@ -104,7 +105,6 @@ private:
 private slots:
 	void OnEndPointComboChanged(int index);
 	void OnFunctionComboChanged(int index);
-	void OnIniGroupToggled(bool checked);
 	void OnMaxRequestsChanged(int value);
 	void OnMaxRequestsToggled(bool checked);
 	void OnMaxTempChanged(int value);

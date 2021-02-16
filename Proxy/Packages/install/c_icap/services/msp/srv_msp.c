@@ -708,6 +708,8 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		strncpy( pBzd->m_Method, curr_grp, MAX_GROUPLEN-1 );
 		pBzd->m_Method[MAX_GROUPLEN-1] = 0x00;
 		strtok(pBzd->m_Method, "@");
+		// if a null pointer is specified, the function continues 
+		// scanning where a previous successful call to the function ended.
 		pBzd->m_EndPoint = strtok(NULL, "@");
 		if( pBzd->m_EndPoint == (gchar *)WILDCARD ) {
 		   g_critical("%s", "Failed to get Method/Endpoint\n");

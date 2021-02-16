@@ -262,7 +262,7 @@ QDomDocument WsdlFile::MethodTemplate(const QString& method)
 		int errorLine;
 		int errorColumn;
 		if (!doc.setContent(&file, &errMsg, &errorLine, &errorColumn))
-			qDebug() << "Error--Unable to set Content of DOM file" << endl << errMsg << errorLine << errorColumn;
+			qDebug() << "Error--Unable to set Content of DOM file" << Qt::endl << errMsg << errorLine << errorColumn;
 		file.close();
 		return doc;
 	}
@@ -637,6 +637,7 @@ QByteArray WsdlFile::XmlSoap(const TimelineEvent& e, int indent, bool bFull)
 		else if (e.Type() == TimelineEvent::Response)
 			bytes.append("RESPONSE\n");
 
+// You then need to call QString::toUtf8() (or QString::toLatin1() or QString::toLocal8Bit()) explicitly if you want to convert the data to const char *.
 		bytes.append(QString("%1\n").arg(e.Host()));
 		bytes.append(QString("SOAPAction: %1/%2\n").arg(e.Namespace()).arg(e.Method()));
 	}

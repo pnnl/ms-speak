@@ -65,14 +65,18 @@
 #include "ui_IdsEditor.h"
 
 #include <QMainWindow>
+#include <QLabel>
 #include <QShortcut>
 #include <QStandardItemModel>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QHostAddress>
 
-//class LogDockWidget;
 class RuleSection;
+
+#define DB_HASH QHash<QString, QStringList>
+#define DB_HHASH QHash<QString, DB_HASH>
 
 class IdsEditor : public QMainWindow
 {
@@ -80,19 +84,24 @@ class IdsEditor : public QMainWindow
 private:
 	Ui::IdsEditorClass ui;
 	QShortcut m_clearSettingsShortcut;
-	QString m_dbFileName;
-	QString m_iniFileName;
-	QLabel m_dbFileNameLabel; // m_iniFileNameLabel
-	//LogDockWidget* m_logDock;
-	//QString m_logFileName;
+	QString   m_dbFileName;
+	QLabel    m_dbFileNameLabel;
 	QStandardItemModel m_sectionModel;
 	QHash<QString, RuleSection*> m_sections; // Key is section Name
+	DB_HHASH m_testers;   // key is a tester, value a hash of rules
+	DB_HASH m_functions; // key is a function, value a hash of endpoints
+	DB_HASH m_methods;  // key is an endpoint, value a list of methods
 	QSqlDatabase m_db;
+	QHostAddress m_Host;
 
 public:
 	IdsEditor(QWidget* parent = Q_NULLPTR);
 	~IdsEditor();
 	void UpdateSectionModel();
+	QHash<QString, RuleSection*>& Sections() { return m_sections; }
+	DB_HHASH& Testers() { return m_testers; }
+	DB_HASH& Functions() { return m_functions; }
+	DB_HASH& Methods() { return m_methods; }
 
 protected:
 	virtual void closeEvent(QCloseEvent* e);
@@ -101,12 +110,11 @@ protected:
 private:
 	void CreateLogDock();
 	void Edit(const QModelIndex& index);
-	//LogDockWidget& LogDock() { if (!m_logDock) CreateLogDock(); return *m_logDock; }
 
 	QModelIndex ModelIndexByKeyAndRole(const QString& key, int role);
 
+	void InitCombo();
 	void ReadDbFile(const QString& fileName);
-	//void ReadIniFile(const QString& fileName);
 	void RestoreGeometry();
 	void RestoreState();
 	QStandardItem* RuleItem(const QString& ruleKey);
@@ -114,27 +122,28 @@ private:
 	void SaveState();
 	QStandardItem* SectionItem(const QString& sectionKey);
 	//void UpdateSectionModel();
-	bool WriteIniFile(const QString& fileName);
 
 private slots:
 	void OnAbout();
 	void OnAboutQt();
 	void OnClearSettings();
-	//void OnFileNew();
-	//void OnFileSaveAs();  maybe make this OnFileExport to save as ini file
-	//void OnLogDock();
-	//void OnLogFileChanged(const QString& fileName);
-	//void OnReadIniFile() { ReadIniFile(m_iniFileName); }
 	void OnFileOpen();
 	bool OnFileSave();
 	void OnHelp();
 	void OnQuit() { close(); }
+	void OnInitCombo() { InitCombo(); }
 	void OnReadDbFile() { ReadDbFile(m_dbFileName); }
 	void OnRestoreState() { RestoreState(); }
 	void OnRuleDelete();
 	void OnRuleEdit();
 	void OnRuleNew();
-	void OnRulesTreeViewDoubleClicked(const QModelIndex& index);
-	void OnToolBarVisibilityChanged(bool visible);
+	void OnRulesTreeViewDoubleClicked(const QModelIndex&);
+	void OnToolBarVisibilityChanged(bool);
+	//void OnHostEditReturn();
+	//void OnHostEditFinished();
+	//void OnHostTextChanged(QString);
+	void OnAddHost();
+	void OnHostSelectionChanged(int);
+
 };
 #endif // IDSEDITOR_H

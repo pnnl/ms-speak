@@ -19,34 +19,34 @@
 class Rule
 {
 public:
-  QString Name; // Name of rule
-  QHash<QString, QString> KeyValue;
+	QString Name; // Name of rule
+	QHash<QString, QString> KeyValue;
 public:
-  Rule() {}
-  Rule(const Rule& rule);
-  ~Rule() {}
-  void Copy(const Rule& rule);
-  QString ToString() const;
+	Rule() {}
+	Rule(const Rule& rule);
+	~Rule() {}
+	void Copy(const Rule& rule);
+	QString ToString() const;
 };
 
 class RuleSection
 {
 public:
-  QHash<QString, Rule*> Rules; // key is Rule Name, Mem owned here
-  QString EndPoint;
-  QString Method;
+	QHash<QString, Rule*> Rules; // key is Rule Name, Mem owned here
+	QString EndPoint;
+	QString Method;
 
 public:
-  RuleSection() {}
-  RuleSection(const RuleSection& rs);
-  ~RuleSection() { qDeleteAll(Rules); }
+	RuleSection() {}
+	RuleSection(const RuleSection& rs);
+	~RuleSection() { qDeleteAll(Rules); }
 
-  void Copy(const RuleSection& rs);
+	void Copy(const RuleSection& rs);
 
-  static Rule* CreateRule(const QString& ruleName);
+	static Rule* CreateRule(const QString& ruleName);
 
-  QString Section() const;
-  QString ToString() const;
+	QString Section() const;
+	QString ToString() const;
 };
 
 #endif // RULE_H

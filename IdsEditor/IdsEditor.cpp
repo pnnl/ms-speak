@@ -58,6 +58,7 @@
 // Summary: IdsEditor.cpp
 //-------------------------------------------------------------------------------
 
+#include <QtWidgets>  // rid invalid use of incomplete type ‘....’
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileDialog>
@@ -71,7 +72,6 @@
 
 #include "IdsEditor.h"
 #include "IdsSettings.h"
-//#include "LogDockWidget.h"
 #include "Rule.h"
 #include "RuleConst.h"
 #include "RuleEditor.h"
@@ -84,14 +84,17 @@ bool CLEAR_SETTINGS_ON_EXIT = false; // Used for the clear settings shortcut fea
 IdsEditor::IdsEditor(QWidget* parent)
 	: QMainWindow(parent),
 	  m_clearSettingsShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+C")), this, SLOT(OnClearSettings())),
-	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString()),
-	  m_iniFileName(QSettings().value(SK_INI_FILE_NAME, INI_FILE_NAME).toString())
-	  //,m_logDock(Q_NULLPTR),
-	  //m_logFileName(QSettings().value(SK_LOG_FILE_NAME, LOG_FILE_NAME).toString())
+	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString())
 {
 	ui.setupUi(this);
 	setWindowTitle(QStringLiteral("IDS Editor %1").arg(SOFTWARE_VERSION));
 	RestoreGeometry();
+
+	//connect(ui.cmbHosts->lineEdit(), SIGNAL(returnPressed()), this, SLOT(OnHostEditReturn()));
+	//connect(ui.cmbHosts->lineEdit(), SIGNAL(editingFinished()), this, SLOT(OnHostEditFinished()));
+	//connect(ui.cmbHosts, SIGNAL(currentTextChanged(QString)),this,SLOT(OnHostTextChanged(QString)));
+	connect(ui.cmbHosts, SIGNAL(currentIndexChanged(int)),this,SLOT(OnHostSelectionChanged(int)));
+	connect(ui.btnAddHost, SIGNAL(clicked()), this, SLOT(OnAddHost()));
 
 	ui.RulesTreeView->setModel(&m_sectionModel);
 	ui.RulesTreeView->setHeaderHidden(true);
@@ -99,32 +102,23 @@ IdsEditor::IdsEditor(QWidget* parent)
 	ui.RulesTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
 	ui.RulesTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-	//statusBar()->addWidget(&m_iniFileNameLabel);
-	//m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
 	statusBar()->addWidget(&m_dbFileNameLabel);
 	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 
 	connect(ui.FileOpenAct, SIGNAL(triggered()), this, SLOT(OnFileOpen()));
 	connect(ui.FileSaveAct, SIGNAL(triggered()), this, SLOT(OnFileSave()));
-	/* not supporting creating new DBs
-	//connect(ui.FileNewAct, SIGNAL(triggered()), this, SLOT(OnFileNew()));
-	//connect(ui.FileSaveAsAct, SIGNAL(triggered()), this, SLOT(OnFileSaveAs()));
-	*/
-
 	connect(ui.HelpAboutAct, SIGNAL(triggered()), this, SLOT(OnAbout()));
 	connect(ui.HelpAct, SIGNAL(triggered()), this, SLOT(OnHelp()));
 	connect(ui.HelpLicensingAct, SIGNAL(triggered()), this, SLOT(OnAboutQt()));
-	//connect(ui.LogAct, SIGNAL(triggered()), this, SLOT(OnLogDock()));
 	connect(ui.QuitAct, SIGNAL(triggered()), this, SLOT(OnQuit()));
-
 	connect(ui.DeleteBtn, SIGNAL(clicked()), this, SLOT(OnRuleDelete()));
 	connect(ui.EditBtn, SIGNAL(clicked()), this, SLOT(OnRuleEdit()));
 	connect(ui.NewBtn, SIGNAL(clicked()), this, SLOT(OnRuleNew()));
-
 	connect(ui.RulesTreeView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(OnRulesTreeViewDoubleClicked(const QModelIndex&)));
 
 	QTimer::singleShot(100, this, SLOT(OnRestoreState())); // Restore State after Docks Created
-	QTimer::singleShot(100, this, SLOT(OnReadDbFile()));  // OnReadIniFile
+	QTimer::singleShot(100, this, SLOT(OnReadDbFile()));
+	QTimer::singleShot(150, this, SLOT(OnInitCombo()));
 }
 //-------------------------------------------------------------------------------
 // ~IdsEditor
@@ -134,16 +128,6 @@ IdsEditor::~IdsEditor()
 	qDeleteAll(m_sections);
 	m_sections.clear();
 }
-
-//------------------------------------------------------------------------------
-// CreateLogDock
-/*
-void IdsEditor::CreateLogDock()
-{
-	m_logDock = new LogDockWidget(QStringLiteral("Log"), m_logFileName, this);
-	connect(m_logDock, SIGNAL(LogFileChanged(const QString&)), this, SLOT(OnLogFileChanged(const QString&)));
-	addDockWidget(Qt::BottomDockWidgetArea, m_logDock);
-}*/
 
 //------------------------------------------------------------------------------
 // Edit
@@ -157,7 +141,7 @@ void IdsEditor::Edit(const QModelIndex& index)
 			QString sectionKey = index.data(ROLE_SECTION_KEY).toString();
 			if (RuleSection* section = m_sections.value(sectionKey, Q_NULLPTR))
 			{
-				RuleEditor dlg(*section,  m_sections, this);
+				RuleEditor dlg(*section, this); // m_sections
 				if (QDialog::Accepted == dlg.exec())
 				{
 					if (section->Section() == dlg.Section().Section())
@@ -226,7 +210,11 @@ void IdsEditor::ReadDbFile(const QString& fileName)
 			return;
 		}
 		QSqlQuery query(m_db);
-
+		/*query.prepare("INSERT INTO person (id, forename, surname) "
+					  "VALUES (:id, :forename, :surname)");
+		query.bindValue(":id", 1001);
+		query.bindValue(":forename", "Bart");
+		query.bindValue(":surname", "Simpson");*/
 		/* Insert row.
 		query.prepare("INSERT INTO test VALUES (null, ?)");
 		query.addBindValue("Some text");
@@ -246,7 +234,17 @@ void IdsEditor::ReadDbFile(const QString& fileName)
 		*/
 
 		// Query.
-		QString strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_TESTERS);
+		//QString strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_TESTERS);
+		//			qDebug("Tester %d: id = %d, text = %s.", i, query.value(0).toInt(),
+
+		QString strQuery = QStringLiteral(
+		"SELECT functions.name as Function, endpoints.name as EndPoint, methods.name as Method"
+		" FROM Functions"
+		" INNER JOIN endpoints ON endpoints.Function = Functions.id"
+		" INNER JOIN methods ON methods.EndPoint = endpoints.id"
+		" ORDER BY Function, EndPoint, Method;"
+		);
+
 		query.prepare(strQuery);
 		if (!query.exec()) {
 			qDebug("Error occurred querying.");
@@ -254,91 +252,53 @@ void IdsEditor::ReadDbFile(const QString& fileName)
 			m_db.close();
 			return;
 		}
-		qint16 i=0;
-		while (query.next()) {
-			i++;
-			qDebug("Tester %d: id = %d, text = %s.", i, query.value(0).toInt(),
-			qPrintable(query.value(1).toString()));
+
+		QString fn;
+		QString ep;
+		QString me;
+		// iQSqlQuery q("select * from employees");
+		// iQSqlRecord rec = q.record();
+		// iqDebug() << "Number of columns: " << rec.count();
+		// int nameCol = rec.indexOf("name"); // index of the field "name"
+		while( query.next() ){
+			fn =  query.value(0).toString();
+			ep =  query.value(1).toString();
+			me =  query.value(2).toString();
+			//qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
+			//DB_HASH& eps = m_functions[fn];
+			//QStringList& mes = eps[ep];
+			//mes.append(me);
+			//m_functions[fn][ep].append(me);
+			if( !m_functions[fn].contains(ep) )
+				m_functions[fn].append(ep);
+			if( !m_methods[ep].contains(me) )
+				m_methods[ep].append(me);
 		}
 		m_db.close();
+//  DB_HASH QHash<QString, QStringList>
+// DB_HHASH QHash<QString, DB_HASH>
+//		m_tfunctions =&m_functions;
+//		m_tmethods = &m_functions[0];
+
 		UpdateSectionModel();
 	}
 	//QSqlDatabase::removeDatabase("BizConn");
 }
 
 //------------------------------------------------------------------------------
-// ReadIniFile
-/*
-void IdsEditor::ReadIniFile(const QString& fileName)
+// InitCombo
+//
+void IdsEditor::InitCombo(void)
 {
-	qDeleteAll(m_sections);
-	m_sections.clear();
-
-	QSettings ini(fileName, QSettings::IniFormat);
-
-	QString sectionKey;
-	QString key;
-	QString value;
-	for (QString iniKey : ini.allKeys())
-	{
-		sectionKey = QStringLiteral("[%1]").arg(iniKey.left(iniKey.indexOf(QStringLiteral("/"))));
-
-		if (sectionKey.startsWith(SETTINGS_GROUP))
-		{
-			key = iniKey.right(iniKey.length() - iniKey.indexOf(QStringLiteral("/")) - 1);
-			if (key == SETTINGS_LOG_FILE)
-				m_logFileName = ini.value(iniKey).toString();
-			continue;
-		}
-
-		if (!m_sections.contains(sectionKey))
-			m_sections.insert(sectionKey, new RuleSection());
-
-		if (RuleSection* section = m_sections.value(sectionKey, Q_NULLPTR))
-		{
-			section->Method = iniKey.left(iniKey.indexOf(QStringLiteral("@")));
-			section->EndPoint = iniKey.mid(iniKey.indexOf(QStringLiteral("@")) + 1, iniKey.indexOf(QStringLiteral("/")) - iniKey.indexOf(QStringLiteral("@")) - 1);
-			key = iniKey.right(iniKey.length() - iniKey.indexOf(QStringLiteral("/")) - 1);
-			value = ini.value(iniKey).toString();
-
-			if (key == RULE_KEY_NUMREQ)
-			{
-				if (!section->Rules.contains(RULE_TYPE_MAX_VALUE))
-					section->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
-
-				if (Rule* rule = section->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
-				{
-					rule->Name = RULE_TYPE_MAX_VALUE;
-					rule->KeyValue.insert(key, value);
-				}
-			}
-			else if (key == RULE_KEY_MAXTEMP || key == RULE_KEY_MINTEMP)
-			{
-				if (!section->Rules.contains(RULE_TYPE_TEMP_RANGE))
-					section->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
-
-				if (Rule* rule = section->Rules.value(RULE_TYPE_TEMP_RANGE, Q_NULLPTR))
-				{
-					rule->Name = RULE_TYPE_TEMP_RANGE;
-					rule->KeyValue.insert(key, value);
-				}
-			}
-			else if (key == RULE_KEY_MAXTIME || key == RULE_KEY_MINTIME)
-			{
-				if (!section->Rules.contains(RULE_TYPE_TIME_RANGE))
-					section->Rules.insert(RULE_TYPE_TIME_RANGE, new Rule());
-
-				if (Rule* rule = section->Rules.value(RULE_TYPE_TIME_RANGE, Q_NULLPTR))
-				{
-					rule->Name = RULE_TYPE_TIME_RANGE;
-					rule->KeyValue.insert(key, value);
-				}
-			}
-		}
-	}
-	UpdateSectionModel();
+	ui.cmbHosts->setEditable(true);
+	ui.cmbHosts->setMinimumWidth(150);
+	ui.cmbHosts->lineEdit()->setAlignment(Qt::AlignCenter);
+	ui.cmbHosts->lineEdit()->setInputMask( "000.000.000.000" );
+	ui.cmbHosts->addItem("255.255.255.255");
+	ui.cmbHosts->addItem("0.0.0.0");
+	//ui.cmbHosts->setItemText(0,"255.255.255.255");
+	ui.cmbHosts->setCurrentIndex(0);
 }
-*/
 
 //------------------------------------------------------------------------------
 // RestoreGeometry
@@ -410,30 +370,6 @@ void IdsEditor::UpdateSectionModel()
 }
 
 //------------------------------------------------------------------------------
-// WriteIniFile
-//
-bool IdsEditor::WriteIniFile(const QString& fileName)
-{
-	// TODO: write ini file from DB, append Testername etc.
-	QFile file(fileName);
-	if (file.open(QIODevice::WriteOnly))
-	{
-		QTextStream out(&file);
-
-		// Log File
-		//out << SETTINGS_GROUP << Qt::endl;
-		//out << QStringLiteral("%1 = %2").arg(SETTINGS_LOG_FILE, m_logFileName) << Qt::endl << Qt::endl;
-
-		// Rules
-		for (RuleSection* section : m_sections)
-			out << section->ToString() << Qt::endl << Qt::endl;
-		file.close();
-		return true;
-	}
-	return false;
-}
-
-//------------------------------------------------------------------------------
 // OnAbout
 //
 void IdsEditor::OnAbout()
@@ -481,68 +417,20 @@ void IdsEditor::OnFileOpen()
 }
 
 //------------------------------------------------------------------------------
-// OnFileOpenIni
-/*
-void IdsEditor::OnFileOpenIni()
-{
-	QString fileName = QFileDialog::getOpenFileName(this, QStringLiteral("Biz Rules Config File"),
-													m_iniFileName, QStringLiteral("Config File (*.cfg);; All (*.*)"));
-
-	if (fileName.isEmpty())
-		return;
-
-	m_iniFileName = fileName;
-	ReadIniFile(m_iniFileName);
-	UpdateSectionModel();
-
-	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
-	m_iniFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
-}*/
-
-//------------------------------------------------------------------------------
 // OnFileSave
 //
 bool IdsEditor::OnFileSave()
 {
 	// Todo: save DB, or update as we go along?
-	return WriteIniFile(m_iniFileName);
+	qDebug() << "Saving Rules For Host " << m_Host.toString();
+// WriteIniFile
+	// Rules
+	for (RuleSection* section : m_sections)
+		qDebug() << section->ToString() << Qt::endl << Qt::endl;
+//
+
+	return true;
 }
-
-//------------------------------------------------------------------------------
-// OnFileNew
-/*
-void IdsEditor::OnFileNew()
-{
-	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Biz Rules Config File"),
-													m_iniFileName, QStringLiteral("Config File (*.cfg);; All (*.*)"));
-
-	if (fileName.isEmpty())
-		return;
-
-	m_iniFileName = fileName;
-	ReadIniFile(m_iniFileName);
-	UpdateSectionModel();
-
-	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
-	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
-}*/
-
-//------------------------------------------------------------------------------
-// OnFileSaveAs
-/*
-void IdsEditor::OnFileSaveAs()
-{
-	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Biz Rules Config File"),
-													m_iniFileName, QStringLiteral("Config File (*.cfg);; All (*.*)"));
-
-	if (fileName.isEmpty())
-		return;
-
-	m_iniFileName = fileName;
-
-	QSettings().setValue(SK_INI_FILE_NAME, m_iniFileName);
-	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_iniFileName));
-}*/
 
 //------------------------------------------------------------------------------
 // closeEvent
@@ -555,11 +443,9 @@ void IdsEditor::closeEvent(QCloseEvent* e)
 	if (CLEAR_SETTINGS_ON_EXIT)
 		QSettings().clear();
 
-	//if (!WriteIniFile(m_iniFileName))
 	if( !OnFileSave() )
 	{
 		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 //QStringLiteral("Unable to Save File: %1").arg(m_iniFileName),
 							 QStringLiteral("Unable to Save File: %1").arg(m_dbFileName),
 							 QMessageBox::Ok,
 							 QMessageBox::Ok);
@@ -577,22 +463,35 @@ void IdsEditor::OnHelp()
 }
 
 //------------------------------------------------------------------------------
-// OnLogDock
-/*
-void IdsEditor::OnLogDock()
+// OnAddHost
+void IdsEditor::OnAddHost()
 {
-	LogDock().show();
+	QString qs;
+	QString newText = ui.cmbHosts->currentText();
+	int index = ui.cmbHosts->findText(newText); // findData
+	if ( index == -1 ) { // -1 for not found
+		qs = QString("Address added to host list: %1").arg(newText);
+		ui.cmbHosts->addItem(newText);
+		m_Host = QHostAddress(ui.cmbHosts->currentText());
+	}
+	else{
+		qs = QString("%1 already in list").arg(newText);
+	}
+	statusBar()->showMessage(qs);
+	qDebug() << qs;
 }
 
 //------------------------------------------------------------------------------
-// OnLogFileChanged
+// OnHostSelectionChanged
 //
-void IdsEditor::OnLogFileChanged(const QString& fileName)
+void IdsEditor::OnHostSelectionChanged(int index)
 {
-	m_logFileName = fileName;
-	QSettings().setValue(SK_LOG_FILE_NAME, m_logFileName);
-	WriteIniFile(m_iniFileName);
-}*/
+	QString newText = ui.cmbHosts->itemText(index);
+	QString qs = QString(" Host Changed to %1").arg(newText);
+	qDebug() << qs;
+	statusBar()->showMessage(qs);
+	m_Host = QHostAddress(ui.cmbHosts->currentText());
+}
 
 //------------------------------------------------------------------------------
 // OnRuleDelete
@@ -632,7 +531,7 @@ void IdsEditor::OnRuleEdit()
 void IdsEditor::OnRuleNew()
 {
 	RuleSection section;
-	RuleEditor dlg(section, m_sections, this);
+	RuleEditor dlg(section, this);// m_sections,
 	if(QDialog::Accepted == dlg.exec() )
 	{
 		section.Copy(dlg.Section());

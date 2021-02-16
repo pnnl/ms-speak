@@ -52,6 +52,7 @@
 //	History
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
+//		02.12.2021 CHM - Populate from Sqlite DB.
 //-------------------------------------------------------------------------------
 //
 // Summary: RuleEditor.cpp
@@ -69,27 +70,24 @@
 //-------------------------------------------------------------------------------
 // RuleEditor
 //
-RuleEditor::RuleEditor(const RuleSection& ruleSection,
-					   QHash<QString, RuleSection*>& ruleSections,
-					   QWidget* parent)
+RuleEditor::RuleEditor(const RuleSection& ruleSection, IdsEditor* parent)
 	: QDialog(parent),
 	  m_ruleSection(ruleSection),
-	  m_ruleSections(ruleSections),
-	  m_parent((IdsEditor *)parent),
+	  m_parent(parent),
+	  m_ruleSections(parent->Sections()),
+	  m_functions(parent->Functions()),
+	  m_methods(parent->Methods()),
 	  m_bClosed(false)
 {
 	ui.setupUi(this);
 
 	RestoreGeometry();
 
-	ui.BottomFrame->setVisible(true);
-	ui.IniPlainTextEdit->setVisible(false);
 	ui.MaxRequestsFrame->setVisible(false);
 	ui.TempFrame->setVisible(false);
 	ui.TimeFrame->setVisible(false);
 
-	InitMethods(); // init the m_methods hash
-	InitCombos();
+	InitFunctions();
 	UpdateUi();
 
 	// Group Toggle connections before SetRule
@@ -100,10 +98,7 @@ RuleEditor::RuleEditor(const RuleSection& ruleSection,
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	connect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
-	connect(ui.IniGroup, SIGNAL(toggled(bool)), this, SLOT(OnIniGroupToggled(bool)));
-
 	connect(ui.MaxRequestsSpin, SIGNAL(valueChanged(int)), this, SLOT(OnMaxRequestsChanged(int)));
-
 	connect(ui.MaxTempSlider, SIGNAL(valueChanged(int)), ui.MaxTempSpin, SLOT(setValue(int)));
 	connect(ui.MaxTempSlider, SIGNAL(valueChanged(int)), this, SLOT(OnMaxTempChanged(int)));
 	connect(ui.MaxTempSpin, SIGNAL(valueChanged(int)), ui.MaxTempSlider, SLOT(setValue(int)));
@@ -136,26 +131,19 @@ RuleEditor::~RuleEditor()
 }
 
 //-------------------------------------------------------------------------------
-// InitCombos
+// InitFunctions
 //
-void RuleEditor::InitCombos()
+void RuleEditor::InitFunctions()
 {
-	ui.FunctionCombo->addItem(CUSTOMER_BILLING, CUSTOMER_BILLING_ENDPOINT_LIST);
-	ui.FunctionCombo->addItem(METERING_MANAGEMENT, METERING_MANAGEMENT_ENDPOINT_LIST);
-	ui.FunctionCombo->addItem(OUTAGE_MANAGEMENT, OUTAGE_MANAGEMENT_ENDPOINT_LIST);
-}
-
-//-------------------------------------------------------------------------------
-// InitMethods
-//
-void RuleEditor::InitMethods()
-{
-	m_methods.insert(CB_SERVER, &CB_METHOD_LIST);
-	m_methods.insert(MDM_SERVER, &MDM_METHOD_LIST);
-	m_methods.insert(PG_SERVER, &PG_METHOD_LIST);
-	m_methods.insert(CD_SERVER, &CD_METHOD_LIST);
-	m_methods.insert(MR_SERVER, &MR_METHOD_LIST);
-	m_methods.insert(OD_SERVER, &OD_METHOD_LIST);
+	QStringList qsl = QStringList();
+	QHash<QString, QStringList>::const_iterator it = m_functions.constBegin();
+	for (it = m_functions.constBegin(); it != m_functions.constEnd(); ++it)
+		qsl << it.key();
+	qsl.sort();
+	QStringList::const_iterator it2;
+	for (it2 = qsl.constBegin(); it2 != qsl.constEnd(); ++it2){
+		ui.FunctionCombo->addItem(*it2,m_functions[*it2]);
+	}
 }
 
 //-------------------------------------------------------------------------------
@@ -179,12 +167,8 @@ void RuleEditor::SaveGeometry()
 //
 void RuleEditor::UpdateUi()
 {
-	// Deduce what the function is based on rule
-	QString function = CUSTOMER_BILLING;
-	if (METERING_MANAGEMENT_ENDPOINT_LIST.contains(m_ruleSection.EndPoint))
-		function = METERING_MANAGEMENT;
-	else if (OUTAGE_MANAGEMENT_ENDPOINT_LIST.contains(m_ruleSection.EndPoint))
-		function = OUTAGE_MANAGEMENT;
+	// Deduce what the function is based on rule EndPoint
+	QString function = ui.FunctionCombo->currentText();
 
 	// Set up the combos based on rule
 	disconnect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
@@ -196,8 +180,8 @@ void RuleEditor::UpdateUi()
 
 	// EndPoint
 	QStringList endPointList = ui.FunctionCombo->currentData().toStringList();
-	for (QString ep : endPointList)
-		ui.EndPointCombo->addItem(ep, *m_methods.value(ep));
+	for( const QString & ep : qAsConst(endPointList) )
+		ui.EndPointCombo->addItem(ep, m_methods.value(ep));
 
 	int idx = ui.EndPointCombo->findText(m_ruleSection.EndPoint);
 	if (idx < 0)
@@ -211,7 +195,8 @@ void RuleEditor::UpdateUi()
 	}
 
 	// Method
-	for (QString method : ui.EndPointCombo->currentData().toStringList())
+	QStringList methodList = ui.EndPointCombo->currentData().toStringList();
+	for( const QString & method : qAsConst(methodList))
 		ui.MethodCombo->addItem(method);
 
 	idx = ui.MethodCombo->findText(m_ruleSection.Method);
@@ -257,9 +242,18 @@ void RuleEditor::UpdateUi()
 			ui.MinTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
 		}
 	}
+}
 
-	ui.IniPlainTextEdit->clear();
-	ui.IniPlainTextEdit->appendPlainText(m_ruleSection.ToString());
+//-------------------------------------------------------------------------------
+// OnFunctionComboChanged
+//
+void RuleEditor::OnFunctionComboChanged(int index)
+{
+	Q_UNUSED(index);
+	QString function = ui.FunctionCombo->currentText();
+	m_ruleSection.EndPoint = m_functions[function].first();
+	m_ruleSection.Method = m_methods.value(m_ruleSection.EndPoint).first();
+	UpdateUi();
 }
 
 //-------------------------------------------------------------------------------
@@ -271,39 +265,20 @@ void RuleEditor::OnEndPointComboChanged(int index)
 		return;
 
 	m_ruleSection.EndPoint = ui.EndPointCombo->itemText(index);
-	m_ruleSection.Method = m_methods.value(m_ruleSection.EndPoint)->first();
-
+	m_ruleSection.Method = m_methods.value(m_ruleSection.EndPoint).first();
 	UpdateUi();
 }
 
 //-------------------------------------------------------------------------------
-// OnFunctionComboChanged
+// OnMethodComboChanged
 //
-void RuleEditor::OnFunctionComboChanged(int index)
+void RuleEditor::OnMethodComboChanged(int index)
 {
 	Q_UNUSED(index);
-	QString function = ui.FunctionCombo->currentText();
-
-	if (function == CUSTOMER_BILLING)
-		m_ruleSection.EndPoint = CUSTOMER_BILLING_ENDPOINT_LIST.first();
-	else if (function == METERING_MANAGEMENT)
-		m_ruleSection.EndPoint = METERING_MANAGEMENT_ENDPOINT_LIST.first();
-	else if (function == OUTAGE_MANAGEMENT)
-		m_ruleSection.EndPoint = OUTAGE_MANAGEMENT_ENDPOINT_LIST.first();
-
-	m_ruleSection.Method = m_methods.value(m_ruleSection.EndPoint)->first();
-
-	//qDebug() << "OnFunctionComboChanged";
+	if (ui.MethodCombo->count() <= 0)
+		return;
+	m_ruleSection.Method = ui.MethodCombo->currentText();
 	UpdateUi();
-}
-
-//-------------------------------------------------------------------------------
-// OnIniGroupToggled
-//
-void RuleEditor::OnIniGroupToggled(bool checked)
-{
-	ui.IniPlainTextEdit->setVisible(checked);
-	ui.BottomFrame->setVisible(!checked);
 }
 
 //-------------------------------------------------------------------------------
@@ -359,18 +334,6 @@ void RuleEditor::OnMaxTimeChanged(int value)
 		ui.MinTimeSpin->setValue(value);
 	}
 	m_ruleSection.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
-	UpdateUi();
-}
-
-//-------------------------------------------------------------------------------
-// OnMethodComboChanged
-//
-void RuleEditor::OnMethodComboChanged(int index)
-{
-	Q_UNUSED(index);
-	if (ui.MethodCombo->count() <= 0)
-		return;
-	m_ruleSection.Method = ui.MethodCombo->currentText();
 	UpdateUi();
 }
 

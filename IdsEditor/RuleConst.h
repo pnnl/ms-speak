@@ -52,6 +52,7 @@
 //	History
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
+//		02.14.2021 CHM - Populate from Sqlite DB.
 //-------------------------------------------------------------------------------
 //
 // Summary: RuleConst.h
@@ -95,86 +96,10 @@ const QString DB_COLUMN_MINTIME = RULE_KEY_MINTIME;
 const QString DB_COLUMN_NUMREQ = RULE_KEY_NUMREQ;
 const QString DB_COLUMN_EMAIL = QStringLiteral("Email");
 
-// Log Consts
-//const QString SETTINGS_GROUP = QStringLiteral("[Settings]");
-//const QString SETTINGS_LOG_FILE = QStringLiteral("LogFile");
-
 // Rule Types
 const QString RULE_TYPE_MAX_VALUE = QStringLiteral("MaxValue");
 const QString RULE_TYPE_TEMP_RANGE = QStringLiteral("TempRange");
 const QString RULE_TYPE_TIME_RANGE = QStringLiteral("TimeRange");
-
-// Functions
-const QString CUSTOMER_BILLING = QStringLiteral("Customer Billing");
-const QString METERING_MANAGEMENT = QStringLiteral("Metering Management");
-const QString OUTAGE_MANAGEMENT = QStringLiteral("Outage Management");
-
-// EndPoints
-const QString CB_SERVER = QStringLiteral("CB_Server");
-const QString CD_SERVER = QStringLiteral("CD_Server");
-const QString MDM_SERVER = QStringLiteral("MDM_Server");
-const QString MR_SERVER = QStringLiteral("MR_Server");
-const QString OD_SERVER = QStringLiteral("OD_Server");
-const QString PG_SERVER = QStringLiteral("PG_Server");
-
-// CB Methods
-const QString CHANGE_CUSTOMER_DATA = QStringLiteral("ChangeCustomerData");
-const QString CHANGE_METER_DATA = QStringLiteral("ChangeMeterData");
-const QString CHANGE_STREET_LIGHT_DATA = QStringLiteral("ChangeStreetLightData");
-
-// CD Methods
-const QString GET_CD_SUPPORTED_METERS = QStringLiteral("GetCDSupportedMeters");
-const QString INITIATE_CONNECT_DISCONNECT = QStringLiteral("InitiateConnectDisconnect");
-const QString IS_CD_SUPPORTED = QStringLiteral("IsCDSupported");
-const QString SET_CD_DEVICES_DISABLED = QStringLiteral("SetCDDevicesDisabled");
-const QString SET_CD_DEVICES_ENABLED = QStringLiteral("SetCDDevicesEnabled");
-
-// MDM Methods
-const QString INITIATE_BILLING_DETERMINANTS = QStringLiteral("InitiateBillingDeterminants");
-
-// MR Methods
-const QString GET_LATEST_METER_READINGS = QStringLiteral("GetLatestMeterReadings");
-const QString GET_METER_READINGS_BY_BILLINGCYCLE = QStringLiteral("GetMeterReadingsByBillingCycle");
-const QString GET_END_DEVICE_EVENTS_BY_METERIDS = QStringLiteral("GetEndDeviceEventsByMeterIDs");
-
-// PG Methods
-const QString CHANGE_PAYMENT_TRANSACTIONS = QStringLiteral("ChangePaymentTransactions");
-const QString CHANGE_RECURRING_PAYMENT_CONFIGURATION = QStringLiteral("ChangeRecurringPaymentConfiguration");
-const QString PROCESS_PAYMENT_TRANSACTIONS = QStringLiteral("ProcessPaymentTransactions");
-
-// OD Methods
-const QString GET_METER_IDS_BY_END_DEVICE_STATE_TYPES = QStringLiteral("GetMeterIDsByEndDeviceStateTypes");
-const QString INITIATE_END_DEVICE_PINGS = QStringLiteral("InitiateEndDevicePings");
-
-static QStringList FUNCTION_LIST = QStringList()
-<< CUSTOMER_BILLING << METERING_MANAGEMENT << OUTAGE_MANAGEMENT;
-
-static QStringList CUSTOMER_BILLING_ENDPOINT_LIST = QStringList()
-<< CB_SERVER << MDM_SERVER << PG_SERVER;
-
-static QStringList METERING_MANAGEMENT_ENDPOINT_LIST = QStringList()
-<< CD_SERVER << MR_SERVER;
-
-static QStringList OUTAGE_MANAGEMENT_ENDPOINT_LIST = QStringList()
-<< OD_SERVER;
-
-static QStringList CB_METHOD_LIST = QStringList()
-<< CHANGE_CUSTOMER_DATA << CHANGE_METER_DATA << CHANGE_STREET_LIGHT_DATA;
-
-static QStringList CD_METHOD_LIST = QStringList()
-<< GET_CD_SUPPORTED_METERS << INITIATE_CONNECT_DISCONNECT << IS_CD_SUPPORTED << SET_CD_DEVICES_DISABLED << SET_CD_DEVICES_ENABLED;
-
-static QStringList MDM_METHOD_LIST = QStringList()
-<< INITIATE_BILLING_DETERMINANTS;
-
-static QStringList MR_METHOD_LIST = QStringList()
-<< GET_LATEST_METER_READINGS << GET_METER_READINGS_BY_BILLINGCYCLE << GET_END_DEVICE_EVENTS_BY_METERIDS;
-
-static QStringList PG_METHOD_LIST = QStringList()
-<< CHANGE_PAYMENT_TRANSACTIONS << CHANGE_RECURRING_PAYMENT_CONFIGURATION << PROCESS_PAYMENT_TRANSACTIONS;
-
-static QStringList OD_METHOD_LIST = QStringList()
-<< GET_METER_IDS_BY_END_DEVICE_STATE_TYPES << INITIATE_END_DEVICE_PINGS;
 
 #endif // RULECONST_H
 

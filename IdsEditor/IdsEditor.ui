@@ -18,80 +18,112 @@
     <normaloff>:/IdsEditor/Resources/icon.png</normaloff>:/IdsEditor/Resources/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QFrame" name="frame">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="grpMain">
+      <property name="minimumSize">
+       <size>
+        <width>10</width>
+        <height>0</height>
+       </size>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+      <property name="title">
+       <string>Business Rules</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QToolButton" name="NewBtn">
+           <property name="toolTip">
+            <string>New Business Rule</string>
+           </property>
+           <property name="text">
+            <string>New</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="EditBtn">
+           <property name="toolTip">
+            <string>Edit Selected Business Rule</string>
+           </property>
+           <property name="text">
+            <string>Edit</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="DeleteBtn">
+           <property name="toolTip">
+            <string>Delete Selected Business Rule</string>
+           </property>
+           <property name="text">
+            <string>Delete</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="3">
+        <widget class="QPushButton" name="btnAddHost">
          <property name="text">
-          <string>Business Rules</string>
+          <string>Add</string>
          </property>
         </widget>
        </item>
+       <item row="0" column="4">
+        <widget class="QComboBox" name="cmbHosts">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>70</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Enter Host IP</string>
+         </property>
+         <property name="statusTip">
+          <string/>
+         </property>
+         <property name="editable">
+          <bool>true</bool>
+         </property>
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+         <property name="minimumContentsLength">
+          <number>0</number>
+         </property>
+         <property name="placeholderText">
+          <string>0.0.0.0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="5">
+        <widget class="QTreeView" name="RulesTreeView"/>
+       </item>
+       <item row="0" column="2">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QToolButton" name="NewBtn">
-        <property name="toolTip">
-         <string>New Business Rule</string>
-        </property>
-        <property name="text">
-         <string>New</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="EditBtn">
-        <property name="toolTip">
-         <string>Edit Selected Business Rule</string>
-        </property>
-        <property name="text">
-         <string>Edit</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="DeleteBtn">
-        <property name="toolTip">
-         <string>Delete Selected Business Rule</string>
-        </property>
-        <property name="text">
-         <string>Delete</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <widget class="QTreeView" name="RulesTreeView"/>
     </item>
    </layout>
   </widget>
