@@ -11,15 +11,15 @@
 --		except then the testers would have to recreate all their rules each time
 
 PRAGMA foreign_keys = 1;
--- create tester table, should these actually be IPs ?
-CREATE TABLE [Testers] ( 
+-- create hosts table, should these actually be IPs ?
+CREATE TABLE [Hosts] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Name] NVARCHAR(50) NOT NULL,
-	UNIQUE(Name)
+	[Addr] NVARCHAR(32) NOT NULL,
+	UNIQUE(Addr),
+	CHECK(length(Addr) >= 7 AND length(Addr)<=15)
 ); 
-insert into Testers (Name) VALUES ('Carl');
-insert into Testers (Name) VALUES ('Tom M');
-insert into Testers (Name) VALUES ('Tom Valdez');
+insert into Hosts (Addr) VALUES ('255.255.255.255');
+-- insert into Hosts (Addr) VALUES ('0.0.0.0);
 
 -- create Functions table
 CREATE TABLE [Functions] ( 
@@ -121,7 +121,7 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 -- 		255) || '.' || (ip & 255) from mytable;
 CREATE TABLE [Rules] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Tester] INTEGER NOT NULL, 
+	[Host] INTEGER NOT NULL, 
 	[Endpoint] INTEGER NOT NULL, 
 	[Method] INTEGER NOT NULL, 
 	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),
@@ -130,9 +130,9 @@ CREATE TABLE [Rules] (
 	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),
 	[numReq] INTEGER,
 	[email] NVARCHAR(50),
-	UNIQUE(Tester,Endpoint,Method),
+	UNIQUE(Host,Endpoint,Method),
 	CHECK (maxTemp > minTemp AND maxHour > minHour),
-	FOREIGN KEY(Tester) REFERENCES Testers(Id),
+	FOREIGN KEY(Host) REFERENCES Hosts(Id),
 	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),
 	FOREIGN KEY(Method) REFERENCES Methods(Id)
 ); 

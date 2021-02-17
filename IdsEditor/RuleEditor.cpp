@@ -62,6 +62,7 @@
 #include <QHash>
 #include <QSettings>
 #include <QVariant>
+#include <QRegularExpression>
 
 #include "IdsSettings.h"
 #include "RuleConst.h"
@@ -90,11 +91,17 @@ RuleEditor::RuleEditor(const RuleSection& ruleSection, IdsEditor* parent)
 	InitFunctions();
 	UpdateUi();
 
+	/*QRegularExpression mailREX("\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[A-Z]{2,4}\\b");
+	QValidator *validator = new QRegularExpressionValidator(mailREX, this);
+	ui.Email->setValidator(validator);*/
+
 	// Group Toggle connections before SetRule
 	connect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
 	connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	connect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
+	connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
 
+	connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	connect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
@@ -174,6 +181,8 @@ void RuleEditor::UpdateUi()
 	disconnect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	disconnect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	disconnect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
+	disconnect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
+
 	ui.MethodCombo->clear();
 	ui.EndPointCombo->clear();
 	ui.FunctionCombo->setCurrentIndex(ui.FunctionCombo->findText(function));
@@ -213,6 +222,7 @@ void RuleEditor::UpdateUi()
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	connect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
+	connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
 
 	// Check for rules
 	for (Rule* rule : m_ruleSection.Rules)
@@ -240,6 +250,10 @@ void RuleEditor::UpdateUi()
 			ui.MaxTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MAXTIME).toInt());
 			ui.MinTimeSpin->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
 			ui.MinTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
+		}
+		else if (rule->Name == RULE_TYPE_EMAIL)
+		{
+			qDebug() << "TODO: Handle case RULE_TYPE_EMAIL";
 		}
 	}
 }
@@ -282,30 +296,22 @@ void RuleEditor::OnMethodComboChanged(int index)
 }
 
 //-------------------------------------------------------------------------------
+// OnEmailChanged
+//
+void RuleEditor::OnEmailChanged(void)
+{
+	QString qs = ui.Email->displayText();
+	qDebug() << "Email Address Set to: " << qs;
+	m_ruleSection.Rules.value(RULE_TYPE_EMAIL)->KeyValue.insert(RULE_KEY_EMAIL, qs);
+	UpdateUi();
+}
+
+//-------------------------------------------------------------------------------
 // OnMaxRequestsChanged
 //
 void RuleEditor::OnMaxRequestsChanged(int value)
 {
 	m_ruleSection.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
-	UpdateUi();
-}
-
-//-------------------------------------------------------------------------------
-// OnMaxRequestsToggled
-//
-void RuleEditor::OnMaxRequestsToggled(bool checked)
-{
-	ui.MaxRequestsFrame->setVisible(checked);
-	if (checked)
-	{
-		Rule* rule = RuleSection::CreateRule(RULE_TYPE_MAX_VALUE);
-		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
-		m_ruleSection.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
-	}
-	else
-	{
-		delete m_ruleSection.Rules.take(RULE_TYPE_MAX_VALUE);
-	}
 	UpdateUi();
 }
 
@@ -366,6 +372,25 @@ void RuleEditor::OnMinTimeChanged(int value)
 }
 
 //-------------------------------------------------------------------------------
+// OnMaxRequestsToggled
+//
+void RuleEditor::OnMaxRequestsToggled(bool checked)
+{
+	ui.MaxRequestsFrame->setVisible(checked);
+	if (checked)
+	{
+		Rule* rule = RuleSection::CreateRule(RULE_TYPE_MAX_VALUE);
+		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
+		m_ruleSection.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
+	}
+	else
+	{
+		delete m_ruleSection.Rules.take(RULE_TYPE_MAX_VALUE);
+	}
+	UpdateUi();
+}
+
+//-------------------------------------------------------------------------------
 // OnTempToggled
 //
 void RuleEditor::OnTempToggled(bool checked)
@@ -401,6 +426,25 @@ void RuleEditor::OnTimeToggled(bool checked)
 	else
 	{
 		delete m_ruleSection.Rules.take(RULE_TYPE_TIME_RANGE);
+	}
+	UpdateUi();
+}
+
+
+//-------------------------------------------------------------------------------
+// OnEmailToggled
+//
+void RuleEditor::OnEmailToggled(bool checked)
+{
+	if (checked)
+	{
+		Rule* rule = RuleSection::CreateRule(RULE_TYPE_EMAIL);
+		rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
+		m_ruleSection.Rules.insert(RULE_TYPE_EMAIL, rule);
+	}
+	else
+	{
+		delete m_ruleSection.Rules.take(RULE_TYPE_EMAIL);
 	}
 	UpdateUi();
 }

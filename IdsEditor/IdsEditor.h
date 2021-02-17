@@ -93,6 +93,7 @@ private:
 	DB_HASH m_methods;  // key is an endpoint, value a list of methods
 	QSqlDatabase m_db;
 	QHostAddress m_Host;
+	bool m_prompt;
 
 public:
 	IdsEditor(QWidget* parent = Q_NULLPTR);
@@ -114,14 +115,14 @@ private:
 	QModelIndex ModelIndexByKeyAndRole(const QString& key, int role);
 
 	void InitCombo();
-	void ReadDbFile(const QString& fileName);
+	bool ReadDbFile(const QString& fileName);
+	bool LoadRules( QSqlDatabase& );
 	void RestoreGeometry();
 	void RestoreState();
 	QStandardItem* RuleItem(const QString& ruleKey);
 	void SaveGeometry();
 	void SaveState();
 	QStandardItem* SectionItem(const QString& sectionKey);
-	//void UpdateSectionModel();
 
 private slots:
 	void OnAbout();
@@ -132,7 +133,8 @@ private slots:
 	void OnHelp();
 	void OnQuit() { close(); }
 	void OnInitCombo() { InitCombo(); }
-	void OnReadDbFile() { ReadDbFile(m_dbFileName); }
+	//void OnReadDbFile() { ReadDbFile(m_dbFileName);}
+	void OnReadDbFile() { OnFileOpen(); m_prompt = true;}
 	void OnRestoreState() { RestoreState(); }
 	void OnRuleDelete();
 	void OnRuleEdit();

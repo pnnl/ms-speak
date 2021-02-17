@@ -440,7 +440,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="emlGroup">
+        <widget class="QGroupBox" name="EmailGroup">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -451,14 +451,14 @@
           <string>E-mail Address</string>
          </property>
          <property name="checkable">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="checked">
           <bool>false</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="Email">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -467,6 +467,9 @@
             </property>
             <property name="acceptDrops">
              <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>&lt;none&gt;</string>
             </property>
            </widget>
           </item>

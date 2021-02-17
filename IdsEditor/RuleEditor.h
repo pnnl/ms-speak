@@ -103,18 +103,21 @@ private:
 	void UpdateUi();
 
 private slots:
-	void OnEndPointComboChanged(int index);
-	void OnFunctionComboChanged(int index);
-	void OnMaxRequestsChanged(int value);
-	void OnMaxRequestsToggled(bool checked);
-	void OnMaxTempChanged(int value);
-	void OnMaxTimeChanged(int value);
-	void OnMethodComboChanged(int index);
-	void OnMinTempChanged(int value);
-	void OnMinTimeChanged(int value);
+	void OnEndPointComboChanged(int);
+	void OnFunctionComboChanged(int);
+	void OnMaxRequestsChanged(int);
+	void OnMaxRequestsToggled(bool);
+	void OnMaxTempChanged(int);
+	void OnMaxTimeChanged(int);
+	void OnMethodComboChanged(int);
+	void OnMinTempChanged(int);
+	void OnMinTimeChanged(int);
+	void OnEmailChanged(void);
 
-	void OnTempToggled(bool checked);
-	void OnTimeToggled(bool checked);
+	void OnTempToggled(bool);
+	void OnTimeToggled(bool);
+	void OnEmailToggled(bool);
+
 	void OnClickedBtn(QAbstractButton *);
 	void accept();
 	void reject();
