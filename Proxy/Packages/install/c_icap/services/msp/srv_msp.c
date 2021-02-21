@@ -397,6 +397,7 @@ struct srv_msp_msg_info {
 	//char timestamp[CI_MAXTIMESTAMPLEN + 
 };
 
+// 2021 -  should add src IP to this?
 struct srv_msp_data {
 	struct body_data body;
 	struct srv_msp_msg_info msginfo;
@@ -901,7 +902,42 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			msp_dumphex(buf, len);
 		}
 	}
+	
+	/* 2021: GET src IP in order to retrieve rules
+           if ((clientip = ci_headers_value(req->request_header, "X-Client-IP")) != NULL) {
+           debugs(2, "DEBUG X-Client-IP: %s\n", clientip);
+	*/
+	
+	/*
+	 * CHM: FEB-20--2021  https://sourceforge.net/p/c-icap/mailman/message/32589421/
+	 * > I'm using SQUID 3.1.10 + c-icap 0.1.6 and would like to obtain the
+		> client IP in my ICAP service.
+		> I have the following line in the SQUID configuration file:
+		>
+		>     icap_send_client_ip on
+		>
+		>
+		> and in the service code I try to get the client IP:
+		>
+		>     const char *ip = ci_headers_value(ci_http_request_headers(req),
+		>     "X-Client-IP);
+		>
+		>
+		> but it does not work. There is no such header there.
 
+		Just use the following:
+		const char *ip = ci_headers_value(req->request_header, "X-Client-IP);
+
+
+		Looks that currently c-icap misses a function to get ICAP request 
+		headers. The ci_http_request_headers function return the encapsulated 
+		http request headers, not the ICAP request headers.
+		So you have to use the (undocumented :-( ) ci_request_t::request_header 
+		member to get ICAP request headers.
+
+		Regards,
+			Christos
+	*/
 	// If the content type is not xml do not process 
 	/*
 	const char *content_type = ci_http_response_get_header(req, "Content-Type");

@@ -37,4 +37,8 @@ x64/
 IdsEditor/GeneratedFiles/
 IdsEditor/Debug/
 methods.txt
+Todo.txt
+Sql/srv_msp.c
+Sql/tstCreateBizDB.sql
+Sql/tstShowTables.sql
 

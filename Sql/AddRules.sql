@@ -52,8 +52,6 @@ INSERT OR REPLACE INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHou
 	3,
 	"tom Mcd@gmail.com");
 
-
-
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='PG_Server')
 INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Carl'),
@@ -64,6 +62,31 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	15,
 	10,
 	7,
-	"carl.miller@gmail.com");
+	'');
+
+WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='PG_Server')
+INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, email ) VALUES 
+	((SELECT Id FROM Testers WHERE Name ='Darlene'),
+	(SELECT * from EpId),
+	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
+	95,
+	33,
+	15,
+	10,
+	7,
+	'');
+
+
+WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='PG_Server')
+INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, email ) VALUES 
+	((SELECT Id FROM Testers WHERE Name ='Amy'),
+	(SELECT * from EpId),
+	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
+	77,
+	43,
+	11,
+	8,
+	3,
+	'');
 
 .quit

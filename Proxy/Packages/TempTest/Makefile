@@ -1,0 +1,20 @@
+
+INC = /usr/include/libxml2
+
+PROJECT_BINARY_NAME = Weather
+PROJECT_SOURCES = Weather.c
+
+INCLUDES += -I$(INC)
+
+all:	$(PROJECT_BINARY_NAME)
+
+CFLAGS  += -Wall -O
+CFLAGS  += -DDEBUG
+
+LDLIBS  += -lcurl -lxml2
+
+$(PROJECT_BINARY_NAME): $(PROJECT_SOURCES)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(PROJECT_BINARY_NAME) $(PROJECT_SOURCES) $(INCLUDES) $(LDLIBS)
+
+clean:
+	rm -f $(PROJECT_BINARY_NAME)

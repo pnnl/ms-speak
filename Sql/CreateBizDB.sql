@@ -1,5 +1,5 @@
 -- Create BizRules DB
---     sqlite3 BizRules.db < BizRules.sql
+--     sqlite3 BizRules.db < CreateBizDB.sql
 --	dot commands are allowed, but must be lowercase
 
 -- can wrap commands around Begin/Commit:
@@ -11,15 +11,18 @@
 --		except then the testers would have to recreate all their rules each time
 
 PRAGMA foreign_keys = 1;
--- create hosts table, should these actually be IPs ?
-CREATE TABLE [Hosts] ( 
+
+-- create tester table
+CREATE TABLE [Testers] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Addr] NVARCHAR(32) NOT NULL,
-	UNIQUE(Addr),
-	CHECK(length(Addr) >= 7 AND length(Addr)<=15)
+	[Name]  NVARCHAR(50) NOT NULL,
+ 	[Host]  NVARCHAR(16) NOT NULL,
+	[AppId] NVARCHAR(50),
+	[Zipcode] NVARCHAR(6),
+ 	UNIQUE(Name),
+ 	UNIQUE(Host),
+ 	CHECK(length(Host) >= 7 AND length(Host)<=15)
 ); 
-insert into Hosts (Addr) VALUES ('255.255.255.255');
--- insert into Hosts (Addr) VALUES ('0.0.0.0);
 
 -- create Functions table
 CREATE TABLE [Functions] ( 
@@ -114,14 +117,13 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 --INSERT INTO Methods (EndPoint, Name ) VALUES
 --	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), "PingURL"); 	
 
-
 -- create rules table - not sure if even need to have Id
 -- convert IPs:
 -- 	select (ip >> 24) || '.' || ((ip >> 16) & 255) || '.' || ((ip >> 8) &
 -- 		255) || '.' || (ip & 255) from mytable;
 CREATE TABLE [Rules] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
-	[Host] INTEGER NOT NULL, 
+	[Tester] INTEGER NOT NULL, 
 	[Endpoint] INTEGER NOT NULL, 
 	[Method] INTEGER NOT NULL, 
 	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),
@@ -130,9 +132,9 @@ CREATE TABLE [Rules] (
 	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),
 	[numReq] INTEGER,
 	[email] NVARCHAR(50),
-	UNIQUE(Host,Endpoint,Method),
+	UNIQUE(Tester,Endpoint,Method),
 	CHECK (maxTemp > minTemp AND maxHour > minHour),
-	FOREIGN KEY(Host) REFERENCES Hosts(Id),
+	FOREIGN KEY(Tester) REFERENCES Hosts(Id),
 	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),
 	FOREIGN KEY(Method) REFERENCES Methods(Id)
 ); 

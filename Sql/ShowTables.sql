@@ -4,9 +4,9 @@
 .headers ON
 .mode column
 
-.width 3 15
-.print == Hosts ==
-select * from Hosts;
+.width 3 15 25 32
+.print == Testers ==
+select * from Testers;
 
 .print
 .width 3 20
