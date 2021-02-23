@@ -294,8 +294,10 @@ void TimelineScene::Start()
 	// Disable movement of items while running...will be reset at Reset
 	foreach(QGraphicsItem* item, items())
 	{
-		if (TimelineEventItem* teItem = qgraphicsitem_cast<TimelineEventItem*>(item))
-			teItem->setFlags(Q_NULLPTR);
+		if (TimelineEventItem* teItem = qgraphicsitem_cast<TimelineEventItem*>(item)){
+			//teItem->setFlags(Q_NULLPTR); // CHM: 2-21-2021:
+			teItem->setFlags((QGraphicsItem::GraphicsItemFlags)0x00);
+		}
 	}
 
 	if (m_currentIdx < m_events.count())

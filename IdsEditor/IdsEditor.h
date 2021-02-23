@@ -71,7 +71,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
-#include <QHostAddress>
+//#include <QHostAddress>
 
 class RuleSection;
 
@@ -92,7 +92,8 @@ private:
 	DB_HASH m_functions; // key is a function, value a hash of endpoints
 	DB_HASH m_methods;  // key is an endpoint, value a list of methods
 	QSqlDatabase m_db;
-	QHostAddress m_Host;
+	//QHostAddress m_Host;
+	QString m_Tester;
 	bool m_prompt;
 
 public:
@@ -115,8 +116,8 @@ private:
 	QModelIndex ModelIndexByKeyAndRole(const QString& key, int role);
 
 	void InitCombo();
-	bool ReadDbFile(const QString& fileName);
-	bool LoadRules( QSqlDatabase& );
+	bool ReadDbFile(const QString& fileName, QString&);
+	bool LoadRules( QSqlDatabase&, QString& );
 	void RestoreGeometry();
 	void RestoreState();
 	QStandardItem* RuleItem(const QString& ruleKey);
@@ -144,8 +145,8 @@ private slots:
 	//void OnHostEditReturn();
 	//void OnHostEditFinished();
 	//void OnHostTextChanged(QString);
-	void OnAddHost();
-	void OnHostSelectionChanged(int);
+	void OnAddTester();
+	void OnTesterSelectionChanged(int);
 
 };
 #endif // IDSEDITOR_H

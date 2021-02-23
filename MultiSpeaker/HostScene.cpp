@@ -287,9 +287,17 @@ QStringList HostScene::HostRoles() const
 	{
 		if (!map.contains(host->Name()))
 			map.insert(host->Name(), new QStringList);
+		/* 2-21-2021 original, doesn't compile:
 		//QStringList list = map.value[host->Name()];
 		//list << QString::number(host->Id());
 		map.values(host->Name()).first()->append(QString::number(host->Id()));
+		//map.value[host->Name()].append(QString::number(host->Id()));
+		*/
+
+		// CHM: 2-21-2021:
+		// map.values(host->Name()).first()->append(QString::number(host->Id()));
+		QStringList *list = map.value(host->Name());
+		list->first().append(QString::number(host->Id()));
 		//map.value[host->Name()].append(QString::number(host->Id()));
 	}
 

@@ -8,7 +8,6 @@
 #include <curl/curl.h>
 
 #define MAX_DB_NAMELEN  50
-#define MAX_DB_HOSTLEN  15
 #define MAX_DB_ZIPLEN    5
 #define APIBUFFLEN     250
 
@@ -16,7 +15,6 @@
 #define WILDCARD -1
 
 #define DB_COLNAME_TESTER	"Tester"
-#define DB_COLNAME_HOST		"Host"
 #define DB_COLNAME_APPID	"AppId"
 #define DB_COLNAME_ZIPCODE	"Zipcode"
 #define DB_COLNAME_ENDPOINT "Endpoint"
@@ -26,6 +24,7 @@
 #define DB_COLNAME_MAXHOUR	"maxHour"
 #define DB_COLNAME_MINHOUR	"minHour"
 #define DB_COLNAME_NUMREQ	"numReq"
+#define DB_COLNAME_NUMRPH	"numRPH"
 #define DB_COLNAME_EMAIL	"email"
 
 typedef signed long gint64;
@@ -35,6 +34,7 @@ typedef char   gchar;
 //		the string placed in dest will not be null-terminated.
 typedef struct _bizdata {
 	gint64 m_numReq;
+	gint64 m_numRPH;
 	gint64 m_minTemp;
 	gint64 m_maxTemp;
 	gint64 m_minHour;
@@ -42,7 +42,6 @@ typedef struct _bizdata {
 	gint64 m_ValidRequestNum;
 	gint64 m_TotalRequestNum;
 	gchar  m_Tester[MAX_DB_NAMELEN+1];
-	gchar  m_Host[MAX_DB_HOSTLEN+1];
 	gchar  m_AppId[MAX_DB_NAMELEN+1];
 	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
 	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
@@ -83,6 +82,9 @@ static int callback(void *data, int colcount, char **values, char **columns){
 			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
 				pBzd->m_numReq = atoll(values[i]);
 			}
+			else if( !strcmp(curr_key, DB_COLNAME_NUMRPH) ){
+				pBzd->m_numRPH = atoll(values[i]);
+			}
 			else if( !strcmp(curr_key, DB_COLNAME_MINTEMP) ){
 				pBzd->m_minTemp = atoll(values[i]);
 			}
@@ -97,9 +99,6 @@ static int callback(void *data, int colcount, char **values, char **columns){
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
 				strncpy( pBzd->m_Tester, values[i], MAX_DB_NAMELEN );
-			}
-			else if( !strcmp(curr_key, DB_COLNAME_HOST) ){
-				strncpy( pBzd->m_Host, values[i], MAX_DB_HOSTLEN );
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_APPID) ){
 				if( values[i] )
@@ -189,40 +188,16 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
     return size*nmemb;
 }
 
-typedef struct _hostrecs{
-	BIZ_DATA *m_first;
-	int		  m_num;
-} HOST_RECS;
-
-// GetHostRecs
-bool GetHostRecs( BIZ_DATA *pBizRecs, int numRecs, 
-				  const char *pHost, HOST_RECS *pHRecs ){
-	bool bRet = false;
-	if( pBizRecs && pHost && pHRecs ){
-		pHRecs->m_first = NULL;
-		pHRecs->m_num = 0;
-		for( int i=0; i<numRecs; i++ ){
-			if( !strcmp(pBizRecs->m_Host, pHost) ){ //  found host, find the rest now
-				if( !bRet ){
-					pHRecs->m_first = pBizRecs;
-					bRet = true;
-				}
-				pHRecs->m_num++;
-			}
-			else if( bRet )
-				break;
-			pBizRecs++;
-		}
-	}
-	return bRet;
-}
-
+#define SQL_FROM_QUERY " FROM rules"\
+		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
+		" INNER JOIN methods ON methods.id = rules.method"\
+		" INNER JOIN testers ON testers.id = rules.tester"\
+		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"\
+		
 // sudo apt-get install libsqlite3-dev -lcurl -DDEBUG
 // make -f icapMakefile
-// gcc IcapTest.c -o IcapTest -lsqlite3
+// gcc IcapTest.c -o IcapTest -lsqlite3 -lcurl -lxml2
 int main(int argc, char* argv[]) {
-	HOST_RECS hRecs; // host records should be consecutive by tester due to 'ORDER BY Tester' query
-	const char *clientip;
 	sqlite3 *db;
 	char *zErrMsg = 0;
 	int rc;
@@ -237,15 +212,14 @@ int main(int argc, char* argv[]) {
 	} else {
 		;//fprintf(stderr, "Opened database successfully\n");
 	}
-	sql = "SELECT Count(*)"
-		" FROM rules"
-		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
-		" INNER JOIN methods ON methods.id = rules.method"
-		" INNER JOIN testers ON testers.id = rules.tester;";
+		
+	sql = "SELECT Count(*)" SQL_FROM_QUERY;
+
 	sqlite3_stmt *stmt;
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
 	if (rc != SQLITE_OK) {
 		fprintf(stderr, "PREPARE failed: %s\n", sqlite3_errmsg(db));
+		fprintf(stderr, "QUERY: %s\n", sql);
 		return(iRet);
 	}
 	bool bOnce = false;
@@ -268,33 +242,37 @@ int main(int argc, char* argv[]) {
 	}
 	sqlite3_finalize(stmt);	
 
+	if( NumBizRecs == 0 ){
+		fprintf(stderr, "SANITY FAILURE: %s\n", "No Active Tester Rules Found");
+		return(iRet);
+	}else{
+		printf( "%d Active Tester Rules Found\n", NumBizRecs);
+	}
+	
 	size_t size = NumBizRecs * sizeof(BIZ_DATA);
 	RowCnt = 0;
 	pBizRecords = (BIZ_DATA *)calloc(1,size); // assure all string buffs will be null-termed
 	for( int i=0; i<NumBizRecs; i++ ){
 		pBizRecords[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+		pBizRecords[i].m_numRPH = WILDCARD;
 		pBizRecords[i].m_minTemp = WILDCARD;
 		pBizRecords[i].m_maxTemp = WILDCARD;
 		pBizRecords[i].m_minHour = WILDCARD;
 		pBizRecords[i].m_maxHour = WILDCARD;
 	}
-	
-	sql = "SELECT testers.Name as Tester, testers.Host, testers.AppId, testers.Zipcode, endpoints.name as Endpoint, methods.name as Method,"
-		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.email"
-		" FROM rules"
-		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
-		" INNER JOIN methods ON methods.id = rules.method"
-		" INNER JOIN testers ON testers.id = rules.tester"
-		" ORDER BY Tester;";
-
+		
 	/* Execute SQL statement 
-		The fourth parameter of sqlite3_exec can be used to pass information to the callback.
-		A pointer to a struct to fill would be useful.	 
-		*/
+	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
+	A pointer to a struct to fill would be useful.	 
+	*/
+	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, endpoints.name as Endpoint, methods.name as Method,"
+		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
+		 SQL_FROM_QUERY;	
 	rc = sqlite3_exec(db, sql, callback, (void*)pBizRecords, &zErrMsg);
 	if( rc != SQLITE_OK ) {
-		fprintf(stderr, "SQL error: %s\n", zErrMsg);
+		fprintf(stderr, "SQL error getting Active Rules: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		return(iRet);
 	} else {
 		;//fprintf(stdout, "Operation done successfully\n");
 	}
@@ -304,23 +282,16 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "SANITY FAILURE: %s\n", "excess rows for query");
 	}
 	else{
-		//fprintf(stdout, "Rules Read Successfully\n");
-		clientip = "172.31.153.24"; // should be extracted by icap from msp packet
-		if( GetHostRecs( pBizRecords, NumBizRecs, clientip, &hRecs ) )
-		{
-			iRet = 0;
-			BIZ_DATA *pBizRecs = hRecs.m_first;
-			for( int i=0; i<hRecs.m_num; i++ ){
-				printf("Record %d:\n  Tester: %s, Host: %s, AppId: %s, Zip: %s\n",
-					i,pBizRecs->m_Tester,pBizRecs->m_Host,pBizRecs->m_AppId, pBizRecs-> m_Zipcode);
-				printf("          Endpoint: %s, Method: %s\n",pBizRecs->m_EndPoint,pBizRecs->m_Method);
-				printf("          numReq: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
-					pBizRecs->m_numReq,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
-				printf("          Email: %s\n",pBizRecs->m_Email);
-				pBizRecs++;
-			}
-		}else{
-			fprintf(stderr, "No Host Records Found For Host '%s'\n", clientip);
+		iRet = 0;
+		BIZ_DATA *pBizRecs = pBizRecords;
+		for( int i=0; i<NumBizRecs; i++ ){
+			printf("Record %d:\n  Tester: %s, AppId: %s, Zip: %s\n",
+				i,pBizRecs->m_Tester,pBizRecs->m_AppId, pBizRecs-> m_Zipcode);
+			printf("          Endpoint: %s, Method: %s\n",pBizRecs->m_EndPoint,pBizRecs->m_Method);
+			printf("          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
+				pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
+			printf("          Email: %s\n",pBizRecs->m_Email);
+			pBizRecs++;
 		}
 	}
 #ifdef _WEATHER	

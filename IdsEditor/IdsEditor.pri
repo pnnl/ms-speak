@@ -68,5 +68,6 @@ SOURCES += ./IdsEditor.cpp \
     ./Rule.cpp \
     ./RuleEditor.cpp
 FORMS += ./IdsEditor.ui \
+    $$PWD/../../../../../../../Desktop/MS-Speak/Phase3/IdsEditor/TesterEditor.ui \
     ./RuleEditor.ui
 RESOURCES += IdsEditor.qrc

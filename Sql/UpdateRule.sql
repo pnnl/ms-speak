@@ -3,6 +3,7 @@
 
 -- should also check the Endpoint, in case multiple endpoints share the same method
 --		(i.e. PingUrl)
+-- maybe not use OR REPLACE as each replaces autoincrements the rule Id, use UPDATE instead
 
 .print
 .print == Update IsCDSupported Rule ==

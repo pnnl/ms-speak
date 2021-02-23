@@ -106,6 +106,7 @@ RuleEditor::RuleEditor(const RuleSection& ruleSection, IdsEditor* parent)
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	connect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
 	connect(ui.MaxRequestsSpin, SIGNAL(valueChanged(int)), this, SLOT(OnMaxRequestsChanged(int)));
+	connect(ui.MaxReqPHSpin, SIGNAL(valueChanged(int)), this, SLOT(OnMaxReqPHChanged(int)));
 	connect(ui.MaxTempSlider, SIGNAL(valueChanged(int)), ui.MaxTempSpin, SLOT(setValue(int)));
 	connect(ui.MaxTempSlider, SIGNAL(valueChanged(int)), this, SLOT(OnMaxTempChanged(int)));
 	connect(ui.MaxTempSpin, SIGNAL(valueChanged(int)), ui.MaxTempSlider, SLOT(setValue(int)));
@@ -311,7 +312,24 @@ void RuleEditor::OnEmailChanged(void)
 //
 void RuleEditor::OnMaxRequestsChanged(int value)
 {
+	if( value < ui.MaxReqPHSpin->value() )
+	{
+		ui.MaxReqPHSpin->setValue(value);
+	}
 	m_ruleSection.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
+	UpdateUi();
+}
+
+//-------------------------------------------------------------------------------
+// OnMaxReqPHChanged
+//
+void RuleEditor::OnMaxReqPHChanged(int value)
+{
+	if( value > ui.MaxRequestsSpin->value() )
+	{
+		ui.MaxRequestsSpin->setValue(value);
+	}
+	m_ruleSection.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
 	UpdateUi();
 }
 
@@ -330,20 +348,6 @@ void RuleEditor::OnMaxTempChanged(int value)
 }
 
 //-------------------------------------------------------------------------------
-// OnMaxTimeChanged
-//
-void RuleEditor::OnMaxTimeChanged(int value)
-{
-	if (value < ui.MinTimeSlider->value() || value < ui.MinTimeSpin->value())
-	{
-		ui.MinTimeSlider->setValue(value);
-		ui.MinTimeSpin->setValue(value);
-	}
-	m_ruleSection.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
-	UpdateUi();
-}
-
-//-------------------------------------------------------------------------------
 // OnMinTempChanged
 //
 void RuleEditor::OnMinTempChanged(int value)
@@ -354,6 +358,20 @@ void RuleEditor::OnMinTempChanged(int value)
 		ui.MaxTempSpin->setValue(value);
 	}
 	m_ruleSection.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(value));
+	UpdateUi();
+}
+
+//-------------------------------------------------------------------------------
+// OnMaxTimeChanged
+//
+void RuleEditor::OnMaxTimeChanged(int value)
+{
+	if (value < ui.MinTimeSlider->value() || value < ui.MinTimeSpin->value())
+	{
+		ui.MinTimeSlider->setValue(value);
+		ui.MinTimeSpin->setValue(value);
+	}
+	m_ruleSection.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
 	UpdateUi();
 }
 
@@ -381,6 +399,7 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 	{
 		Rule* rule = RuleSection::CreateRule(RULE_TYPE_MAX_VALUE);
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
+		rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
 		m_ruleSection.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
 	}
 	else

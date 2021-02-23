@@ -41,4 +41,9 @@ Todo.txt
 Sql/srv_msp.c
 Sql/tstCreateBizDB.sql
 Sql/tstShowTables.sql
-
+*(copy)*
+*.bak
+Proxy/Packages/TempTest/Weather
+Proxy/Packages/TempTest/MailTest
+Sql/Upsert.txt
+run/readme

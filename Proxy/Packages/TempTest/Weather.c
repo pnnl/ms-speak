@@ -9,6 +9,8 @@
 #define _XOPEN_SOURCE       /* See feature_test_macros(7) */
 #include <time.h>
 
+#define APIBUFFLEN     250
+
 char *strptime(const char *s, const char *format, struct tm *tm);
 time_t timelocal(struct tm *tm);
 
@@ -20,7 +22,9 @@ struct string {
 void init_string(struct string *);
 size_t writefunc(void *, size_t, size_t, struct string *);
 
-const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?zip=99352&appid=85cd2a23af95429c1dbbc7b308463346&units=imperial&mode=xml";
+// appid=85cd2a23af95429c1dbbc7b308463346
+const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?zip=%s&appid=85cd2a23af95429c1dbbc7b308463346&units=imperial&mode=xml";
+char api_buffer[APIBUFFLEN+1];
 
 void init_string(struct string *s) {
     s->len = 0;
@@ -64,38 +68,62 @@ xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
     return child;
 }
 
-
-/*
-	<?xml version="1.0"?>
-	<story>
-	<storyinfo>
-		<author>John Fleck</author>
-		<datewritten>June 2, 2002</datewritten>
-		<keyword>example keyword</keyword>
-	</storyinfo>
-	<body>
-		<headline>This is the headline</headline>
-		<para>This is the body text.</para>
-	</body>
-	</story>
+/*  https://openweathermap.org/current
+	<current>
+	<city id="0" name="Richland">
+		<coord lon="-119.288" lat="46.2522"/>
+		<country>US</country>
+		<timezone>-28800</timezone>
+		<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
+	</city>
+	<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
+	<feels_like value="21.83" unit="fahrenheit"/>
+	<humidity value="93" unit="%"/>
+	<pressure value="1021" unit="hPa"/>
+	<wind>
+		<speed value="7.58" unit="mph" name="Light breeze"/>
+		<gusts/>
+		<direction value="210" code="SSW" name="South-southwest"/>
+	</wind>
+	<clouds value="90" name="overcast clouds"/>
+	<visibility value="10000"/>
+	<precipitation mode="no"/>
+	<weather number="804" value="overcast clouds" icon="04d"/>
+	<lastupdate value="2021-02-19T17:45:04"/>
+	</current>
 */
 
 //  https://openweathermap.org/current
 // sudo apt-get install libsqlite3-dev -lcurl -DDEBUG
 // gcc Weather.c -o Weather -lcurl -lxml2
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
+	bool bShowAll = false;
+	
+	if( argc < 2 ){
+		printf("\n You Must Provide a Zipcode.\n"); // 10502: Ardsley, 97429: DC
+		return -1;	
+	}
+	if( argc == 3 )
+		bShowAll = true;
 	
 	// get weather
     CURL *curl;
     CURLcode res;
-
-    curl = curl_easy_init();
+	int tmz_off = 0;
+	char *Zipcode = argv[1];
+	if( !strcmp(Zipcode, "10502") ){
+		tmz_off = 3;
+	}
+	
+	curl = curl_easy_init();
     if(curl)
     {
         struct string s;
         init_string(&s);
-
-        curl_easy_setopt(curl, CURLOPT_URL, api_endpoint);
+		printf("\n Getting Weather for area %s\n", Zipcode);		
+		snprintf(api_buffer, APIBUFFLEN, api_endpoint, Zipcode );
+        curl_easy_setopt(curl, CURLOPT_URL, api_buffer);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
@@ -103,8 +131,10 @@ int main(int argc, char* argv[]) {
         if(res != CURLE_OK) {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         } else {
-            //printf("string len: %ld\n",s.len);
-			//printf("%s\n",s.ptr);
+			if( bShowAll ){
+				//printf("string len: %ld\n",s.len);
+				printf("\n%s\n\n",s.ptr);
+			}
 			xmlNodePtr cur;
 			xmlDocPtr xmlDoc;
 			xmlDoc = xmlParseMemory(s.ptr, s.len);
@@ -121,33 +151,11 @@ int main(int argc, char* argv[]) {
 			cur = cur->xmlChildrenNode;
 			printf("\n\n");
 			
-			/*  https://openweathermap.org/current
-				<current>
-				<city id="0" name="Richland">
-					<coord lon="-119.288" lat="46.2522"/>
-					<country>US</country>
-					<timezone>-28800</timezone>
-					<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
-				</city>
-				<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
-				<feels_like value="21.83" unit="fahrenheit"/>
-				<humidity value="93" unit="%"/>
-				<pressure value="1021" unit="hPa"/>
-				<wind>
-					<speed value="7.58" unit="mph" name="Light breeze"/>
-					<gusts/>
-					<direction value="210" code="SSW" name="South-southwest"/>
-				</wind>
-				<clouds value="90" name="overcast clouds"/>
-				<visibility value="10000"/>
-				<precipitation mode="no"/>
-				<weather number="804" value="overcast clouds" icon="04d"/>
-				<lastupdate value="2021-02-19T17:45:04"/>
-				</current>
-			*/
-			
 			xmlNodePtr child;
 			xmlChar *key, *key2;
+			struct tm result;
+			struct tm *info;
+			time_t local;
 			while (cur != NULL)
 			{
 				//printf("Current Name: '%s'\n", cur->name);
@@ -168,6 +176,16 @@ int main(int argc, char* argv[]) {
 						xmlFree(key);
 					}	
 				}
+				else if( (!xmlStrcmp(cur->name, (const xmlChar *)"feels_like")) ){
+					key = xmlGetProp(cur, (const xmlChar *)"value");
+					printf("Feels like: %s\n", key);
+					xmlFree(key);
+				}				
+				else if( (!xmlStrcmp(cur->name, (const xmlChar *)"humidity")) ){
+					key = xmlGetProp(cur, (const xmlChar *)"value");
+					printf("Humidity: %s%%\n", key);
+					xmlFree(key);
+				}				
 				else if( (!xmlStrcmp(cur->name, (const xmlChar *)"city")) ){
 					key = xmlGetProp(cur, (const xmlChar *)"name");
 					printf("City: %s\n", key);
@@ -185,18 +203,44 @@ int main(int argc, char* argv[]) {
 					else{
 						printf("ERROR: Failed to locate '%s'\n", key );
 					}
+					key = (xmlChar *)"sun";
+					child = parseNode( cur, key);
+					if( child ){
+						key = xmlGetProp(child, (const xmlChar *)"rise");
+						if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+							printf("\nstrptime failed\n");					
+						else{
+							local = timegm(&result);
+							info = localtime( &local );
+							info->tm_hour+=tmz_off;
+							printf("Sunrise: %d:%d:%d\n", info->tm_hour,info->tm_min,info->tm_sec );
+						}
+						xmlFree(key);
+						key = xmlGetProp(child, (const xmlChar *)"set");
+						if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+							printf("\nstrptime failed\n");					
+						else{
+							local = timegm(&result);
+							info = localtime( &local );
+							info->tm_hour+=tmz_off;
+							printf("Sunset: %d:%d:%d\n", info->tm_hour,info->tm_min,info->tm_sec );
+						}
+						xmlFree(key);
+					}
+					else{
+						printf("ERROR: Failed to locate '%s'\n", key );
+					}
 				}
 				else if( (!xmlStrcmp(cur->name, (const xmlChar *)"lastupdate")) ){
 					// 2021-02-20T18:44:07
 					key = xmlGetProp(cur, (const xmlChar *)"value");
-					struct tm result;
 					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
 						printf("\nstrptime failed\n");					
 					else{
 						//time_t local = timelocal(&result);
-						time_t local = timegm(&result);
-						struct tm *info;
+						local = timegm(&result);
 						info = localtime( &local );
+						info->tm_hour+=tmz_off;
 						//printf("Current local time and date: %s", asctime(info));
 						printf("Last Update: %s\n", asctime(info));
 					}
@@ -223,15 +267,47 @@ int main(int argc, char* argv[]) {
 					child = parseNode( cur, key);
 					if( child ){
 						key = xmlGetProp(child, (const xmlChar *)"name");
-						key2 = xmlGetProp(child, (const xmlChar *)"value");
-						printf("  direction: %s (%s degrees) )\n", key, key2);
+						if( key ){
+							key2 = xmlGetProp(child, (const xmlChar *)"value");
+							printf("  direction: %s (%s degrees)\n", key, key2);
+							xmlFree(key2);
+						}
 						xmlFree(key);
-						xmlFree(key2);
 					}
 					else{
 						printf("ERROR: Failed to locate '%s'\n", key );
 					}
+					key = (xmlChar *)"gusts";
+					child = parseNode( cur, key);
+					if( child ){
+						key = xmlGetProp(child, (const xmlChar *)"value");
+						if( key ){
+							printf("  gusts: %s\n", key);
+							xmlFree(key);
+						}
+					}
+					else{
+						printf("ERROR: Failed to locate '%s'\n", key );
+					}					
 				}				
+				else if( (!xmlStrcmp(cur->name, (const xmlChar *)"clouds")) ){
+					key = xmlGetProp(cur, (const xmlChar *)"name");
+					printf("%s\n", key);
+					xmlFree(key);
+				}
+				//.mode Possible values are 'no", name of weather phenomena as 'rain', 'snow'				
+				else if( (!xmlStrcmp(cur->name, (const xmlChar *)"precipitation")) ){
+					key = xmlGetProp(cur, (const xmlChar *)"value");
+					if( key ){
+						key2 = xmlGetProp(cur, (const xmlChar *)"mode");
+						printf("precipitation: %smm, %s\n", key,key2);
+						xmlFree(key2);
+					}
+					else{
+						printf("precipitation: %s\n", "none");
+					}
+					xmlFree(key);
+				}
 				cur = cur->next;
 			}			
 			xmlFreeDoc(xmlDoc);

@@ -16,14 +16,18 @@ PRAGMA foreign_keys = 1;
 CREATE TABLE [Testers] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
 	[Name]  NVARCHAR(50) NOT NULL,
- 	[Host]  NVARCHAR(16) NOT NULL,
 	[AppId] NVARCHAR(50),
 	[Zipcode] NVARCHAR(6),
- 	UNIQUE(Name),
- 	UNIQUE(Host),
- 	CHECK(length(Host) >= 7 AND length(Host)<=15)
+ 	UNIQUE(Name)
 ); 
 
+-- create ActiveTester table
+CREATE TABLE [ActiveTester] ( 
+	[Id] INTEGER NOT NULL PRIMARY KEY,
+	[Tester] INTEGER NOT NULL,
+	FOREIGN KEY(Tester) REFERENCES Testers(Id)
+);	
+	
 -- create Functions table
 CREATE TABLE [Functions] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
@@ -131,10 +135,11 @@ CREATE TABLE [Rules] (
 	[maxHour] INTEGER CHECK(maxHour >= -1 AND maxHour<=23),
 	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),
 	[numReq] INTEGER,
+	[numRPH] INTEGER,
 	[email] NVARCHAR(50),
 	UNIQUE(Tester,Endpoint,Method),
 	CHECK (maxTemp > minTemp AND maxHour > minHour),
-	FOREIGN KEY(Tester) REFERENCES Hosts(Id),
+	FOREIGN KEY(Tester) REFERENCES Testers(Id),
 	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),
 	FOREIGN KEY(Method) REFERENCES Methods(Id)
 ); 

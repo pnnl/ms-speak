@@ -106,6 +106,7 @@ private slots:
 	void OnEndPointComboChanged(int);
 	void OnFunctionComboChanged(int);
 	void OnMaxRequestsChanged(int);
+	void OnMaxReqPHChanged(int);
 	void OnMaxRequestsToggled(bool);
 	void OnMaxTempChanged(int);
 	void OnMaxTimeChanged(int);

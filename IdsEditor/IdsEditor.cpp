@@ -105,9 +105,9 @@ IdsEditor::IdsEditor(QWidget* parent)
 	ui.DeleteBtn->setEnabled(false);
 	ui.EditBtn->setEnabled(false);
 	ui.NewBtn->setEnabled(false);
-	ui.btnAddHost->setEnabled(false);
-	ui.cmbHosts->setEnabled(false);
-	//ui.cmbHosts->setEditable(false);
+	ui.btnAddTester->setEnabled(false);
+	ui.cmbTesters->setEnabled(false);
+	//ui.cmbTesters->setEditable(false);
 
 	connect(ui.FileOpenAct, SIGNAL(triggered()), this, SLOT(OnFileOpen()));
 	connect(ui.FileSaveAct, SIGNAL(triggered()), this, SLOT(OnFileSave()));
@@ -119,8 +119,8 @@ IdsEditor::IdsEditor(QWidget* parent)
 	connect(ui.EditBtn, SIGNAL(clicked()), this, SLOT(OnRuleEdit()));
 	connect(ui.NewBtn, SIGNAL(clicked()), this, SLOT(OnRuleNew()));
 	connect(ui.RulesTreeView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(OnRulesTreeViewDoubleClicked(const QModelIndex&)));
-	connect(ui.cmbHosts, SIGNAL(currentIndexChanged(int)),this,SLOT(OnHostSelectionChanged(int)));
-	connect(ui.btnAddHost, SIGNAL(clicked()), this, SLOT(OnAddHost()));
+	connect(ui.cmbTesters, SIGNAL(currentIndexChanged(int)),this,SLOT(OnTesterSelectionChanged(int)));
+	connect(ui.btnAddTester, SIGNAL(clicked()), this, SLOT(OnAddTester()));
 
 	QTimer::singleShot(100, this, SLOT(OnRestoreState())); // Restore State after Docks Created
 	QTimer::singleShot(100, this, SLOT(OnReadDbFile()));
@@ -192,7 +192,7 @@ QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& section, int role)
 // https://doc.qt.io/qt-5/examples-sql.html
 // By default, SQLite operates in auto-commit mode. It means that for each command,
 // SQLite starts, processes, and commits the transaction automatically.
-bool IdsEditor::ReadDbFile(const QString& fileName)
+bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 {
 	bool bRet = false;
 
@@ -209,10 +209,10 @@ bool IdsEditor::ReadDbFile(const QString& fileName)
 		m_db.setUserName("mojito");
 		m_db.setPassword("J0a1m8");*/
 		m_db.setConnectOptions("QSQLITE_OPEN_READONLY");
-		m_db.setDatabaseName(fileName); //
+		m_db.setDatabaseName(fileName);
 		if( !m_db.open()){
-			qDebug("Error occurred opening the database.");
-			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			errStr = QStringLiteral("Error occurred opening the database: '%1'").arg(m_db.lastError().text());
+			qDebug("%s", qPrintable(errStr));
 			return bRet;
 		}
 		QSqlQuery query(m_db);
@@ -249,9 +249,10 @@ bool IdsEditor::ReadDbFile(const QString& fileName)
 		);
 
 		query.prepare(strQuery);
-		if( !query.exec()){
-			qDebug("Error occurred querying.");
-			qDebug("%s.", qPrintable(m_db.lastError().text()));
+		if( !query.exec() ){
+			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+			qDebug("%s", qPrintable(errStr));
+			//qDebug("%s.", qPrintable(query.lastError().text()));
 			m_db.close();
 			return bRet;
 		}
@@ -273,26 +274,23 @@ bool IdsEditor::ReadDbFile(const QString& fileName)
 			if( !m_methods[ep].contains(me) )
 				m_methods[ep].append(me);
 		}
-		QString host;
-		strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_HOSTS);
+		QString tester;
+		strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_TESTERS );
 		query.prepare(strQuery);
 		if( !query.exec()){
-			qDebug("Error occurred querying.");
-			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+			qDebug("%s", qPrintable(errStr));
 			m_db.close();
 			return bRet;
 		}
 		while( query.next() ){
-			host =  query.value(1).toString();
-			qDebug() << "Host: " << host;
-			ui.cmbHosts->addItem(host);
+			tester =  query.value(1).toString();
+			qDebug() << "Tester: " << tester;
+			ui.cmbTesters->addItem(tester);
 		}
-		ui.cmbHosts->setCurrentIndex(0);
+		ui.cmbTesters->setCurrentIndex(0);
 
-		bRet = LoadRules( m_db );
-
-
-
+		bRet = LoadRules( m_db,errStr );
 		m_db.close();
 		UpdateSectionModel();
 	}
@@ -302,7 +300,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName)
 //------------------------------------------------------------------------------
 // LoadRules
 //
-bool IdsEditor::LoadRules(QSqlDatabase& db )
+bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 {
 	bool bRet = false;
 
@@ -381,41 +379,44 @@ bool IdsEditor::LoadRules(QSqlDatabase& db )
 	" FROM rules"
 	" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
 	" INNER JOIN methods ON methods.id = rules.method"
-	" INNER JOIN hosts ON hosts.id = rules.host;"
+	" INNER JOIN testers ON testers.id = rules.Tester;"
 	);
 
 	query.prepare(strQuery);
 	if( !query.exec() ){
-		qDebug("Error occurred querying.");
-		qDebug("%s.", qPrintable(m_db.lastError().text()));
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		//qDebug("%s.", qPrintable(m_db.lastError().text()));
 		return bRet;
 	}
 	QSqlRecord rec = query.record();
 	if( rec.isEmpty() ){
-		qDebug("isEmpty Error occurred querying.");
-		qDebug("%s.", qPrintable(m_db.lastError().text()));
+		errStr = QStringLiteral("isEmpty Error occurred querying.");
+		qDebug("%s", qPrintable(errStr));
 		return bRet;
 	}
 	QVariant qvRecval = rec.value( "count" );
 	if( !qvRecval.isValid() ){
-		qDebug("Invalid record value for 'count'.");
-		qDebug("%s.", qPrintable(m_db.lastError().text()));
+		errStr = QStringLiteral("Invalid record value for 'count'.");
+		qDebug("%s", qPrintable(errStr));
 		return bRet;
 	}
-	int numRules = rec.value( "count" ).toInt();
+	query.next();
+	int cntCol = rec.indexOf("count");
+	int numRules = query.value(cntCol).toInt();
 	if( numRules == 0 ){
 		qDebug("No Rules Defined.");
 		return true;
 	}
 	// == All Rules ==
 	strQuery = QStringLiteral(
-	"SELECT hosts.Addr as ip, endpoints.name as EndPoint, methods.name as Method,"
-	" rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.email"
+	"SELECT testers.Name as who, endpoints.name as EndPoint, methods.name as Method,"
+	" rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 	" FROM rules"
 	" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
 	" INNER JOIN methods ON methods.id = rules.method"
-	" INNER JOIN hosts ON testers.id = rules.host"
-	" ORDER BY ip;"
+	" INNER JOIN testers ON testers.id = rules.tester"
+	" ORDER BY who;"
 	);
 	UpdateSectionModel();
 	bRet = true;
@@ -427,21 +428,17 @@ bool IdsEditor::LoadRules(QSqlDatabase& db )
 //
 void IdsEditor::InitCombo(void)
 {
-	/* The idea of 'hosts' is to all rules to be enforced in ICAP based on
+	/* The idea of 'hosts' was that all rules to be enforced in ICAP based on
 	 * specific IPs. By default, rules are created for the broadcast IP and will
 	 * be applied to all IPs icap sees unless the IP exists within the DB, then
 	 * any rules for the IP will take precedence.
 	 * When icap see an IP if there is no rule associated with
 	 * that IP it is accepted.
 	 */
-	ui.cmbHosts->setEditable(true);
-	ui.cmbHosts->setMinimumWidth(150);
-	ui.cmbHosts->lineEdit()->setAlignment(Qt::AlignCenter);
-	ui.cmbHosts->lineEdit()->setInputMask( "000.000.000.000" );
-	//ui.cmbHosts->addItem("255.255.255.255");
-	//ui.cmbHosts->addItem("0.0.0.0");
-	//ui.cmbHosts->setItemText(0,"255.255.255.255");
-	//ui.cmbHosts->setCurrentIndex(0);
+	ui.cmbTesters->setEditable(true);
+	ui.cmbTesters->setMinimumWidth(150);
+	ui.cmbTesters->lineEdit()->setAlignment(Qt::AlignCenter);
+	//ui.cmbHosts->lineEdit()->setInputMask( "000.000.000.000" );
 }
 
 //------------------------------------------------------------------------------
@@ -553,24 +550,26 @@ void IdsEditor::OnFileOpen()
 			return;
 		m_dbFileName = fileName;
 	}
-	if( ReadDbFile(m_dbFileName) ){
+	QString err;
+	if( ReadDbFile(m_dbFileName, err) ){
 		UpdateSectionModel();
 		QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 		ui.DeleteBtn->setEnabled(true);
 		ui.EditBtn->setEnabled(true);
 		ui.NewBtn->setEnabled(true);
-		ui.btnAddHost->setEnabled(true);
-		ui.cmbHosts->setEnabled(true);
+		ui.btnAddTester->setEnabled(true);
+		ui.cmbTesters->setEnabled(true);
 	}
 	else{
 		ui.DeleteBtn->setEnabled(false);
 		ui.EditBtn->setEnabled(false);
 		ui.NewBtn->setEnabled(false);
-		ui.btnAddHost->setEnabled(false);
-		ui.cmbHosts->setEnabled(false);
-		QString qs = QStringLiteral("Unable to Open File: %1").arg(m_dbFileName);
-		m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs));
+		ui.btnAddTester->setEnabled(false);
+		ui.cmbTesters->setEnabled(false);
+		QString qs = QStringLiteral("Unable to Open File: %1\n%2").arg(m_dbFileName).arg(err);
+		QString qs2 = QStringLiteral("Unable to Open File: %1").arg(m_dbFileName);
+		m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs2));
 		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
 							 qs, QMessageBox::Ok, QMessageBox::Ok);
 	}
@@ -582,7 +581,7 @@ void IdsEditor::OnFileOpen()
 bool IdsEditor::OnFileSave()
 {
 	// Todo: save DB, or update as we go along?
-	qDebug() << "Saving Rules For Host " << m_Host.toString();
+	qDebug() << "Saving Rules For Tester " << m_Tester;
 // WriteIniFile
 	// Rules
 	// "ChangeCustomerData::CB_Server\nnumReq = 2\nminTemp = 20\nmaxTemp = 30\nmaxHour = 20\nminHour = 10"
@@ -624,16 +623,17 @@ void IdsEditor::OnHelp()
 }
 
 //------------------------------------------------------------------------------
-// OnAddHost
-void IdsEditor::OnAddHost()
+// OnAddTester
+void IdsEditor::OnAddTester()
 {
 	//QString qs;
-	QString newText = ui.cmbHosts->currentText();
-	int index = ui.cmbHosts->findText(newText); // findData
+	QString newText = ui.cmbTesters->currentText();
+	int index = ui.cmbTesters->findText(newText); // findData
 	if(  index == -1 ){ // -1 for not found
-		//qs = QString("Address added to host list: %1").arg(newText);
-		ui.cmbHosts->addItem(newText);
-		m_Host = QHostAddress(ui.cmbHosts->currentText());
+		//qs = QString("Address added to Tester list: %1").arg(newText);
+		ui.cmbTesters->addItem(newText);
+		//m_Host = QHostAddress(ui.cmbTesters->currentText());
+		m_Tester = ui.cmbTesters->currentText();
 	}
 	/*else{
 		qs = QString("%1 already in list").arg(newText);
@@ -643,15 +643,16 @@ void IdsEditor::OnAddHost()
 }
 
 //------------------------------------------------------------------------------
-// OnHostSelectionChanged
+// OnTesterSelectionChanged
 //
-void IdsEditor::OnHostSelectionChanged(int index)
+void IdsEditor::OnTesterSelectionChanged(int index)
 {
-	QString newText = ui.cmbHosts->itemText(index);
-	/*QString qs = QString(" Host Changed to %1").arg(newText);
+	QString newText = ui.cmbTesters->itemText(index);
+	/*QString qs = QString(" Tester Changed to %1").arg(newText);
 	qDebug() << qs;
 	statusBar()->showMessage(qs);*/
-	m_Host = QHostAddress(ui.cmbHosts->currentText());
+	//m_Host = QHostAddress(ui.cmbTesters->currentText());
+	m_Tester = ui.cmbTesters->currentText();
 }
 
 //------------------------------------------------------------------------------

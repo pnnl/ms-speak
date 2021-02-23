@@ -66,14 +66,14 @@
         </layout>
        </item>
        <item row="0" column="3">
-        <widget class="QPushButton" name="btnAddTester">
+        <widget class="QPushButton" name="btnAddHost">
          <property name="text">
-          <string>Add Tester</string>
+          <string>Add</string>
          </property>
         </widget>
        </item>
        <item row="0" column="4">
-        <widget class="QComboBox" name="cmbTesters">
+        <widget class="QComboBox" name="cmbHosts">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>

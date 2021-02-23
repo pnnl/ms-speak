@@ -1,3 +1,14 @@
+
+       reconfigure
+              The service will reread the config file without the need to stop and restart the c-
+              icap server. The services will be reinitialized
+Examples:
+
+       To reconfigure c-icap:
+                    echo -n "reconfigure" > /var/run/c-icap.ctl
+
+
+
   388         /* Check client Ip against SquidClamav trustclient */
   389         if ((clientip = ci_headers_value(req->request_header, "X-Client-IP")) != NULL) {
   390         debugs(2, "DEBUG X-Client-IP: %s\n", clientip);

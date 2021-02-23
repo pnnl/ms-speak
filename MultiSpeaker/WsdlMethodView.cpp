@@ -71,7 +71,7 @@
 #include "TimelineEvent.h"
 #include "WsdlFile.h"
 #include "WsdlMethodView.h"
-#include "Valid8.h"
+//#include "Valid8.h" // CHM: 2-21-2021:
 
 const int ID_ROLE = Qt::UserRole + 2;
 const int IS_VALUE_ROLE = Qt::UserRole + 3;
@@ -544,6 +544,8 @@ void WsdlMethodView::OnXmlOnly(bool checked)
 //		-v 2
 void WsdlMethodView::OnValid8()
 {
+	return;
+	/*
 	QString schema = m_timelineEvent->Namespace();
 	QRegExp rx("(\\/wsdl/)");
 	QStringList eplist = schema.split(rx);
@@ -573,7 +575,7 @@ void WsdlMethodView::OnValid8()
 	}
 	else{
 		qDebug() << "eplist empty";
-	}
+	}*/
 }
 
 void WsdlMethodView::ExportXmlOrSoap( bool bExport/*=false*/ )

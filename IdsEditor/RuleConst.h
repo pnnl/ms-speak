@@ -75,11 +75,14 @@ const QString RULE_KEY_MAXTIME = QStringLiteral("maxHour");
 const QString RULE_KEY_MINTEMP = QStringLiteral("minTemp");
 const QString RULE_KEY_MINTIME = QStringLiteral("minHour");
 const QString RULE_KEY_NUMREQ = QStringLiteral("numReq");
+const QString RULE_KEY_NUMRPH = QStringLiteral("numRPH");
 const QString RULE_KEY_EMAIL = QStringLiteral("email");
 
 // Database
 // --- Tables
-const QString DB_TABLE_HOSTS = QStringLiteral("Hosts");
+//const QString DB_TABLE_HOSTS = QStringLiteral("Hosts");
+const QString DB_TABLE_TESTERS = QStringLiteral("Testers");
+const QString DB_TABLE_ACTIVE = QStringLiteral("ActiveTester");
 const QString DB_TABLE_FUNCTIONS = QStringLiteral("Functions");
 const QString DB_TABLE_ENDPOINTS = QStringLiteral("EndPoints");
 const QString DB_TABLE_METHODS = QStringLiteral("Methods");
@@ -95,10 +98,12 @@ const QString DB_COLUMN_MINTEMP = RULE_KEY_MINTEMP;
 const QString DB_COLUMN_MAXTIME = RULE_KEY_MAXTIME;
 const QString DB_COLUMN_MINTIME = RULE_KEY_MINTIME;
 const QString DB_COLUMN_NUMREQ = RULE_KEY_NUMREQ;
+const QString DB_COLUMN_NUMRPH = RULE_KEY_NUMRPH;
 const QString DB_COLUMN_EMAIL = QStringLiteral("Email");
 
 // Rule Types
 const QString RULE_TYPE_MAX_VALUE = QStringLiteral("MaxValue");
+//const QString RULE_TYPE_RPH_VALUE = QStringLiteral("RphValue");
 const QString RULE_TYPE_TEMP_RANGE = QStringLiteral("TempRange");
 const QString RULE_TYPE_TIME_RANGE = QStringLiteral("TimeRange");
 const QString RULE_TYPE_EMAIL = QStringLiteral("Email");
