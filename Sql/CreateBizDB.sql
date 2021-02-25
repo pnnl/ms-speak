@@ -1,5 +1,7 @@
 -- Create BizRules DB
 --     sqlite3 BizRules.db < CreateBizDB.sql
+--	   sudo apt-get install libsqlite3-dev
+
 --	dot commands are allowed, but must be lowercase
 
 -- can wrap commands around Begin/Commit:

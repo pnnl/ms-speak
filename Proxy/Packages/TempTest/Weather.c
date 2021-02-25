@@ -94,7 +94,7 @@ xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
 */
 
 //  https://openweathermap.org/current
-// sudo apt-get install libsqlite3-dev -lcurl -DDEBUG
+// sudo apt-get install libsqlite3-dev
 // gcc Weather.c -o Weather -lcurl -lxml2
 int main(int argc, char* argv[])
 {

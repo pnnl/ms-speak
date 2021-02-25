@@ -194,7 +194,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
 		" INNER JOIN testers ON testers.id = rules.tester"\
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"\
 		
-// sudo apt-get install libsqlite3-dev -lcurl -DDEBUG
+// sudo apt-get install libsqlite3-dev
 // make -f icapMakefile
 // gcc IcapTest.c -o IcapTest -lsqlite3 -lcurl -lxml2
 int main(int argc, char* argv[]) {

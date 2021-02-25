@@ -3,15 +3,16 @@
 
 -- .param set :who %1
 -- Do an UPSERT:
--- What does the “@” symbol do in SQL?
+-- What does the '@' symbol do in SQL?
 --     The @CustID means it's a parameter that you will supply a value for later in your code. 
 --     This is the best way of protecting against SQL injection.
 --     @ is used as a prefix denoting stored procedure and function parameter names, and also variable names
 .print
---.parameter set :who 'carl'
 .print == Make a Tester the Active Tester ==
-INSERT INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Carl'))
-  ON CONFLICT(Id) DO UPDATE SET Tester=excluded.Tester;
+--INSERT INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Shimoe'))
+--  ON CONFLICT(Id) DO UPDATE SET Tester=excluded.Tester;
+-- 'ON' only support for sqlite 3.24+, wsl ubunutu is only 3.22
+INSERT OR REPLACE INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Shimoe'));
 
 .print
 .width 3 6
