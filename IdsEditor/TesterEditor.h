@@ -50,104 +50,57 @@
 */
 //-------------------------------------------------------------------------------
 //	History
-//		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
-//                  Lance Irvine, LMI Developments, LLC.
-//		02.09.2021 CHM - Populate from Sqlite DB, added m_dbFileName.
+//		2021 - Carl Miller <carl.miller@pnnl.gov>.
 //-------------------------------------------------------------------------------
 //
-// Summary: IdsEditor.h
+// Summary: TesterEditor.h
 //-------------------------------------------------------------------------------
 
 
-#ifndef IDSEDITOR_H
-#define IDSEDITOR_H
+#ifndef TesterEditor_H
+#define TesterEditor_H
 
-#include "ui_IdsEditor.h"
+#include "ui_TesterEditor.h"
 
-#include <QMainWindow>
-#include <QLabel>
-#include <QShortcut>
-#include <QStandardItemModel>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
-//#include <QHostAddress>
+#include <QDialog>
+#include <QHash>
+#include <QStringList>
 
-class RuleSection;
+#include "IdsEditor.h"
 
-#define DB_HASH QHash<QString, QStringList>
-#define RULE_HASH QHash<QString, RuleSection*>
-#define RULE_HHASH QHash<QString, RULE_HASH>
+const QChar FILL_CHAR = QChar('-');
 
-class IdsEditor : public QMainWindow
+class TesterEditor : public QDialog
 {
 	Q_OBJECT
+	// You use the Q_OBJECT macro to tell the compiler that this class uses
+	// its own signals and slots.
 private:
-	Ui::IdsEditorClass ui;
-	QShortcut m_clearSettingsShortcut;
-	QString   m_dbFileName;
-	QLabel    m_dbFileNameLabel;
-	QStandardItemModel m_sectionModel;
-	RULE_HASH m_sections;	// Key is section Name
-	//RULE_HHASH m_testers;   // key is a tester, value a hash of rule hashes
-	DB_HASH m_functions;	// key is a function, value a hash of endpoints
-	DB_HASH m_methods;		// key is an endpoint, value a list of methods
-	QSqlDatabase m_db;
-	QString m_tester;
-	bool m_prompt;
+	Ui::TesterEditor ui;
+	IdsEditor *m_parent;
+	QComboBox *cmbTesters;
+	bool m_bWeather;
 
 public:
-	IdsEditor(QWidget* parent = Q_NULLPTR);
-	~IdsEditor();
-	void UpdateSectionModel();
-	RULE_HASH& Sections() { return m_sections; }
-	//RULE_HHASH& Testers() { return m_testers; }
-	QComboBox *Testers() { return ui.cmbTesters; }
-	DB_HASH& Functions() { return m_functions; }
-	DB_HASH& Methods() { return m_methods; }
+	TesterEditor(IdsEditor* parent = Q_NULLPTR);
+	~TesterEditor();
 
 protected:
-	virtual void closeEvent(QCloseEvent* e);
-	virtual void resizeEvent(QResizeEvent* e) { QMainWindow::resizeEvent(e); SaveGeometry(); }
+	virtual void resizeEvent(QResizeEvent* e) { QWidget::resizeEvent(e); SaveGeometry(); }
 
 private:
-	void CreateLogDock();
-	void Edit(const QModelIndex& index);
-
-	QModelIndex ModelIndexByKeyAndRole(const QString& key, int role);
-
-	void InitCombo();
-	bool ReadDbFile(const QString& fileName, QString&);
-	bool LoadRules( QSqlDatabase&, QString& );
 	void RestoreGeometry();
-	void RestoreState();
-	QStandardItem* RuleItem(const QString& ruleKey);
 	void SaveGeometry();
-	void SaveState();
-	QStandardItem* SectionItem(const QString& sectionKey);
+	void UpdateUi();
 
 private slots:
-	void OnAbout();
-	void OnAboutQt();
-	void OnClearSettings();
-	void OnFileOpen();
-	bool OnFileSave();
-	void OnHelp();
-	void OnQuit() { close(); }
-	void OnInitCombo() { InitCombo(); }
-	//void OnReadDbFile() { ReadDbFile(m_dbFileName);}
-	void OnReadDbFile() { OnFileOpen(); m_prompt = true;}
-	void OnRestoreState() { RestoreState(); }
-	void OnRuleDelete();
-	void OnRuleEdit();
-	void OnRuleNew();
-	void OnRulesTreeViewDoubleClicked(const QModelIndex&);
-	void OnToolBarVisibilityChanged(bool);
-	//void OnHostEditReturn();
-	//void OnHostEditFinished();
-	//void OnHostTextChanged(QString);
-	void OnEditTester();
-	void OnTesterSelectionChanged(int);
-
+	void OnNameChanged(void);
+	void OnAppIdChanged(void);
+	void OnZipChanged(void);
+	void OnActiveToggled(bool);
+	void OnWeatherToggled(bool);
+	void OnClickedBtn(QAbstractButton *);
+	void accept();
+	void reject();
 };
-#endif // IDSEDITOR_H
+#endif // TesterEditor_H

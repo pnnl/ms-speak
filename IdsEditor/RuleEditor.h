@@ -81,7 +81,7 @@ private:
 	//QHash<QString, QStringList*> m_methods;
 	RuleSection m_ruleSection;
 	IdsEditor *m_parent;
-	QHash<QString, RuleSection*>& m_ruleSections;
+	RULE_HASH& m_ruleSections;
 	DB_HASH& m_functions; // key is a function, value a list of endpoints
 	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
 	bool m_bClosed;

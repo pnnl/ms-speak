@@ -62,12 +62,14 @@ HEADERS += ./IdsSettings.h \
     ./Rule.h \
     ./RuleConst.h \
     ./IdsEditor.h \
-	./RuleEditor.h
+	./RuleEditor.h \
+	./TesterEditor.h
 SOURCES += ./IdsEditor.cpp \
     ./main.cpp \
     ./Rule.cpp \
-    ./RuleEditor.cpp
+	./RuleEditor.cpp \
+	./TesterEditor.cpp
 FORMS += ./IdsEditor.ui \
-    $$PWD/../../../../../../../Desktop/MS-Speak/Phase3/IdsEditor/TesterEditor.ui \
-    ./RuleEditor.ui
+	./RuleEditor.ui \
+	./TesterEditor.ui
 RESOURCES += IdsEditor.qrc

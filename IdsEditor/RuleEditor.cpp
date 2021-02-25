@@ -87,6 +87,7 @@ RuleEditor::RuleEditor(const RuleSection& ruleSection, IdsEditor* parent)
 	ui.MaxRequestsFrame->setVisible(false);
 	ui.TempFrame->setVisible(false);
 	ui.TimeFrame->setVisible(false);
+	ui.EmailFrame->setVisible(false);
 
 	InitFunctions();
 	UpdateUi();
@@ -455,6 +456,7 @@ void RuleEditor::OnTimeToggled(bool checked)
 //
 void RuleEditor::OnEmailToggled(bool checked)
 {
+	ui.EmailFrame->setVisible(checked);
 	if (checked)
 	{
 		Rule* rule = RuleSection::CreateRule(RULE_TYPE_EMAIL);

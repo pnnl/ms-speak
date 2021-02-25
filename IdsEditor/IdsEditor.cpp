@@ -76,6 +76,7 @@
 #include "Rule.h"
 #include "RuleConst.h"
 #include "RuleEditor.h"
+#include "TesterEditor.h"
 
 bool CLEAR_SETTINGS_ON_EXIT = false; // Used for the clear settings shortcut feature (Ctrl+Shift+C)
 
@@ -90,6 +91,15 @@ IdsEditor::IdsEditor(QWidget* parent)
 
 {
 	ui.setupUi(this);
+	ui.cmbTesters->addItem("<new>", ROLE_NEW_TESTER_KEY);
+
+	ui.DeleteBtn->setEnabled(false);
+	ui.EditBtn->setEnabled(false);
+	ui.NewBtn->setEnabled(false);
+	ui.btnEditTester->setEnabled(false);
+	ui.cmbTesters->setEnabled(false);
+	//ui.cmbTesters->setEditable(false);
+
 	setWindowTitle(QStringLiteral("IDS Editor %1").arg(SOFTWARE_VERSION));
 	RestoreGeometry();
 
@@ -102,12 +112,6 @@ IdsEditor::IdsEditor(QWidget* parent)
 	statusBar()->addWidget(&m_dbFileNameLabel);
 	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 
-	ui.DeleteBtn->setEnabled(false);
-	ui.EditBtn->setEnabled(false);
-	ui.NewBtn->setEnabled(false);
-	ui.btnAddTester->setEnabled(false);
-	ui.cmbTesters->setEnabled(false);
-	//ui.cmbTesters->setEditable(false);
 
 	connect(ui.FileOpenAct, SIGNAL(triggered()), this, SLOT(OnFileOpen()));
 	connect(ui.FileSaveAct, SIGNAL(triggered()), this, SLOT(OnFileSave()));
@@ -120,7 +124,7 @@ IdsEditor::IdsEditor(QWidget* parent)
 	connect(ui.NewBtn, SIGNAL(clicked()), this, SLOT(OnRuleNew()));
 	connect(ui.RulesTreeView, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(OnRulesTreeViewDoubleClicked(const QModelIndex&)));
 	connect(ui.cmbTesters, SIGNAL(currentIndexChanged(int)),this,SLOT(OnTesterSelectionChanged(int)));
-	connect(ui.btnAddTester, SIGNAL(clicked()), this, SLOT(OnAddTester()));
+	connect(ui.btnEditTester, SIGNAL(clicked()), this, SLOT(OnEditTester()));
 
 	QTimer::singleShot(100, this, SLOT(OnRestoreState())); // Restore State after Docks Created
 	QTimer::singleShot(100, this, SLOT(OnReadDbFile()));
@@ -285,8 +289,8 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 		}
 		while( query.next() ){
 			tester =  query.value(1).toString();
-			qDebug() << "Tester: " << tester;
-			ui.cmbTesters->addItem(tester);
+			//qDebug() << "Tester: " << tester;
+			ui.cmbTesters->insertItem(0, tester, ROLE_TESTER_KEY);
 		}
 		ui.cmbTesters->setCurrentIndex(0);
 
@@ -555,17 +559,11 @@ void IdsEditor::OnFileOpen()
 		UpdateSectionModel();
 		QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
-		ui.DeleteBtn->setEnabled(true);
-		ui.EditBtn->setEnabled(true);
-		ui.NewBtn->setEnabled(true);
-		ui.btnAddTester->setEnabled(true);
+		ui.btnEditTester->setEnabled(true);
 		ui.cmbTesters->setEnabled(true);
 	}
 	else{
-		ui.DeleteBtn->setEnabled(false);
-		ui.EditBtn->setEnabled(false);
-		ui.NewBtn->setEnabled(false);
-		ui.btnAddTester->setEnabled(false);
+		ui.btnEditTester->setEnabled(false);
 		ui.cmbTesters->setEnabled(false);
 		QString qs = QStringLiteral("Unable to Open File: %1\n%2").arg(m_dbFileName).arg(err);
 		QString qs2 = QStringLiteral("Unable to Open File: %1").arg(m_dbFileName);
@@ -581,7 +579,7 @@ void IdsEditor::OnFileOpen()
 bool IdsEditor::OnFileSave()
 {
 	// Todo: save DB, or update as we go along?
-	qDebug() << "Saving Rules For Tester " << m_Tester;
+	qDebug() << "Saving Rules For Tester " << m_tester;
 // WriteIniFile
 	// Rules
 	// "ChangeCustomerData::CB_Server\nnumReq = 2\nminTemp = 20\nmaxTemp = 30\nmaxHour = 20\nminHour = 10"
@@ -623,23 +621,14 @@ void IdsEditor::OnHelp()
 }
 
 //------------------------------------------------------------------------------
-// OnAddTester
-void IdsEditor::OnAddTester()
+// OnEditTester
+void IdsEditor::OnEditTester()
 {
-	//QString qs;
-	QString newText = ui.cmbTesters->currentText();
-	int index = ui.cmbTesters->findText(newText); // findData
-	if(  index == -1 ){ // -1 for not found
-		//qs = QString("Address added to Tester list: %1").arg(newText);
-		ui.cmbTesters->addItem(newText);
-		//m_Host = QHostAddress(ui.cmbTesters->currentText());
-		m_Tester = ui.cmbTesters->currentText();
+	TesterEditor dlg(this);
+	if(QDialog::Accepted == dlg.exec() )
+	{
+		qDebug() << "Accepted";
 	}
-	/*else{
-		qs = QString("%1 already in list").arg(newText);
-	}
-	statusBar()->showMessage(qs);
-	qDebug() << qs;*/
 }
 
 //------------------------------------------------------------------------------
@@ -648,11 +637,24 @@ void IdsEditor::OnAddTester()
 void IdsEditor::OnTesterSelectionChanged(int index)
 {
 	QString newText = ui.cmbTesters->itemText(index);
-	/*QString qs = QString(" Tester Changed to %1").arg(newText);
+	QString qs = QString("Current Tester by index: %1").arg(newText);
 	qDebug() << qs;
-	statusBar()->showMessage(qs);*/
-	//m_Host = QHostAddress(ui.cmbTesters->currentText());
-	m_Tester = ui.cmbTesters->currentText();
+	//statusBar()->showMessage(qs);
+	m_tester = ui.cmbTesters->currentText();
+	if(	ui.cmbTesters->currentData() == ROLE_NEW_TESTER_KEY ){
+		//qDebug() << "New Tester: " << m_tester;
+		ui.DeleteBtn->setEnabled(false);
+		ui.EditBtn->setEnabled(false);
+		ui.NewBtn->setEnabled(false);
+		ui.btnEditTester->setText("Add");
+	}
+	else{
+		//qDebug() << "Current Tester: " << m_tester;
+		ui.DeleteBtn->setEnabled(true);
+		ui.EditBtn->setEnabled(true);
+		ui.NewBtn->setEnabled(true);
+		ui.btnEditTester->setText("Edit");
+	}
 }
 
 //------------------------------------------------------------------------------
