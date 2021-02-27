@@ -58,7 +58,6 @@
 // Summary: IdsEditor.h
 //-------------------------------------------------------------------------------
 
-
 #ifndef IDSEDITOR_H
 #define IDSEDITOR_H
 
@@ -71,13 +70,16 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
-//#include <QHostAddress>
 
-class RuleSection;
-
+class RemObject;
+/*
+ * In general, recommend to use contains() and value() rather than operator[]()
+ * for looking up a key in a hash. The reason is that operator[]() silently inserts an
+ * item into the hash if no item exists with the same key (unless the hash is const).
+ */
 #define DB_HASH QHash<QString, QStringList>
-#define RULE_HASH QHash<QString, RuleSection*>
-#define RULE_HHASH QHash<QString, RULE_HASH>
+#define REMOBJ_HASH QHash<QString, RemObject*>  // rem, object
+#define REMOBJ_HHASH QHash<QString, REMOBJ_HASH>
 
 class IdsEditor : public QMainWindow
 {
@@ -87,44 +89,60 @@ private:
 	QShortcut m_clearSettingsShortcut;
 	QString   m_dbFileName;
 	QLabel    m_dbFileNameLabel;
-	QStandardItemModel m_sectionModel;
-	RULE_HASH m_sections;	// Key is section Name
-	//RULE_HHASH m_testers;   // key is a tester, value a hash of rule hashes
+	QStandardItemModel m_RemObjModel;
+	//REMOBJ_HASH m_RemObjs;	// Key is rem Name
+	REMOBJ_HHASH m_RemObjs; // key is a tester, value a hash of rem objects
 	DB_HASH m_functions;	// key is a function, value a hash of endpoints
 	DB_HASH m_methods;		// key is an endpoint, value a list of methods
 	QSqlDatabase m_db;
-	QString m_tester;
+	QString m_currTester;
+	QStringList m_origs;
+	QStringList m_mods;
+	QStringList m_adds;
+	QStringList m_dels;
 	bool m_prompt;
 
 public:
 	IdsEditor(QWidget* parent = Q_NULLPTR);
 	~IdsEditor();
-	void UpdateSectionModel();
-	RULE_HASH& Sections() { return m_sections; }
-	//RULE_HHASH& Testers() { return m_testers; }
+	void ClearHHash();
+	void UpdateObjectModel();
+	REMOBJ_HHASH& RemObjHash() { return m_RemObjs; }
+	bool NoCurr() { return m_currTester.isEmpty(); }
+	QString Curr() { return m_currTester; }
+	REMOBJ_HASH& RemObjects() { return m_RemObjs[m_currTester]; }
 	QComboBox *Testers() { return ui.cmbTesters; }
 	DB_HASH& Functions() { return m_functions; }
 	DB_HASH& Methods() { return m_methods; }
+	void Mods( bool add , QString qs ){ if( add ) m_mods<<qs; else m_mods.removeAll(qs); }
+	void Adds( bool add , QString qs ){ if( add ) m_adds<<qs; else m_adds.removeAll(qs); }
+	void Dels( bool add , QString qs ){ if( add ) m_dels<<qs; else m_dels.removeAll(qs); }
 
+	bool Mods( QString qs ){ if( m_mods.contains(qs,Qt::CaseInsensitive) )
+			return true; else return false; }
+	bool Adds( QString qs ){ if( m_adds.contains(qs,Qt::CaseInsensitive) )
+			return true; else return false; }
+	bool Dels( QString qs ){ if( m_dels.contains(qs,Qt::CaseInsensitive) )
+			return true; else return false; }
 protected:
 	virtual void closeEvent(QCloseEvent* e);
 	virtual void resizeEvent(QResizeEvent* e) { QMainWindow::resizeEvent(e); SaveGeometry(); }
 
 private:
 	void CreateLogDock();
-	void Edit(const QModelIndex& index);
+	void Edit(const QModelIndex&);
 
-	QModelIndex ModelIndexByKeyAndRole(const QString& key, int role);
+	QModelIndex ModelIndexByKeyAndRole(const QString&, int);
 
 	void InitCombo();
 	bool ReadDbFile(const QString& fileName, QString&);
 	bool LoadRules( QSqlDatabase&, QString& );
 	void RestoreGeometry();
 	void RestoreState();
-	QStandardItem* RuleItem(const QString& ruleKey);
+	QStandardItem* RuleItem(const QString&);
 	void SaveGeometry();
 	void SaveState();
-	QStandardItem* SectionItem(const QString& sectionKey);
+	QStandardItem* RemItem(const QString&);
 
 private slots:
 	void OnAbout();

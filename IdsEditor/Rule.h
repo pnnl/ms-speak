@@ -79,23 +79,23 @@ public:
 	QString ToString() const;
 };
 
-class RuleSection
+class RemObject // Rule Endpoint Method Container
 {
 public:
 	QHash<QString, Rule*> Rules; // key is Rule Name, Mem owned here
-	QString EndPoint;
-	QString Method;
+	QString m_EndPoint;
+	QString m_Method;
 
 public:
-	RuleSection() {}
-	RuleSection(const RuleSection& rs);
-	~RuleSection() { qDeleteAll(Rules); }
+	RemObject() {}
+	RemObject(const RemObject& rs);
+	~RemObject() { qDeleteAll(Rules); }
 
-	void Copy(const RuleSection& rs);
+	void Copy(const RemObject& rs);
 
 	static Rule* CreateRule(const QString& ruleName);
 
-	QString Section() const;
+	QString Rem() const;
 	QString ToString() const;
 };
 

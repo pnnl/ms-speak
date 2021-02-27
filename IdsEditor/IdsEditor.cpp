@@ -103,7 +103,7 @@ IdsEditor::IdsEditor(QWidget* parent)
 	setWindowTitle(QStringLiteral("IDS Editor %1").arg(SOFTWARE_VERSION));
 	RestoreGeometry();
 
-	ui.RulesTreeView->setModel(&m_sectionModel);
+	ui.RulesTreeView->setModel(&m_RemObjModel);
 	ui.RulesTreeView->setHeaderHidden(true);
 	ui.RulesTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.RulesTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -135,8 +135,22 @@ IdsEditor::IdsEditor(QWidget* parent)
 //
 IdsEditor::~IdsEditor()
 {
-	qDeleteAll(m_sections);
-	m_sections.clear();
+	ClearHHash();
+}
+
+//-------------------------------------------------------------------------------
+// ClearHHash
+//
+void IdsEditor::ClearHHash()
+{
+	REMOBJ_HHASH::iterator hitr;
+	for( hitr = m_RemObjs.begin(); hitr != m_RemObjs.end(); ++hitr ){
+		REMOBJ_HASH& h = hitr.value();
+		qDeleteAll(h); // is the same as qDeleteAll(c.begin(), c.end()).
+		h.clear();
+	}
+	//qDeleteAll(m_RemObjs);
+	m_RemObjs.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -146,27 +160,28 @@ void IdsEditor::Edit(const QModelIndex& index)
 {
 	if( index.isValid())
 	{
-		if( index.data(ROLE_SECTION_KEY).isValid())
+		if( index.data(ROLE_REM_KEY).isValid())
 		{
-			QString sectionKey = index.data(ROLE_SECTION_KEY).toString();
-			if( RuleSection* section = m_sections.value(sectionKey, Q_NULLPTR))
+			QString remKey = index.data(ROLE_REM_KEY).toString();
+			REMOBJ_HASH& rRemObjs = RemObjects();
+			if( RemObject* remObj = rRemObjs.value(remKey, Q_NULLPTR))
 			{
-				RuleEditor dlg(*section, this); // m_sections
+				RuleEditor dlg(*remObj, this);
 				if( QDialog::Accepted == dlg.exec())
 				{
-					if( section->Section() == dlg.Section().Section())
+					if( remObj->Rem() == dlg.RemObj().Rem())
 					{
-						// Same Section...so just copy
-						section->Copy(dlg.Section());
+						// Same Rem...so just copy
+						remObj->Copy(dlg.RemObj());
 					}
 					else
 					{
-						// Different Section so delete old one and add new one
-						delete m_sections.take(section->Section());
-						section = new RuleSection(dlg.Section());
-						m_sections.insert(section->Section(), section);
+						// Different Rem so delete old one and add new one
+						delete rRemObjs.take(remObj->Rem()); // Removes the item with the key from the hash and returns the value associated with it.
+						remObj = new RemObject(dlg.RemObj());
+						rRemObjs.insert(remObj->Rem(), remObj);
 					}
-					UpdateSectionModel();
+					UpdateObjectModel();
 				}
 			}
 		}
@@ -176,13 +191,13 @@ void IdsEditor::Edit(const QModelIndex& index)
 //------------------------------------------------------------------------------
 // ModelIndexByKeyAndRole
 //
-QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& section, int role)
+QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& remObj, int role)
 {
 	QModelIndex idx;
-	if( QStandardItem* item = m_sectionModel.item(0))
+	if( QStandardItem* item = m_RemObjModel.item(0))
 		idx = item->index();
 
-	QModelIndexList idxList = m_sectionModel.match(idx, role, section, 1, Qt::MatchExactly | Qt::MatchRecursive | Qt::MatchWrap);
+	QModelIndexList idxList = m_RemObjModel.match(idx, role, remObj, 1, Qt::MatchExactly | Qt::MatchRecursive | Qt::MatchWrap);
 	if( idxList.count())
 		return idxList.first();
 	else
@@ -278,7 +293,6 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 			if( !m_methods[ep].contains(me) )
 				m_methods[ep].append(me);
 		}
-		QString tester;
 		strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_TESTERS );
 		query.prepare(strQuery);
 		if( !query.exec()){
@@ -287,16 +301,18 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 			m_db.close();
 			return bRet;
 		}
+		QString tester;
 		while( query.next() ){
 			tester =  query.value(1).toString();
 			//qDebug() << "Tester: " << tester;
 			ui.cmbTesters->insertItem(0, tester, ROLE_TESTER_KEY);
+			m_origs << tester;
 		}
 		ui.cmbTesters->setCurrentIndex(0);
 
 		bRet = LoadRules( m_db,errStr );
 		m_db.close();
-		UpdateSectionModel();
+		UpdateObjectModel();
 	}
 	//QSqlDatabase::removeDatabase("BizConn");
 	return bRet;
@@ -308,74 +324,9 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 {
 	bool bRet = false;
 
-	qDeleteAll(m_sections);
-	m_sections.clear();
-	/*
-	QSettings ini(fileName, QSettings::IniFormat);
-	QString sectionKey;
-	QString key;
-	QString value;
-	for (QString iniKey : ini.allKeys())
-	{
-		sectionKey = QStringLiteral("[%1]").arg(iniKey.left(iniKey.indexOf(QStringLiteral("/"))));
-
-		if( sectionKey.startsWith(SETTINGS_GROUP))
-		{
-			key = iniKey.right(iniKey.length() - iniKey.indexOf(QStringLiteral("/")) - 1);
-			if( key == SETTINGS_LOG_FILE)
-				m_logFileName = ini.value(iniKey).toString();
-			continue;
-		}
-
-		if( !m_sections.contains(sectionKey))
-			m_sections.insert(sectionKey, new RuleSection());
-
-		if( RuleSection* section = m_sections.value(sectionKey, Q_NULLPTR))
-		{
-			section->Method = iniKey.left(iniKey.indexOf(QStringLiteral("@")));
-			section->EndPoint = iniKey.mid(iniKey.indexOf(QStringLiteral("@")) + 1, iniKey.indexOf(QStringLiteral("/")) - iniKey.indexOf(QStringLiteral("@")) - 1);
-			key = iniKey.right(iniKey.length() - iniKey.indexOf(QStringLiteral("/")) - 1);
-			value = ini.value(iniKey).toString();
-
-			if( key == RULE_KEY_NUMREQ)
-			{
-				if( !section->Rules.contains(RULE_TYPE_MAX_VALUE))
-					section->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
-
-				if( Rule* rule = section->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
-				{
-					rule->Name = RULE_TYPE_MAX_VALUE;
-					rule->KeyValue.insert(key, value);
-				}
-			}
-			else if( key == RULE_KEY_MAXTEMP || key == RULE_KEY_MINTEMP)
-			{
-				if( !section->Rules.contains(RULE_TYPE_TEMP_RANGE))
-					section->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
-
-				if( Rule* rule = section->Rules.value(RULE_TYPE_TEMP_RANGE, Q_NULLPTR))
-				{
-					rule->Name = RULE_TYPE_TEMP_RANGE;
-					rule->KeyValue.insert(key, value);
-				}
-			}
-			else if( key == RULE_KEY_MAXTIME || key == RULE_KEY_MINTIME)
-			{
-				if( !section->Rules.contains(RULE_TYPE_TIME_RANGE))
-					section->Rules.insert(RULE_TYPE_TIME_RANGE, new Rule());
-
-				if( Rule* rule = section->Rules.value(RULE_TYPE_TIME_RANGE, Q_NULLPTR))
-				{
-					rule->Name = RULE_TYPE_TIME_RANGE;
-					rule->KeyValue.insert(key, value);
-				}
-			}
-		}
-	}
-	*/
+	ClearHHash();
 
 	QSqlQuery query(db);
-
 	// Query.
 	// == Number of Rules ==
 	QString strQuery = QStringLiteral(
@@ -422,7 +373,65 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 	" INNER JOIN testers ON testers.id = rules.tester"
 	" ORDER BY who;"
 	);
-	UpdateSectionModel();
+	query.prepare(strQuery);
+	if( !query.exec() ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		return bRet;
+	}
+	while( query.next() ){
+		QString Tester =  query.value(0).toString();
+		QString EndPoint =  query.value(1).toString();
+		QString Method =  query.value(2).toString();
+		QString maxTemp =  query.value(3).toString();
+		QString minTemp =  query.value(4).toString();
+		QString maxHour =  query.value(5).toString();
+		QString minHour =  query.value(6).toString();
+		QString numReq =  query.value(7).toString();
+		QString numRPH =  query.value(8).toString();
+		QString email =  query.value(9).toString();
+		/*
+		qDebug() << Tester;
+		qDebug() << "   " << EndPoint << "::" << Method;
+		qDebug() << "   " << maxTemp << "  " << minTemp << maxHour << "  " << minHour;
+		qDebug() << "   " << numReq << "  " << numRPH << email;*/
+
+		QString remKey = QStringLiteral("%1::%2").arg(EndPoint, Method);
+		REMOBJ_HASH& rRemObjs = m_RemObjs[Tester];
+		rRemObjs.insert(remKey, new RemObject());
+		RemObject *pRemObj = rRemObjs[remKey];
+		pRemObj->m_EndPoint = EndPoint;
+		pRemObj->m_Method = Method;
+		pRemObj->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
+		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_TEMP_RANGE, Q_NULLPTR))
+		{
+			rule->Name = RULE_TYPE_TEMP_RANGE;
+			rule->KeyValue.insert(RULE_KEY_MAXTEMP, maxTemp);
+			rule->KeyValue.insert(RULE_KEY_MINTEMP, minTemp);
+		}
+		pRemObj->Rules.insert(RULE_TYPE_TIME_RANGE, new Rule());
+		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_TIME_RANGE, Q_NULLPTR))
+		{
+			rule->Name = RULE_TYPE_TIME_RANGE;
+			rule->KeyValue.insert(RULE_KEY_MAXTIME, maxHour);
+			rule->KeyValue.insert(RULE_KEY_MINTIME, minHour);
+		}
+		pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
+		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+		{
+			rule->Name = RULE_TYPE_MAX_VALUE;
+			rule->KeyValue.insert(RULE_KEY_NUMREQ, numReq);
+			rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
+		}
+		pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
+		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+		{
+			rule->Name = RULE_TYPE_EMAIL;
+			rule->KeyValue.insert(RULE_KEY_EMAIL, email);
+		}
+	}
+
+	UpdateObjectModel();
 	bRet = true;
 	return bRet;
 }
@@ -466,7 +475,7 @@ void IdsEditor::RestoreState()
 //
 QStandardItem* IdsEditor::RuleItem(const QString& ruleKey)
 {
-	return m_sectionModel.itemFromIndex(ModelIndexByKeyAndRole(ruleKey, ROLE_RULE_KEY));
+	return m_RemObjModel.itemFromIndex(ModelIndexByKeyAndRole(ruleKey, ROLE_RULE_KEY));
 }
 
 //------------------------------------------------------------------------------
@@ -486,30 +495,32 @@ void IdsEditor::SaveState()
 }
 
 //------------------------------------------------------------------------------
-// SectionItem
+// RemItem
 //
-QStandardItem* IdsEditor::SectionItem(const QString& ruleKey)
+QStandardItem* IdsEditor::RemItem(const QString& ruleKey)
 {
-	return m_sectionModel.itemFromIndex(ModelIndexByKeyAndRole(ruleKey, ROLE_SECTION_KEY));
+	return m_RemObjModel.itemFromIndex(ModelIndexByKeyAndRole(ruleKey, ROLE_REM_KEY));
 }
 
 //------------------------------------------------------------------------------
-// UpdateSectionModel
+// UpdateObjectModel
 //
-void IdsEditor::UpdateSectionModel()
+void IdsEditor::UpdateObjectModel()
 {
-	m_sectionModel.clear();
-	for (RuleSection* section : m_sections)
+	m_RemObjModel.clear();
+
+	REMOBJ_HASH& rRemObjs = RemObjects();
+	for (RemObject* remObj : rRemObjs)
 	{
-		QStandardItem* sectionItem = new QStandardItem(section->Section());
-		sectionItem->setData(section->Section(), ROLE_SECTION_KEY);
-		m_sectionModel.appendRow(sectionItem);
-		for (Rule* rule : section->Rules)
+		QStandardItem* RemItem = new QStandardItem(remObj->Rem());
+		RemItem->setData(remObj->Rem(), ROLE_REM_KEY);
+		m_RemObjModel.appendRow(RemItem);
+		for (Rule* rule : remObj->Rules)
 		{
 			QStandardItem* ruleItem = new QStandardItem(rule->ToString());
-			ruleItem->setData(section->Section(), ROLE_SECTION_KEY);
+			ruleItem->setData(remObj->Rem(), ROLE_REM_KEY);
 			ruleItem->setData(rule->ToString(), ROLE_RULE_KEY);
-			sectionItem->appendRow(ruleItem);
+			RemItem->appendRow(ruleItem);
 		}
 	}
 }
@@ -556,11 +567,13 @@ void IdsEditor::OnFileOpen()
 	}
 	QString err;
 	if( ReadDbFile(m_dbFileName, err) ){
-		UpdateSectionModel();
+		UpdateObjectModel();
 		QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 		ui.btnEditTester->setEnabled(true);
 		ui.cmbTesters->setEnabled(true);
+
+
 	}
 	else{
 		ui.btnEditTester->setEnabled(false);
@@ -579,12 +592,20 @@ void IdsEditor::OnFileOpen()
 bool IdsEditor::OnFileSave()
 {
 	// Todo: save DB, or update as we go along?
-	qDebug() << "Saving Rules For Tester " << m_tester;
 // WriteIniFile
 	// Rules
 	// "ChangeCustomerData::CB_Server\nnumReq = 2\nminTemp = 20\nmaxTemp = 30\nmaxHour = 20\nminHour = 10"
-	for (RuleSection* section : m_sections)
-		qDebug() << section->ToString() << Qt::endl << Qt::endl;
+
+	REMOBJ_HHASH::iterator hitr;
+	for( hitr = m_RemObjs.begin(); hitr != m_RemObjs.end(); ++hitr ){
+		REMOBJ_HASH& rRemObjs = hitr.value();
+		if( rRemObjs.count() > 0 ){
+			qDebug() << "Saving Rules For Tester " << hitr.key();
+			for (RemObject* remObj : rRemObjs){
+				qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
+			}
+		}
+	}
 //
 
 	return true;
@@ -640,7 +661,7 @@ void IdsEditor::OnTesterSelectionChanged(int index)
 	QString qs = QString("Current Tester by index: %1").arg(newText);
 	qDebug() << qs;
 	//statusBar()->showMessage(qs);
-	m_tester = ui.cmbTesters->currentText();
+	m_currTester = ui.cmbTesters->currentText();
 	if(	ui.cmbTesters->currentData() == ROLE_NEW_TESTER_KEY ){
 		//qDebug() << "New Tester: " << m_tester;
 		ui.DeleteBtn->setEnabled(false);
@@ -655,6 +676,7 @@ void IdsEditor::OnTesterSelectionChanged(int index)
 		ui.NewBtn->setEnabled(true);
 		ui.btnEditTester->setText("Edit");
 	}
+	UpdateObjectModel();
 }
 
 //------------------------------------------------------------------------------
@@ -662,15 +684,23 @@ void IdsEditor::OnTesterSelectionChanged(int index)
 //
 void IdsEditor::OnRuleDelete()
 {
+	if( NoCurr() ){
+		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		return;
+	}
+
 	QModelIndexList list = ui.RulesTreeView->selectionModel()->selectedIndexes();
 	for (QModelIndex index : list)
 	{
 		if( index.isValid())
 		{
-			if( index.data(ROLE_SECTION_KEY).isValid())
+			if( index.data(ROLE_REM_KEY).isValid())
 			{
-				delete m_sections.take(index.data(ROLE_SECTION_KEY).toString());
-				UpdateSectionModel();
+				REMOBJ_HASH& rRemObjs = RemObjects();
+				delete rRemObjs.take(index.data(ROLE_REM_KEY).toString());
+				UpdateObjectModel();
 			}
 		}
 	}
@@ -681,6 +711,13 @@ void IdsEditor::OnRuleDelete()
 //
 void IdsEditor::OnRuleEdit()
 {
+	if( NoCurr() ){
+		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		return;
+	}
+
 	QModelIndexList list = ui.RulesTreeView->selectionModel()->selectedIndexes();
 	for (QModelIndex index : list)
 	{
@@ -694,17 +731,25 @@ void IdsEditor::OnRuleEdit()
 //
 void IdsEditor::OnRuleNew()
 {
-	RuleSection section;
-	RuleEditor dlg(section, this);// m_sections,
+	if( NoCurr() ){
+		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		return;
+	}
+
+	RemObject remObj;
+	RuleEditor dlg(remObj, this);
 	if(QDialog::Accepted == dlg.exec() )
 	{
-		section.Copy(dlg.Section());
-		QString sectionKey = section.Section();
-		if( m_sections.contains(sectionKey))
-			delete m_sections.take(sectionKey);
+		REMOBJ_HASH& rRemObjs = RemObjects(); // m_RemObjs[m_currTester];
+		remObj.Copy(dlg.RemObj());
+		QString remKey = remObj.Rem();
+		if( rRemObjs.contains(remKey))
+			delete rRemObjs.take(remKey);
 
-		m_sections.insert(sectionKey, new RuleSection(section));
-		UpdateSectionModel();
+		rRemObjs.insert(remKey, new RemObject(remObj));
+		UpdateObjectModel();
 	}
 }
 

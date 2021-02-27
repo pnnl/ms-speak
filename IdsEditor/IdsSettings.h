@@ -78,7 +78,7 @@ const QString SK_RULE_GEOMETRY = QStringLiteral("sk_rule_geometry");
 const QString SK_EDITOR_GEOMETRY = QStringLiteral("sk_edtr_geometry");
 
 const int ROLE_RULE_KEY = Qt::UserRole + 3;
-const int ROLE_SECTION_KEY = Qt::UserRole + 2;
+const int ROLE_REM_KEY = Qt::UserRole + 2;
 
 const int ROLE_NEW_TESTER_KEY = Qt::UserRole + 4;
 const int ROLE_TESTER_KEY = ROLE_NEW_TESTER_KEY + 1;

@@ -79,19 +79,19 @@ private:
 	Ui::RuleEditor ui;
 
 	//QHash<QString, QStringList*> m_methods;
-	RuleSection m_ruleSection;
+	RemObject m_ruleObject;
 	IdsEditor *m_parent;
-	RULE_HASH& m_ruleSections;
+	REMOBJ_HASH& m_ruleObjects;
 	DB_HASH& m_functions; // key is a function, value a list of endpoints
 	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
 	bool m_bClosed;
-
+	QString m_Tester;
 public:
-	RuleEditor(const RuleSection& ruleSection,
+	RuleEditor(const RemObject& ruleSection,
 			   IdsEditor* parent = Q_NULLPTR);
 	~RuleEditor();
 
-	const RuleSection& Section() const { return m_ruleSection; }
+	const RemObject& RemObj() const { return m_ruleObject; }
 
 protected:
 	virtual void resizeEvent(QResizeEvent* e) { QWidget::resizeEvent(e); SaveGeometry(); }

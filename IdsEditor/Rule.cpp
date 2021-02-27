@@ -44,22 +44,22 @@ QString Rule::ToString() const
 	return strList.join(QStringLiteral("\n"));
 }
 //-------------------------------------------------------------------------------
-// RuleSection::RuleSection
+// RemObject::RemObject
 //
-RuleSection::RuleSection(const RuleSection& rs)
-	: EndPoint(rs.EndPoint),
-	  Method(rs.Method)
+RemObject::RemObject(const RemObject& rs)
+	: m_EndPoint(rs.m_EndPoint),
+	  m_Method(rs.m_Method)
 {
 	for (Rule* rule : rs.Rules)
 		Rules.insert(rule->Name, new Rule(*rule));
 }
 //-------------------------------------------------------------------------------
-// RuleSection::Copy
+// RemObject::Copy
 //
-void RuleSection::Copy(const RuleSection& rs)
+void RemObject::Copy(const RemObject& rs)
 {
-	EndPoint = rs.EndPoint;
-	Method = rs.Method;
+	m_EndPoint = rs.m_EndPoint;
+	m_Method = rs.m_Method;
 	qDeleteAll(Rules);
 	Rules.clear();
 
@@ -67,15 +67,16 @@ void RuleSection::Copy(const RuleSection& rs)
 		Rules.insert(rule->Name, new Rule(*rule));
 }
 //-------------------------------------------------------------------------------
-// RuleSection::CreateRule
+// RemObject::CreateRule
 //
-Rule* RuleSection::CreateRule(const QString& ruleName)
+Rule* RemObject::CreateRule(const QString& ruleName)
 {
 	Rule* rule = new Rule();
 	if (ruleName == RULE_TYPE_MAX_VALUE)
 	{
 		rule->Name = ruleName;
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QStringLiteral("0"));
+		rule->KeyValue.insert(RULE_KEY_NUMRPH, QStringLiteral("0"));
 	}
 	else if (ruleName == RULE_TYPE_TEMP_RANGE)
 	{
@@ -89,23 +90,30 @@ Rule* RuleSection::CreateRule(const QString& ruleName)
 		rule->KeyValue.insert(RULE_KEY_MAXTIME, QStringLiteral("0"));
 		rule->KeyValue.insert(RULE_KEY_MINTIME, QStringLiteral("0"));
 	}
+	else if (ruleName == RULE_TYPE_EMAIL)
+	{
+		rule->Name = ruleName;
+		rule->KeyValue.insert(RULE_KEY_EMAIL, QStringLiteral(""));
+	}
 	return rule;
 }
 //-------------------------------------------------------------------------------
-// RuleSection::Section
+// RemObject::Rem
 //
-QString RuleSection::Section() const
+QString RemObject::Rem() const
 {
 	//return QStringLiteral("[%1@%2]").arg(Method, EndPoint);
-	return QStringLiteral("%1::%2").arg(Method, EndPoint);
+	//return QStringLiteral("%1::%2").arg(Method, EndPoint);
+	//return QStringLiteral("%1::%2").arg(EndPoint, Method);
+	return QStringLiteral("%1::%2").arg(m_EndPoint, m_Method);
 }
 //-------------------------------------------------------------------------------
-// RuleSection::ToString
+// RemObject::ToString
 //
-QString RuleSection::ToString() const
+QString RemObject::ToString() const
 {
 	QStringList strList;
-	strList << Section();
+	strList << Rem();
 	for (Rule* rule : Rules)
 		strList << rule->ToString();
 

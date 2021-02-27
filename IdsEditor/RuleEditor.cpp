@@ -62,7 +62,8 @@
 #include <QHash>
 #include <QSettings>
 #include <QVariant>
-#include <QRegularExpression>
+//#include <QRegularExpression>
+#include <QMessageBox>
 
 #include "IdsSettings.h"
 #include "RuleConst.h"
@@ -71,11 +72,11 @@
 //-------------------------------------------------------------------------------
 // RuleEditor
 //
-RuleEditor::RuleEditor(const RuleSection& ruleSection, IdsEditor* parent)
+RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	: QDialog(parent),
-	  m_ruleSection(ruleSection),
+	  m_ruleObject(ruleObj),
 	  m_parent(parent),
-	  m_ruleSections(parent->Sections()),
+	  m_ruleObjects(parent->RemObjects()),
 	  m_functions(parent->Functions()),
 	  m_methods(parent->Methods()),
 	  m_bClosed(false)
@@ -144,6 +145,13 @@ RuleEditor::~RuleEditor()
 //
 void RuleEditor::InitFunctions()
 {
+	if( m_parent->NoCurr() ){
+		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
+		QMessageBox::warning(this, QStringLiteral("Rule Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		close();
+	}
+	m_Tester = m_parent->Curr();
 	QStringList qsl = QStringList();
 	QHash<QString, QStringList>::const_iterator it = m_functions.constBegin();
 	for (it = m_functions.constBegin(); it != m_functions.constEnd(); ++it)
@@ -194,11 +202,11 @@ void RuleEditor::UpdateUi()
 	for( const QString & ep : qAsConst(endPointList) )
 		ui.EndPointCombo->addItem(ep, m_methods.value(ep));
 
-	int idx = ui.EndPointCombo->findText(m_ruleSection.EndPoint);
+	int idx = ui.EndPointCombo->findText( m_ruleObject.m_EndPoint);
 	if (idx < 0)
 	{
 		ui.EndPointCombo->setCurrentIndex(0); // First one
-		m_ruleSection.EndPoint = ui.EndPointCombo->currentText();
+		 m_ruleObject.m_EndPoint = ui.EndPointCombo->currentText();
 	}
 	else
 	{
@@ -210,11 +218,11 @@ void RuleEditor::UpdateUi()
 	for( const QString & method : qAsConst(methodList))
 		ui.MethodCombo->addItem(method);
 
-	idx = ui.MethodCombo->findText(m_ruleSection.Method);
+	idx = ui.MethodCombo->findText( m_ruleObject.m_Method);
 	if (idx < 0)
 	{
 		ui.MethodCombo->setCurrentIndex(0); // First one
-		m_ruleSection.Method = ui.MethodCombo->currentText();
+		 m_ruleObject.m_Method = ui.MethodCombo->currentText();
 	}
 	else
 	{
@@ -227,7 +235,7 @@ void RuleEditor::UpdateUi()
 	connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
 
 	// Check for rules
-	for (Rule* rule : m_ruleSection.Rules)
+	for (Rule* rule : m_ruleObject.Rules)
 	{
 		if (rule->Name == RULE_TYPE_MAX_VALUE)
 		{
@@ -267,8 +275,8 @@ void RuleEditor::OnFunctionComboChanged(int index)
 {
 	Q_UNUSED(index);
 	QString function = ui.FunctionCombo->currentText();
-	m_ruleSection.EndPoint = m_functions[function].first();
-	m_ruleSection.Method = m_methods.value(m_ruleSection.EndPoint).first();
+	 m_ruleObject.m_EndPoint = m_functions[function].first();
+	 m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
 	UpdateUi();
 }
 
@@ -280,8 +288,8 @@ void RuleEditor::OnEndPointComboChanged(int index)
 	if (ui.EndPointCombo->count() <= 0)
 		return;
 
-	m_ruleSection.EndPoint = ui.EndPointCombo->itemText(index);
-	m_ruleSection.Method = m_methods.value(m_ruleSection.EndPoint).first();
+	 m_ruleObject.m_EndPoint = ui.EndPointCombo->itemText(index);
+	 m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
 	UpdateUi();
 }
 
@@ -293,7 +301,7 @@ void RuleEditor::OnMethodComboChanged(int index)
 	Q_UNUSED(index);
 	if (ui.MethodCombo->count() <= 0)
 		return;
-	m_ruleSection.Method = ui.MethodCombo->currentText();
+	 m_ruleObject.m_Method = ui.MethodCombo->currentText();
 	UpdateUi();
 }
 
@@ -304,7 +312,7 @@ void RuleEditor::OnEmailChanged(void)
 {
 	QString qs = ui.Email->displayText();
 	qDebug() << "Email Address Set to: " << qs;
-	m_ruleSection.Rules.value(RULE_TYPE_EMAIL)->KeyValue.insert(RULE_KEY_EMAIL, qs);
+	 m_ruleObject.Rules.value(RULE_TYPE_EMAIL)->KeyValue.insert(RULE_KEY_EMAIL, qs);
 	UpdateUi();
 }
 
@@ -317,7 +325,7 @@ void RuleEditor::OnMaxRequestsChanged(int value)
 	{
 		ui.MaxReqPHSpin->setValue(value);
 	}
-	m_ruleSection.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
+	 m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
 	UpdateUi();
 }
 
@@ -330,7 +338,7 @@ void RuleEditor::OnMaxReqPHChanged(int value)
 	{
 		ui.MaxRequestsSpin->setValue(value);
 	}
-	m_ruleSection.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
+	 m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
 	UpdateUi();
 }
 
@@ -344,7 +352,7 @@ void RuleEditor::OnMaxTempChanged(int value)
 		ui.MinTempSlider->setValue(value);
 		ui.MinTempSpin->setValue(value);
 	}
-	m_ruleSection.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(value));
+	 m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(value));
 	UpdateUi();
 }
 
@@ -358,7 +366,7 @@ void RuleEditor::OnMinTempChanged(int value)
 		ui.MaxTempSlider->setValue(value);
 		ui.MaxTempSpin->setValue(value);
 	}
-	m_ruleSection.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(value));
+	 m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(value));
 	UpdateUi();
 }
 
@@ -372,7 +380,7 @@ void RuleEditor::OnMaxTimeChanged(int value)
 		ui.MinTimeSlider->setValue(value);
 		ui.MinTimeSpin->setValue(value);
 	}
-	m_ruleSection.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
+	 m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
 	UpdateUi();
 }
 
@@ -386,7 +394,7 @@ void RuleEditor::OnMinTimeChanged(int value)
 		ui.MaxTimeSlider->setValue(value);
 		ui.MaxTimeSpin->setValue(value);
 	}
-	m_ruleSection.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MINTIME, QString::number(value));
+	 m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MINTIME, QString::number(value));
 	UpdateUi();
 }
 
@@ -398,14 +406,14 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 	ui.MaxRequestsFrame->setVisible(checked);
 	if (checked)
 	{
-		Rule* rule = RuleSection::CreateRule(RULE_TYPE_MAX_VALUE);
+		Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
 		rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
-		m_ruleSection.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
+		 m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
 	}
 	else
 	{
-		delete m_ruleSection.Rules.take(RULE_TYPE_MAX_VALUE);
+		delete m_ruleObject.Rules.take(RULE_TYPE_MAX_VALUE);
 	}
 	UpdateUi();
 }
@@ -418,14 +426,14 @@ void RuleEditor::OnTempToggled(bool checked)
 	ui.TempFrame->setVisible(checked);
 	if (checked)
 	{
-		Rule* rule = RuleSection::CreateRule(RULE_TYPE_TEMP_RANGE);
+		Rule* rule = RemObject::CreateRule(RULE_TYPE_TEMP_RANGE);
 		rule->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(ui.MaxTempSpin->value()));
 		rule->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(ui.MinTempSpin->value()));
-		m_ruleSection.Rules.insert(RULE_TYPE_TEMP_RANGE, rule);
+		 m_ruleObject.Rules.insert(RULE_TYPE_TEMP_RANGE, rule);
 	}
 	else
 	{
-		delete m_ruleSection.Rules.take(RULE_TYPE_TEMP_RANGE);
+		delete m_ruleObject.Rules.take(RULE_TYPE_TEMP_RANGE);
 	}
 	UpdateUi();
 }
@@ -438,14 +446,14 @@ void RuleEditor::OnTimeToggled(bool checked)
 	ui.TimeFrame->setVisible(checked);
 	if (checked)
 	{
-		Rule* rule = RuleSection::CreateRule(RULE_TYPE_TIME_RANGE);
+		Rule* rule = RemObject::CreateRule(RULE_TYPE_TIME_RANGE);
 		rule->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(ui.MaxTimeSpin->value()));
 		rule->KeyValue.insert(RULE_KEY_MINTIME, QString::number(ui.MinTimeSpin->value()));
-		m_ruleSection.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
+		 m_ruleObject.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
 	}
 	else
 	{
-		delete m_ruleSection.Rules.take(RULE_TYPE_TIME_RANGE);
+		delete m_ruleObject.Rules.take(RULE_TYPE_TIME_RANGE);
 	}
 	UpdateUi();
 }
@@ -459,13 +467,13 @@ void RuleEditor::OnEmailToggled(bool checked)
 	ui.EmailFrame->setVisible(checked);
 	if (checked)
 	{
-		Rule* rule = RuleSection::CreateRule(RULE_TYPE_EMAIL);
+		Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
 		rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
-		m_ruleSection.Rules.insert(RULE_TYPE_EMAIL, rule);
+		 m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
 	}
 	else
 	{
-		delete m_ruleSection.Rules.take(RULE_TYPE_EMAIL);
+		delete m_ruleObject.Rules.take(RULE_TYPE_EMAIL);
 	}
 	UpdateUi();
 }
@@ -476,13 +484,13 @@ void RuleEditor::OnEmailToggled(bool checked)
 void RuleEditor::accept()
 {
 	//qDebug() << "accept()";
-	//m_ruleSection.Copy(Section());
-	QString sectionKey = m_ruleSection.Section();
-	if (m_ruleSections.contains(sectionKey))
-		delete m_ruleSections.take(sectionKey);
+	// m_ruleObject.Copy(Se ction());
+	QString objectKey = m_ruleObject.Rem();
+	if ( m_ruleObjects.contains(objectKey))
+		delete m_ruleObjects.take(objectKey);
 
-	m_ruleSections.insert(sectionKey, new RuleSection(m_ruleSection));
-	m_parent->UpdateSectionModel();
+	 m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
+	m_parent->UpdateObjectModel();
 }
 
 //-------------------------------------------------------------------------------
