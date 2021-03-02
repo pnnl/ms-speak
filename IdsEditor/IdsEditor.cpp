@@ -177,6 +177,249 @@ QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& remObj, int role)
 }
 
 //------------------------------------------------------------------------------
+// OpenBizDB
+//
+bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QString &options)
+{
+	bool bRet = false;
+	if( fileName.isEmpty() ){
+		errStr = QStringLiteral("Error Opening DB - File Name is Empty.");
+		return bRet;
+	}
+	if( m_db.isOpen() ){
+		qDebug("Database still Open.");
+		m_db.close();
+	}
+	if( m_db.isValid() ){
+		qDebug("Database Already Added.");
+		m_db.removeDatabase("BizConn");
+	}
+	
+	// Create database connection.
+	m_db = QSqlDatabase::addDatabase("QSQLITE", "BizConn");
+	if( !m_db.isValid() ){
+		qDebug("Error occurred adding the database.");
+		qDebug("%s.", qPrintable(m_db.lastError().text()));
+		return bRet;
+	}
+	/*m_db.setHostName("acidalia");
+	m_db.setDatabaseName("customdb");
+	m_db.setUserName("mojito");
+	m_db.setPassword("J0a1m8");*/
+	m_db.setConnectOptions(options); // For the QSQLITE driver, if the database name specified does not exist, 
+									 // then it will create the file for you unless the QSQLITE_OPEN_READONLY option is set
+	m_db.setDatabaseName(fileName);
+	if( !m_db.open()){
+		errStr = QStringLiteral("Error occurred opening the database: '%1'").arg(m_db.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		return bRet;
+	}
+	return true;
+}
+
+//------------------------------------------------------------------------------
+// CreateBizDB
+/*
+QString path = "path";
+QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+db.setDatabaseName(path);
+db.open();
+QSqlQuery query;
+query.exec("create table person "
+          "(id integer primary key, "
+          "firstname varchar(20), "
+          "lastname varchar(30), "
+          "age integer)")
+ */
+bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
+{
+	bool bRet = OpenBizDB( fileName, errStr, QString("") );
+	if( !bRet ){
+		return bRet;
+	}
+	bRet = false;
+	QSqlQuery query(m_db);
+
+	// create tester table
+	QString strQuery = QStringLiteral(
+	"CREATE TABLE [Testers] (" 
+	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
+	"	[Name]  NVARCHAR(50) NOT NULL,"
+	"	[AppId] NVARCHAR(50),"
+	"	[Zipcode] NVARCHAR(6),"
+	"	UNIQUE(Name) );"
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		//qDebug("%s.", qPrintable(query.lastError().text()));
+		m_db.close();
+		return bRet;
+	}	
+ 
+	// create ActiveTester table
+	strQuery = QStringLiteral(
+	"CREATE TABLE [ActiveTester] ("
+	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
+	"	[Tester] INTEGER NOT NULL,"
+	"	FOREIGN KEY(Tester) REFERENCES Testers(Id) );"	
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}	
+		
+	// create Functions table
+	strQuery = QStringLiteral("
+	"CREATE TABLE [Functions] ("
+	"	[Id] INTEGER NOT NULL PRIMARY KEY," 
+	"	[Name] NVARCHAR(50) NOT NULL,"
+	"	UNIQUE(Name) );" 
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	bool bInsert = query.exec("insert into Functions (Name) VALUES ('Customer Billing');");
+	bInsert &= query.exec("insert into Functions (Name) VALUES ('Metering Management');");
+	bInsert &= query.exec("insert into Functions (Name) VALUES ('Outage Management');");
+
+	// create EndPoints table
+	strQuery = QStringLiteral(
+	"CREATE TABLE [EndPoints] ("
+	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
+	"	[Function] INTEGER NOT NULL,"
+	"	[Name] NVARCHAR(50) NOT NULL,"
+	"	UNIQUE(Name),"
+	"	FOREIGN KEY(Function) REFERENCES Functions(Id) ); "
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	// set function keys
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'CB_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'MDM_Server');" );
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'PG_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Metering Management'), 'CD_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Metering Management'), 'MR_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Outage Management'), 'OD_Server');");
+
+	// create Methods table
+	strQuery = QStringLiteral(
+	"CREATE TABLE [Methods] (
+	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
+	"	[EndPoint] INTEGER NOT NULL,"
+	"	[Name] NVARCHAR(50) NOT NULL,"
+	"	UNIQUE(EndPoint, Name),"
+	"	FOREIGN KEY(EndPoint) REFERENCES EndPoints(Id) );"
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	// set Endpoint keys
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), 'ChangeCustomerData');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), 'ChangeMeterData');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), 'ChangeStreetLightData');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES"
+	"	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), 'PingURL');");	
+
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES"
+	"	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), 'GetCDSupportedMeters');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), 'InitiateConnectDisconnect');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), 'IsCDSupported');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), 'SetCDDevicesDisabled');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), 'SetCDDevicesEnabled');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES"
+	"	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), 'PingURL');");
+
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), 'InitiateBillingDeterminants');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES"
+	"	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), 'PingURL');");
+
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), 'GetLatestMeterReadings');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), 'GetMeterReadingsByBillingCycle');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), 'GetEndDeviceEventsByMeterIDs');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES"
+	"	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), 'PingURL');");
+
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), 'ChangePaymentTransactions');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), 'ChangeRecurringPaymentConfiguration');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), 'ProcessPaymentTransactions');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES"
+	"	((SELECT Id FROM EndPoints WHERE Name ='PG_Server'), 'PingURL');");
+
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), 'GetMeterIDsByEndDeviceStateTypes');");
+	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
+	"	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), 'InitiateEndDevicePings');");
+	//INSERT INTO Methods (EndPoint, Name ) VALUES
+	//	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), 'PingURL"); 	
+	if( !bInsert ){
+		errStr = QStringLiteral("Error preparing Insert queryies:\n%1").arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	// create Rules table
+	strQuery = QStringLiteral(
+	"CREATE TABLE [Rules] ( "
+	"	[Id] INTEGER NOT NULL PRIMARY KEY, "
+	"	[Tester] INTEGER NOT NULL, "
+	"	[Endpoint] INTEGER NOT NULL, "
+	"	[Method] INTEGER NOT NULL, "
+	"	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),"
+	"	[minTemp] INTEGER CHECK(minTemp >= -1 AND minTemp<150),"
+	"	[maxHour] INTEGER CHECK(maxHour >= -1 AND maxHour<=23),"
+	"	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),"
+	"	[numReq] INTEGER,"
+	"	[numRPH] INTEGER,"
+	"	[email] NVARCHAR(50),"
+	"	UNIQUE(Tester,Endpoint,Method),"
+	"	CHECK (maxTemp > minTemp AND maxHour > minHour),"
+	"	FOREIGN KEY(Tester) REFERENCES Testers(Id),"
+	"	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),"
+	"	FOREIGN KEY(Method) REFERENCES Methods(Id) );"
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	return true;
+}
+
+//------------------------------------------------------------------------------
 // ReadDbFile
 //
 // https://doc.qt.io/qt-5/sql-programming.html
@@ -185,139 +428,124 @@ QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& remObj, int role)
 // SQLite starts, processes, and commits the transaction automatically.
 bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 {
-	bool bRet = false;
-
-	if( !fileName.isEmpty() ){
-		// Create database connetion.
-		m_db = QSqlDatabase::addDatabase("QSQLITE", "BizConn");
-		if( !m_db.isValid() ){
-			qDebug("Error occurred adding the database.");
-			qDebug("%s.", qPrintable(m_db.lastError().text()));
-			return bRet;
-		}
-		/*m_db.setHostName("acidalia");
-		m_db.setDatabaseName("customdb");
-		m_db.setUserName("mojito");
-		m_db.setPassword("J0a1m8");*/
-		m_db.setConnectOptions("QSQLITE_OPEN_READONLY");
-		m_db.setDatabaseName(fileName);
-		if( !m_db.open()){
-			errStr = QStringLiteral("Error occurred opening the database: '%1'").arg(m_db.lastError().text());
-			qDebug("%s", qPrintable(errStr));
-			return bRet;
-		}
-		QSqlQuery query(m_db);
-		/*query.prepare("INSERT INTO person (id, forename, surname) "
-					  "VALUES (:id, :forename, :surname)");
-		query.bindValue(":id", 1001);
-		query.bindValue(":forename", "Bart");
-		query.bindValue(":surname", "Simpson");*/
-		/* Insert row.
-		query.prepare("INSERT INTO test VALUES (null, ?)");
-		query.addBindValue("Some text");
-		if( !query.exec()){
-			qDebug("Error occurred inserting.");
-			qDebug("%s.", qPrintable(m_db.lastError().text()));
-			return bRet;
-		}
-		// Insert row.
-		query.prepare("INSERT INTO test VALUES (null, ?)");
-		query.addBindValue("Some text");
-		if( !query.exec()){
-			qDebug("Error occurred inserting.");
-			qDebug("%s.", qPrintable(m_db.lastError().text()));
-			return bRet;
-		}
-		*/
-
-		// Query.
-		QString strQuery = QStringLiteral(
-		"SELECT functions.name as Function, endpoints.name as EndPoint, methods.name as Method"
-		" FROM Functions"
-		" INNER JOIN endpoints ON endpoints.Function = Functions.id"
-		" INNER JOIN methods ON methods.EndPoint = endpoints.id"
-		" ORDER BY Function, EndPoint, Method;"
-		);
-
-		query.prepare(strQuery);
-		if( !query.exec() ){
-			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
-			qDebug("%s", qPrintable(errStr));
-			//qDebug("%s.", qPrintable(query.lastError().text()));
-			m_db.close();
-			return bRet;
-		}
-
-		QString fn;
-		QString ep;
-		QString me;
-		// iQSqlQuery q("select * from employees");
-		// iQSqlRecord rec = q.record();
-		// iqDebug() << "Number of columns: " << rec.count();
-		// int nameCol = rec.indexOf("name"); // index of the field "name"
-		while( query.next() ){
-			fn =  query.value(0).toString();
-			ep =  query.value(1).toString();
-			me =  query.value(2).toString();
-			//qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
-			if( !m_functions[fn].contains(ep) )
-				m_functions[fn].append(ep);
-			if( !m_methods[ep].contains(me) )
-				m_methods[ep].append(me);
-		}
-
-		m_ActTester = Q_NULLPTR;
-		strQuery = QStringLiteral(
-		"SELECT %1 FROM %2"
-		" INNER JOIN %3 ON testers.id = ActiveTester.Tester"
-		" WHERE( Testers.Id =(SELECT Tester FROM ActiveTester));"
-		).arg(DB_COLUMN_NAME).arg(DB_TABLE_TESTERS).arg(DB_TABLE_ACTIVE);
-
-		query.prepare(strQuery);
-		if( !query.exec()){
-			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
-			qDebug("%s", qPrintable(errStr));
-			m_db.close();
-			return bRet;
-		}
-		if( query.next() ){
-			m_ActTester = query.value(0).toString();
-		}
-		m_ActTesterOrig = m_ActTester;
-		qDebug() << "Active Tester is: " << m_ActTesterOrig;
-
-		strQuery = QStringLiteral("SELECT Name, AppId, Zipcode FROM %1").arg(DB_TABLE_TESTERS);
-		query.prepare(strQuery);
-		if( !query.exec()){
-			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
-			qDebug("%s", qPrintable(errStr));
-			m_db.close();
-			return bRet;
-		}
-		while( query.next() ){
-			QString tester =  query.value(0).toString();
-			QString AppId =  query.value(1).toString();
-			QString Zipcode =  query.value(2).toString();
-			qDebug() << tester << ", " << AppId << ", " << Zipcode;
-			ui.cmbTesters->insertItem(0, tester, ROLE_TESTER_KEY);
-			m_origs << tester;
-
-			m_Testers[tester] = new Tester();
-			Tester *pTester = m_Testers[tester];
-			pTester->Name( tester );
-			pTester->AppId( AppId );
-			pTester->Zip( Zipcode );
-			pTester->Original( true );
-		}
-		ui.cmbTesters->setCurrentIndex(0);
-
-		bRet = LoadRules( m_db,errStr );
-		m_db.close();
-		UpdateObjectModel();
+	bool bRet = OpenBizDB( fileName, errStr, QString("QSQLITE_OPEN_READONLY") );
+	if( !bRet ){
+		return bRet;
 	}
+	bRet = false;
+	QSqlQuery query(m_db);
+	
+	/*query.prepare("INSERT INTO person (id, forename, surname) "
+				  "VALUES (:id, :forename, :surname)");
+	query.bindValue(":id", 1001);
+	query.bindValue(":forename", "Bart");
+	query.bindValue(":surname", "Simpson");*/
+	/* Insert row.
+	query.prepare("INSERT INTO test VALUES (null, ?)");
+	query.addBindValue("Some text");
+	if( !query.exec()){
+		qDebug("Error occurred inserting.");
+		qDebug("%s.", qPrintable(m_db.lastError().text()));
+		return bRet;
+	}
+	// Insert row.
+	query.prepare("INSERT INTO test VALUES (null, ?)");
+	query.addBindValue("Some text");
+	if( !query.exec()){
+		qDebug("Error occurred inserting.");
+		qDebug("%s.", qPrintable(m_db.lastError().text()));
+		return bRet;
+	}
+	*/
+
+	// Query.
+	QString strQuery = QStringLiteral(
+	"SELECT functions.name as Function, endpoints.name as EndPoint, methods.name as Method"
+	" FROM Functions"
+	" INNER JOIN endpoints ON endpoints.Function = Functions.id"
+	" INNER JOIN methods ON methods.EndPoint = endpoints.id"
+	" ORDER BY Function, EndPoint, Method;"
+	);
+
+	query.prepare(strQuery);
+	if( !query.exec() ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		//qDebug("%s.", qPrintable(query.lastError().text()));
+		m_db.close();
+		return bRet;
+	}
+
+	QString fn;
+	QString ep;
+	QString me;
+	// iQSqlQuery q("select * from employees");
+	// iQSqlRecord rec = q.record();
+	// iqDebug() << "Number of columns: " << rec.count();
+	// int nameCol = rec.indexOf("name"); // index of the field "name"
+	while( query.next() ){
+		fn =  query.value(0).toString();
+		ep =  query.value(1).toString();
+		me =  query.value(2).toString();
+		//qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
+		if( !m_functions[fn].contains(ep) )
+			m_functions[fn].append(ep);
+		if( !m_methods[ep].contains(me) )
+			m_methods[ep].append(me);
+	}
+
+	m_ActTester = Q_NULLPTR;
+	strQuery = QStringLiteral(
+	"SELECT %1 FROM %2"
+	" INNER JOIN %3 ON testers.id = ActiveTester.Tester"
+	" WHERE( Testers.Id =(SELECT Tester FROM ActiveTester));"
+	).arg(DB_COLUMN_NAME).arg(DB_TABLE_TESTERS).arg(DB_TABLE_ACTIVE);
+
+	query.prepare(strQuery);
+	if( !query.exec()){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	if( query.next() ){
+		m_ActTester = query.value(0).toString();
+	}
+	m_ActTesterOrig = m_ActTester;
+	qDebug() << "Active Tester is: " << m_ActTesterOrig;
+
+	strQuery = QStringLiteral("SELECT Name, AppId, Zipcode FROM %1").arg(DB_TABLE_TESTERS);
+	query.prepare(strQuery);
+	if( !query.exec()){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	while( query.next() ){
+		QString tester =  query.value(0).toString();
+		QString AppId =  query.value(1).toString();
+		QString Zipcode =  query.value(2).toString();
+		qDebug() << tester << ", " << AppId << ", " << Zipcode;
+		ui.cmbTesters->insertItem(0, tester, ROLE_TESTER_KEY);
+		m_origs << tester;
+
+		m_Testers[tester] = new Tester();
+		Tester *pTester = m_Testers[tester];
+		pTester->Name( tester );
+		pTester->AppId( AppId );
+		pTester->Zip( Zipcode );
+		pTester->Original( true );
+	}
+	ui.cmbTesters->setCurrentIndex(0);
+
+	bRet = LoadRules( m_db,errStr );
+	m_db.close();
+	UpdateObjectModel();
 	//QSqlDatabase::removeDatabase("BizConn");
 	return bRet;
 }
+
 //------------------------------------------------------------------------------
 // LoadRules
 //
