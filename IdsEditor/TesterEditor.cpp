@@ -68,40 +68,101 @@
 #include "TesterEditor.h"
 
 //-------------------------------------------------------------------------------
+// Tester
+Tester::Tester(const Tester& rt)
+	: m_Name(rt.m_Name),
+	  m_AppId(rt.m_AppId),
+	  m_Zipcode(rt.m_Zipcode),
+	  m_dirty(rt.m_dirty),
+	  m_dirtyrules(rt.m_dirtyrules),
+	  m_orig(rt.m_orig),
+	  m_op(rt.m_op)
+{
+}
+Tester::Tester(void)
+	: m_dirty(false),
+	  m_dirtyrules(false),
+	  m_orig(false),
+	  m_op(NIL)
+{
+}
+//-------------------------------------------------------------------------------
+// Copy
+//
+void Tester::Copy(const Tester& ts)
+{
+	m_Name = ts.m_Name;
+	m_AppId = ts.m_AppId;
+	m_Zipcode = ts.m_Zipcode;
+	m_dirty = ts.m_dirty;
+	m_dirtyrules = ts.m_dirtyrules;
+	m_orig = ts.m_orig;
+	m_op = ts.m_op;
+}
+
+//-------------------------------------------------------------------------------
+// Tester::ToString
+//
+QString Tester::ToString() const
+{
+	QStringList strList;
+	strList << Name();
+	strList << QStringLiteral("%1 = %2").arg("AppId").arg(AppId());
+	strList << QStringLiteral("%1 = %2").arg("Zipcode").arg(m_Zipcode);
+	strList << QStringLiteral("%1 = %2").arg("dirty").arg(m_dirty);
+	strList << QStringLiteral("%1 = %2").arg("orig").arg(m_orig);
+	strList << QStringLiteral("%1 = %2").arg("op").arg(m_op);
+	//return strList.join(QStringLiteral("\n"));
+	return strList.join(QStringLiteral(", "));
+}
+
+//-------------------------------------------------------------------------------
 // TesterEditor
 //
-TesterEditor::TesterEditor(IdsEditor* parent)
+TesterEditor::TesterEditor(const Tester& tester, bool bnew,
+						   IdsEditor* parent)
 	: QDialog(parent),
+	  m_tester(tester),
 	  m_parent(parent),
-	  cmbTesters(m_parent->Testers()),
-	  m_bWeather(false)
+	  m_TesterCombo(m_parent->TesterCombo())
 {
+	bool bSet=false;
 	ui.setupUi(this);
 
 	RestoreGeometry();
 
 	ui.edtZip->setInputMask( QString("99999;%1").arg(FILL_CHAR) );
 	ui.edtAppId->setInputMask(  QString("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH;%1").arg(FILL_CHAR) );
-	ui.WeatherFrame->setVisible(false);
 
-	if(	cmbTesters->currentData() == ROLE_NEW_TESTER_KEY ){
+	if(	bnew ){
 		ui.edtName->setText("");
 		ui.edtName->setEnabled(true);
+		ui.chkActive->setChecked(false);
+		ui.btnDelete->setVisible(false);
 	}
 	else{
-		ui.edtName->setText(cmbTesters->currentText());
+		ui.edtName->setText(m_tester.Name());
 		ui.edtName->setEnabled(false);
+		ui.edtAppId->setText(m_tester.AppId());
+		ui.edtZip->setText(m_tester.Zip());
+		ui.chkActive->setChecked( m_tester.Name() == m_parent->Active() );
+		if( !m_tester.AppId().isEmpty() && !m_tester.Zip().isEmpty() ){
+			bSet = true;
+		}
+		ui.btnDelete->setVisible(true);
 	}
-
-	UpdateUi();
+	ui.grpWeather->setChecked(bSet);
+	ui.WeatherFrame->setVisible(bSet);
 
 	connect(ui.edtName, SIGNAL(editingFinished()), this, SLOT(OnNameChanged()));
 	connect(ui.edtAppId, SIGNAL(editingFinished()), this, SLOT(OnAppIdChanged()));
 	connect(ui.edtZip, SIGNAL(editingFinished()), this, SLOT(OnZipChanged()));
 
-	connect(ui.grpWeather, SIGNAL(toggled(bool)), this, SLOT(OnWeatherToggled(bool)));
-	connect(ui.chkActive, SIGNAL(toggled(bool)), this, SLOT(OnActiveToggled(bool)));
+	connect(ui.edtAppId, SIGNAL(textEdited(QString)), this, SLOT(OnAppIdChanged(QString)));
+	connect(ui.edtZip, SIGNAL(textEdited(QString)), this, SLOT(OnZipChanged(QString)));
 
+	connect(ui.grpWeather, SIGNAL(toggled(bool)), this, SLOT(OnWeatherToggled(bool)));
+	connect(ui.btnDelete, SIGNAL(clicked()), this, SLOT(OnDelete()));
 	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
 	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 	connect(ui.buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(OnClickedBtn(QAbstractButton *)));
@@ -131,62 +192,38 @@ void TesterEditor::SaveGeometry()
 }
 
 //-------------------------------------------------------------------------------
-// UpdateUi
-//
-void TesterEditor::UpdateUi()
-{
-	disconnect(ui.edtName, SIGNAL(editingFinished()), this, SLOT(OnNameChanged()));
-	disconnect(ui.edtAppId, SIGNAL(editingFinished()), this, SLOT(OnAppIdChanged()));
-	disconnect(ui.edtZip, SIGNAL(editingFinished()), this, SLOT(OnZipChanged()));
-	// do something....
-	connect(ui.edtName, SIGNAL(editingFinished()), this, SLOT(OnNameChanged()));
-	connect(ui.edtAppId, SIGNAL(editingFinished()), this, SLOT(OnAppIdChanged()));
-	connect(ui.edtZip, SIGNAL(editingFinished()), this, SLOT(OnZipChanged()));
-}
-
-//-------------------------------------------------------------------------------
 // OnNameChanged
 //
 void TesterEditor::OnNameChanged(void)
 {
-	QString qs = ui.edtName->displayText();
-	qDebug() << "Test Name Set to: " << qs;
-	UpdateUi();
+	m_tester.Dirty(true);
 }
 
 //-------------------------------------------------------------------------------
 // OnAppIdChanged
 //
+void TesterEditor::OnAppIdChanged(QString qs)
+{
+	if( !qs.isEmpty() )
+		OnAppIdChanged();
+}
 void TesterEditor::OnAppIdChanged(void)
 {
-	QString qs = ui.edtAppId->displayText();
-	qDebug() << "Application Id Set to: " << qs;
-	UpdateUi();
+	m_tester.Dirty(true);
 }
 
 //-------------------------------------------------------------------------------
 // OnZipChanged
 //
+void TesterEditor::OnZipChanged(QString qs)
+{
+	//qDebug() << "OnZipChanged: " << qs;
+	if( !qs.isEmpty() )
+		OnZipChanged();
+}
 void TesterEditor::OnZipChanged(void)
 {
-	QString qs = ui.edtZip->displayText();
-	qDebug() << "Zipcode Set to: " << qs;
-	UpdateUi();
-}
-
-//-------------------------------------------------------------------------------
-// OnActiveToggled
-//
-void TesterEditor::OnActiveToggled(bool checked)
-{
-	if (checked)
-	{
-		// ui.chkActive
-	}
-	else
-	{
-	}
-	UpdateUi();
+	m_tester.Dirty(true);
 }
 
 //-------------------------------------------------------------------------------
@@ -195,79 +232,108 @@ void TesterEditor::OnActiveToggled(bool checked)
 void TesterEditor::OnWeatherToggled(bool checked)
 {
 	ui.WeatherFrame->setVisible(checked);
-	if (checked)
-	{
-		m_bWeather = true;
-	}
-	else
-	{
-		m_bWeather = false;
-	}
-	UpdateUi();
+	m_tester.Dirty(true);
 }
 
-
 //-------------------------------------------------------------------------------
-// accept
+// setTesterData
 //
-void TesterEditor::accept()
+void TesterEditor::setTesterData( QString qsName, QString qsAppid, QString qsZip, DBOP op )
 {
-	bool bOk = true;
-	QString field = "Application Id";
-	QString qs = ui.edtAppId->displayText();
+	m_tester.Name( qsName );
+	m_tester.AppId( qsAppid );
+	m_tester.Zip( qsZip );
+	m_tester.Op(op);
+}
 
-	if( m_bWeather ){
-		bOk = false;
-		if( !qs.isEmpty() && !qs.contains(FILL_CHAR) ){
-			field = "Zipcode";
-			qs = ui.edtZip->displayText();
-			if( !qs.isEmpty() && !qs.contains(FILL_CHAR) ){
-				bOk = true;
-			}
-		}
-	}
+//------------------------------------------------------------------------------
+// OnDelete
+//
+void TesterEditor::OnDelete()
+{
 
-	if( bOk ){
-		if(	cmbTesters->currentData() == ROLE_NEW_TESTER_KEY ){
-			qs = ui.edtName->displayText();
-			if( !qs.isEmpty() ){
-				if(	cmbTesters->findText(qs,Qt::MatchFixedString) == -1 ){
-					cmbTesters->insertItem(0, qs, ROLE_TESTER_KEY);
-					cmbTesters->setCurrentIndex(0);
-				} // MatchFixedString
-				else{
-					field = "Tester Already Exists";
-					bOk = false;
-				}
-			} // name isEmpty
-			else{
-				field = "Tester Name";
-				bOk = false;
-			}
-		} // new
-		else{
-			// todo: how handle DELETE ?
-			// void	removeItem(int index)
-		}
-	}
-	if( !bOk ){
-		qDebug() << "Rejected()";
-		//done(Rejected);
-		QString qs = QStringLiteral("Incomplete Field: %1").arg(field);
-		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 qs, QMessageBox::Ok, QMessageBox::Ok);
-		return;
-	}
-	qDebug() << "accept()";
+	m_tester.Op(DEL);
+
 	done(Accepted);
 }
 
 //-------------------------------------------------------------------------------
 // accept
 //
+void TesterEditor::accept()
+{
+	QString qsName = ui.edtName->displayText();
+	if( ui.chkActive->isChecked() ){
+		 m_parent->Active(qsName);
+	}
+	else{ //  were we the Active Tester?
+		if( qsName == m_parent->Active() ){
+			m_parent->Active( Q_NULLPTR );
+		}
+	}
+
+	if( m_tester.Dirty() ){ // notihng to do if all was done was toggle Active
+		bool bOk = true;
+		QString field = "Application Id";
+		QString qsAppId = ui.edtAppId->displayText();
+		QString qsZip = ui.edtZip->displayText();
+
+		if( ui.grpWeather->isChecked() ){
+			bOk = false;
+			if( !qsAppId.isEmpty() && !qsAppId.contains(FILL_CHAR) ){
+				field = "Zipcode";
+				if( !qsZip.isEmpty() && !qsZip.contains(FILL_CHAR) ){
+					bOk = true;
+				}
+			}
+		}
+
+		if( bOk ){
+			if(	m_TesterCombo->currentData() == ROLE_NEW_TESTER_KEY ){
+				if( !qsName.isEmpty() ){
+					if(	m_TesterCombo->findText(qsName,Qt::MatchFixedString) == -1 ){
+						m_TesterCombo->insertItem(0, qsName, ROLE_TESTER_KEY);
+						m_TesterCombo->setCurrentIndex(0);
+						// check to see if orignal of same name was previously
+						// deleted and now is being added back
+						if( m_parent->Original(qsName) ){
+							setTesterData( qsName, qsAppId, qsZip, MOD);
+						}
+						else{
+							setTesterData( qsName, qsAppId, qsZip, ADD);
+						}
+					} // MatchFixedString
+					else{
+						field = "Tester Already Exists";
+						bOk = false;
+					}
+				} // name isEmpty
+				else{
+					field = "Tester Name";
+					bOk = false;
+				}
+			} // new
+			else{
+				setTesterData( qsName, qsAppId, qsZip, MOD );
+			}
+		}
+		if( !bOk ){
+			//done(Rejected);
+			QString qs = QStringLiteral("Incomplete Field: %1").arg(field);
+			QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+								 qs, QMessageBox::Ok, QMessageBox::Ok);
+			return;
+		}
+	}
+
+	done(Accepted);
+}
+
+//-------------------------------------------------------------------------------
+// reject
+//
 void TesterEditor::reject()
 {
-	qDebug() << "reject(Reject)";
 	done(Rejected);
 }
 
@@ -280,11 +346,11 @@ void TesterEditor::OnClickedBtn(QAbstractButton *button)
 	switch(stdBtn)
 	{
 		case QDialogButtonBox::Ok:		// An "OK" button defined with the AcceptRole.
-			qDebug() << "Ok Clicked";
+			//qDebug() << "Ok Clicked";
 			break;
 
 		case QDialogButtonBox::Cancel:	// A "Cancel" button defined with the RejectRole.
-			qDebug() << "Cancel Clicked";
+			//qDebug() << "Cancel Clicked";
 			break;
 
 		case QDialogButtonBox::Open:	// An "Open" button defined with the AcceptRole.

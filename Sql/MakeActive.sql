@@ -1,4 +1,5 @@
 -- Make a Tester the Active Tester
+-- 	sqlite3 BizRules.db < MakeActive.sql
 -- 	sqlite3 BizRules.db param set :who< MakeActive.sql
 
 -- .param set :who %1
@@ -9,10 +10,10 @@
 --     @ is used as a prefix denoting stored procedure and function parameter names, and also variable names
 .print
 .print == Make a Tester the Active Tester ==
---INSERT INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Shimoe'))
+--INSERT INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Carl'))
 --  ON CONFLICT(Id) DO UPDATE SET Tester=excluded.Tester;
 -- 'ON' only support for sqlite 3.24+, wsl ubunutu is only 3.22
-INSERT OR REPLACE INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Shimoe'));
+INSERT OR REPLACE INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Carl'));
 
 .print
 .width 3 6

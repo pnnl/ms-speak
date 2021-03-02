@@ -100,6 +100,9 @@ const QString DB_COLUMN_MINTIME = RULE_KEY_MINTIME;
 const QString DB_COLUMN_NUMREQ = RULE_KEY_NUMREQ;
 const QString DB_COLUMN_NUMRPH = RULE_KEY_NUMRPH;
 const QString DB_COLUMN_EMAIL = QStringLiteral("Email");
+const QString DB_COLUMN_APPID = QStringLiteral("AppId");
+const QString DB_COLUMN_ZIPCODE = QStringLiteral("Zipcode");
+const QString DB_COLUMN_TESTER = QStringLiteral("Tester");
 
 // Rule Types
 const QString RULE_TYPE_MAX_VALUE = QStringLiteral("MaxValue");

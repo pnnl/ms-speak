@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 	bool bShowAll = false;
 	
 	if( argc < 2 ){
-		printf("\n You Must Provide a Zipcode.\n"); // 10502: Ardsley, 97429: DC
+		printf("\n You Must Provide a Zipcode.\n"); // 10502: Ardsley, ./Weather 97429: DC
 		return -1;	
 	}
 	if( argc == 3 )

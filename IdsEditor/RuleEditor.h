@@ -78,17 +78,14 @@ class RuleEditor : public QDialog
 private:
 	Ui::RuleEditor ui;
 
-	//QHash<QString, QStringList*> m_methods;
 	RemObject m_ruleObject;
 	IdsEditor *m_parent;
 	REMOBJ_HASH& m_ruleObjects;
 	DB_HASH& m_functions; // key is a function, value a list of endpoints
 	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
 	bool m_bClosed;
-	QString m_Tester;
 public:
-	RuleEditor(const RemObject& ruleSection,
-			   IdsEditor* parent = Q_NULLPTR);
+	RuleEditor(const RemObject& ruleObj, IdsEditor* parent = Q_NULLPTR);
 	~RuleEditor();
 
 	const RemObject& RemObj() const { return m_ruleObject; }

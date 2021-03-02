@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>443</width>
-    <height>460</height>
+    <width>731</width>
+    <height>622</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,8 +29,8 @@
      <property name="title">
       <string>Tester Name</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
        <widget class="QFrame" name="frame">
         <property name="frameShape">
          <enum>QFrame::Panel</enum>
@@ -40,11 +40,18 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
          <item row="0" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QLineEdit" name="edtName">
              <property name="alignment">
               <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnDelete">
+             <property name="text">
+              <string>Delete This Tester</string>
              </property>
             </widget>
            </item>
@@ -55,7 +62,7 @@
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>128</width>
+               <width>108</width>
                <height>20</height>
               </size>
              </property>

@@ -72,14 +72,16 @@
 #include <QSqlError>
 
 class RemObject;
+class Tester;
 /*
  * In general, recommend to use contains() and value() rather than operator[]()
  * for looking up a key in a hash. The reason is that operator[]() silently inserts an
  * item into the hash if no item exists with the same key (unless the hash is const).
  */
 #define DB_HASH QHash<QString, QStringList>
-#define REMOBJ_HASH QHash<QString, RemObject*>  // rem, object
+#define REMOBJ_HASH QHash<QString, RemObject*>
 #define REMOBJ_HHASH QHash<QString, REMOBJ_HASH>
+#define TESTER_HASH QHash<QString, Tester*>
 
 class IdsEditor : public QMainWindow
 {
@@ -90,16 +92,15 @@ private:
 	QString   m_dbFileName;
 	QLabel    m_dbFileNameLabel;
 	QStandardItemModel m_RemObjModel;
-	//REMOBJ_HASH m_RemObjs;	// Key is rem Name
 	REMOBJ_HHASH m_RemObjs; // key is a tester, value a hash of rem objects
+	TESTER_HASH  m_Testers;	// key is a tester, value a list of Tester objects
 	DB_HASH m_functions;	// key is a function, value a hash of endpoints
 	DB_HASH m_methods;		// key is an endpoint, value a list of methods
 	QSqlDatabase m_db;
+	QString m_ActTesterOrig;
+	QString m_ActTester;
 	QString m_currTester;
 	QStringList m_origs;
-	QStringList m_mods;
-	QStringList m_adds;
-	QStringList m_dels;
 	bool m_prompt;
 
 public:
@@ -107,31 +108,28 @@ public:
 	~IdsEditor();
 	void ClearHHash();
 	void UpdateObjectModel();
-	REMOBJ_HHASH& RemObjHash() { return m_RemObjs; }
-	bool NoCurr() { return m_currTester.isEmpty(); }
-	QString Curr() { return m_currTester; }
 	REMOBJ_HASH& RemObjects() { return m_RemObjs[m_currTester]; }
-	QComboBox *Testers() { return ui.cmbTesters; }
+	TESTER_HASH& Testers() { return m_Testers; }
+	//Tester    *TesterInfo() { return m_Testers[m_currTester]; }
+	void DirtyRules();
+
+	QComboBox *TesterCombo() { return ui.cmbTesters; }
 	DB_HASH& Functions() { return m_functions; }
 	DB_HASH& Methods() { return m_methods; }
-	void Mods( bool add , QString qs ){ if( add ) m_mods<<qs; else m_mods.removeAll(qs); }
-	void Adds( bool add , QString qs ){ if( add ) m_adds<<qs; else m_adds.removeAll(qs); }
-	void Dels( bool add , QString qs ){ if( add ) m_dels<<qs; else m_dels.removeAll(qs); }
+	bool Original( QString qs ){ if( m_origs.contains(qs,Qt::CaseInsensitive) )
+			return true; else return false; }
+	void Active( QString qs ){ m_ActTester = qs; }
+	QString Active(){ return m_ActTester; }
+	void RemoveTester(QString);
 
-	bool Mods( QString qs ){ if( m_mods.contains(qs,Qt::CaseInsensitive) )
-			return true; else return false; }
-	bool Adds( QString qs ){ if( m_adds.contains(qs,Qt::CaseInsensitive) )
-			return true; else return false; }
-	bool Dels( QString qs ){ if( m_dels.contains(qs,Qt::CaseInsensitive) )
-			return true; else return false; }
 protected:
 	virtual void closeEvent(QCloseEvent* e);
 	virtual void resizeEvent(QResizeEvent* e) { QMainWindow::resizeEvent(e); SaveGeometry(); }
 
 private:
-	void CreateLogDock();
-	void Edit(const QModelIndex&);
-
+	void NewTester(void);
+	void EditTester(QString);
+	void EditRule(const QModelIndex&);
 	QModelIndex ModelIndexByKeyAndRole(const QString&, int);
 
 	void InitCombo();
@@ -153,7 +151,6 @@ private slots:
 	void OnHelp();
 	void OnQuit() { close(); }
 	void OnInitCombo() { InitCombo(); }
-	//void OnReadDbFile() { ReadDbFile(m_dbFileName);}
 	void OnReadDbFile() { OnFileOpen(); m_prompt = true;}
 	void OnRestoreState() { RestoreState(); }
 	void OnRuleDelete();
@@ -161,9 +158,6 @@ private slots:
 	void OnRuleNew();
 	void OnRulesTreeViewDoubleClicked(const QModelIndex&);
 	void OnToolBarVisibilityChanged(bool);
-	//void OnHostEditReturn();
-	//void OnHostEditFinished();
-	//void OnHostTextChanged(QString);
 	void OnEditTester();
 	void OnTesterSelectionChanged(int);
 

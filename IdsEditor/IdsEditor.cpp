@@ -88,7 +88,6 @@ IdsEditor::IdsEditor(QWidget* parent)
 	  m_clearSettingsShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+C")), this, SLOT(OnClearSettings())),
 	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString()),
 	  m_prompt( false )
-
 {
 	ui.setupUi(this);
 	ui.cmbTesters->addItem("<new>", ROLE_NEW_TESTER_KEY);
@@ -112,7 +111,6 @@ IdsEditor::IdsEditor(QWidget* parent)
 	statusBar()->addWidget(&m_dbFileNameLabel);
 	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 
-
 	connect(ui.FileOpenAct, SIGNAL(triggered()), this, SLOT(OnFileOpen()));
 	connect(ui.FileSaveAct, SIGNAL(triggered()), this, SLOT(OnFileSave()));
 	connect(ui.HelpAboutAct, SIGNAL(triggered()), this, SLOT(OnAbout()));
@@ -130,6 +128,7 @@ IdsEditor::IdsEditor(QWidget* parent)
 	QTimer::singleShot(100, this, SLOT(OnReadDbFile()));
 	QTimer::singleShot(150, this, SLOT(OnInitCombo()));
 }
+
 //-------------------------------------------------------------------------------
 // ~IdsEditor
 //
@@ -138,6 +137,14 @@ IdsEditor::~IdsEditor()
 	ClearHHash();
 }
 
+
+//-------------------------------------------------------------------------------
+// DirtyRules
+//
+void IdsEditor::DirtyRules()
+{
+	m_Testers[m_currTester]->DirtyRules(true);
+}
 //-------------------------------------------------------------------------------
 // ClearHHash
 //
@@ -151,41 +158,6 @@ void IdsEditor::ClearHHash()
 	}
 	//qDeleteAll(m_RemObjs);
 	m_RemObjs.clear();
-}
-
-//------------------------------------------------------------------------------
-// Edit
-//
-void IdsEditor::Edit(const QModelIndex& index)
-{
-	if( index.isValid())
-	{
-		if( index.data(ROLE_REM_KEY).isValid())
-		{
-			QString remKey = index.data(ROLE_REM_KEY).toString();
-			REMOBJ_HASH& rRemObjs = RemObjects();
-			if( RemObject* remObj = rRemObjs.value(remKey, Q_NULLPTR))
-			{
-				RuleEditor dlg(*remObj, this);
-				if( QDialog::Accepted == dlg.exec())
-				{
-					if( remObj->Rem() == dlg.RemObj().Rem())
-					{
-						// Same Rem...so just copy
-						remObj->Copy(dlg.RemObj());
-					}
-					else
-					{
-						// Different Rem so delete old one and add new one
-						delete rRemObjs.take(remObj->Rem()); // Removes the item with the key from the hash and returns the value associated with it.
-						remObj = new RemObject(dlg.RemObj());
-						rRemObjs.insert(remObj->Rem(), remObj);
-					}
-					UpdateObjectModel();
-				}
-			}
-		}
-	}
 }
 
 //------------------------------------------------------------------------------
@@ -293,7 +265,14 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 			if( !m_methods[ep].contains(me) )
 				m_methods[ep].append(me);
 		}
-		strQuery = QStringLiteral("SELECT %1 FROM %2").arg("*", DB_TABLE_TESTERS );
+
+		m_ActTester = Q_NULLPTR;
+		strQuery = QStringLiteral(
+		"SELECT %1 FROM %2"
+		" INNER JOIN %3 ON testers.id = ActiveTester.Tester"
+		" WHERE( Testers.Id =(SELECT Tester FROM ActiveTester));"
+		).arg(DB_COLUMN_NAME).arg(DB_TABLE_TESTERS).arg(DB_TABLE_ACTIVE);
+
 		query.prepare(strQuery);
 		if( !query.exec()){
 			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
@@ -301,12 +280,34 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 			m_db.close();
 			return bRet;
 		}
-		QString tester;
+		if( query.next() ){
+			m_ActTester = query.value(0).toString();
+		}
+		m_ActTesterOrig = m_ActTester;
+		qDebug() << "Active Tester is: " << m_ActTesterOrig;
+
+		strQuery = QStringLiteral("SELECT Name, AppId, Zipcode FROM %1").arg(DB_TABLE_TESTERS);
+		query.prepare(strQuery);
+		if( !query.exec()){
+			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+			qDebug("%s", qPrintable(errStr));
+			m_db.close();
+			return bRet;
+		}
 		while( query.next() ){
-			tester =  query.value(1).toString();
-			//qDebug() << "Tester: " << tester;
+			QString tester =  query.value(0).toString();
+			QString AppId =  query.value(1).toString();
+			QString Zipcode =  query.value(2).toString();
+			qDebug() << tester << ", " << AppId << ", " << Zipcode;
 			ui.cmbTesters->insertItem(0, tester, ROLE_TESTER_KEY);
 			m_origs << tester;
+
+			m_Testers[tester] = new Tester();
+			Tester *pTester = m_Testers[tester];
+			pTester->Name( tester );
+			pTester->AppId( AppId );
+			pTester->Zip( Zipcode );
+			pTester->Original( true );
 		}
 		ui.cmbTesters->setCurrentIndex(0);
 
@@ -572,8 +573,6 @@ void IdsEditor::OnFileOpen()
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 		ui.btnEditTester->setEnabled(true);
 		ui.cmbTesters->setEnabled(true);
-
-
 	}
 	else{
 		ui.btnEditTester->setEnabled(false);
@@ -591,23 +590,73 @@ void IdsEditor::OnFileOpen()
 //
 bool IdsEditor::OnFileSave()
 {
-	// Todo: save DB, or update as we go along?
-// WriteIniFile
-	// Rules
-	// "ChangeCustomerData::CB_Server\nnumReq = 2\nminTemp = 20\nmaxTemp = 30\nmaxHour = 20\nminHour = 10"
-
+	TESTER_HASH::iterator titr;
 	REMOBJ_HHASH::iterator hitr;
-	for( hitr = m_RemObjs.begin(); hitr != m_RemObjs.end(); ++hitr ){
-		REMOBJ_HASH& rRemObjs = hitr.value();
-		if( rRemObjs.count() > 0 ){
-			qDebug() << "Saving Rules For Tester " << hitr.key();
-			for (RemObject* remObj : rRemObjs){
-				qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
+	bool bShowAll = false;
+	if( bShowAll )
+	{
+		for( hitr = m_RemObjs.begin(); hitr != m_RemObjs.end(); ++hitr ){
+			REMOBJ_HASH& rRemObjs = hitr.value();
+			if( rRemObjs.count() > 0 ){
+				qDebug() << "Saving Rules For Tester " << hitr.key();
+				for (RemObject* remObj : rRemObjs){
+					qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
+				}
 			}
 		}
+		for( titr = m_Testers.begin(); titr != m_Testers.end(); ++titr ){
+			Tester* tester= titr.value();
+			qDebug() << "Showing Attributes For Tester " << titr.key();
+			qDebug() << "  " << tester->ToString();// << Qt::endl << Qt::endl;
+		}
 	}
-//
+	// show dirty users
+	qDebug() << "Showing Dirty Testers:";
+	QString op;
+	for( titr = m_Testers.begin(); titr != m_Testers.end(); ++titr ){
+		Tester* tester= titr.value();
+		qDebug() << titr.key();
+		if( tester->Dirty() ){
+			switch( tester->Op() ){
+				case NIL:
+					op = "NIL";
+					break;
+				case ADD:
+					op = "ADD";
+					break;
+				case DEL:
+					op = "DEL";
+					break;
+				case MOD:
+					op = "MOD";
+					break;
+			}
+			qDebug() << op << "---> " << tester->ToString();
+		}
+		// show if dirty rules
+		if( tester->DirtyRules() ){
+			qDebug() << "---> Has Dirty Rules";
+		}else{
+			qDebug() << "---> Has NO Dirty Rules";
+		}
+	}
 
+
+	// show active tester
+	if( m_ActTesterOrig != m_ActTester ){
+		if( Active().isEmpty() ){
+			qDebug() << "No Active Tester Set Anymore.";
+		}else{
+			qDebug() << "Active Tester Change To: " << Active();
+		}
+	}
+	else{
+		if( Active().isEmpty() ){
+			qDebug() << "Still No Active Tester Set.";
+		}else{
+			qDebug() << "Active Tester Still Set To: " << Active();
+		}
+	}
 	return true;
 }
 
@@ -645,11 +694,86 @@ void IdsEditor::OnHelp()
 // OnEditTester
 void IdsEditor::OnEditTester()
 {
-	TesterEditor dlg(this);
+	if(	ui.cmbTesters->currentData() == ROLE_NEW_TESTER_KEY ){
+		NewTester();
+	}
+	else{
+		EditTester( ui.cmbTesters->currentText() );
+	}
+}
+
+//------------------------------------------------------------------------------
+// NewTester
+//
+void IdsEditor::NewTester(void)
+{
+	Tester tester;
+	TesterEditor dlg(tester, true, this);
 	if(QDialog::Accepted == dlg.exec() )
 	{
-		qDebug() << "Accepted";
+		TESTER_HASH& rTesters = Testers();
+		tester.Copy(dlg.GetTester());
+		QString tstKey = tester.Name();
+		if( rTesters.contains(tstKey))
+			delete rTesters.take(tstKey);
+
+		rTesters.insert(tstKey, new Tester(tester));
+		UpdateObjectModel();
 	}
+}
+
+//------------------------------------------------------------------------------
+// EditTester
+//
+void IdsEditor::EditTester(QString qsName )
+{
+	TESTER_HASH& rTesters = Testers();
+	if( Tester* tester = rTesters.value(qsName, Q_NULLPTR))
+	{
+		TesterEditor dlg(*tester, false, this);
+		if( QDialog::Accepted == dlg.exec())
+		{
+			if( dlg.GetTester().Op() == DEL )
+			{
+				if( Active() == qsName ){
+					Active( Q_NULLPTR );
+				}
+				if( Original(qsName) ){
+					tester->Op(DEL);
+				}
+				else{
+					RemoveTester(qsName);
+				}
+				TesterCombo()->removeItem( TesterCombo()->currentIndex() );
+			}
+			else
+			{
+				if( tester->Name() == dlg.GetTester().Name() )
+				{
+					// Same Name...so just copy
+					tester->Copy(dlg.GetTester());
+				}
+				else
+				{
+					// Different Name so delete old one and add new one
+					// this should only be possible if Tester is not an original
+					delete rTesters.take(tester->Name()); // Removes the item with the key from the hash and returns the value associated with it.
+					tester = new Tester(dlg.GetTester());
+					rTesters.insert(tester->Name(), tester);
+				}
+			}
+			UpdateObjectModel();
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// RemoveTester
+//
+void IdsEditor::RemoveTester(QString qsName)
+{
+	TESTER_HASH& rTesters = Testers();
+	delete rTesters.take(qsName);
 }
 
 //------------------------------------------------------------------------------
@@ -658,8 +782,8 @@ void IdsEditor::OnEditTester()
 void IdsEditor::OnTesterSelectionChanged(int index)
 {
 	QString newText = ui.cmbTesters->itemText(index);
-	QString qs = QString("Current Tester by index: %1").arg(newText);
-	qDebug() << qs;
+	//QString qs = QString("Current Tester by index: %1").arg(newText);
+	//qDebug() << qs;
 	//statusBar()->showMessage(qs);
 	m_currTester = ui.cmbTesters->currentText();
 	if(	ui.cmbTesters->currentData() == ROLE_NEW_TESTER_KEY ){
@@ -684,13 +808,6 @@ void IdsEditor::OnTesterSelectionChanged(int index)
 //
 void IdsEditor::OnRuleDelete()
 {
-	if( NoCurr() ){
-		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
-		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 qs, QMessageBox::Ok, QMessageBox::Ok);
-		return;
-	}
-
 	QModelIndexList list = ui.RulesTreeView->selectionModel()->selectedIndexes();
 	for (QModelIndex index : list)
 	{
@@ -698,6 +815,7 @@ void IdsEditor::OnRuleDelete()
 		{
 			if( index.data(ROLE_REM_KEY).isValid())
 			{
+				DirtyRules();
 				REMOBJ_HASH& rRemObjs = RemObjects();
 				delete rRemObjs.take(index.data(ROLE_REM_KEY).toString());
 				UpdateObjectModel();
@@ -707,37 +825,10 @@ void IdsEditor::OnRuleDelete()
 }
 
 //------------------------------------------------------------------------------
-// OnRuleEdit
-//
-void IdsEditor::OnRuleEdit()
-{
-	if( NoCurr() ){
-		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
-		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 qs, QMessageBox::Ok, QMessageBox::Ok);
-		return;
-	}
-
-	QModelIndexList list = ui.RulesTreeView->selectionModel()->selectedIndexes();
-	for (QModelIndex index : list)
-	{
-		Edit(index);
-		break; // Only want first one
-	}
-}
-
-//------------------------------------------------------------------------------
 // OnRuleNew
 //
 void IdsEditor::OnRuleNew()
 {
-	if( NoCurr() ){
-		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
-		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 qs, QMessageBox::Ok, QMessageBox::Ok);
-		return;
-	}
-
 	RemObject remObj;
 	RuleEditor dlg(remObj, this);
 	if(QDialog::Accepted == dlg.exec() )
@@ -749,7 +840,57 @@ void IdsEditor::OnRuleNew()
 			delete rRemObjs.take(remKey);
 
 		rRemObjs.insert(remKey, new RemObject(remObj));
+		DirtyRules();
 		UpdateObjectModel();
+	}
+}
+
+//------------------------------------------------------------------------------
+// OnRuleEdit
+//
+void IdsEditor::OnRuleEdit()
+{
+	QModelIndexList list = ui.RulesTreeView->selectionModel()->selectedIndexes();
+	for (QModelIndex index : list)
+	{
+		EditRule(index);
+		DirtyRules();
+		break; // Only want first one
+	}
+}
+
+//------------------------------------------------------------------------------
+// EditRule
+//
+void IdsEditor::EditRule(const QModelIndex& index)
+{
+	if( index.isValid())
+	{
+		if( index.data(ROLE_REM_KEY).isValid())
+		{
+			QString remKey = index.data(ROLE_REM_KEY).toString();
+			REMOBJ_HASH& rRemObjs = RemObjects();
+			if( RemObject* remObj = rRemObjs.value(remKey, Q_NULLPTR))
+			{
+				RuleEditor dlg(*remObj, this);
+				if( QDialog::Accepted == dlg.exec())
+				{
+					if( remObj->Rem() == dlg.RemObj().Rem())
+					{
+						// Same Rem...so just copy
+						remObj->Copy(dlg.RemObj());
+					}
+					else
+					{
+						// Different Rem so delete old one and add new one
+						delete rRemObjs.take(remObj->Rem()); // Removes the item with the key from the hash and returns the value associated with it.
+						remObj = new RemObject(dlg.RemObj());
+						rRemObjs.insert(remObj->Rem(), remObj);
+					}
+					UpdateObjectModel();
+				}
+			}
+		}
 	}
 }
 
@@ -758,7 +899,7 @@ void IdsEditor::OnRuleNew()
 //
 void IdsEditor::OnRulesTreeViewDoubleClicked(const QModelIndex& index)
 {
-	Edit(index);
+	EditRule(index);
 }
 
 //------------------------------------------------------------------------------

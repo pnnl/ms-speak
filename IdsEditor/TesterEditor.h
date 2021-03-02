@@ -69,6 +69,47 @@
 #include "IdsEditor.h"
 
 const QChar FILL_CHAR = QChar('-');
+typedef enum dbop {
+	NIL =0,
+	ADD,
+	DEL,
+	MOD
+} DBOP;
+
+class Tester
+{
+public:
+private:
+	QString m_Name;
+	QString m_AppId;
+	QString m_Zipcode;
+	bool	m_dirty;
+	bool	m_dirtyrules;
+	bool	m_orig; // true if already in the db
+	DBOP	m_op;
+public:
+	Tester();
+	Tester(const Tester& tester);
+	~Tester() {}
+	void Copy(const Tester& tester);
+
+	void Name(QString qs) { m_Name=qs; }
+	QString Name() const { return m_Name; }
+	void AppId(QString qs) { m_AppId=qs; }
+	QString AppId() const { return m_AppId; }
+	void Zip(QString qs) { m_Zipcode=qs; }
+	QString Zip() const { return m_Zipcode; }
+	void Dirty(bool b){ m_dirty=b; }
+	bool Dirty(void){ return m_dirty; }
+	void DirtyRules(bool b){ m_dirtyrules=b; }
+	bool DirtyRules(void){ return m_dirtyrules; }
+	void Original(bool b){ m_orig=b; }
+	bool Original(void){ return m_orig; }
+	void Op(DBOP op){ m_op=op; if( op != NIL ) m_dirty=true; }
+	DBOP Op(void) const { return m_op; }
+
+	QString ToString() const;
+};
 
 class TesterEditor : public QDialog
 {
@@ -77,13 +118,16 @@ class TesterEditor : public QDialog
 	// its own signals and slots.
 private:
 	Ui::TesterEditor ui;
+
+	Tester	   m_tester;
 	IdsEditor *m_parent;
-	QComboBox *cmbTesters;
-	bool m_bWeather;
+	QComboBox *m_TesterCombo;
 
 public:
-	TesterEditor(IdsEditor* parent = Q_NULLPTR);
+	TesterEditor(const Tester& t, bool bnew, IdsEditor* parent = Q_NULLPTR);
 	~TesterEditor();
+
+	const Tester& GetTester() const { return m_tester; }
 
 protected:
 	virtual void resizeEvent(QResizeEvent* e) { QWidget::resizeEvent(e); SaveGeometry(); }
@@ -91,15 +135,17 @@ protected:
 private:
 	void RestoreGeometry();
 	void SaveGeometry();
-	void UpdateUi();
+	void setTesterData( QString, QString, QString, DBOP );
 
 private slots:
 	void OnNameChanged(void);
 	void OnAppIdChanged(void);
 	void OnZipChanged(void);
-	void OnActiveToggled(bool);
+	void OnAppIdChanged(QString);
+	void OnZipChanged(QString);
 	void OnWeatherToggled(bool);
 	void OnClickedBtn(QAbstractButton *);
+	void OnDelete();
 	void accept();
 	void reject();
 };

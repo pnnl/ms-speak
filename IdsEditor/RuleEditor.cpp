@@ -145,13 +145,6 @@ RuleEditor::~RuleEditor()
 //
 void RuleEditor::InitFunctions()
 {
-	if( m_parent->NoCurr() ){
-		QString qs = QStringLiteral("Sanity Check Failure: %1").arg("No Current Tester");
-		QMessageBox::warning(this, QStringLiteral("Rule Editor"),
-							 qs, QMessageBox::Ok, QMessageBox::Ok);
-		close();
-	}
-	m_Tester = m_parent->Curr();
 	QStringList qsl = QStringList();
 	QHash<QString, QStringList>::const_iterator it = m_functions.constBegin();
 	for (it = m_functions.constBegin(); it != m_functions.constEnd(); ++it)
@@ -489,7 +482,7 @@ void RuleEditor::accept()
 	if ( m_ruleObjects.contains(objectKey))
 		delete m_ruleObjects.take(objectKey);
 
-	 m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
+	m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
 	m_parent->UpdateObjectModel();
 }
 

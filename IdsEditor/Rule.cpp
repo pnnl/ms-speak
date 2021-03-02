@@ -19,6 +19,7 @@ Rule::Rule(const Rule& rule)
 	for (QString key : rule.KeyValue.keys())
 		KeyValue.insert(key, rule.KeyValue.value(key));
 }
+
 //-------------------------------------------------------------------------------
 // Rule::Copy
 //
@@ -29,6 +30,7 @@ void Rule::Copy(const Rule& rule)
 	for (QString key : rule.KeyValue.keys())
 		KeyValue.insert(key, rule.KeyValue.value(key));
 }
+
 //-------------------------------------------------------------------------------
 // Rule::ToString
 //
@@ -41,8 +43,10 @@ QString Rule::ToString() const
 				   .arg(key)
 				   .arg(KeyValue.value(key));
 	}
-	return strList.join(QStringLiteral("\n"));
+	//return strList.join(QStringLiteral("\n"));
+	return strList.join(QStringLiteral(", "));
 }
+
 //-------------------------------------------------------------------------------
 // RemObject::RemObject
 //
@@ -53,6 +57,7 @@ RemObject::RemObject(const RemObject& rs)
 	for (Rule* rule : rs.Rules)
 		Rules.insert(rule->Name, new Rule(*rule));
 }
+
 //-------------------------------------------------------------------------------
 // RemObject::Copy
 //
@@ -66,6 +71,7 @@ void RemObject::Copy(const RemObject& rs)
 	for (Rule* rule : rs.Rules)
 		Rules.insert(rule->Name, new Rule(*rule));
 }
+
 //-------------------------------------------------------------------------------
 // RemObject::CreateRule
 //
@@ -97,6 +103,7 @@ Rule* RemObject::CreateRule(const QString& ruleName)
 	}
 	return rule;
 }
+
 //-------------------------------------------------------------------------------
 // RemObject::Rem
 //
@@ -107,6 +114,7 @@ QString RemObject::Rem() const
 	//return QStringLiteral("%1::%2").arg(EndPoint, Method);
 	return QStringLiteral("%1::%2").arg(m_EndPoint, m_Method);
 }
+
 //-------------------------------------------------------------------------------
 // RemObject::ToString
 //
