@@ -87,17 +87,16 @@ IdsEditor::IdsEditor(QWidget* parent)
 	: QMainWindow(parent),
 	  m_clearSettingsShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+C")), this, SLOT(OnClearSettings())),
 	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString()),
-	  m_prompt( false )
+	  m_prompt(false),
+	  m_saveErr(false),
+	  m_DBmods(false)
 {
 	ui.setupUi(this);
-	ui.cmbTesters->addItem("<new>", ROLE_NEW_TESTER_KEY);
 
 	ui.DeleteBtn->setEnabled(false);
 	ui.EditBtn->setEnabled(false);
 	ui.NewBtn->setEnabled(false);
 	ui.btnEditTester->setEnabled(false);
-	ui.cmbTesters->setEnabled(false);
-	//ui.cmbTesters->setEditable(false);
 
 	setWindowTitle(QStringLiteral("IDS Editor %1").arg(SOFTWARE_VERSION));
 	RestoreGeometry();
@@ -109,10 +108,15 @@ IdsEditor::IdsEditor(QWidget* parent)
 	ui.RulesTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 	statusBar()->addWidget(&m_dbFileNameLabel);
+	statusBar()->setToolTip( "SQLite Open-source Database" );
+
 	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 
+	connect(ui.FileNewAct, SIGNAL(triggered()), this, SLOT(OnFileNew()));
 	connect(ui.FileOpenAct, SIGNAL(triggered()), this, SLOT(OnFileOpen()));
 	connect(ui.FileSaveAct, SIGNAL(triggered()), this, SLOT(OnFileSave()));
+	connect(ui.FileSaveAsAct, SIGNAL(triggered()), this, SLOT(OnFileSaveAs()));
+
 	connect(ui.HelpAboutAct, SIGNAL(triggered()), this, SLOT(OnAbout()));
 	connect(ui.HelpAct, SIGNAL(triggered()), this, SLOT(OnHelp()));
 	connect(ui.HelpLicensingAct, SIGNAL(triggered()), this, SLOT(OnAboutQt()));
@@ -134,21 +138,17 @@ IdsEditor::IdsEditor(QWidget* parent)
 //
 IdsEditor::~IdsEditor()
 {
-	ClearHHash();
+	ClearHashes();
+	if( m_db.isOpen() ){
+		qDebug("~IdsEditor""Database still Open.");
+		m_db.close();
+	}
 }
 
-
-//-------------------------------------------------------------------------------
-// DirtyRules
-//
-void IdsEditor::DirtyRules()
-{
-	m_Testers[m_currTester]->DirtyRules(true);
-}
 //-------------------------------------------------------------------------------
 // ClearHHash
 //
-void IdsEditor::ClearHHash()
+void IdsEditor::ClearHashes()
 {
 	REMOBJ_HHASH::iterator hitr;
 	for( hitr = m_RemObjs.begin(); hitr != m_RemObjs.end(); ++hitr ){
@@ -158,7 +158,75 @@ void IdsEditor::ClearHHash()
 	}
 	//qDeleteAll(m_RemObjs);
 	m_RemObjs.clear();
+
+	//TESTER_HASH::iterator titr;
+	//for( titr = m_Testers.begin(); titr != m_Testers.end(); ++titr ){
+	qDeleteAll(m_Testers);
+	m_Testers.clear();
+	DB_HASH::iterator ditr;
+	for( ditr = m_functions.begin(); ditr != m_functions.end(); ++ditr ){
+		QStringList& ql = ditr.value();
+		ql.clear();
+	}
+	for( ditr = m_methods.begin(); ditr != m_methods.end(); ++ditr ){
+		QStringList& ql = ditr.value();
+		ql.clear();
+	}
 }
+
+//-------------------------------------------------------------------------------
+// reset
+//
+void IdsEditor::reset()
+{
+	ClearHashes();
+	m_ActTesterOrig = Q_NULLPTR;
+	m_ActTester = Q_NULLPTR;
+	m_currTester = Q_NULLPTR;
+	m_origs.clear();
+	m_DBmods = false;
+	ui.cmbTesters->clear();
+
+	//ui.cmbTesters->setEditable(false);
+	ui.cmbTesters->addItem("<new>", ROLE_NEW_TESTER_KEY);
+	ui.DeleteBtn->setEnabled(false);
+	ui.EditBtn->setEnabled(false);
+	ui.NewBtn->setEnabled(false);
+	ui.btnEditTester->setEnabled(false);
+	//ui.cmbTesters->setEnabled(false);
+	//ui.cmbTesters->setEditable(false);
+	m_RemObjModel.clear();
+	m_dbFileNameLabel.setText(QDir::toNativeSeparators(""));
+	this->repaint();
+	qApp->processEvents();
+}
+
+//-------------------------------------------------------------------------------
+// Modded
+//
+void IdsEditor::Modded( bool bTester /*=true*/ )
+{
+	if( bTester )
+		m_Testers[m_currTester]->Modded(true);
+	m_DBmods = true;
+}
+
+//-------------------------------------------------------------------------------
+// DirtyRules
+//
+void IdsEditor::DirtyRules( bool b )
+{
+	m_Testers[m_currTester]->DirtyRules(b);
+	m_DBmods = true;
+}
+
+//-------------------------------------------------------------------------------
+// DirtyRules
+/*
+bool IdsEditor::DirtyRules( void )
+{
+	return m_Testers[m_currTester]->DirtyRules();
+}*/
 
 //------------------------------------------------------------------------------
 // ModelIndexByKeyAndRole
@@ -190,17 +258,22 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QStrin
 		qDebug("Database still Open.");
 		m_db.close();
 	}
-	if( m_db.isValid() ){
-		qDebug("Database Already Added.");
-		m_db.removeDatabase("BizConn");
-	}
-	
-	// Create database connection.
-	m_db = QSqlDatabase::addDatabase("QSQLITE", "BizConn");
+
+	/* Create database connection.
+	 * if connection name is defined application-wide and you call addDatabase in each of
+	 * the objects that use it, you are changing all QSqlDatabase objects that uses the same
+	 * connection name and invalidating all queries that were active on them.
+	 */
 	if( !m_db.isValid() ){
-		qDebug("Error occurred adding the database.");
-		qDebug("%s.", qPrintable(m_db.lastError().text()));
-		return bRet;
+		m_db = QSqlDatabase::addDatabase("QSQLITE", DB_CONNECTION_NAME);
+		if( !m_db.isValid() ){
+			qDebug("Error occurred adding the database.");
+			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			return bRet;
+		}
+	}
+	else{
+		qDebug("SqlDatabase::addDatabase already valid");
 	}
 	/*m_db.setHostName("acidalia");
 	m_db.setDatabaseName("customdb");
@@ -209,7 +282,7 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QStrin
 	m_db.setConnectOptions(options); // For the QSQLITE driver, if the database name specified does not exist, 
 									 // then it will create the file for you unless the QSQLITE_OPEN_READONLY option is set
 	m_db.setDatabaseName(fileName);
-	if( !m_db.open()){
+	if( !m_db.open() ){
 		errStr = QStringLiteral("Error occurred opening the database: '%1'").arg(m_db.lastError().text());
 		qDebug("%s", qPrintable(errStr));
 		return bRet;
@@ -219,18 +292,6 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QStrin
 
 //------------------------------------------------------------------------------
 // CreateBizDB
-/*
-QString path = "path";
-QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-db.setDatabaseName(path);
-db.open();
-QSqlQuery query;
-query.exec("create table person "
-          "(id integer primary key, "
-          "firstname varchar(20), "
-          "lastname varchar(30), "
-          "age integer)")
- */
 bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 {
 	bool bRet = OpenBizDB( fileName, errStr, QString("") );
@@ -238,6 +299,11 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 		return bRet;
 	}
 	bRet = false;
+	/*
+	 * all QSqlQuery are detached from the QSqlDatabase before closing the database
+	 *  by calling QSqlQuery::finish(), which is automatic when the QSqlQuery object
+	 *  goes out of scope,
+	 */
 	QSqlQuery query(m_db);
 
 	// create tester table
@@ -272,7 +338,7 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	}	
 		
 	// create Functions table
-	strQuery = QStringLiteral("
+	strQuery = QStringLiteral(
 	"CREATE TABLE [Functions] ("
 	"	[Id] INTEGER NOT NULL PRIMARY KEY," 
 	"	[Name] NVARCHAR(50) NOT NULL,"
@@ -319,7 +385,7 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 
 	// create Methods table
 	strQuery = QStringLiteral(
-	"CREATE TABLE [Methods] (
+	"CREATE TABLE [Methods] ("
 	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
 	"	[EndPoint] INTEGER NOT NULL,"
 	"	[Name] NVARCHAR(50) NOT NULL,"
@@ -428,36 +494,13 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 // SQLite starts, processes, and commits the transaction automatically.
 bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 {
-	bool bRet = OpenBizDB( fileName, errStr, QString("QSQLITE_OPEN_READONLY") );
+	bool bRet = OpenBizDB( fileName, errStr, QString("") ); // QSQLITE_OPEN_READONLY
 	if( !bRet ){
 		return bRet;
 	}
 	bRet = false;
 	QSqlQuery query(m_db);
 	
-	/*query.prepare("INSERT INTO person (id, forename, surname) "
-				  "VALUES (:id, :forename, :surname)");
-	query.bindValue(":id", 1001);
-	query.bindValue(":forename", "Bart");
-	query.bindValue(":surname", "Simpson");*/
-	/* Insert row.
-	query.prepare("INSERT INTO test VALUES (null, ?)");
-	query.addBindValue("Some text");
-	if( !query.exec()){
-		qDebug("Error occurred inserting.");
-		qDebug("%s.", qPrintable(m_db.lastError().text()));
-		return bRet;
-	}
-	// Insert row.
-	query.prepare("INSERT INTO test VALUES (null, ?)");
-	query.addBindValue("Some text");
-	if( !query.exec()){
-		qDebug("Error occurred inserting.");
-		qDebug("%s.", qPrintable(m_db.lastError().text()));
-		return bRet;
-	}
-	*/
-
 	// Query.
 	QString strQuery = QStringLiteral(
 	"SELECT functions.name as Function, endpoints.name as EndPoint, methods.name as Method"
@@ -502,7 +545,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 	).arg(DB_COLUMN_NAME).arg(DB_TABLE_TESTERS).arg(DB_TABLE_ACTIVE);
 
 	query.prepare(strQuery);
-	if( !query.exec()){
+	if( !query.exec() ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
 		m_db.close();
@@ -516,7 +559,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 
 	strQuery = QStringLiteral("SELECT Name, AppId, Zipcode FROM %1").arg(DB_TABLE_TESTERS);
 	query.prepare(strQuery);
-	if( !query.exec()){
+	if( !query.exec() ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
 		m_db.close();
@@ -540,9 +583,8 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 	ui.cmbTesters->setCurrentIndex(0);
 
 	bRet = LoadRules( m_db,errStr );
-	m_db.close();
-	UpdateObjectModel();
-	//QSqlDatabase::removeDatabase("BizConn");
+	//m_db.close();
+	//UpdateObjectModel();
 	return bRet;
 }
 
@@ -553,7 +595,7 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 {
 	bool bRet = false;
 
-	ClearHHash();
+	//ClearHashes();
 
 	QSqlQuery query(db);
 	// Query.
@@ -652,8 +694,8 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 			rule->KeyValue.insert(RULE_KEY_NUMREQ, numReq);
 			rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
 		}
-		pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
-		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+		pRemObj->Rules.insert(RULE_TYPE_EMAIL, new Rule());
+		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_EMAIL, Q_NULLPTR))
 		{
 			rule->Name = RULE_TYPE_EMAIL;
 			rule->KeyValue.insert(RULE_KEY_EMAIL, email);
@@ -678,9 +720,12 @@ void IdsEditor::InitCombo(void)
 	 * that IP it is accepted.
 	 */
 	ui.cmbTesters->setEditable(true);
+	ui.cmbTesters->addItem("<new>", ROLE_NEW_TESTER_KEY);
 	ui.cmbTesters->setMinimumWidth(150);
 	ui.cmbTesters->lineEdit()->setAlignment(Qt::AlignCenter);
 	//ui.cmbHosts->lineEdit()->setInputMask( "000.000.000.000" );
+	ui.cmbTesters->setEnabled(true);
+	ui.cmbTesters->setEditable(false);
 }
 
 //------------------------------------------------------------------------------
@@ -734,23 +779,35 @@ QStandardItem* IdsEditor::RemItem(const QString& ruleKey)
 //------------------------------------------------------------------------------
 // UpdateObjectModel
 //
-void IdsEditor::UpdateObjectModel()
+void IdsEditor::UpdateObjectModel(QString rem /*= Q_NULLPTR*/)
 {
+	QModelIndex	index;
+
 	m_RemObjModel.clear();
 
 	REMOBJ_HASH& rRemObjs = RemObjects();
 	for (RemObject* remObj : rRemObjs)
 	{
-		QStandardItem* RemItem = new QStandardItem(remObj->Rem());
-		RemItem->setData(remObj->Rem(), ROLE_REM_KEY);
+		QString ItemRem = remObj->Rem();
+		QStandardItem* RemItem = new QStandardItem(ItemRem);
+		RemItem->setData(ItemRem, ROLE_REM_KEY);
 		m_RemObjModel.appendRow(RemItem);
 		for (Rule* rule : remObj->Rules)
 		{
 			QStandardItem* ruleItem = new QStandardItem(rule->ToString());
-			ruleItem->setData(remObj->Rem(), ROLE_REM_KEY);
+			ruleItem->setData(ItemRem, ROLE_REM_KEY);
 			ruleItem->setData(rule->ToString(), ROLE_RULE_KEY);
 			RemItem->appendRow(ruleItem);
+			if( !rem.isNull() ){
+				if( rem == ItemRem ){
+					index = RemItem->index();
+				}
+			}
 		}
+	}
+	//ui.RulesTreeView->expandAll();
+	if( index.isValid() ){
+		ui.RulesTreeView->expand(index);
 	}
 }
 
@@ -783,6 +840,42 @@ void IdsEditor::OnClearSettings()
 }
 
 //------------------------------------------------------------------------------
+// OnFileNew
+//
+void IdsEditor::OnFileNew()
+{
+	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Business Rules Database"),
+	m_dbFileName, QStringLiteral("Sqlite DB File (*.db)"));
+
+	if (fileName.isEmpty())
+		return;
+
+	reset();
+
+	if( QFile::exists(fileName) ){
+		QFile file (fileName);
+		file.remove();
+	}
+	m_dbFileName = fileName;
+
+	QString err;
+	if( CreateBizDB(m_dbFileName, err) ){
+	}
+	else{
+		ui.btnEditTester->setEnabled(false);
+		//ui.cmbTesters->setEnabled(false);
+		QString qs = QStringLiteral("Unable to Open File: %1\n%2").arg(m_dbFileName).arg(err);
+		QString qs2 = QStringLiteral("Unable to Open File: %1").arg(m_dbFileName);
+		m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs2));
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		return;
+	}
+	m_prompt = false;
+	OnFileOpen();
+}
+
+//------------------------------------------------------------------------------
 // OnFileOpen
 //
 void IdsEditor::OnFileOpen()
@@ -792,19 +885,21 @@ void IdsEditor::OnFileOpen()
 														m_dbFileName, QStringLiteral("Sqlite DB File (*.db)"));
 		if( fileName.isEmpty())
 			return;
+		reset();
 		m_dbFileName = fileName;
 	}
+	m_prompt = true;
 	QString err;
 	if( ReadDbFile(m_dbFileName, err) ){
-		UpdateObjectModel();
+		//UpdateObjectModel(); this is done inside ReadDbFile
 		QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 		ui.btnEditTester->setEnabled(true);
-		ui.cmbTesters->setEnabled(true);
+		//ui.cmbTesters->setEnabled(true);
 	}
 	else{
 		ui.btnEditTester->setEnabled(false);
-		ui.cmbTesters->setEnabled(false);
+		//ui.cmbTesters->setEnabled(false);
 		QString qs = QStringLiteral("Unable to Open File: %1\n%2").arg(m_dbFileName).arg(err);
 		QString qs2 = QStringLiteral("Unable to Open File: %1").arg(m_dbFileName);
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs2));
@@ -816,8 +911,51 @@ void IdsEditor::OnFileOpen()
 //------------------------------------------------------------------------------
 // OnFileSave
 //
+/*
+ * If you want to insert many records at the same time, it is often more efficient to separate the
+ * query from the actual values being inserted. This can be done using placeholders. Qt supports two
+ * placeholder syntaxes: named binding and positional binding. Here's an example of named binding:
+
+	QSqlQuery query;
+	query.prepare("INSERT INTO employee (id, name, salary) "
+				  "VALUES (:id, :name, :salary)");
+	query.bindValue(":id", 1001);
+	query.bindValue(":name", "Thad Beaumont");
+	query.bindValue(":salary", 65000);
+	query.exec();
+Here's an example of positional binding:
+	QSqlQuery query;
+	query.prepare("INSERT INTO employee (id, name, salary) "
+				  "VALUES (?, ?, ?)");
+	query.addBindValue(1001);
+	query.addBindValue("Thad Beaumont");
+	query.addBindValue(65000);
+	query.exec();
+
+The actual query that ends up being executed by the DBMS is available as QSqlQuery::executedQuery().
+
+When inserting multiple records, you only need to call QSqlQuery::prepare() once. Then you call
+ bindValue() or addBindValue() followed by exec() as many times as necessary.
+*/
 bool IdsEditor::OnFileSave()
 {
+
+	if( !m_db.open() ){
+		QString qs = QStringLiteral("Unable to Save DB '%1', Not Open.").arg(m_dbFileName);
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		return false;
+	}
+
+	if( !m_DBmods ){
+		qDebug() << "Nothing Changed, Nothing to Save";
+		return true;
+	}
+	m_DBmods = false;
+	m_saveErr = true;
+	//qDebug() << "Changes Saved.";
+	//return true;
+
 	TESTER_HASH::iterator titr;
 	REMOBJ_HHASH::iterator hitr;
 	bool bShowAll = false;
@@ -838,54 +976,263 @@ bool IdsEditor::OnFileSave()
 			qDebug() << "  " << tester->ToString();// << Qt::endl << Qt::endl;
 		}
 	}
-	// show dirty users
-	qDebug() << "Showing Dirty Testers:";
+	QString errStr;
+	QSqlQuery query(m_db);
+	QString strQuery;
+
+	// == Add or Modify Tester ==
+	QString strQueryAddMod = QStringLiteral(
+			"INSERT OR REPLACE INTO Testers(Name, AppId, Zipcode) "
+			"VALUES (:Name, :AppId, :Zipcode);"
+	);
+
+	// == Update Active Tester ==
+	QString strQueryModAct = QStringLiteral(
+		"INSERT OR REPLACE INTO ActiveTester(Id,Tester) "
+		"VALUES(1, (SELECT Id FROM Testers WHERE Name = ?));"
+	);
+
+	// == Remove From Active Tester ==
+	QString strQueryDelAct = QStringLiteral(
+		"DELETE FROM ActiveTester WHERE Id = 1;"
+	);
+	// "DELETE FROM ActiveTester WHERE Tester = "
+	// "(SELECT Id FROM Testers WHERE Name = ?);"
+
+	// == Add Tester Rules ==
+	QString strQueryQAddRules = QStringLiteral(
+		"WITH EpId AS (SELECT Id FROM EndPoints WHERE Name = :EpName) "
+		"INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
+		"VALUES ((SELECT Id FROM Testers WHERE Name = :TstrName), "
+		"(SELECT * from EpId), "
+		"(SELECT Id FROM Methods WHERE (Name = :MetName AND EndPoint=(SELECT * from EpId))), "
+		":mxTemp, :mnTemp, :mxHour, :mnHour, :nReq, :nRPH, :em);"
+	);
+	// == Remove Tester Rules ==
+	QString strQueryDelRules = QStringLiteral(
+		"DELETE FROM Rules WHERE id IN "
+		"(SELECT rules.id FROM rules "
+		"WHERE( Tester =(SELECT id FROM Testers WHERE Name = ?)));"
+	);
+	// == Remove Tester ==
+	QString strQueryDelTstr = QStringLiteral(
+		"DELETE FROM Testers WHERE Name = ?;"
+	);
+
+	bool delActive = false;
 	QString op;
 	for( titr = m_Testers.begin(); titr != m_Testers.end(); ++titr ){
 		Tester* tester= titr.value();
-		qDebug() << titr.key();
-		if( tester->Dirty() ){
-			switch( tester->Op() ){
-				case NIL:
-					op = "NIL";
-					break;
-				case ADD:
-					op = "ADD";
-					break;
-				case DEL:
-					op = "DEL";
-					break;
-				case MOD:
-					op = "MOD";
-					break;
-			}
-			qDebug() << op << "---> " << tester->ToString();
-		}
+		//	if we added a new user, we need to add it to the table before removing rules
+		//	but if Dirty-Rules(), we need to delete them all before deleting a tester
+		QString qsName = tester->Name();
+		if( tester->Dirty() || tester->DirtyRules() ){
+			// show dirty users
+			qDebug() << "Showing Dirty Tester:" << qsName;
+			tester->Modded(false);
+			bool addrules = true;
+			bool delrules = true;
+			if( tester->Dirty() ){
+				tester->Dirty(false);
+				switch( tester->Op() ){
+					case NIL:
+						qDebug() << "NIL ---> " << tester->ToString();
+						continue;
+						break;
+
+					case ADD:
+					case MOD:
+						if( tester->Op() == ADD ){
+							qDebug() << "ADD ---> " << tester->ToString();
+							delrules = false;
+							// tester->DirtyRules(true); ?????
+						}
+						else
+							qDebug() << "MOD ---> " << tester->ToString();
+						break;
+
+					case DEL:
+						qDebug() << "DEL ---> " << tester->ToString();
+						// set DirtyRules to force going in below, then
+						// remove rules prior to removing tester
+						tester->DirtyRules(true);
+						addrules = false;
+						break;
+				} // switch on tester->Op()
+				if( tester->Op() != DEL ){
+					qDebug() << "Add/Moddiing Tester:" << qsName;
+					if( query.prepare( strQueryAddMod ) ){
+						query.bindValue(":Name", qsName);
+						query.bindValue(":AppId", tester->AppId());
+						query.bindValue(":Zipcode", tester->Zip());
+						if( !ExecQuery( query ) ){
+							return false;
+						}
+					}
+					else{
+						return false;
+					}
+				}
+			} // >Dirty()
+			if( tester->DirtyRules() ){
+				tester->DirtyRules(false);
+				if( delrules ){
+					// delete all old rules, then add back existing ones
+					qDebug() << "---> Del Dirty Rules for " << qsName;
+					if( query.prepare( strQueryDelRules ) ){
+						query.addBindValue(qsName);
+						if( !ExecQuery( query ) ){
+							return false;
+						}
+					}
+					else{
+						return false;
+					}
+				}
+				if( addrules ){
+					// To bind a NULL value, use a null QVariant; for example,
+					//  use QVariant(QVariant::String) if you are binding a string.
+					qDebug() << "---> Add Dirty Rules for " << qsName;
+					if( query.prepare( strQueryQAddRules ) ){
+						REMOBJ_HASH& rRemObjs = m_RemObjs[qsName];
+						//if( rRemObjs.count() > 0 ){
+						for (RemObject* remObj : rRemObjs)
+						{
+							qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
+							/*QStandardItem* RemItem = new QStandardItem(remObj->Rem());
+							RemItem->setData(remObj->Rem(), ROLE_REM_KEY);
+							m_RemObjModel.appendRow(RemItem);
+							for (Rule* rule : remObj->Rules)
+							{
+								QStandardItem* ruleItem = new QStandardItem(rule->ToString());
+								ruleItem->setData(remObj->Rem(), ROLE_REM_KEY);
+								ruleItem->setData(rule->ToString(), ROLE_RULE_KEY);
+								RemItem->appendRow(ruleItem);
+							}*/
+						}
+/*
+						query.bindValue(":EpName", "CB_Server");
+						query.bindValue(":TstrName", "Carl");
+						query.bindValue(":MetName", "PingURL");
+						//if (color.isEmpty())
+						//  query.bindValue(":color", QVariant(QVariant::String));
+						//else
+						//  query.bindValue(":color", color);
+						query.bindValue(":mxTemp", "75");
+						query.bindValue(":mnTemp", "32");
+						query.bindValue(":mxHour", "14");
+						query.bindValue(":mnHour", "9");
+						query.bindValue(":nReq", "22");
+						query.bindValue(":nRPH", "4");
+						query.bindValue(":em", "SLEDawg.gpl.com");
+						if( !ExecQuery( query ) ){
+							return false;
+						}*/
+					}
+					else{
+						return false;
+					}
+				}
+				else{
+					//must be DEL
+					qDebug() << "Deleting Tester:" << qsName;
+					if( qsName == m_ActTesterOrig ){
+						delActive = true;
+					}
+					if( query.prepare( strQueryDelTstr ) ){
+						query.addBindValue(qsName);
+						if( !ExecQuery( query ) ){
+							return false;
+						}
+					}
+					else{
+						return false;
+					}
+					RemoveTester(qsName); // this already done in EditTester, but not for original testers
+				}
+			} // DirtyRules
+		} // Dirty() || DirtyRules()
 		// show if dirty rules
-		if( tester->DirtyRules() ){
-			qDebug() << "---> Has Dirty Rules";
-		}else{
-			qDebug() << "---> Has NO Dirty Rules";
-		}
-	}
-
-
-	// show active tester
-	if( m_ActTesterOrig != m_ActTester ){
-		if( Active().isEmpty() ){
-			qDebug() << "No Active Tester Set Anymore.";
-		}else{
-			qDebug() << "Active Tester Change To: " << Active();
-		}
+	} // for m_Testers
+	QString actQueryStr = Q_NULLPTR;
+	if( delActive ){
+		m_ActTester = Q_NULLPTR;
+		m_ActTesterOrig = Q_NULLPTR;
+		actQueryStr = strQueryDelAct;
 	}
 	else{
-		if( Active().isEmpty() ){
-			qDebug() << "Still No Active Tester Set.";
-		}else{
-			qDebug() << "Active Tester Still Set To: " << Active();
+		if( m_ActTesterOrig != m_ActTester ){
+			m_ActTesterOrig = m_ActTester;
+			actQueryStr = strQueryModAct;
 		}
 	}
+	if( !actQueryStr.isEmpty() ){
+		if( query.prepare( strQueryModAct ) ){
+			if( !delActive )
+				query.addBindValue(m_ActTester);
+			if( !ExecQuery( query ) ){
+				return false;
+			}
+		}
+		else{
+			return false;
+		}
+	}
+	if( Active().isEmpty() ){
+		qDebug() << "No Active Tester Set.";
+	}else{
+		qDebug() << "Active Tester Set To: " << Active();
+	}
+	m_saveErr = false;
 	return true;
+}
+
+//------------------------------------------------------------------------------
+// ExecQuery
+//
+bool IdsEditor::ExecQuery( QSqlQuery& query )
+{
+	QString strQuery;
+	QString errStr;
+	bool bRet = query.exec();
+	if( !bRet ){
+		strQuery = query.executedQuery();
+		errStr = QStringLiteral("Query Error updating DB:\n%1\n%2").arg(query.lastError().text()).arg(strQuery);
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 errStr, QMessageBox::Ok, QMessageBox::Ok);
+		return bRet;
+	}
+	else{
+		qDebug() << "numRowsAffected: " << query.numRowsAffected();
+		/* there may be no, or many rules etc.
+		if( query.numRowsAffected() != 1 ){
+			qDebug() <<  query.lastQuery();
+			strQuery = query.executedQuery();
+			errStr = QStringLiteral("Query Error updating Testers:\n%1\n%2").arg(query.lastError().text()).arg(strQuery);
+			QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+								 errStr, QMessageBox::Ok, QMessageBox::Ok);
+			bRet = false;
+		}*/
+	}
+	return bRet;
+}
+
+//------------------------------------------------------------------------------
+// OnFileSaveAs
+//
+void IdsEditor::OnFileSaveAs()
+{
+	QString fileName = QFileDialog::getSaveFileName(this, QStringLiteral("New Business Rules Database"),
+	m_dbFileName, QStringLiteral("Sqlite DB File (*.db)"));
+
+	if (fileName.isEmpty())
+		return;
+
+	OnFileSave();
+	m_dbFileName = fileName;
+
+	QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
+	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 }
 
 //------------------------------------------------------------------------------
@@ -899,14 +1246,25 @@ void IdsEditor::closeEvent(QCloseEvent* e)
 	if( CLEAR_SETTINGS_ON_EXIT)
 		QSettings().clear();
 
-	if( !OnFileSave() )
-	{
-		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
-							 QStringLiteral("Unable to Save File: %1").arg(m_dbFileName),
-							 QMessageBox::Ok,
-							 QMessageBox::Ok);
+	if( !m_saveErr ){
+		if( m_DBmods ){
+			QMessageBox::StandardButton reply;
+			reply = QMessageBox::question(this, "IDS Editor", "Save Changes?",
+										  QMessageBox::Yes|QMessageBox::No);
+			if (reply == QMessageBox::Yes) {
+				if( !OnFileSave() )
+				{
+					QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+										 QStringLiteral("Unable to Save File: %1").arg(m_dbFileName),
+										 QMessageBox::Ok,
+										 QMessageBox::Ok);
+				}
+			}
+		}
 	}
-
+	if( m_db.isOpen() ){
+		m_db.close();
+	}
 	QMainWindow::closeEvent(e);
 }
 
@@ -947,13 +1305,14 @@ void IdsEditor::NewTester(void)
 
 		rTesters.insert(tstKey, new Tester(tester));
 		UpdateObjectModel();
+		Modded();
 	}
 }
 
 //------------------------------------------------------------------------------
 // EditTester
 //
-void IdsEditor::EditTester(QString qsName )
+void IdsEditor::EditTester( QString qsName )
 {
 	TESTER_HASH& rTesters = Testers();
 	if( Tester* tester = rTesters.value(qsName, Q_NULLPTR))
@@ -961,36 +1320,48 @@ void IdsEditor::EditTester(QString qsName )
 		TesterEditor dlg(*tester, false, this);
 		if( QDialog::Accepted == dlg.exec())
 		{
-			if( dlg.GetTester().Op() == DEL )
+			const Tester& rTester = dlg.GetTester();
+			if( rTester.Dirty() )
 			{
-				if( Active() == qsName ){
-					Active( Q_NULLPTR );
-				}
-				if( Original(qsName) ){
-					tester->Op(DEL);
-				}
-				else{
-					RemoveTester(qsName);
-				}
-				TesterCombo()->removeItem( TesterCombo()->currentIndex() );
-			}
-			else
-			{
-				if( tester->Name() == dlg.GetTester().Name() )
+				Modded();
+				if( rTester.Op() == DEL )
 				{
-					// Same Name...so just copy
-					tester->Copy(dlg.GetTester());
+					if( Active() == qsName ){
+						Active( Q_NULLPTR );
+					}
+					if( Original(qsName) ){
+						tester->Op(DEL);// mark so will remove from DB on Save
+					}
+					else{
+						RemoveTester(qsName); // else was newly added, so not in DB yet
+					}
+					TesterCombo()->removeItem( TesterCombo()->currentIndex() );
 				}
 				else
 				{
-					// Different Name so delete old one and add new one
-					// this should only be possible if Tester is not an original
-					delete rTesters.take(tester->Name()); // Removes the item with the key from the hash and returns the value associated with it.
-					tester = new Tester(dlg.GetTester());
-					rTesters.insert(tester->Name(), tester);
+					if( tester->Name() == rTester.Name() )
+					{
+						// Same Name...so just copy
+						tester->Copy(rTester);
+					}
+					else
+					{
+						// Different Name so delete old one and add new one
+						// this should only be possible if Tester is not an original
+						delete rTesters.take(tester->Name()); // Removes the item with the key from the hash and returns the value associated with it.
+						tester = new Tester(rTester);
+						rTesters.insert(tester->Name(), tester);
+					}
 				}
+				UpdateObjectModel();
 			}
-			UpdateObjectModel();
+		}
+		else{
+			// if we haven't previously accepted changes,
+			// clear the dirty flag since we cancelled.
+			if( !tester->Modded() ){
+				tester->Dirty(false);
+			}
 		}
 	}
 }
@@ -1002,6 +1373,7 @@ void IdsEditor::RemoveTester(QString qsName)
 {
 	TESTER_HASH& rTesters = Testers();
 	delete rTesters.take(qsName);
+	m_DBmods = true;
 }
 
 //------------------------------------------------------------------------------
@@ -1043,7 +1415,7 @@ void IdsEditor::OnRuleDelete()
 		{
 			if( index.data(ROLE_REM_KEY).isValid())
 			{
-				DirtyRules();
+				DirtyRules( true );
 				REMOBJ_HASH& rRemObjs = RemObjects();
 				delete rRemObjs.take(index.data(ROLE_REM_KEY).toString());
 				UpdateObjectModel();
@@ -1068,7 +1440,7 @@ void IdsEditor::OnRuleNew()
 			delete rRemObjs.take(remKey);
 
 		rRemObjs.insert(remKey, new RemObject(remObj));
-		DirtyRules();
+		DirtyRules( true );
 		UpdateObjectModel();
 	}
 }
@@ -1082,7 +1454,6 @@ void IdsEditor::OnRuleEdit()
 	for (QModelIndex index : list)
 	{
 		EditRule(index);
-		DirtyRules();
 		break; // Only want first one
 	}
 }
@@ -1103,19 +1474,29 @@ void IdsEditor::EditRule(const QModelIndex& index)
 				RuleEditor dlg(*remObj, this);
 				if( QDialog::Accepted == dlg.exec())
 				{
-					if( remObj->Rem() == dlg.RemObj().Rem())
+					if( dlg.Modded() )
 					{
-						// Same Rem...so just copy
-						remObj->Copy(dlg.RemObj());
+						if( remObj->Rem() == dlg.RemObj().Rem())
+						{
+							// Same Rem...so just copy
+							remObj->Copy(dlg.RemObj());
+						}
+						else
+						{
+							// Different Rem so delete old one and add new one
+							delete rRemObjs.take(remObj->Rem()); // Removes the item with the key from the hash and returns the value associated with it.
+							remObj = new RemObject(dlg.RemObj());
+							rRemObjs.insert(remObj->Rem(), remObj);
+						}
+						UpdateObjectModel();
+						DirtyRules( true );
 					}
-					else
-					{
-						// Different Rem so delete old one and add new one
-						delete rRemObjs.take(remObj->Rem()); // Removes the item with the key from the hash and returns the value associated with it.
-						remObj = new RemObject(dlg.RemObj());
-						rRemObjs.insert(remObj->Rem(), remObj);
+				}
+				else{
+					// need catch if they modded, then 'saved', then 'cancel'd
+					if( dlg.Modded() && dlg.Saved() ){
+						DirtyRules( true );
 					}
-					UpdateObjectModel();
 				}
 			}
 		}

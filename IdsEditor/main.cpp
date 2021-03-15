@@ -128,8 +128,20 @@ int main(int argc, char *argv[])
 	QCoreApplication::setApplicationName(QStringLiteral("IdsEditor"));
 
 	CreateHomeFolders();
-
-	IdsEditor w;
-	w.show();
-	return a.exec();
+	int ret;
+	{
+		IdsEditor w;
+		w.show();
+		ret = a.exec();
+	}
+	/*
+	 * The SqlDatabase object needs to go out of scope before you can call
+	 * removeDatabase, else get:
+	 *		QSqlDatabasePrivate::removeDatabase: connection 'BizConn' is still
+	 *			in use, all queries will cease to work.
+	 *
+	 *	Both "m_db" and any "query" are destroyed because they are now out of scope
+	 */
+	QSqlDatabase::removeDatabase(DB_CONNECTION_NAME);
+	return ret;
 }

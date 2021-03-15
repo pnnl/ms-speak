@@ -64,6 +64,8 @@
 #include <QDir>
 #include <QString>
 
+const QString DB_CONNECTION_NAME = QStringLiteral("BizConn");
+
 const QString IDS_EDITOR_HOME_PATH = QStringLiteral("%1/.msspeak-ids").arg(QDir::homePath());
 const QString DB_FILE_NAME = QStringLiteral("%1/%2").arg(IDS_EDITOR_HOME_PATH, QStringLiteral("BizRules.db"));
 const QString IDS_EDITOR_DOCS_FOLDER = QStringLiteral("%1/docs").arg(IDS_EDITOR_HOME_PATH);

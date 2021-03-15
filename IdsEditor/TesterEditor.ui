@@ -31,7 +31,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">
-       <widget class="QFrame" name="frame">
+       <widget class="QFrame" name="TesterFrame">
         <property name="frameShape">
          <enum>QFrame::Panel</enum>
         </property>
@@ -72,6 +72,9 @@
          </item>
          <item row="1" column="0">
           <widget class="QCheckBox" name="chkActive">
+           <property name="toolTip">
+            <string>Tester whose rules are currently in effect</string>
+           </property>
            <property name="text">
             <string>Make This The Active Tester</string>
            </property>
@@ -90,6 +93,9 @@
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Subscribe to real-time temperature updates</string>
      </property>
      <property name="title">
       <string>Real-Time Weather Updates</string>
@@ -138,6 +144,12 @@
                <width>180</width>
                <height>0</height>
               </size>
+             </property>
+             <property name="toolTip">
+              <string>https://openweathermap.org/appid</string>
+             </property>
+             <property name="statusTip">
+              <string/>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>

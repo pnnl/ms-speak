@@ -71,7 +71,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 
-class RemObject;
+class RemObject;  // Rule Endpoint Method Object
 class Tester;
 /*
  * In general, recommend to use contains() and value() rather than operator[]()
@@ -102,16 +102,20 @@ private:
 	QString m_currTester;
 	QStringList m_origs;
 	bool m_prompt;
+	bool m_saveErr;
+	bool m_DBmods;
 
 public:
 	IdsEditor(QWidget* parent = Q_NULLPTR);
 	~IdsEditor();
-	void ClearHHash();
-	void UpdateObjectModel();
+	void ClearHashes();
+	void UpdateObjectModel(QString rem = Q_NULLPTR);
 	REMOBJ_HASH& RemObjects() { return m_RemObjs[m_currTester]; }
 	TESTER_HASH& Testers() { return m_Testers; }
-	//Tester    *TesterInfo() { return m_Testers[m_currTester]; }
-	void DirtyRules();
+	void reset();
+	void Modded(bool bTester=true);
+	void DirtyRules(bool);
+	//bool DirtyRules(void);
 
 	QComboBox *TesterCombo() { return ui.cmbTesters; }
 	DB_HASH& Functions() { return m_functions; }
@@ -133,8 +137,11 @@ private:
 	QModelIndex ModelIndexByKeyAndRole(const QString&, int);
 
 	void InitCombo();
-	bool ReadDbFile(const QString& fileName, QString&);
+	bool OpenBizDB(const QString&, QString&, const QString &);
+	bool CreateBizDB(const QString&, QString& );
+	bool ReadDbFile(const QString&, QString&);
 	bool LoadRules( QSqlDatabase&, QString& );
+	bool ExecQuery( QSqlQuery& );
 	void RestoreGeometry();
 	void RestoreState();
 	QStandardItem* RuleItem(const QString&);
@@ -146,8 +153,10 @@ private slots:
 	void OnAbout();
 	void OnAboutQt();
 	void OnClearSettings();
+	void OnFileNew();
 	void OnFileOpen();
 	bool OnFileSave();
+	void OnFileSaveAs();
 	void OnHelp();
 	void OnQuit() { close(); }
 	void OnInitCombo() { InitCombo(); }

@@ -2,7 +2,7 @@
 -- 	sqlite3 BizRules.db < AddRule.sql
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='CD_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, email ) VALUES 
+INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Carl'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='IsCDSupported' AND EndPoint=(SELECT * from EpId))),
@@ -11,6 +11,7 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	13,
 	9,
 	5,
+	2,
 	"carl.miller@gmail.com");
 	
 .quit

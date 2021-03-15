@@ -79,7 +79,9 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	  m_ruleObjects(parent->RemObjects()),
 	  m_functions(parent->Functions()),
 	  m_methods(parent->Methods()),
-	  m_bClosed(false)
+	  m_bClosed(false),
+	  m_modded(false),
+	  m_saved(false)
 {
 	ui.setupUi(this);
 
@@ -91,7 +93,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.EmailFrame->setVisible(false);
 
 	InitFunctions();
-	UpdateUi();
+	UpdateUi(false);
 
 	/*QRegularExpression mailREX("\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[A-Z]{2,4}\\b");
 	QValidator *validator = new QRegularExpressionValidator(mailREX, this);
@@ -111,6 +113,16 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	connect(ui.MaxReqPHSpin, SIGNAL(valueChanged(int)), this, SLOT(OnMaxReqPHChanged(int)));
 	connect(ui.MaxTempSlider, SIGNAL(valueChanged(int)), ui.MaxTempSpin, SLOT(setValue(int)));
 	connect(ui.MaxTempSlider, SIGNAL(valueChanged(int)), this, SLOT(OnMaxTempChanged(int)));
+
+	/*
+	 * With a QSpinbox Qt Internal code uses a timer on clicks/presses. If you step through in debugger
+	 * you exceed the timeout and get bad/double behaviour.
+	 *
+	 * Simplest: change all connect() to QSpinbox click/key to pass Qt::QueuedConnection as last
+	 * parameter for connection type, not default Qt::DirectConnection.
+	 *
+	 * the double call only happens on spinners that also have a slider
+	 */
 	connect(ui.MaxTempSpin, SIGNAL(valueChanged(int)), ui.MaxTempSlider, SLOT(setValue(int)));
 	connect(ui.MaxTempSpin, SIGNAL(valueChanged(int)), this, SLOT(OnMaxTempChanged(int)));
 	connect(ui.MinTempSlider, SIGNAL(valueChanged(int)), ui.MinTempSpin, SLOT(setValue(int)));
@@ -175,8 +187,10 @@ void RuleEditor::SaveGeometry()
 //-------------------------------------------------------------------------------
 // UpdateUi
 //
-void RuleEditor::UpdateUi()
+void RuleEditor::UpdateUi( bool init )
 {
+	if( !init )
+		m_modded = true;
 	// Deduce what the function is based on rule EndPoint
 	QString function = ui.FunctionCombo->currentText();
 
@@ -199,7 +213,7 @@ void RuleEditor::UpdateUi()
 	if (idx < 0)
 	{
 		ui.EndPointCombo->setCurrentIndex(0); // First one
-		 m_ruleObject.m_EndPoint = ui.EndPointCombo->currentText();
+		m_ruleObject.m_EndPoint = ui.EndPointCombo->currentText();
 	}
 	else
 	{
@@ -215,7 +229,7 @@ void RuleEditor::UpdateUi()
 	if (idx < 0)
 	{
 		ui.MethodCombo->setCurrentIndex(0); // First one
-		 m_ruleObject.m_Method = ui.MethodCombo->currentText();
+		m_ruleObject.m_Method = ui.MethodCombo->currentText();
 	}
 	else
 	{
@@ -235,6 +249,7 @@ void RuleEditor::UpdateUi()
 			ui.MaxRequestsGroup->setChecked(true);
 			ui.MaxRequestsFrame->setVisible(true);
 			ui.MaxRequestsSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMREQ).toInt());
+			ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
 		}
 		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
 		{
@@ -256,7 +271,16 @@ void RuleEditor::UpdateUi()
 		}
 		else if (rule->Name == RULE_TYPE_EMAIL)
 		{
-			qDebug() << "TODO: Handle case RULE_TYPE_EMAIL";
+			ui.EmailGroup->setChecked(true);
+			/* As far as I know, QtCreator makes functions italic that are either
+			 *		Virtual methods (e.g. "virtual void foo();" ), or
+			 *		methods that are derived from a base class and then overridden
+			 *			in the child class (however, i'm not sure if it only happens
+			 *			if they are derived "virtual", or if there are other corner cases where
+			 *			overridden methods are not italic)
+			 */
+			ui.EmailFrame->setVisible(true);
+			ui.Email->setText(rule->KeyValue.value(RULE_KEY_EMAIL));
 		}
 	}
 }
@@ -268,8 +292,8 @@ void RuleEditor::OnFunctionComboChanged(int index)
 {
 	Q_UNUSED(index);
 	QString function = ui.FunctionCombo->currentText();
-	 m_ruleObject.m_EndPoint = m_functions[function].first();
-	 m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
+	m_ruleObject.m_EndPoint = m_functions[function].first();
+	m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
 	UpdateUi();
 }
 
@@ -281,8 +305,8 @@ void RuleEditor::OnEndPointComboChanged(int index)
 	if (ui.EndPointCombo->count() <= 0)
 		return;
 
-	 m_ruleObject.m_EndPoint = ui.EndPointCombo->itemText(index);
-	 m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
+	m_ruleObject.m_EndPoint = ui.EndPointCombo->itemText(index);
+	m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
 	UpdateUi();
 }
 
@@ -294,7 +318,7 @@ void RuleEditor::OnMethodComboChanged(int index)
 	Q_UNUSED(index);
 	if (ui.MethodCombo->count() <= 0)
 		return;
-	 m_ruleObject.m_Method = ui.MethodCombo->currentText();
+	m_ruleObject.m_Method = ui.MethodCombo->currentText();
 	UpdateUi();
 }
 
@@ -304,8 +328,8 @@ void RuleEditor::OnMethodComboChanged(int index)
 void RuleEditor::OnEmailChanged(void)
 {
 	QString qs = ui.Email->displayText();
-	qDebug() << "Email Address Set to: " << qs;
-	 m_ruleObject.Rules.value(RULE_TYPE_EMAIL)->KeyValue.insert(RULE_KEY_EMAIL, qs);
+	//qDebug() << "Email Address Set to: " << qs;
+	m_ruleObject.Rules.value(RULE_TYPE_EMAIL)->KeyValue.insert(RULE_KEY_EMAIL, qs);
 	UpdateUi();
 }
 
@@ -314,11 +338,12 @@ void RuleEditor::OnEmailChanged(void)
 //
 void RuleEditor::OnMaxRequestsChanged(int value)
 {
+	//qDebug() << "OnMaxRequestsChanged: " << value;
 	if( value < ui.MaxReqPHSpin->value() )
 	{
 		ui.MaxReqPHSpin->setValue(value);
 	}
-	 m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
+	m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
 	UpdateUi();
 }
 
@@ -327,11 +352,12 @@ void RuleEditor::OnMaxRequestsChanged(int value)
 //
 void RuleEditor::OnMaxReqPHChanged(int value)
 {
+	//qDebug() << "OnMaxReqPHChanged: " << value;
 	if( value > ui.MaxRequestsSpin->value() )
 	{
 		ui.MaxRequestsSpin->setValue(value);
 	}
-	 m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
+	m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
 	UpdateUi();
 }
 
@@ -340,12 +366,13 @@ void RuleEditor::OnMaxReqPHChanged(int value)
 //
 void RuleEditor::OnMaxTempChanged(int value)
 {
+	//qDebug() << "OnMaxTempChanged: " << value;
 	if (value < ui.MinTempSlider->value() || value < ui.MinTempSpin->value())
 	{
 		ui.MinTempSlider->setValue(value);
 		ui.MinTempSpin->setValue(value);
 	}
-	 m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(value));
+	m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(value));
 	UpdateUi();
 }
 
@@ -354,12 +381,13 @@ void RuleEditor::OnMaxTempChanged(int value)
 //
 void RuleEditor::OnMinTempChanged(int value)
 {
+	//qDebug() << "OnMinTempChanged: " << value;
 	if (value > ui.MaxTempSlider->value() || value > ui.MaxTempSpin->value())
 	{
 		ui.MaxTempSlider->setValue(value);
 		ui.MaxTempSpin->setValue(value);
 	}
-	 m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(value));
+	m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(value));
 	UpdateUi();
 }
 
@@ -368,12 +396,13 @@ void RuleEditor::OnMinTempChanged(int value)
 //
 void RuleEditor::OnMaxTimeChanged(int value)
 {
+	//qDebug() << "OnMaxTimeChanged: " << value;
 	if (value < ui.MinTimeSlider->value() || value < ui.MinTimeSpin->value())
 	{
 		ui.MinTimeSlider->setValue(value);
 		ui.MinTimeSpin->setValue(value);
 	}
-	 m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
+	m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
 	UpdateUi();
 }
 
@@ -382,12 +411,13 @@ void RuleEditor::OnMaxTimeChanged(int value)
 //
 void RuleEditor::OnMinTimeChanged(int value)
 {
+	//qDebug() << "OnMinTimeChanged: " << value;
 	if (value > ui.MaxTimeSlider->value() || value > ui.MaxTimeSpin->value())
 	{
 		ui.MaxTimeSlider->setValue(value);
 		ui.MaxTimeSpin->setValue(value);
 	}
-	 m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MINTIME, QString::number(value));
+	m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MINTIME, QString::number(value));
 	UpdateUi();
 }
 
@@ -402,7 +432,7 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 		Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
 		rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
-		 m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
+		m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
 	}
 	else
 	{
@@ -422,7 +452,7 @@ void RuleEditor::OnTempToggled(bool checked)
 		Rule* rule = RemObject::CreateRule(RULE_TYPE_TEMP_RANGE);
 		rule->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(ui.MaxTempSpin->value()));
 		rule->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(ui.MinTempSpin->value()));
-		 m_ruleObject.Rules.insert(RULE_TYPE_TEMP_RANGE, rule);
+		m_ruleObject.Rules.insert(RULE_TYPE_TEMP_RANGE, rule);
 	}
 	else
 	{
@@ -442,7 +472,7 @@ void RuleEditor::OnTimeToggled(bool checked)
 		Rule* rule = RemObject::CreateRule(RULE_TYPE_TIME_RANGE);
 		rule->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(ui.MaxTimeSpin->value()));
 		rule->KeyValue.insert(RULE_KEY_MINTIME, QString::number(ui.MinTimeSpin->value()));
-		 m_ruleObject.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
+		m_ruleObject.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
 	}
 	else
 	{
@@ -462,7 +492,7 @@ void RuleEditor::OnEmailToggled(bool checked)
 	{
 		Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
 		rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
-		 m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
+		m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
 	}
 	else
 	{
@@ -472,18 +502,23 @@ void RuleEditor::OnEmailToggled(bool checked)
 }
 
 //-------------------------------------------------------------------------------
-// accept
+// accept - only called on click of Save
 //
 void RuleEditor::accept()
 {
-	//qDebug() << "accept()";
-	// m_ruleObject.Copy(Se ction());
-	QString objectKey = m_ruleObject.Rem();
-	if ( m_ruleObjects.contains(objectKey))
-		delete m_ruleObjects.take(objectKey);
-
-	m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
-	m_parent->UpdateObjectModel();
+	if( m_modded )
+	{
+		//qDebug() << "accept()";
+		// m_ruleObject.Copy(Section());
+		QString objectKey = m_ruleObject.Rem();
+		if ( m_ruleObjects.contains(objectKey)){
+			qDebug() << "accept() delete " << objectKey;
+			delete m_ruleObjects.take(objectKey);
+		}
+		m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
+		m_modded = false;
+		m_parent->UpdateObjectModel(objectKey);
+	}
 }
 
 //-------------------------------------------------------------------------------
@@ -520,6 +555,7 @@ void RuleEditor::OnClickedBtn(QAbstractButton *button)
 		case QDialogButtonBox::Save:	// A "Save" button defined with the AcceptRole.
 			//qDebug() << "Save Clicked";
 			//QDialog::reject();
+			m_saved = true;
 			break;
 
 		case QDialogButtonBox::Ok:		// An "OK" button defined with the AcceptRole.

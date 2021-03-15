@@ -13,7 +13,7 @@
 --INSERT INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Carl'))
 --  ON CONFLICT(Id) DO UPDATE SET Tester=excluded.Tester;
 -- 'ON' only support for sqlite 3.24+, wsl ubunutu is only 3.22
-INSERT OR REPLACE INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Carl'));
+INSERT OR REPLACE INTO ActiveTester(Id,Tester) VALUES(1, (SELECT Id FROM Testers WHERE Name ='Bob'));
 
 .print
 .width 3 6

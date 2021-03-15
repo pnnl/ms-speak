@@ -75,6 +75,7 @@ Tester::Tester(const Tester& rt)
 	  m_Zipcode(rt.m_Zipcode),
 	  m_dirty(rt.m_dirty),
 	  m_dirtyrules(rt.m_dirtyrules),
+	  m_modded(rt.m_modded),
 	  m_orig(rt.m_orig),
 	  m_op(rt.m_op)
 {
@@ -82,6 +83,7 @@ Tester::Tester(const Tester& rt)
 Tester::Tester(void)
 	: m_dirty(false),
 	  m_dirtyrules(false),
+	  m_modded(false),
 	  m_orig(false),
 	  m_op(NIL)
 {
@@ -96,6 +98,7 @@ void Tester::Copy(const Tester& ts)
 	m_Zipcode = ts.m_Zipcode;
 	m_dirty = ts.m_dirty;
 	m_dirtyrules = ts.m_dirtyrules;
+	m_modded = ts.m_modded;
 	m_orig = ts.m_orig;
 	m_op = ts.m_op;
 }
@@ -151,6 +154,9 @@ TesterEditor::TesterEditor(const Tester& tester, bool bnew,
 		}
 		ui.btnDelete->setVisible(true);
 	}
+
+	m_act = ui.chkActive->isChecked();
+
 	ui.grpWeather->setChecked(bSet);
 	ui.WeatherFrame->setVisible(bSet);
 
@@ -251,9 +257,7 @@ void TesterEditor::setTesterData( QString qsName, QString qsAppid, QString qsZip
 //
 void TesterEditor::OnDelete()
 {
-
 	m_tester.Op(DEL);
-
 	done(Accepted);
 }
 
@@ -287,7 +291,14 @@ void TesterEditor::accept()
 				}
 			}
 		}
-
+		else{
+			if( qsAppId.contains(FILL_CHAR) ){
+				qsAppId = "";
+			}
+			if( qsZip.contains(FILL_CHAR) ){
+				qsZip = "";
+			}
+		}
 		if( bOk ){
 			if(	m_TesterCombo->currentData() == ROLE_NEW_TESTER_KEY ){
 				if( !qsName.isEmpty() ){
@@ -323,6 +334,14 @@ void TesterEditor::accept()
 			QMessageBox::warning(this, QStringLiteral("IDS Editor"),
 								 qs, QMessageBox::Ok, QMessageBox::Ok);
 			return;
+		}
+	}
+	else{
+		if( m_act != ui.chkActive->isChecked() ){
+			// if activeTester state is different than when we started
+			// mark dirty for save to DB
+			 //m_tester.Dirty(true);
+			 m_parent->Modded(false);
 		}
 	}
 

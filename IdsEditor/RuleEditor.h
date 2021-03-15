@@ -83,12 +83,19 @@ private:
 	REMOBJ_HASH& m_ruleObjects;
 	DB_HASH& m_functions; // key is a function, value a list of endpoints
 	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
-	bool m_bClosed;
+	bool	 m_bClosed;
+	bool	 m_modded;
+	bool	 m_saved;
+
 public:
 	RuleEditor(const RemObject& ruleObj, IdsEditor* parent = Q_NULLPTR);
 	~RuleEditor();
 
 	const RemObject& RemObj() const { return m_ruleObject; }
+	void Modded(bool b){ m_modded=b; }
+	bool Modded(void){ return m_modded; }
+	void Saved(bool b){ m_saved=b; }
+	bool Saved(void){ return m_saved; }
 
 protected:
 	virtual void resizeEvent(QResizeEvent* e) { QWidget::resizeEvent(e); SaveGeometry(); }
@@ -97,7 +104,7 @@ private:
 	void InitFunctions();
 	void RestoreGeometry();
 	void SaveGeometry();
-	void UpdateUi();
+	void UpdateUi(bool b=true);
 
 private slots:
 	void OnEndPointComboChanged(int);

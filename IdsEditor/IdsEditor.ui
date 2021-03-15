@@ -98,6 +98,9 @@
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="0" column="0">
            <widget class="QPushButton" name="btnEditTester">
+            <property name="toolTip">
+             <string>Different sets of rules for each tester</string>
+            </property>
             <property name="text">
              <string>Edit</string>
             </property>
@@ -118,13 +121,13 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Enter Host IP</string>
+             <string>Select Tester</string>
             </property>
             <property name="statusTip">
              <string/>
             </property>
             <property name="editable">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="sizeAdjustPolicy">
              <enum>QComboBox::AdjustToContents</enum>
@@ -133,7 +136,7 @@
              <number>0</number>
             </property>
             <property name="placeholderText">
-             <string>0.0.0.0</string>
+             <string/>
             </property>
            </widget>
           </item>
@@ -183,11 +186,14 @@
   </widget>
   <widget class="QStatusBar" name="StatusBar"/>
   <action name="FileNewAct">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>&amp;New</string>
    </property>
    <property name="visible">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="FileOpenAct">
@@ -205,7 +211,7 @@
     <string>Save &amp;As</string>
    </property>
    <property name="visible">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </action>
   <action name="QuitAct">

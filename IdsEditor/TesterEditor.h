@@ -85,6 +85,7 @@ private:
 	QString m_Zipcode;
 	bool	m_dirty;
 	bool	m_dirtyrules;
+	bool	m_modded;
 	bool	m_orig; // true if already in the db
 	DBOP	m_op;
 public:
@@ -100,9 +101,11 @@ public:
 	void Zip(QString qs) { m_Zipcode=qs; }
 	QString Zip() const { return m_Zipcode; }
 	void Dirty(bool b){ m_dirty=b; }
-	bool Dirty(void){ return m_dirty; }
+	bool Dirty(void) const { return m_dirty; }
 	void DirtyRules(bool b){ m_dirtyrules=b; }
 	bool DirtyRules(void){ return m_dirtyrules; }
+	void Modded(bool b){ m_modded=b; }
+	bool Modded(void){ return m_modded; }
 	void Original(bool b){ m_orig=b; }
 	bool Original(void){ return m_orig; }
 	void Op(DBOP op){ m_op=op; if( op != NIL ) m_dirty=true; }
@@ -122,6 +125,7 @@ private:
 	Tester	   m_tester;
 	IdsEditor *m_parent;
 	QComboBox *m_TesterCombo;
+	bool	   m_act;
 
 public:
 	TesterEditor(const Tester& t, bool bnew, IdsEditor* parent = Q_NULLPTR);

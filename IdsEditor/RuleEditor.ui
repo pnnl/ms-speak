@@ -129,6 +129,9 @@
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label_6">
+               <property name="toolTip">
+                <string>Rule for N messages per hour</string>
+               </property>
                <property name="text">
                 <string>Per Hour:</string>
                </property>
@@ -465,6 +468,9 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Email notification when rule violated</string>
          </property>
          <property name="title">
           <string>E-mail Address</string>
