@@ -636,9 +636,10 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 	}
 	// == All Rules ==
 	strQuery = QStringLiteral(
-	"SELECT testers.Name as who, endpoints.name as EndPoint, methods.name as Method,"
+	"SELECT testers.Name as who, functions.Name as Function, endpoints.name as EndPoint, methods.name as Method,"
 	" rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 	" FROM rules"
+	" INNER JOIN functions ON functions.id = rules.function"
 	" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
 	" INNER JOIN methods ON methods.id = rules.method"
 	" INNER JOIN testers ON testers.id = rules.tester"
@@ -652,15 +653,16 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 	}
 	while( query.next() ){
 		QString Tester =  query.value(0).toString();
-		QString EndPoint =  query.value(1).toString();
-		QString Method =  query.value(2).toString();
-		QString maxTemp =  query.value(3).toString();
-		QString minTemp =  query.value(4).toString();
-		QString maxHour =  query.value(5).toString();
-		QString minHour =  query.value(6).toString();
-		QString numReq =  query.value(7).toString();
-		QString numRPH =  query.value(8).toString();
-		QString email =  query.value(9).toString();
+		QString Function =  query.value(1).toString();
+		QString EndPoint =  query.value(2).toString();
+		QString Method =  query.value(3).toString();
+		QString maxTemp =  query.value(4).toString();
+		QString minTemp =  query.value(5).toString();
+		QString maxHour =  query.value(6).toString();
+		QString minHour =  query.value(7).toString();
+		QString numReq =  query.value(8).toString();
+		QString numRPH =  query.value(9).toString();
+		QString email =  query.value(10).toString();
 		/*
 		qDebug() << Tester;
 		qDebug() << "   " << EndPoint << "::" << Method;
@@ -671,6 +673,7 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 		REMOBJ_HASH& rRemObjs = m_RemObjs[Tester];
 		rRemObjs.insert(remKey, new RemObject());
 		RemObject *pRemObj = rRemObjs[remKey];
+		pRemObj->m_Function = Function;
 		pRemObj->m_EndPoint = EndPoint;
 		pRemObj->m_Method = Method;
 		pRemObj->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
@@ -1314,6 +1317,7 @@ void IdsEditor::NewTester(void)
 //
 void IdsEditor::EditTester( QString qsName )
 {
+	qDebug() << "EditTester: " << qsName;
 	TESTER_HASH& rTesters = Testers();
 	if( Tester* tester = rTesters.value(qsName, Q_NULLPTR))
 	{
@@ -1471,6 +1475,7 @@ void IdsEditor::EditRule(const QModelIndex& index)
 			REMOBJ_HASH& rRemObjs = RemObjects();
 			if( RemObject* remObj = rRemObjs.value(remKey, Q_NULLPTR))
 			{
+				// need to get the one selected
 				RuleEditor dlg(*remObj, this);
 				if( QDialog::Accepted == dlg.exec())
 				{

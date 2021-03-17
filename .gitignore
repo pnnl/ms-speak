@@ -41,8 +41,7 @@ Todo.txt
 Sql/srv_msp.c
 Sql/tstCreateBizDB.sql
 Sql/tstShowTables.sql
-Sql/BizRules (full).db
-Sql/origBizRules.db
+Sql/FullBiz.db
 *(copy)*
 *.bak
 Proxy/Packages/TempTest/Weather

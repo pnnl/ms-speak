@@ -130,6 +130,7 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 CREATE TABLE [Rules] ( 
 	[Id] INTEGER NOT NULL PRIMARY KEY, 
 	[Tester] INTEGER NOT NULL, 
+	[Function] INTEGER NOT NULL,
 	[Endpoint] INTEGER NOT NULL, 
 	[Method] INTEGER NOT NULL, 
 	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),
@@ -142,6 +143,7 @@ CREATE TABLE [Rules] (
 	UNIQUE(Tester,Endpoint,Method),
 	CHECK (maxTemp > minTemp AND maxHour > minHour),
 	FOREIGN KEY(Tester) REFERENCES Testers(Id),
+	FOREIGN KEY(Function) REFERENCES Functions(Id),
 	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),
 	FOREIGN KEY(Method) REFERENCES Methods(Id)
 ); 

@@ -129,6 +129,7 @@ TesterEditor::TesterEditor(const Tester& tester, bool bnew,
 	  m_parent(parent),
 	  m_TesterCombo(m_parent->TesterCombo())
 {
+
 	bool bSet=false;
 	ui.setupUi(this);
 

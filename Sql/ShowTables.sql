@@ -29,7 +29,7 @@ select * from EndPoints;
 select * from Methods;
 
 .print
-.width 3 10 8 8 7 7 7 7 6 6 35
+.width 3 10 8 8 8 7 7 7 7 6 6 35
 .print == Rules ==
 --pragma table_info('Rules');
 select * from Rules;

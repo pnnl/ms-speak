@@ -51,7 +51,8 @@ QString Rule::ToString() const
 // RemObject::RemObject
 //
 RemObject::RemObject(const RemObject& rs)
-	: m_EndPoint(rs.m_EndPoint),
+	: m_Function(rs.m_Function),
+	  m_EndPoint(rs.m_EndPoint),
 	  m_Method(rs.m_Method)
 {
 	for (Rule* rule : rs.Rules)
@@ -63,6 +64,7 @@ RemObject::RemObject(const RemObject& rs)
 //
 void RemObject::Copy(const RemObject& rs)
 {
+	m_Function = rs.m_Function;
 	m_EndPoint = rs.m_EndPoint;
 	m_Method = rs.m_Method;
 	qDeleteAll(Rules);

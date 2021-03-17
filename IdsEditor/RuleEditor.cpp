@@ -191,9 +191,8 @@ void RuleEditor::UpdateUi( bool init )
 {
 	if( !init )
 		m_modded = true;
-	// Deduce what the function is based on rule EndPoint
-	QString function = ui.FunctionCombo->currentText();
 
+	QString function = m_ruleObject.m_Function;
 	// Set up the combos based on rule
 	disconnect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	disconnect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
@@ -292,6 +291,7 @@ void RuleEditor::OnFunctionComboChanged(int index)
 {
 	Q_UNUSED(index);
 	QString function = ui.FunctionCombo->currentText();
+	m_ruleObject.m_Function = function;
 	m_ruleObject.m_EndPoint = m_functions[function].first();
 	m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
 	UpdateUi();
@@ -502,7 +502,7 @@ void RuleEditor::OnEmailToggled(bool checked)
 }
 
 //-------------------------------------------------------------------------------
-// accept - only called on click of Save
+// accept - only called on click of 'Save'
 //
 void RuleEditor::accept()
 {
@@ -517,6 +517,7 @@ void RuleEditor::accept()
 		}
 		m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
 		m_modded = false;
+		m_parent->Modded(true);
 		m_parent->UpdateObjectModel(objectKey);
 	}
 }

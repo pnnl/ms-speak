@@ -83,6 +83,7 @@ class RemObject // Rule Endpoint Method Container
 {
 public:
 	QHash<QString, Rule*> Rules; // key is Rule Name, Mem owned here
+	QString m_Function;
 	QString m_EndPoint;
 	QString m_Method;
 

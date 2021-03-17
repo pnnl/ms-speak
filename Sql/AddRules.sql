@@ -1,11 +1,11 @@
 -- Add some rules to BizRules DB
 -- 	sqlite3 BizRules.db < AddRules.sql
-
 -- set some rules
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='CB_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Carl'),
+	(SELECT Id FROM Functions WHERE Name ='Customer Billing'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
 	75,
@@ -17,8 +17,9 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	"carl.miller@gmail.com");
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='MDM_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Tom Valdez'),
+	(SELECT Id FROM Functions WHERE Name ='Customer Billing'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='InitiateBillingDeterminants' AND EndPoint=(SELECT * from EpId))),	
 	85,
@@ -30,8 +31,9 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	"tv.in.richland@gmail.com"); 
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='MDM_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Carl'),
+	(SELECT Id FROM Functions WHERE Name ='Customer Billing'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='InitiateBillingDeterminants' AND EndPoint=(SELECT * from EpId))),	
 	79,
@@ -43,8 +45,9 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	"carl.miller@gmail.com");
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='CD_Server')
-INSERT OR REPLACE INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Tom M'),
+	(SELECT Id FROM Functions WHERE Name ='Metering Management'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='IsCDSupported' AND EndPoint=(SELECT * from EpId))),	
 	82,
@@ -56,8 +59,9 @@ INSERT OR REPLACE INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHou
 	"tom Mcd@gmail.com");
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='PG_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Carl'),
+	(SELECT Id FROM Functions WHERE Name ='Metering Management'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
 	95,
@@ -69,8 +73,9 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	'');
 
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='PG_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Darlene'),
+	(SELECT Id FROM Functions WHERE Name ='Metering Management'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
 	95,
@@ -81,10 +86,24 @@ INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour,
 	'',
 	'');
 
-
 WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='PG_Server')
-INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
 	((SELECT Id FROM Testers WHERE Name ='Amy'),
+	(SELECT Id FROM Functions WHERE Name ='Metering Management'),
+	(SELECT * from EpId),
+	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
+	77,
+	43,
+	11,
+	8,
+	13,
+	3,
+	'');
+
+WITH EpId AS (SELECT Id FROM EndPoints WHERE Name ='OD_Server')
+INSERT INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) VALUES 
+	((SELECT Id FROM Testers WHERE Name ='Amy'),
+	(SELECT Id FROM Functions WHERE Name ='Outage Management'),
 	(SELECT * from EpId),
 	(SELECT Id FROM Methods WHERE (Name ='PingURL' AND EndPoint=(SELECT * from EpId))),
 	77,
