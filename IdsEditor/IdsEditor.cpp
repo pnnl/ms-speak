@@ -463,15 +463,16 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	"	[Tester] INTEGER NOT NULL, "
 	"	[Endpoint] INTEGER NOT NULL, "
 	"	[Method] INTEGER NOT NULL, "
-	"	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),"
-	"	[minTemp] INTEGER CHECK(minTemp >= -1 AND minTemp<150),"
-	"	[maxHour] INTEGER CHECK(maxHour >= -1 AND maxHour<=23),"
-	"	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),"
+	"	[maxTemp] INTEGER CHECK( (maxTemp = NULL) OR (maxTemp between 32 and 120) ),"
+	"	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),"
+	"	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),"
+	"	[minHour] INTEGER CHECK( (minHour = NULL) OR (minHour between 0 and 23) ),"
 	"	[numReq] INTEGER,"
 	"	[numRPH] INTEGER,"
 	"	[email] NVARCHAR(50),"
 	"	UNIQUE(Tester,Endpoint,Method),"
-	"	CHECK (maxTemp > minTemp AND maxHour > minHour),"
+	"	CHECK( (maxTemp = NULL AND minTemp = NULL) OR (maxTemp > minTemp) ),"
+	"	CHECK( (maxHour = NULL AND minHour = NULL) OR (maxHour > minHour) ),"
 	"	FOREIGN KEY(Tester) REFERENCES Testers(Id),"
 	"	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),"
 	"	FOREIGN KEY(Method) REFERENCES Methods(Id) );"
@@ -676,32 +677,50 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 		pRemObj->m_Function = Function;
 		pRemObj->m_EndPoint = EndPoint;
 		pRemObj->m_Method = Method;
-		pRemObj->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
-		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_TEMP_RANGE, Q_NULLPTR))
-		{
-			rule->Name = RULE_TYPE_TEMP_RANGE;
-			rule->KeyValue.insert(RULE_KEY_MAXTEMP, maxTemp);
-			rule->KeyValue.insert(RULE_KEY_MINTEMP, minTemp);
+
+		if( !maxTemp.isEmpty() ){
+			pRemObj->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_TEMP_RANGE, Q_NULLPTR))
+			{
+				rule->Name = RULE_TYPE_TEMP_RANGE;
+				rule->KeyValue.insert(RULE_KEY_MAXTEMP, maxTemp);
+				rule->KeyValue.insert(RULE_KEY_MINTEMP, minTemp);
+			}
 		}
-		pRemObj->Rules.insert(RULE_TYPE_TIME_RANGE, new Rule());
-		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_TIME_RANGE, Q_NULLPTR))
-		{
-			rule->Name = RULE_TYPE_TIME_RANGE;
-			rule->KeyValue.insert(RULE_KEY_MAXTIME, maxHour);
-			rule->KeyValue.insert(RULE_KEY_MINTIME, minHour);
+		if( !maxHour.isEmpty() ){
+			pRemObj->Rules.insert(RULE_TYPE_TIME_RANGE, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_TIME_RANGE, Q_NULLPTR))
+			{
+				rule->Name = RULE_TYPE_TIME_RANGE;
+				rule->KeyValue.insert(RULE_KEY_MAXTIME, maxHour);
+				rule->KeyValue.insert(RULE_KEY_MINTIME, minHour);
+			}
 		}
-		pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
-		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
-		{
-			rule->Name = RULE_TYPE_MAX_VALUE;
-			rule->KeyValue.insert(RULE_KEY_NUMREQ, numReq);
-			rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
+		if( !numReq.isEmpty() ){
+			pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+			{
+				rule->Name = RULE_TYPE_MAX_VALUE;
+				rule->KeyValue.insert(RULE_KEY_NUMREQ, numReq);
+				if( !numRPH.isEmpty() )
+					rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
+			}
 		}
-		pRemObj->Rules.insert(RULE_TYPE_EMAIL, new Rule());
-		if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_EMAIL, Q_NULLPTR))
-		{
-			rule->Name = RULE_TYPE_EMAIL;
-			rule->KeyValue.insert(RULE_KEY_EMAIL, email);
+		else if( !numRPH.isEmpty() ){
+			pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+			{
+				rule->Name = RULE_TYPE_MAX_VALUE;
+				rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
+			}
+		}
+		if( !email.isEmpty() ){
+			pRemObj->Rules.insert(RULE_TYPE_EMAIL, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_EMAIL, Q_NULLPTR))
+			{
+				rule->Name = RULE_TYPE_EMAIL;
+				rule->KeyValue.insert(RULE_KEY_EMAIL, email);
+			}
 		}
 	}
 
@@ -969,7 +988,8 @@ bool IdsEditor::OnFileSave()
 			if( rRemObjs.count() > 0 ){
 				qDebug() << "Saving Rules For Tester " << hitr.key();
 				for (RemObject* remObj : rRemObjs){
-					qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
+					//qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
+					qDebug() << "  " << remObj->m_Function;
 				}
 			}
 		}
@@ -1005,8 +1025,9 @@ bool IdsEditor::OnFileSave()
 	// == Add Tester Rules ==
 	QString strQueryQAddRules = QStringLiteral(
 		"WITH EpId AS (SELECT Id FROM EndPoints WHERE Name = :EpName) "
-		"INSERT INTO Rules (Tester, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
+		"INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
 		"VALUES ((SELECT Id FROM Testers WHERE Name = :TstrName), "
+		"(SELECT Id FROM Functions WHERE Name =:FuncName), "
 		"(SELECT * from EpId), "
 		"(SELECT Id FROM Methods WHERE (Name = :MetName AND EndPoint=(SELECT * from EpId))), "
 		":mxTemp, :mnTemp, :mxHour, :mnHour, :nReq, :nRPH, :em);"
@@ -1094,43 +1115,56 @@ bool IdsEditor::OnFileSave()
 				}
 				if( addrules ){
 					// To bind a NULL value, use a null QVariant; for example,
-					//  use QVariant(QVariant::String) if you are binding a string.
+					//  use QVariant(QVariant::String) if you are binding a string. for Qt5
+					//	use QVariant(QMetaType::QString) if you are binding a string. for Qt6
 					qDebug() << "---> Add Dirty Rules for " << qsName;
 					if( query.prepare( strQueryQAddRules ) ){
 						REMOBJ_HASH& rRemObjs = m_RemObjs[qsName];
-						//if( rRemObjs.count() > 0 ){
-						for (RemObject* remObj : rRemObjs)
+						for (RemObject* pRemObj : rRemObjs)
 						{
-							qDebug() << "  " << remObj->ToString();// << Qt::endl << Qt::endl;
-							/*QStandardItem* RemItem = new QStandardItem(remObj->Rem());
-							RemItem->setData(remObj->Rem(), ROLE_REM_KEY);
-							m_RemObjModel.appendRow(RemItem);
-							for (Rule* rule : remObj->Rules)
-							{
-								QStandardItem* ruleItem = new QStandardItem(rule->ToString());
-								ruleItem->setData(remObj->Rem(), ROLE_REM_KEY);
-								ruleItem->setData(rule->ToString(), ROLE_RULE_KEY);
-								RemItem->appendRow(ruleItem);
-							}*/
+							RuleData rd;
+							pRemObj->getData( rd, qsName );
+							query.bindValue(":TstrName", rd.m_Tester);
+							query.bindValue(":FuncName", rd.m_Function);
+							query.bindValue(":EpName", rd.m_Endpoint);
+							query.bindValue(":MetName", rd.m_Method);
+							if (rd.m_maxTemp.isEmpty()){
+								query.bindValue(":mxTemp", QVariant(QVariant::String));
+								query.bindValue(":mnTemp", QVariant(QVariant::String));
+							}else{
+								query.bindValue(":mxTemp", rd.m_maxTemp.toInt());
+								query.bindValue(":mnTemp", rd.m_minTemp.toInt());
+							}
+							if (rd.m_maxHour.isEmpty()){
+								query.bindValue(":mxHour", QVariant(QVariant::String));
+								query.bindValue(":mnHour", QVariant(QVariant::String));
+							}else{
+								query.bindValue(":mxHour", rd.m_maxHour.toInt());
+								query.bindValue(":mnHour", rd.m_minHour.toInt());
+							}
+							if (rd.m_numReq.isEmpty()){
+								query.bindValue(":nReq", QVariant(QVariant::String));
+							}else{
+								query.bindValue(":nReq", rd.m_numReq.toInt());
+							}
+							/*
+							 * TODO: allow to have either/or total reqs or reqsph
+							 *		that is, allow just numRPH if desired.
+							 */
+							if (rd.m_numRPH.isEmpty()){
+								query.bindValue(":nRPH", QVariant(QVariant::String));
+							}else{
+								query.bindValue(":nRPH", rd.m_numRPH.toInt());
+							}
+							if (rd.m_email.isEmpty()){
+								query.bindValue(":em", QVariant(QVariant::String));
+							}else{
+								query.bindValue(":em", rd.m_email);
+							}
 						}
-/*
-						query.bindValue(":EpName", "CB_Server");
-						query.bindValue(":TstrName", "Carl");
-						query.bindValue(":MetName", "PingURL");
-						//if (color.isEmpty())
-						//  query.bindValue(":color", QVariant(QVariant::String));
-						//else
-						//  query.bindValue(":color", color);
-						query.bindValue(":mxTemp", "75");
-						query.bindValue(":mnTemp", "32");
-						query.bindValue(":mxHour", "14");
-						query.bindValue(":mnHour", "9");
-						query.bindValue(":nReq", "22");
-						query.bindValue(":nRPH", "4");
-						query.bindValue(":em", "SLEDawg.gpl.com");
 						if( !ExecQuery( query ) ){
 							return false;
-						}*/
+						}
 					}
 					else{
 						return false;

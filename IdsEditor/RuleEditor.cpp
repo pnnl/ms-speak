@@ -81,6 +81,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	  m_methods(parent->Methods()),
 	  m_bClosed(false),
 	  m_modded(false),
+	  m_tmpmodded(false),
 	  m_saved(false)
 {
 	ui.setupUi(this);
@@ -93,7 +94,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.EmailFrame->setVisible(false);
 
 	InitFunctions();
-	UpdateUi(false);
+	UpdateUi(true);
 
 	/*QRegularExpression mailREX("\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[A-Z]{2,4}\\b");
 	QValidator *validator = new QRegularExpressionValidator(mailREX, this);
@@ -190,7 +191,7 @@ void RuleEditor::SaveGeometry()
 void RuleEditor::UpdateUi( bool init )
 {
 	if( !init )
-		m_modded = true;
+		m_tmpmodded = true;
 
 	QString function = m_ruleObject.m_Function;
 	// Set up the combos based on rule
@@ -248,7 +249,11 @@ void RuleEditor::UpdateUi( bool init )
 			ui.MaxRequestsGroup->setChecked(true);
 			ui.MaxRequestsFrame->setVisible(true);
 			ui.MaxRequestsSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMREQ).toInt());
-			ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
+
+			QHash<QString, QString>::iterator i = rule->KeyValue.find(RULE_KEY_NUMRPH);
+			if (i != rule->KeyValue.end()) {
+				ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
+			}
 		}
 		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
 		{
@@ -357,7 +362,14 @@ void RuleEditor::OnMaxReqPHChanged(int value)
 	{
 		ui.MaxRequestsSpin->setValue(value);
 	}
-	m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
+	if( value > 0 )
+	{
+		m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
+	}
+	else{
+		m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.remove(RULE_KEY_NUMRPH);
+		ui.MaxReqPHSpin->setValue(0);
+	}
 	UpdateUi();
 }
 
@@ -431,7 +443,9 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 	{
 		Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
-		rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
+		if( ui.MaxReqPHSpin->value() > 0 ){
+			rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
+		}
 		m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
 	}
 	else
@@ -506,20 +520,24 @@ void RuleEditor::OnEmailToggled(bool checked)
 //
 void RuleEditor::accept()
 {
-	if( m_modded )
+	if( m_tmpmodded )
 	{
-		//qDebug() << "accept()";
+		//qDebug() << "accept()::m_modded";
 		// m_ruleObject.Copy(Section());
 		QString objectKey = m_ruleObject.Rem();
 		if ( m_ruleObjects.contains(objectKey)){
-			qDebug() << "accept() delete " << objectKey;
+			//qDebug() << "accept() delete " << objectKey;
 			delete m_ruleObjects.take(objectKey);
 		}
 		m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
-		m_modded = false;
+		m_tmpmodded = false;
+		m_modded = true;
 		m_parent->Modded(true);
 		m_parent->UpdateObjectModel(objectKey);
 	}
+	//else{
+	//	qDebug() << "accept():: NOT modded";
+	//}
 }
 
 //-------------------------------------------------------------------------------
@@ -530,6 +548,7 @@ void RuleEditor::reject()
 	//qDebug() << "reject()";
 	if( m_bClosed ){
 		//qDebug() << "reject(Accepted)";
+		accept();
 		done(Accepted);
 	}
 	else{

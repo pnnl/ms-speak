@@ -66,7 +66,7 @@
 #include <QStringList>
 
 // Version
-const QString SOFTWARE_VERSION = QStringLiteral("21.02.24");
+const QString SOFTWARE_VERSION = QStringLiteral("21.03.24");
 const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Business Rule Editor</h3><h4>Copyright 2021</h4><h4>Pacific Northwest National Laboratory</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
 // Rule Keys
@@ -79,6 +79,7 @@ const QString RULE_KEY_NUMRPH = QStringLiteral("numRPH");
 const QString RULE_KEY_EMAIL = QStringLiteral("email");
 
 // Database
+#define DB_NO_VALUE Q_NULLPTR
 // --- Tables
 //const QString DB_TABLE_HOSTS = QStringLiteral("Hosts");
 const QString DB_TABLE_TESTERS = QStringLiteral("Testers");

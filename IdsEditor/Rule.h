@@ -66,6 +66,26 @@
 
 #include "RuleConst.h"
 
+class RuleData
+{
+public:
+	QString m_Tester;
+	QString m_Function;
+	QString m_Endpoint;
+	QString m_Method;
+	QString m_email;
+	QString m_maxTemp;
+	QString m_minTemp;
+	QString m_maxHour;
+	QString m_minHour;
+	QString m_numReq;
+	QString m_numRPH;
+public:
+	RuleData();
+	~RuleData() {}
+	void clear();
+};
+
 class Rule
 {
 public:
@@ -98,6 +118,8 @@ public:
 
 	QString Rem() const;
 	QString ToString() const;
+	void getData( RuleData&, QString );
+
 };
 
 #endif // RULE_H

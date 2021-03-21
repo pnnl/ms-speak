@@ -110,7 +110,14 @@
              <item row="0" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_5">
                <item>
-                <widget class="QSpinBox" name="MaxRequestsSpin"/>
+                <widget class="QSpinBox" name="MaxRequestsSpin">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>1000</number>
+                 </property>
+                </widget>
                </item>
                <item>
                 <spacer name="horizontalSpacer_4">
@@ -140,7 +147,14 @@
              <item row="1" column="1">
               <layout class="QHBoxLayout" name="horizontalLayout_2">
                <item>
-                <widget class="QSpinBox" name="MaxReqPHSpin"/>
+                <widget class="QSpinBox" name="MaxReqPHSpin">
+                 <property name="minimum">
+                  <number>0</number>
+                 </property>
+                 <property name="maximum">
+                  <number>1000</number>
+                 </property>
+                </widget>
                </item>
                <item>
                 <spacer name="horizontalSpacer_6">
@@ -229,8 +243,11 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="minimum">
+                <number>32</number>
+               </property>
                <property name="maximum">
-                <number>212</number>
+                <number>120</number>
                </property>
               </widget>
              </item>
@@ -279,7 +296,7 @@
                 </sizepolicy>
                </property>
                <property name="maximum">
-                <number>212</number>
+                <number>100</number>
                </property>
               </widget>
              </item>
@@ -378,6 +395,9 @@
              </item>
              <item row="0" column="1">
               <widget class="QSpinBox" name="MinTimeSpin">
+               <property name="minimum">
+                <number>1</number>
+               </property>
                <property name="maximum">
                 <number>24</number>
                </property>
@@ -422,7 +442,7 @@
              <item row="2" column="1">
               <widget class="QSpinBox" name="MaxTimeSpin">
                <property name="maximum">
-                <number>24</number>
+                <number>23</number>
                </property>
               </widget>
              </item>

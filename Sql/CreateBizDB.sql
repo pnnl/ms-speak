@@ -12,6 +12,8 @@
 --		in memory so as to not leave a digital signature.
 --		except then the testers would have to recreate all their rules each time
 
+-- cls;sqlite3 BizRules.db < CreateBizDB.sql; sqlite3 BizRules.db < AddTesters.sql; sqlite3 BizRules.db < ShowTables.sql
+
 PRAGMA foreign_keys = 1;
 
 -- create tester table
@@ -133,15 +135,16 @@ CREATE TABLE [Rules] (
 	[Function] INTEGER NOT NULL,
 	[Endpoint] INTEGER NOT NULL, 
 	[Method] INTEGER NOT NULL, 
-	[maxTemp] INTEGER CHECK(maxTemp >= -1 AND maxTemp<=150),
-	[minTemp] INTEGER CHECK(minTemp >= -1 AND minTemp<150),
-	[maxHour] INTEGER CHECK(maxHour >= -1 AND maxHour<=23),
-	[minHour] INTEGER CHECK(minHour >= -1 AND minHour<23),
+	[maxTemp] INTEGER CHECK( (maxTemp = NULL) OR (maxTemp between 32 and 120) ),
+	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),
+	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),
+	[minHour] INTEGER CHECK( (minHour = NULL) OR (minHour between 0 and 23) ),
 	[numReq] INTEGER,
 	[numRPH] INTEGER,
 	[email] NVARCHAR(50),
 	UNIQUE(Tester,Endpoint,Method),
-	CHECK (maxTemp > minTemp AND maxHour > minHour),
+	CHECK( (maxTemp = NULL AND minTemp = NULL) OR (maxTemp > minTemp) ),
+	CHECK( (maxHour = NULL AND minHour = NULL) OR (maxHour > minHour) ),
 	FOREIGN KEY(Tester) REFERENCES Testers(Id),
 	FOREIGN KEY(Function) REFERENCES Functions(Id),
 	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),

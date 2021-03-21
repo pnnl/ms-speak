@@ -7,8 +7,35 @@
 //
 //  Rule
 // 
+#include <QDebug>
 
 #include "Rule.h"
+
+//-------------------------------------------------------------------------------
+// RuleData::RuleData
+//
+RuleData::RuleData(void)
+{
+	clear();
+}
+
+//-------------------------------------------------------------------------------
+// RuleData::clear
+//
+void RuleData::clear(void)
+{
+	m_Tester = DB_NO_VALUE;
+	m_Function = DB_NO_VALUE;
+	m_Endpoint = DB_NO_VALUE;
+	m_Method = DB_NO_VALUE;
+	m_email = DB_NO_VALUE;
+	m_maxTemp = DB_NO_VALUE;
+	m_minTemp = DB_NO_VALUE;
+	m_maxHour = DB_NO_VALUE;
+	m_minHour = DB_NO_VALUE;
+	m_numReq = DB_NO_VALUE;
+	m_numRPH = DB_NO_VALUE;
+}
 
 //-------------------------------------------------------------------------------
 // Rule::Rule
@@ -43,7 +70,6 @@ QString Rule::ToString() const
 				   .arg(key)
 				   .arg(KeyValue.value(key));
 	}
-	//return strList.join(QStringLiteral("\n"));
 	return strList.join(QStringLiteral(", "));
 }
 
@@ -80,30 +106,66 @@ void RemObject::Copy(const RemObject& rs)
 Rule* RemObject::CreateRule(const QString& ruleName)
 {
 	Rule* rule = new Rule();
+	rule->Name = ruleName;
 	if (ruleName == RULE_TYPE_MAX_VALUE)
 	{
-		rule->Name = ruleName;
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QStringLiteral("0"));
 		rule->KeyValue.insert(RULE_KEY_NUMRPH, QStringLiteral("0"));
 	}
 	else if (ruleName == RULE_TYPE_TEMP_RANGE)
 	{
-		rule->Name = ruleName;
-		rule->KeyValue.insert(RULE_KEY_MAXTEMP, QStringLiteral("0"));
+		rule->KeyValue.insert(RULE_KEY_MAXTEMP, QStringLiteral("1"));
 		rule->KeyValue.insert(RULE_KEY_MINTEMP, QStringLiteral("0"));
 	}
 	else if (ruleName == RULE_TYPE_TIME_RANGE)
 	{
-		rule->Name = ruleName;
-		rule->KeyValue.insert(RULE_KEY_MAXTIME, QStringLiteral("0"));
+		rule->KeyValue.insert(RULE_KEY_MAXTIME, QStringLiteral("1"));
 		rule->KeyValue.insert(RULE_KEY_MINTIME, QStringLiteral("0"));
 	}
 	else if (ruleName == RULE_TYPE_EMAIL)
 	{
-		rule->Name = ruleName;
 		rule->KeyValue.insert(RULE_KEY_EMAIL, QStringLiteral(""));
 	}
 	return rule;
+}
+
+//-------------------------------------------------------------------------------
+// RemObject::getData
+//
+void RemObject::getData( RuleData& rd, QString tstr )
+{
+	rd.clear();
+
+	rd.m_Tester = tstr;
+	rd.m_Function = m_Function;
+	rd.m_Endpoint = m_EndPoint;
+	rd.m_Method   = m_Method;
+
+	for (Rule* rule : Rules){
+		if (rule->Name == RULE_TYPE_MAX_VALUE)
+		{
+			rd.m_numReq = rule->KeyValue[RULE_KEY_NUMREQ];
+			QHash<QString, QString>::iterator i = rule->KeyValue.find(RULE_KEY_NUMRPH);
+			if (i != rule->KeyValue.end()) {
+				rd.m_numRPH = rule->KeyValue[RULE_KEY_NUMRPH];
+			}
+		}
+		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
+		{
+			rd.m_maxTemp = rule->KeyValue[RULE_KEY_MAXTEMP];
+			rd.m_minTemp = rule->KeyValue[RULE_KEY_MINTEMP];
+		}
+		else if (rule->Name == RULE_TYPE_TIME_RANGE)
+		{
+			rd.m_maxHour = rule->KeyValue[RULE_KEY_MAXTIME];
+			rd.m_minHour = rule->KeyValue[RULE_KEY_MINTIME];
+		}
+		else if (rule->Name == RULE_TYPE_EMAIL)
+		{
+			rd.m_email = rule->KeyValue[RULE_KEY_EMAIL];
+		}
+	}
+	return;
 }
 
 //-------------------------------------------------------------------------------

@@ -123,6 +123,7 @@ public:
 	bool Original( QString qs ){ if( m_origs.contains(qs,Qt::CaseInsensitive) )
 			return true; else return false; }
 	void Active( QString qs ){ m_ActTester = qs; }
+	QString CurrTester(){ return m_currTester; }
 	QString Active(){ return m_ActTester; }
 	void RemoveTester(QString);
 

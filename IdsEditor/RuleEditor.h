@@ -85,6 +85,7 @@ private:
 	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
 	bool	 m_bClosed;
 	bool	 m_modded;
+	bool	 m_tmpmodded;
 	bool	 m_saved;
 
 public:
@@ -104,7 +105,7 @@ private:
 	void InitFunctions();
 	void RestoreGeometry();
 	void SaveGeometry();
-	void UpdateUi(bool b=true);
+	void UpdateUi(bool b=false);
 
 private slots:
 	void OnEndPointComboChanged(int);

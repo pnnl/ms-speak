@@ -35,7 +35,7 @@
 # Custom
 x64/
 IdsEditor/GeneratedFiles/
-IdsEditor/Debug/
+IdsEditor/debug/
 methods.txt
 Todo.txt
 Sql/srv_msp.c
@@ -47,4 +47,6 @@ Sql/FullBiz.db
 Proxy/Packages/TempTest/Weather
 Proxy/Packages/TempTest/MailTest
 Sql/Upsert.txt
+Sql/CreateBizDB.sql.213
+Sql/CreateBizDB.sql.saved
 run/readme
