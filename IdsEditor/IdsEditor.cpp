@@ -570,7 +570,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 		QString tester =  query.value(0).toString();
 		QString AppId =  query.value(1).toString();
 		QString Zipcode =  query.value(2).toString();
-		qDebug() << tester << ", " << AppId << ", " << Zipcode;
+		//qDebug() << tester << ", " << AppId << ", " << Zipcode;
 		ui.cmbTesters->insertItem(0, tester, ROLE_TESTER_KEY);
 		m_origs << tester;
 
@@ -1022,8 +1022,8 @@ bool IdsEditor::OnFileSave()
 	// "DELETE FROM ActiveTester WHERE Tester = "
 	// "(SELECT Id FROM Testers WHERE Name = ?);"
 
-	// == Add Tester Rules ==
-	QString strQueryQAddRules = QStringLiteral(
+	// == Add Tester Rule ==
+	QString strQueryQAddRule = QStringLiteral(
 		"WITH EpId AS (SELECT Id FROM EndPoints WHERE Name = :EpName) "
 		"INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
 		"VALUES ((SELECT Id FROM Testers WHERE Name = :TstrName), "
@@ -1032,6 +1032,20 @@ bool IdsEditor::OnFileSave()
 		"(SELECT Id FROM Methods WHERE (Name = :MetName AND EndPoint=(SELECT * from EpId))), "
 		":mxTemp, :mnTemp, :mxHour, :mnHour, :nReq, :nRPH, :em);"
 	);
+
+	// == Remove Tester Rule ==
+	QString strQueryDelRule = QStringLiteral(
+		"DELETE FROM Rules WHERE id ="
+		" (SELECT rules.id"
+		" FROM rules"
+		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
+		" INNER JOIN methods ON methods.id = rules.method"
+		" WHERE( Tester =(SELECT id FROM Testers WHERE Name = :TstrName) AND"
+		"  rules.endpoint =(SELECT id FROM endpoints WHERE Name = :EpName) AND"
+		"  rules.method IN (SELECT id FROM methods WHERE Name = :MetName)));"
+	);
+
+
 	// == Remove Tester Rules ==
 	QString strQueryDelRules = QStringLiteral(
 		"DELETE FROM Rules WHERE id IN "
@@ -1100,9 +1114,13 @@ bool IdsEditor::OnFileSave()
 			} // >Dirty()
 			if( tester->DirtyRules() ){
 				tester->DirtyRules(false);
+				/* can't maintain add/del/mod per rule since when deleted, the
+				 * rule is no longer in the hash, so won't have it to use when
+				 * needed here to delete from the DB.
+				 */
 				if( delrules ){
 					// delete all old rules, then add back existing ones
-					qDebug() << "---> Del Dirty Rules for " << qsName;
+					//qDebug() << "---> Del Dirty Rules for " << qsName;
 					if( query.prepare( strQueryDelRules ) ){
 						query.addBindValue(qsName);
 						if( !ExecQuery( query ) ){
@@ -1117,13 +1135,16 @@ bool IdsEditor::OnFileSave()
 					// To bind a NULL value, use a null QVariant; for example,
 					//  use QVariant(QVariant::String) if you are binding a string. for Qt5
 					//	use QVariant(QMetaType::QString) if you are binding a string. for Qt6
-					qDebug() << "---> Add Dirty Rules for " << qsName;
-					if( query.prepare( strQueryQAddRules ) ){
+					qDebug() << "---> Adding Rules for " << qsName;
+					if( query.prepare( strQueryQAddRule ) ){
 						REMOBJ_HASH& rRemObjs = m_RemObjs[qsName];
 						for (RemObject* pRemObj : rRemObjs)
 						{
 							RuleData rd;
 							pRemObj->getData( rd, qsName );
+							QString Str = QString("       %1:%2").arg(rd.m_Endpoint).arg(rd.m_Method);
+							qDebug() << Str;
+
 							query.bindValue(":TstrName", rd.m_Tester);
 							query.bindValue(":FuncName", rd.m_Function);
 							query.bindValue(":EpName", rd.m_Endpoint);
@@ -1161,10 +1182,10 @@ bool IdsEditor::OnFileSave()
 							}else{
 								query.bindValue(":em", rd.m_email);
 							}
-						}
-						if( !ExecQuery( query ) ){
-							return false;
-						}
+							if( !ExecQuery( query ) ){
+								return false;
+							}
+						}// for pRemObj
 					}
 					else{
 						return false;
@@ -1240,7 +1261,7 @@ bool IdsEditor::ExecQuery( QSqlQuery& query )
 		return bRet;
 	}
 	else{
-		qDebug() << "numRowsAffected: " << query.numRowsAffected();
+		//qDebug() << "numRowsAffected: " << query.numRowsAffected();
 		/* there may be no, or many rules etc.
 		if( query.numRowsAffected() != 1 ){
 			qDebug() <<  query.lastQuery();
@@ -1351,7 +1372,7 @@ void IdsEditor::NewTester(void)
 //
 void IdsEditor::EditTester( QString qsName )
 {
-	qDebug() << "EditTester: " << qsName;
+	//qDebug() << "EditTester: " << qsName;
 	TESTER_HASH& rTesters = Testers();
 	if( Tester* tester = rTesters.value(qsName, Q_NULLPTR))
 	{
@@ -1443,7 +1464,11 @@ void IdsEditor::OnTesterSelectionChanged(int index)
 
 //------------------------------------------------------------------------------
 // OnRuleDelete
-//
+/*
+ * Note: it might be better to update the SQL DB as we go rather than
+ *		only in OnFileSave, but then user can't cancel out all changes
+ *		when exiting.
+ */
 void IdsEditor::OnRuleDelete()
 {
 	QModelIndexList list = ui.RulesTreeView->selectionModel()->selectedIndexes();
@@ -1479,7 +1504,7 @@ void IdsEditor::OnRuleNew()
 
 		rRemObjs.insert(remKey, new RemObject(remObj));
 		DirtyRules( true );
-		UpdateObjectModel();
+		UpdateObjectModel( remKey );
 	}
 }
 
@@ -1515,7 +1540,7 @@ void IdsEditor::EditRule(const QModelIndex& index)
 				{
 					if( dlg.Modded() )
 					{
-						if( remObj->Rem() == dlg.RemObj().Rem())
+						if( remObj->Rem() == dlg.RemObj().Rem() )
 						{
 							// Same Rem...so just copy
 							remObj->Copy(dlg.RemObj());
@@ -1527,7 +1552,7 @@ void IdsEditor::EditRule(const QModelIndex& index)
 							remObj = new RemObject(dlg.RemObj());
 							rRemObjs.insert(remObj->Rem(), remObj);
 						}
-						UpdateObjectModel();
+						UpdateObjectModel( remObj->Rem() );
 						DirtyRules( true );
 					}
 				}

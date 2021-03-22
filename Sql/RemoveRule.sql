@@ -16,13 +16,12 @@ FROM rules
 INNER JOIN endpoints ON endpoints.id = rules.endpoint
 INNER JOIN methods ON methods.id = rules.method
 WHERE( Tester =(SELECT id FROM Testers WHERE Name ='Carl')  AND
-	   rules.endpoint =(SELECT id FROM endpoints WHERE Name ='PG_Server') AND
-	   rules.method IN (SELECT id FROM methods WHERE Name ='PingURL')))
-;
+	   rules.endpoint =(SELECT id FROM endpoints WHERE Name ='MR_Server') AND
+	   rules.method IN (SELECT id FROM methods WHERE Name ='GetMeterReadingsByBillingCycle')));
 .print
 .quit
-
--- SELECT rules.id as RuleID
+ 
+ -- SELECT rules.id as RuleID
 -- FROM rules
 -- INNER JOIN endpoints ON endpoints.id = rules.endpoint
 -- INNER JOIN methods ON methods.id = rules.method

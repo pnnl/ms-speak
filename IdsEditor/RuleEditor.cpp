@@ -193,7 +193,6 @@ void RuleEditor::UpdateUi( bool init )
 	if( !init )
 		m_tmpmodded = true;
 
-	QString function = m_ruleObject.m_Function;
 	// Set up the combos based on rule
 	disconnect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	disconnect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
@@ -202,6 +201,11 @@ void RuleEditor::UpdateUi( bool init )
 
 	ui.MethodCombo->clear();
 	ui.EndPointCombo->clear();
+	QString function = m_ruleObject.m_Function;
+	if( function.isEmpty() ){
+		OnFunctionComboChanged(0);
+		function = m_ruleObject.m_Function;
+	}
 	ui.FunctionCombo->setCurrentIndex(ui.FunctionCombo->findText(function));
 
 	// EndPoint
@@ -523,13 +527,15 @@ void RuleEditor::accept()
 	if( m_tmpmodded )
 	{
 		//qDebug() << "accept()::m_modded";
-		// m_ruleObject.Copy(Section());
 		QString objectKey = m_ruleObject.Rem();
-		if ( m_ruleObjects.contains(objectKey)){
-			//qDebug() << "accept() delete " << objectKey;
-			delete m_ruleObjects.take(objectKey);
+		if( false ){ // !m_bClosed
+			// m_ruleObject.Copy(Section());
+			if ( m_ruleObjects.contains(objectKey)){
+				//qDebug() << "accept() delete " << objectKey;
+				delete m_ruleObjects.take(objectKey);
+			}
+			m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
 		}
-		m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
 		m_tmpmodded = false;
 		m_modded = true;
 		m_parent->Modded(true);
