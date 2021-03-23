@@ -1,0 +1,32 @@
+name: MS-User
+login id: msuser
+computer name: MS-Image
+login pw: M$u$3r234
+root pw: ms_r00t
+domain: mstst
+
+Enabling/Disabling Automatic Login through the Command Line
+$ sudo nano /etc/gdm3/daemon.conf
+simply remove the # character from the "Enable automatic login" and provide the username instead of the value “user1” for the user whose automatic login you want to enable (i.e., msuser).
+
+# add user to sudoers
+login as root
+    su root
+add
+    adduser msuser sudo
+bash: adduser: command not found
+	Use su -l
+	
+Bidirectional clipboard not working	
+	You need to add extension pack
+	Open https://download.virtualbox.org/virtualbox and open your Virtualbox version
+	Download Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack.
+	Open Virtualbox VM Manager
+	In File->Preferences, Select Extension
+	Now add extension by browsing to download location
+		This answer assumes:
+		VBox extension pack is installed and current.
+		VBox guest additions are installed and current.
+			as root:
+				Change to the directory where your CD-ROM drive is mounted and run the following command as root:
+				sh ./VBoxLinuxAdditions.run
