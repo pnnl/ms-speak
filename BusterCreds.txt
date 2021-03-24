@@ -30,3 +30,10 @@ Bidirectional clipboard not working
 			as root:
 				Change to the directory where your CD-ROM drive is mounted and run the following command as root:
 				sh ./VBoxLinuxAdditions.run
+
+Run same vm on different host machines
+There are a few things you have to consider:
+No snapshots or saved states can be used, unless you keep changing the XML files manually. Not advised.
+VM settings must be exactly the same. This isn't a problem for XP and Vista, as they can share the settings file, but it's a problem for the Linux host. Take very good care of it, so duplicate the MAC address of your virtual NICs too.
+You can save the settings on the external drive too, but the VMs may not have the same name on the Windows and Linux Hosts if the Machine settings folder is the same. So having a VM called "Windows 7" on Windows Hosts forces you to use a different name for the Linux Host. XP and Vista can share the same name, it's all because of the settings file differences.
+A solution for the latter can be that you use two different folders for the Machine settings. E.g. for Windows Hosts you use "Machines Windows" as settings folder, and for Linux you use "Machines Linux". That way, the VMs can have the same name, because they are separated in the file system hierarchy.
