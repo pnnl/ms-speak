@@ -9,6 +9,7 @@
 
 TEMPLATE = subdirs
 SUBDIRS += \
+	IdsEditor/IdsEditor.pro \
 	MultiSpeaker/MultiSpeaker.pro \
 	MultiSpeakerServer/MultiSpeakerServer.pro
 

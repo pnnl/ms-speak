@@ -50,3 +50,6 @@ Sql/Upsert.txt
 Sql/CreateBizDB.sql.213
 Sql/CreateBizDB.sql.saved
 run/readme
+Sql/BizRules.db
+build/
+run

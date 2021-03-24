@@ -60,6 +60,7 @@
 
 TEMPLATE = app
 TARGET = IdsEditor
+DESTDIR = ../run
 QT += core gui sql network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -78,9 +79,41 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-include(IdsEditor.pri)
+#include(IdsEditor.pri)
 
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+#qnx: target.path = /tmp/$${TARGET}/bin
+#else: unix:!android: target.path = /opt/$${TARGET}/bin
+#!isEmpty(target.path): INSTALLS += target
+
+INCLUDEPATH += \
+	. #\
+#	../Valid8or \
+
+DEPENDPATH += .
+MOC_DIR += GeneratedFiles
+OBJECTS_DIR += obj
+UI_DIR += GeneratedFiles
+RCC_DIR += GeneratedFiles
+
+HEADERS += IdsSettings.h \
+	Rule.h \
+	RuleConst.h \
+	IdsEditor.h \
+	RuleEditor.h \
+	TesterEditor.h
+
+SOURCES += IdsEditor.cpp \
+	main.cpp \
+	Rule.cpp \
+	RuleEditor.cpp \
+	TesterEditor.cpp
+
+FORMS += IdsEditor.ui \
+	RuleEditor.ui \
+	TesterEditor.ui
+
+RESOURCES += IdsEditor.qrc
+
+
+

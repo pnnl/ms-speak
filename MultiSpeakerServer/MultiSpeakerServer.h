@@ -92,14 +92,14 @@ private:
 	void InitFileNameLabel(QLabel* label, const QString& folder);
 	void ServerClose();
 	void ServerListen();
-	void Valid8(const QByteArray& msg);
+	//void Valid8(const QByteArray& msg);
 	void RestoreState();
 	void SaveState();
 
 signals:
 
 private slots :
-	void OnValid8();
+	//void OnValid8();
 	void OnCertFileBrowse() { FileNameBrowse("Select Certificate File", SK_SSL_CERT_FILE, ui.CertFileLabel); }
 	void OnCertFolderBrowse() { FolderBrowse("Select Certificate Folder", SK_SSL_CERT_FOLDER, ui.CertFileLabel); }
 	void OnInitHostAddress();

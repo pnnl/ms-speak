@@ -287,17 +287,9 @@ QStringList HostScene::HostRoles() const
 	{
 		if (!map.contains(host->Name()))
 			map.insert(host->Name(), new QStringList);
-		/* 2-21-2021 original, doesn't compile:
 		//QStringList list = map.value[host->Name()];
 		//list << QString::number(host->Id());
 		map.values(host->Name()).first()->append(QString::number(host->Id()));
-		//map.value[host->Name()].append(QString::number(host->Id()));
-		*/
-
-		// CHM: 2-21-2021:
-		// map.values(host->Name()).first()->append(QString::number(host->Id()));
-		QStringList *list = map.value(host->Name());
-		list->first().append(QString::number(host->Id()));
 		//map.value[host->Name()].append(QString::number(host->Id()));
 	}
 
@@ -540,18 +532,18 @@ bool HostScene::WriteMiniNetConfFile()
 	}
 
 	QTextStream out(&file);
-	out << "[EndPoints]" << Qt::endl;
-	out << Qt::endl;
-	out << "# Add MultiSpeak 'EndPoints' to this section" << Qt::endl;
-	out << "# for each server role in your topology" << Qt::endl;
-	out << Qt::endl;
+	out << "[EndPoints]" << endl;
+	out << endl;
+	out << "# Add MultiSpeak 'EndPoints' to this section" << endl;
+	out << "# for each server role in your topology" << endl;
+	out << endl;
 	out << HostEndPoints().join("\n");
-	out << Qt::endl;
-	out << Qt::endl;
-	out << "[HostRoles]" << Qt::endl;
-	out << Qt::endl;
-	out << "# Add" << Qt::endl;
-	out << Qt::endl;
+	out << endl;
+	out << endl;
+	out << "[HostRoles]" << endl;
+	out << endl;
+	out << "# Add" << endl;
+	out << endl;
 	out << HostRoles().join("\n");
 	file.close();
 	return true;

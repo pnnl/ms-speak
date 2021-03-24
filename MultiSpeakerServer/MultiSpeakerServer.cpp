@@ -67,7 +67,7 @@
 #include "MultiSpeakerServer.h"
 #include "Settings.h"
 #include "SslServer.h"
-#include "Valid8.h"
+//#include "Valid8.h"
 
 //static int MSG_COUNTER = 0;
 
@@ -110,7 +110,7 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 		QString justname = respFile.mid(respFile.lastIndexOf("/")+1);
 		ui.respFileName->setText("Response File: " + justname);
 	}
-	connect(ui.btnValid8, SIGNAL(clicked()), this, SLOT(OnValid8()));
+	//connect(ui.btnValid8, SIGNAL(clicked()), this, SLOT(OnValid8()));
 	RestoreState();
 	QTimer::singleShot(0, this, SLOT(OnInitHostAddress()));
 }
@@ -166,8 +166,8 @@ void MultiSpeakerServer::ServerClose()
 	m_server->close();
 	m_server->deleteLater();
 	ui.btnResponse->setEnabled(true);
-	if(! m_testv8 )
-		ui.btnValid8->setEnabled(false);
+	//if(! m_testv8 )
+	//	ui.btnValid8->setEnabled(false);
 
 }
 //------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ void MultiSpeakerServer::ServerListen()
 }
 //------------------------------------------------------------------------------
 // OnValid8
-//
+/*
 void MultiSpeakerServer::OnValid8()
 {
 	//Test dlg(this);
@@ -270,7 +270,7 @@ void MultiSpeakerServer::Valid8(const QByteArray& msg)
 	m_testv8 = false;
 	m_xmlBuff = msg;
 	ui.btnValid8->setEnabled(true);
-}
+}*/
 //------------------------------------------------------------------------------
 // OnInitHostAddress
 //
@@ -330,7 +330,7 @@ void MultiSpeakerServer::OnMessage(int length, const QByteArray& msg)
 	ui.plainTextEdit->appendPlainText(msg);
 	//ui.plainTextEdit->appendPlainText("*** END MSG ******************\n");
 
-	Valid8(msg);
+	//Valid8(msg);
 
 }
 //------------------------------------------------------------------------------
@@ -384,7 +384,7 @@ void MultiSpeakerServer::OnSslEnabledCheckChanged(bool checked)
 void MultiSpeakerServer::OnClear()
 {
 	ui.plainTextEdit->clear();
-	ui.btnValid8->setEnabled(false);
+	//ui.btnValid8->setEnabled(false);
 }
 //------------------------------------------------------------------------------
 // OnResponse

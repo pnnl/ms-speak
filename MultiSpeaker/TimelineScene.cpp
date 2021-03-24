@@ -295,8 +295,8 @@ void TimelineScene::Start()
 	foreach(QGraphicsItem* item, items())
 	{
 		if (TimelineEventItem* teItem = qgraphicsitem_cast<TimelineEventItem*>(item)){
-			//teItem->setFlags(Q_NULLPTR); // CHM: 2-21-2021:
-			teItem->setFlags((QGraphicsItem::GraphicsItemFlags)0x00);
+			teItem->setFlags(Q_NULLPTR); 
+			//teItem->setFlags((QGraphicsItem::GraphicsItemFlags)0x00); // CHM: 2-21-2021
 		}
 	}
 
