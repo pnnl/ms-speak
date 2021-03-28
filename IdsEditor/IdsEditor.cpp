@@ -247,12 +247,26 @@ QModelIndex IdsEditor::ModelIndexByKeyAndRole(const QString& remObj, int role)
 //------------------------------------------------------------------------------
 // OpenBizDB
 //
-bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QString &options)
+bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr,
+						  const QString &options, const bool bNew /*=false*/)
 {
 	bool bRet = false;
 	if( fileName.isEmpty() ){
 		errStr = QStringLiteral("Error Opening DB - File Name is Empty.");
 		return bRet;
+	}
+	if( !bNew )
+	{
+		QFileInfo check_file(fileName);
+		// check if file exists and if it does, check that it;s really a file and not a directory
+		if( !check_file.exists() ) {
+			errStr = QStringLiteral("Error Opening DB - File Does Not Exist.");
+			return bRet;
+		}
+		if( !check_file.isFile() ) {
+			errStr = QStringLiteral("Error Opening DB - File Name is a Directory.");
+			return bRet;
+		}
 	}
 	if( m_db.isOpen() ){
 		qDebug("Database still Open.");
@@ -282,7 +296,7 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QStrin
 	m_db.setConnectOptions(options); // For the QSQLITE driver, if the database name specified does not exist, 
 									 // then it will create the file for you unless the QSQLITE_OPEN_READONLY option is set
 	m_db.setDatabaseName(fileName);
-	if( !m_db.open() ){
+	if( !m_db.open() ){ // this line creates the db, if it didn't exist
 		errStr = QStringLiteral("Error occurred opening the database: '%1'").arg(m_db.lastError().text());
 		qDebug("%s", qPrintable(errStr));
 		return bRet;
@@ -294,7 +308,7 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr, const QStrin
 // CreateBizDB
 bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 {
-	bool bRet = OpenBizDB( fileName, errStr, QString("") );
+	bool bRet = OpenBizDB( fileName, errStr, QString(""), true );
 	if( !bRet ){
 		return bRet;
 	}
@@ -458,11 +472,12 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	}
 	// create Rules table
 	strQuery = QStringLiteral(
-	"CREATE TABLE [Rules] ( "
-	"	[Id] INTEGER NOT NULL PRIMARY KEY, "
-	"	[Tester] INTEGER NOT NULL, "
-	"	[Endpoint] INTEGER NOT NULL, "
-	"	[Method] INTEGER NOT NULL, "
+	"CREATE TABLE [Rules] ("
+	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
+	"	[Tester] INTEGER NOT NULL,"
+	"   [Function] INTEGER NOT NULL,"
+	"	[Endpoint] INTEGER NOT NULL,"
+	"	[Method] INTEGER NOT NULL,"
 	"	[maxTemp] INTEGER CHECK( (maxTemp = NULL) OR (maxTemp between 32 and 120) ),"
 	"	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),"
 	"	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),"
@@ -474,6 +489,7 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	"	CHECK( (maxTemp = NULL AND minTemp = NULL) OR (maxTemp > minTemp) ),"
 	"	CHECK( (maxHour = NULL AND minHour = NULL) OR (maxHour > minHour) ),"
 	"	FOREIGN KEY(Tester) REFERENCES Testers(Id),"
+	"   FOREIGN KEY(Function) REFERENCES Functions(Id),"
 	"	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),"
 	"	FOREIGN KEY(Method) REFERENCES Methods(Id) );"
 	);
@@ -511,7 +527,13 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 	" ORDER BY Function, EndPoint, Method;"
 	);
 
-	query.prepare(strQuery);
+	if( !query.prepare(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		//qDebug("%s.", qPrintable(query.lastError().text()));
+		m_db.close();
+		return bRet;
+	}
 	if( !query.exec() ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
@@ -545,9 +567,15 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 	" WHERE( Testers.Id =(SELECT Tester FROM ActiveTester));"
 	).arg(DB_COLUMN_NAME).arg(DB_TABLE_TESTERS).arg(DB_TABLE_ACTIVE);
 
-	query.prepare(strQuery);
-	if( !query.exec() ){
+	if( !query.prepare(strQuery) ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+
+	if( !query.exec() ){
+		errStr = QStringLiteral("Error executing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
 		m_db.close();
 		return bRet;
@@ -559,7 +587,12 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 	qDebug() << "Active Tester is: " << m_ActTesterOrig;
 
 	strQuery = QStringLiteral("SELECT Name, AppId, Zipcode FROM %1").arg(DB_TABLE_TESTERS);
-	query.prepare(strQuery);
+	if( !query.prepare(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
 	if( !query.exec() ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
@@ -609,7 +642,12 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 	" INNER JOIN testers ON testers.id = rules.Tester;"
 	);
 
-	query.prepare(strQuery);
+	if( !query.prepare(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
 	if( !query.exec() ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
@@ -646,7 +684,12 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 	" INNER JOIN testers ON testers.id = rules.tester"
 	" ORDER BY who;"
 	);
-	query.prepare(strQuery);
+	if( !query.prepare(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
 	if( !query.exec() ){
 		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
@@ -910,6 +953,9 @@ void IdsEditor::OnFileOpen()
 		reset();
 		m_dbFileName = fileName;
 	}
+	else{
+
+	}
 	m_prompt = true;
 	QString err;
 	if( ReadDbFile(m_dbFileName, err) ){
@@ -961,6 +1007,7 @@ When inserting multiple records, you only need to call QSqlQuery::prepare() once
 */
 bool IdsEditor::OnFileSave()
 {
+	qDebug() << "TODO: check if new rules are not saved when doing 'SaveAs'";
 
 	if( !m_db.open() ){
 		QString qs = QStringLiteral("Unable to Save DB '%1', Not Open.").arg(m_dbFileName);
@@ -1045,7 +1092,6 @@ bool IdsEditor::OnFileSave()
 		"  rules.method IN (SELECT id FROM methods WHERE Name = :MetName)));"
 	);
 
-
 	// == Remove Tester Rules ==
 	QString strQueryDelRules = QStringLiteral(
 		"DELETE FROM Rules WHERE id IN "
@@ -1108,6 +1154,10 @@ bool IdsEditor::OnFileSave()
 						}
 					}
 					else{
+						errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryAddMod).arg(query.lastError().text());
+						qDebug("%s", qPrintable(errStr));
+						QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+											 errStr, QMessageBox::Ok, QMessageBox::Ok);
 						return false;
 					}
 				}
@@ -1128,6 +1178,10 @@ bool IdsEditor::OnFileSave()
 						}
 					}
 					else{
+						errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryDelRules).arg(query.lastError().text());
+						qDebug("%s", qPrintable(errStr));
+						QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+											 errStr, QMessageBox::Ok, QMessageBox::Ok);
 						return false;
 					}
 				}
@@ -1188,6 +1242,10 @@ bool IdsEditor::OnFileSave()
 						}// for pRemObj
 					}
 					else{
+						errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryQAddRule).arg(query.lastError().text());
+						qDebug("%s", qPrintable(errStr));
+						QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+											 errStr, QMessageBox::Ok, QMessageBox::Ok);
 						return false;
 					}
 				}
@@ -1204,6 +1262,10 @@ bool IdsEditor::OnFileSave()
 						}
 					}
 					else{
+						errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryDelTstr).arg(query.lastError().text());
+						qDebug("%s", qPrintable(errStr));
+						QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+											 errStr, QMessageBox::Ok, QMessageBox::Ok);
 						return false;
 					}
 					RemoveTester(qsName); // this already done in EditTester, but not for original testers
@@ -1233,6 +1295,10 @@ bool IdsEditor::OnFileSave()
 			}
 		}
 		else{
+			errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryModAct).arg(query.lastError().text());
+			qDebug("%s", qPrintable(errStr));
+			QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+								 errStr, QMessageBox::Ok, QMessageBox::Ok);
 			return false;
 		}
 	}
@@ -1286,8 +1352,9 @@ void IdsEditor::OnFileSaveAs()
 	if (fileName.isEmpty())
 		return;
 
-	OnFileSave();
 	m_dbFileName = fileName;
+	OnFileSave();
+	//m_dbFileName = fileName; 3.28 why here?
 
 	QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));

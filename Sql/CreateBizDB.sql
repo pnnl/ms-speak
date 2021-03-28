@@ -4,6 +4,12 @@
 
 --	dot commands are allowed, but must be lowercase
 
+--		Enter ".help" for usage hints.
+
+--		Querying the database tables/schema
+--			.tables
+--			.schema   Shows all the CREATE statements
+
 -- can wrap commands around Begin/Commit:
 --		BEGIN;
 --		COMMIT;

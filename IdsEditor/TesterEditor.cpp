@@ -138,6 +138,8 @@ TesterEditor::TesterEditor(const Tester& tester, bool bnew,
 	ui.edtZip->setInputMask( QString("99999;%1").arg(FILL_CHAR) );
 	ui.edtAppId->setInputMask(  QString("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH;%1").arg(FILL_CHAR) );
 
+	ui.edtAppId->setEnabled(true);
+	ui.edtZip->setEnabled(true);
 	if(	bnew ){
 		ui.edtName->setText("");
 		ui.edtName->setEnabled(true);

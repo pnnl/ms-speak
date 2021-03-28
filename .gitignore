@@ -53,3 +53,10 @@ run/readme
 Sql/BizRules.db
 build/
 run
+Proxy/Packages/TempTest/ShowTables.sql
+Proxy/Packages/TempTest/srv_msp.c
+Proxy/Packages/TempTest/srv_msp_body.c
+Proxy/Packages/TempTest/srv_msp_body.h
+Sql/NoUsers.db
+libs/
+Sql/OneRule.db

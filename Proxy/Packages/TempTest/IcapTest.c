@@ -9,7 +9,6 @@
 
 #define MAX_DB_NAMELEN  50
 #define MAX_DB_ZIPLEN    5
-#define APIBUFFLEN     250
 
 #define WILDCARD_STR "-1"
 #define WILDCARD -1
@@ -17,6 +16,7 @@
 #define DB_COLNAME_TESTER	"Tester"
 #define DB_COLNAME_APPID	"AppId"
 #define DB_COLNAME_ZIPCODE	"Zipcode"
+#define DB_COLNAME_FUNCTION "Function"
 #define DB_COLNAME_ENDPOINT "Endpoint"
 #define DB_COLNAME_METHOD	"Method"
 #define DB_COLNAME_MAXTEMP	"maxTemp"
@@ -32,7 +32,12 @@ typedef char   gchar;
 
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
 //		the string placed in dest will not be null-terminated.
-typedef struct _bizdata {
+typedef struct _tester {
+	gchar  m_Tester[MAX_DB_NAMELEN+1];
+	gchar  m_AppId[MAX_DB_NAMELEN+1];
+	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
+} TESTER_DATA;
+typedef struct _bizrule {
 	gint64 m_numReq;
 	gint64 m_numRPH;
 	gint64 m_minTemp;
@@ -41,15 +46,14 @@ typedef struct _bizdata {
 	gint64 m_maxHour;
 	gint64 m_ValidRequestNum;
 	gint64 m_TotalRequestNum;
-	gchar  m_Tester[MAX_DB_NAMELEN+1];
-	gchar  m_AppId[MAX_DB_NAMELEN+1];
-	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
+	gchar  m_Function[MAX_DB_NAMELEN+1];
 	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
 	gchar  m_Method[MAX_DB_NAMELEN+1];
 	gchar  m_Email[MAX_DB_NAMELEN+1];
-} BIZ_DATA;
-BIZ_DATA *pBizRecords;
-int NumBizRecs;
+} BIZ_RULE;
+TESTER_DATA	*pTester;
+BIZ_RULE	*pBizRules;
+int NumBizRules;
 int RowCnt;
 
 struct string {
@@ -71,12 +75,14 @@ typedef int (*sqlite3_callback)(
 
 static int callback(void *data, int colcount, char **values, char **columns){
 	int i;
-	if( RowCnt < NumBizRecs ){
-		BIZ_DATA *pBizRecs = (BIZ_DATA *)data;
-		BIZ_DATA *pBzd = &pBizRecs[RowCnt++];
+	if( RowCnt < NumBizRules ){
+		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
+		BIZ_RULE *pBzd = &pBizRecs[RowCnt++];
 		pBzd->m_ValidRequestNum = 0;
 		pBzd->m_TotalRequestNum = 0;		
 		for(i = 0; i<colcount; i++){
+			if( !values[i] )
+				continue;
 			gchar *curr_key = columns[i];
 			// Note, any non-existant keys will have already been preset to WILDCARD
 			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
@@ -98,25 +104,31 @@ static int callback(void *data, int colcount, char **values, char **columns){
 				pBzd->m_maxHour = atoll(values[i]);
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
-				strncpy( pBzd->m_Tester, values[i], MAX_DB_NAMELEN );
+				if( RowCnt == 1 ){ // we only need store Tester name once
+					strncpy( pTester->m_Tester, values[i], MAX_DB_NAMELEN );
+				}				
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_APPID) ){
-				if( values[i] )
-					strncpy( pBzd->m_AppId, values[i], MAX_DB_NAMELEN );
+				if( RowCnt == 1 ){
+					strncpy( pTester->m_AppId, values[i], MAX_DB_NAMELEN );
+				}				
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_ZIPCODE) ){
-				if( values[i] )
-					strncpy( pBzd->m_Zipcode, values[i], MAX_DB_ZIPLEN );
+				if( RowCnt == 1 ){
+					strncpy( pTester->m_Zipcode, values[i], MAX_DB_ZIPLEN );
+				}				
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_EMAIL) ){
+				strncpy( pBzd->m_Email, values[i], MAX_DB_NAMELEN );
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_FUNCTION) ){
+				strncpy( pBzd->m_Function, values[i], MAX_DB_NAMELEN );
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_ENDPOINT) ){
 				strncpy( pBzd->m_EndPoint, values[i], MAX_DB_NAMELEN );
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_METHOD) ){
 				strncpy( pBzd->m_Method, values[i], MAX_DB_NAMELEN );
-			}
-			else if( !strcmp(curr_key, DB_COLNAME_EMAIL) ){
-				if( values[i] )
-					strncpy( pBzd->m_Email, values[i], MAX_DB_NAMELEN );
 			}
 			else{
 				fprintf(stderr, "Key Lookup Sanity Failure: %s\n", curr_key);
@@ -135,6 +147,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 }
 
 #ifdef _WEATHER	
+#define APIBUFFLEN     250
 /*  https://openweathermap.org/current
 	<current>
 	<city id="0" name="Richland">
@@ -159,7 +172,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 	<lastupdate value="2021-02-19T17:45:04"/>
 	</current>
 */
-const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?zip=%s&appid=%s&units=imperial&mode=xml";
+const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 char api_buffer[APIBUFFLEN+1];
 #endif
 
@@ -189,13 +202,14 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
 }
 
 #define SQL_FROM_QUERY " FROM rules"\
+		" INNER JOIN functions ON functions.id = rules.function"\
 		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
 		" INNER JOIN methods ON methods.id = rules.method"\
 		" INNER JOIN testers ON testers.id = rules.tester"\
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"\
-		
+
 // sudo apt-get install libsqlite3-dev
-// make -f icapMakefile
+// make -f icapMakefile		./IcapTest
 // gcc IcapTest.c -o IcapTest -lsqlite3 -lcurl -lxml2
 int main(int argc, char* argv[]) {
 	sqlite3 *db;
@@ -213,7 +227,7 @@ int main(int argc, char* argv[]) {
 		;//fprintf(stderr, "Opened database successfully\n");
 	}
 		
-	sql = "SELECT Count(*)" SQL_FROM_QUERY;
+	sql = "SELECT Count(*)" SQL_FROM_QUERY;  // get coount of rules for active counter
 
 	sqlite3_stmt *stmt;
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
@@ -225,8 +239,8 @@ int main(int argc, char* argv[]) {
 	bool bOnce = false;
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 		if( !bOnce ){
-			NumBizRecs = sqlite3_column_int(stmt, 0); // sqlite3_column_text
-			//printf("NumBizRecs = %d\n", NumBizRecs);
+			NumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
+			//printf("NumBizRules = %d\n", NumBizRules);
 			bOnce = true;
 		}
 		else{
@@ -242,33 +256,36 @@ int main(int argc, char* argv[]) {
 	}
 	sqlite3_finalize(stmt);	
 
-	if( NumBizRecs == 0 ){
+	if( NumBizRules == 0 ){
 		fprintf(stderr, "SANITY FAILURE: %s\n", "No Active Tester Rules Found");
 		return(iRet);
 	}else{
-		printf( "%d Active Tester Rules Found\n", NumBizRecs);
+		printf( "%d Active Tester Rules Found\n", NumBizRules);
 	}
 	
-	size_t size = NumBizRecs * sizeof(BIZ_DATA);
+	size_t size = NumBizRules * sizeof(BIZ_RULE);
 	RowCnt = 0;
-	pBizRecords = (BIZ_DATA *)calloc(1,size); // assure all string buffs will be null-termed
-	for( int i=0; i<NumBizRecs; i++ ){
-		pBizRecords[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-		pBizRecords[i].m_numRPH = WILDCARD;
-		pBizRecords[i].m_minTemp = WILDCARD;
-		pBizRecords[i].m_maxTemp = WILDCARD;
-		pBizRecords[i].m_minHour = WILDCARD;
-		pBizRecords[i].m_maxHour = WILDCARD;
+	
+	pTester = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); // assure all string buffs will be null-termed
+	pBizRules = (BIZ_RULE *)calloc(1,size);
+	for( int i=0; i<NumBizRules; i++ ){
+		pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+		pBizRules[i].m_numRPH = WILDCARD;
+		pBizRules[i].m_minTemp = WILDCARD;
+		pBizRules[i].m_maxTemp = WILDCARD;
+		pBizRules[i].m_minHour = WILDCARD;
+		pBizRules[i].m_maxHour = WILDCARD;
 	}
-		
+	
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
-	A pointer to a struct to fill would be useful.	 
+	A pointer to a struct to fill would be useful.	
+	, functions.Name
 	*/
-	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, endpoints.name as Endpoint, methods.name as Method,"
+	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
 		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 		 SQL_FROM_QUERY;	
-	rc = sqlite3_exec(db, sql, callback, (void*)pBizRecords, &zErrMsg);
+	rc = sqlite3_exec(db, sql, callback, (void*)pBizRules, &zErrMsg);
 	if( rc != SQLITE_OK ) {
 		fprintf(stderr, "SQL error getting Active Rules: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
@@ -278,50 +295,52 @@ int main(int argc, char* argv[]) {
 	}
 	sqlite3_close(db);
 
-	if( RowCnt > NumBizRecs ){
+	if( RowCnt > NumBizRules ){
 		fprintf(stderr, "SANITY FAILURE: %s\n", "excess rows for query");
 	}
 	else{
 		iRet = 0;
-		BIZ_DATA *pBizRecs = pBizRecords;
-		for( int i=0; i<NumBizRecs; i++ ){
-			printf("Record %d:\n  Tester: %s, AppId: %s, Zip: %s\n",
-				i,pBizRecs->m_Tester,pBizRecs->m_AppId, pBizRecs-> m_Zipcode);
-			printf("          Endpoint: %s, Method: %s\n",pBizRecs->m_EndPoint,pBizRecs->m_Method);
+		printf("Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
+		BIZ_RULE *pBizRecs = pBizRules;
+		for( int i=0; i<NumBizRules; i++ ){
+			printf("          Function: %s, Endpoint: %s, Method: %s\n",
+				   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
 			printf("          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
 				pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
-			printf("          Email: %s\n",pBizRecs->m_Email);
+			printf("          Email: %s\n\n",pBizRecs->m_Email);
 			pBizRecs++;
 		}
 	}
 #ifdef _WEATHER	
-	if( iRet == 0 )
+	if( iRet == 0 && pTester->m_AppId)
 	{
 		CURL *curl;
 		CURLcode res;
 		curl = curl_easy_init();
 		if(curl)
 		{
-			struct string s;
-			init_string(&s);
-			snprintf(api_buffer, APIBUFFLEN, api_endpoint, hRecs.m_first->m_Zipcode, hRecs.m_first->m_AppId );
-
+			struct string xmlStr;
+			init_string(&xmlStr);
+			// appid=85cd2a23af95429c1dbbc7b308463346  is valid
+			strncpy( pTester->m_AppId, "85cd2a23af95429c1dbbc7b308463346", MAX_DB_NAMELEN );
+			snprintf(api_buffer, APIBUFFLEN, api_endpoint, pTester->m_AppId, pTester->m_Zipcode );
+			
 			curl_easy_setopt(curl, CURLOPT_URL, api_buffer);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
 			//curl_easy_setopt(curl, CURLOPT_CAPATH , getenv("SSL_CERT_DIR"));
 
-			puts("*** curl_easy_perform(curl) ***");
+			//puts("*** curl_easy_perform(curl) ***");
 			res = curl_easy_perform(curl);
 			if(res != CURLE_OK) {
 				fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 			} else {
-				printf("string len: %ld\n",s.len);
-				printf("%s\n",s.ptr);
+				//printf("string len: %ld\n",xmlStr.len);
+				//printf("%s\n",xmlStr.ptr);
 				xmlNodePtr cur;
 				xmlDocPtr xmlDoc;
-				xmlDoc = xmlParseMemory(s.ptr, s.len);
+				xmlDoc = xmlParseMemory(xmlStr.ptr, xmlStr.len);
 				if (xmlDoc == NULL) {
 					printf("XML Document not parsed successfully.\n");
 					return 0;
@@ -333,7 +352,6 @@ int main(int argc, char* argv[]) {
 					return 0;
 				}
 				cur = cur->xmlChildrenNode;
-				printf("\n\n");
 				while (cur != NULL)
 				{
 					if ((!xmlStrcmp(cur->name, (const xmlChar *)"temperature")))
@@ -343,7 +361,7 @@ int main(int argc, char* argv[]) {
 							key = xmlGetProp(cur, (const unsigned char *)"value");
 							printf("Current Temp: %s\n", key);
 							xmlFree(key);
-							key = xmlGetProp(cur, (const unsigned char *)"min");
+							/*key = xmlGetProp(cur, (const unsigned char *)"min");
 							printf("Min Temp: %s\n", key);
 							xmlFree(key);
 							key = xmlGetProp(cur, (const unsigned char *)"max");
@@ -351,13 +369,13 @@ int main(int argc, char* argv[]) {
 							xmlFree(key);
 							key = xmlGetProp(cur, (const unsigned char *)"unit");
 							printf("Temp Units: %s\n", key);
-							xmlFree(key);
+							xmlFree(key);*/
 						}	
 					}
 					cur = cur->next;
 				}			
 				xmlFreeDoc(xmlDoc);
-				free(s.ptr);
+				free(xmlStr.ptr);
 			}
 			curl_easy_cleanup(curl); 
 		}

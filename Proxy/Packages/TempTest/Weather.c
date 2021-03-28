@@ -23,7 +23,7 @@ void init_string(struct string *);
 size_t writefunc(void *, size_t, size_t, struct string *);
 
 // appid=85cd2a23af95429c1dbbc7b308463346
-const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?zip=%s&appid=85cd2a23af95429c1dbbc7b308463346&units=imperial&mode=xml";
+const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 char api_buffer[APIBUFFLEN+1];
 
 void init_string(struct string *s) {
@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
     CURLcode res;
 	int tmz_off = 0;
 	char *Zipcode = argv[1];
+	char *appid = "85cd2a23af95429c1dbbc7b308463346";
 	if( !strcmp(Zipcode, "10502") ){
 		tmz_off = 3;
 	}
@@ -122,7 +123,9 @@ int main(int argc, char* argv[])
         struct string s;
         init_string(&s);
 		printf("\n Getting Weather for area %s\n", Zipcode);		
-		snprintf(api_buffer, APIBUFFLEN, api_endpoint, Zipcode );
+		printf("      using AppID: %s\n", appid);		
+		//snprintf(api_buffer, APIBUFFLEN, api_endpoint, Zipcode );
+		snprintf(api_buffer, APIBUFFLEN, api_endpoint, appid, Zipcode );
         curl_easy_setopt(curl, CURLOPT_URL, api_buffer);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);

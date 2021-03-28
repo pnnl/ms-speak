@@ -138,7 +138,7 @@ private:
 	QModelIndex ModelIndexByKeyAndRole(const QString&, int);
 
 	void InitCombo();
-	bool OpenBizDB(const QString&, QString&, const QString &);
+	bool OpenBizDB(const QString&, QString&, const QString &, const bool bNew =false);
 	bool CreateBizDB(const QString&, QString& );
 	bool ReadDbFile(const QString&, QString&);
 	bool LoadRules( QSqlDatabase&, QString& );
