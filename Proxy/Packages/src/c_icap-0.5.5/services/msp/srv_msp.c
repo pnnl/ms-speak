@@ -272,14 +272,14 @@
 #include <stdlib.h> 
 #include <stdarg.h>
 #include <ctype.h>
-//#include <glib.h>
-//#include <glib/gprintf.h>
 #include <time.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include <uuid/uuid.h> 
 #include <sqlite3.h> 
 #include <curl/curl.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "c-icap.h"
@@ -397,7 +397,14 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
 #define DB_COLNAME_NUMREQ	"numReq"
 #define DB_COLNAME_NUMRPH	"numRPH"
 #define DB_COLNAME_EMAIL	"email"
-#define APIBUFFLEN     250
+#define APIBUFFLEN     				250
+#define WEATHER_UPDATE_INTERVAL     5   // minutes
+
+//char *strptime(const char *s, const char *format, struct tm *tm);
+//time_t timelocal(struct tm *tm);
+
+pthread_t thread_weather;
+
 /*  https://openweathermap.org/current
 	<current>
 	<city id="0" name="Richland">
@@ -429,8 +436,6 @@ typedef char   		gchar;
 /*
  * The srv_msp_data structure will store the data required to serve an ICAP request.
  */
-
-
 struct srv_msp_msg_info {
 	char xmlnspace[CI_MAXNSLEN + 1];
 	char method[CI_MAXMETHODLEN + 1];
@@ -451,18 +456,6 @@ struct srv_msp_data {
 	int eof;
 	int isReqmod;
 };
-/*
-typedef struct _bizdata {
-	gint64 m_numReq;
-	gint64 m_minTemp;
-	gint64 m_maxTemp;
-	gint64 m_minHour;
-	gint64 m_maxHour;
-	gint64 m_ValidRequestNum;
-	gint64 m_TotalRequestNum;
-	gchar  m_Method[MAX_GROUPLEN];
-	gchar *m_EndPoint;
-} BIZ_DATA;*/
 
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
 //		the string placed in dest will not be null-terminated.
@@ -471,6 +464,7 @@ typedef struct _tester {
 	gchar  m_AppId[MAX_DB_NAMELEN+1];
 	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
 } TESTER_DATA;
+
 typedef struct _bizrule {
 	gint64 m_numReq;
 	gint64 m_numRPH;
@@ -486,8 +480,8 @@ typedef struct _bizrule {
 	gchar  m_Email[MAX_DB_NAMELEN+1];
 } BIZ_RULE;
 
-TESTER_DATA	*pTester;
-BIZ_RULE	*pBizRules;
+TESTER_DATA	*pTester=NULL;
+BIZ_RULE	*pBizRules=NULL;
 
 int NumBizRules;
 int RowCnt;
@@ -495,8 +489,11 @@ struct string {
     char *ptr;
     size_t len;
 };
-const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
-char api_buffer[APIBUFFLEN+1];
+typedef struct _wd {
+	int currentTemp;
+	bool bSuccess;
+	char city[APIBUFFLEN+1];
+} WEATHER_DATA;
 
 void init_string(struct string *);
 size_t writefunc(void *, size_t, size_t, struct string *);
@@ -642,12 +639,12 @@ static int callback(void *data, int colcount, char **values, char **columns){
 				strncpy( pBzd->m_Method, values[i], MAX_DB_NAMELEN );
 			}
 			else{
-				fprintf(stderr, "Key Lookup Sanity Failure: %s\n", curr_key);
+				ci_debug_printf(0, "Key Lookup Sanity Failure: %s\n", curr_key);
 			}
 		}
 	}
 	else{
-		fprintf(stderr, "Row Count Sanity Failure: %d\n", RowCnt);
+		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", RowCnt);
 	}
    /*
 	* If callback returns non-zero, the sqlite3_exec() routine returns 
@@ -657,44 +654,22 @@ static int callback(void *data, int colcount, char **values, char **columns){
    return 0;
 }
 
-void init_string(struct string *s){
-    s->len = 0;
-    s->ptr = malloc(s->len+1);
-    if( s->ptr == NULL){
-      fprintf(stderr, "in init_string(), malloc() failed\n");
-      exit(EXIT_FAILURE);
-    }
-    s->ptr[0] = '\0';
-}
-
-size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
-{
-    size_t new_len = s->len + size*nmemb;
-    s->ptr = realloc(s->ptr, new_len+1);
-    if( s->ptr == NULL){
-      fprintf(stderr, "realloc() failed\n");
-      exit(EXIT_FAILURE);
-    }
-    memcpy(s->ptr+s->len, ptr, size*nmemb);
-    s->ptr[new_len] = '\0';
-    s->len = new_len;
-
-    return size*nmemb;
-}
-
-bool GetActiveRules( gchar *pdbFile ){
+/*
+ * GetTesterData - reads the business rules for the Active Tester from the DB
+ */
+TESTER_DATA	*GetTesterData( gchar *pdbFile ){
+	TESTER_DATA	*pRetData=NULL;
 	sqlite3 *db;
 	char *zErrMsg = 0;
 	int rc;
-	bool bRet = false;
 	char *sql;
 	/* Open database */
 	rc = sqlite3_open_v2(pdbFile, &db, SQLITE_OPEN_READONLY, NULL);  
 	if( rc ){
-		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-		return(bRet);
+		ci_debug_printf(0, "Can't open database: %s\n", sqlite3_errmsg(db));
+		return(pRetData);
 	} else {
-		;//fprintf(stderr, "Opened database successfully\n");
+		;//ci_debug_printf(0, "Opened database successfully\n");
 	}
 		
 	sql = "SELECT Count(*)" SQL_FROM_QUERY;  // get coount of rules for active counter
@@ -702,51 +677,40 @@ bool GetActiveRules( gchar *pdbFile ){
 	sqlite3_stmt *stmt;
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
 	if (rc != SQLITE_OK){
-		fprintf(stderr, "PREPARE failed: %s\n", sqlite3_errmsg(db));
-		fprintf(stderr, "QUERY: %s\n", sql);
-		return(bRet);
+		ci_debug_printf(0, "PREPARE failed: %s\n", sqlite3_errmsg(db));
+		ci_debug_printf(0, "QUERY: %s\n", sql);
+		return(pRetData);
 	}
 	bool bOnce = false;
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
 		if( !bOnce ){
 			NumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
-			//printf("NumBizRules = %d\n", NumBizRules);
+			//ci_debug_printf(0,"NumBizRules = %d\n", NumBizRules);
 			bOnce = true;
 		}
 		else{
-			fprintf(stderr, "SANITY FAILURE: %s\n", "mutliple rows for Count(*)");
+			ci_debug_printf(0, "SANITY FAILURE: %s\n", "mutliple rows for Count(*)");
 			sqlite3_finalize(stmt);	
-			return(bRet);
+			return(pRetData);
 		}
 	}
 	if (rc != SQLITE_DONE){
-		fprintf(stderr, "SELECT failed: %s\n", sqlite3_errmsg(db));
+		ci_debug_printf(0, "SELECT failed: %s\n", sqlite3_errmsg(db));
 		sqlite3_finalize(stmt);	
-		return(bRet);
+		return(pRetData);
 	}
 	sqlite3_finalize(stmt);	
 
 	if( NumBizRules == 0 ){
-		fprintf(stderr, "SANITY FAILURE: %s\n", "No Active Tester Rules Found");
-		return(bRet);
+		ci_debug_printf(0, "DATABASE FAILURE: %s\n", "No Active Tester Rules Found");
+		return(pRetData);
 	}else{
-		printf( "%d Active Tester Rules Found\n", NumBizRules);
+		ci_debug_printf(3, "%d Active Tester Rules Found\n", NumBizRules);
 	}
 	
 	size_t size = NumBizRules * sizeof(BIZ_RULE);
 	RowCnt = 0;
-	
-	pTester = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); // assure all string buffs will be null-termed
-	pBizRules = (BIZ_RULE *)calloc(1,size);
-	for( int i=0; i<NumBizRules; i++ ){
-		pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-		pBizRules[i].m_numRPH = WILDCARD;
-		pBizRules[i].m_minTemp = WILDCARD;
-		pBizRules[i].m_maxTemp = WILDCARD;
-		pBizRules[i].m_minHour = WILDCARD;
-		pBizRules[i].m_maxHour = WILDCARD;
-	}
-	
+
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
 	A pointer to a struct to fill would be useful.	
@@ -757,105 +721,368 @@ bool GetActiveRules( gchar *pdbFile ){
 		 SQL_FROM_QUERY;	
 	rc = sqlite3_exec(db, sql, callback, (void*)pBizRules, &zErrMsg);
 	if( rc != SQLITE_OK ){
-		fprintf(stderr, "SQL error getting Active Rules: %s\n", zErrMsg);
+		ci_debug_printf(0, "SQL error getting Active Rules: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
-		return(bRet);
+		return(pRetData);
 	} else {
-		;//fprintf(stdout, "Operation done successfully\n");
+		;//ci_debug_printf(0, "Operation done successfully\n");
 	}
 	sqlite3_close(db);
 
 	if( RowCnt > NumBizRules ){
-		fprintf(stderr, "SANITY FAILURE: %s\n", "excess rows for query");
+		ci_debug_printf(0, "SANITY FAILURE: %s\n", "excess rows for query");
 	}
 	else{
-		bRet = true;
-		printf("Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
+		// assure all string buffs will be null-termed
+		pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
+		pBizRules = (BIZ_RULE *)calloc(1,size);
+		for( int i=0; i<NumBizRules; i++ ){
+			pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+			pBizRules[i].m_numRPH = WILDCARD;
+			pBizRules[i].m_minTemp = WILDCARD;
+			pBizRules[i].m_maxTemp = WILDCARD;
+			pBizRules[i].m_minHour = WILDCARD;
+			pBizRules[i].m_maxHour = WILDCARD;
+		}
+		ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
 		BIZ_RULE *pBizRecs = pBizRules;
 		for( int i=0; i<NumBizRules; i++ ){
-			printf("          Function: %s, Endpoint: %s, Method: %s\n",
+			ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
 				   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
-			printf("          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
+			ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
 				pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
-			printf("          Email: %s\n\n",pBizRecs->m_Email);
+			ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
 			pBizRecs++;
 		}
 	}
 	
-	return bRet;
+	return pRetData;
 }
+
 /*
-//#ifdef _WEATHER	
-	if( bRet == 0 && pTester->m_AppId)
+ * init_string - initializer for weather update string struct
+ */
+void init_string(struct string *s){
+    s->len = 0;
+    s->ptr = malloc(s->len+1);
+    if( s->ptr == NULL){
+      ci_debug_printf(0, "in init_string(), malloc() failed\n");
+      exit(EXIT_FAILURE);
+    }
+    s->ptr[0] = '\0';
+}
+
+/*
+ * writefunc - curl handler for weather updates
+ */
+size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
+{
+    size_t new_len = s->len + size*nmemb;
+    s->ptr = realloc(s->ptr, new_len+1);
+    if( s->ptr == NULL){
+      ci_debug_printf(0, "realloc() failed\n");
+      exit(EXIT_FAILURE);
+    }
+    memcpy(s->ptr+s->len, ptr, size*nmemb);
+    s->ptr[new_len] = '\0';
+    s->len = new_len;
+
+    return size*nmemb;
+}
+
+/*
+ * parseNode
+ * 		http://www.xmlsoft.org/tutorial/ar01s04.html
+ */
+xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
+{
+	xmlNodePtr child = NULL;
+    xmlNodePtr nxt = cur->xmlChildrenNode;
+    while (nxt != NULL)
+    {
+        if ((!xmlStrcmp(nxt->name, subchild)))
+        {
+			child = nxt;
+			break;
+        }
+        nxt = nxt->next;
+    }
+    return child;
+}
+
+/*
+ * update_weather - called by thread body for weather handler
+ */
+bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
+{
+    CURLcode res;
+
+	pWd->currentTemp = -273;
+	pWd->bSuccess = false;
+	pWd->city[0]=0; // APIBUFFLEN+1];
+	
+	res = curl_easy_perform(pCurl);
+	if(res != CURLE_OK) {
+		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+		return false;
+	} else {
+		xmlNodePtr cur;
+		xmlDocPtr xmlDoc;
+		xmlDoc = xmlParseMemory(pXmlStr->ptr, pXmlStr->len);
+		if (xmlDoc == NULL) {
+			printf("XML Document not parsed successfully.\n");
+			return false;
+		}
+		cur = xmlDocGetRootElement(xmlDoc);
+		if (cur == NULL) {
+			printf("Failed to get XML ROOT\n");
+			xmlFreeDoc(xmlDoc);
+			return false;
+		}
+		cur = cur->xmlChildrenNode;
+		//printf("\n\n");
+#ifdef _GET_ALL_WEATHER_PARAMS_
+		xmlNodePtr child;
+		xmlChar   *key2;
+		struct tm *info;
+		struct tm  result;
+		time_t 	   local;
+#endif
+		xmlChar *key;
+		while (cur != NULL)
+		{
+			//printf("Current Name: '%s'\n", cur->name);
+			if( (!xmlStrcmp(cur->name, (const xmlChar *)"temperature")) )
+			{
+				if(cur->xmlChildrenNode == NULL){
+					key = xmlGetProp(cur, (const xmlChar *)"value");
+					//printf("Current Temp: %s\n", key);
+					
+					pWd->currentTemp = (int) strtol((const char *)key, (char **)NULL, 10);
+					pWd->bSuccess = true;
+					
+					xmlFree(key);
+					key = xmlGetProp(cur, (const xmlChar *)"min");
+					printf("Min Temp: %s\n", key);
+					xmlFree(key);
+					key = xmlGetProp(cur, (const xmlChar *)"max");
+					printf("Max Temp: %s\n", key);
+					xmlFree(key);
+					key = xmlGetProp(cur, (const xmlChar *)"unit");
+					printf("Temp Units: %s\n", key);
+					xmlFree(key);
+				}	
+			}
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"city")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"name");
+				//printf("City: %s\n", key);
+				strncpy(pWd->city, (const char *)key, APIBUFFLEN);
+				xmlFree(key);
+#ifdef _GET_ALL_WEATHER_PARAMS_
+				key = (xmlChar *)"coord";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"lat");
+					printf("Lat: %s\n", key);
+					xmlFree(key);
+					key = xmlGetProp(child, (const xmlChar *)"lon");
+					printf("Lon: %s\n", key);
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+				key = (xmlChar *)"sun";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"rise");
+					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+						printf("\nstrptime failed\n");					
+					else{
+						local = timegm(&result);
+						info = localtime( &local );
+						//info->tm_hour+=tmz_off;
+						printf("Sunrise: %d:%d:%d\n", info->tm_hour,info->tm_min,info->tm_sec );
+					}
+					xmlFree(key);
+					key = xmlGetProp(child, (const xmlChar *)"set");
+					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+						printf("\nstrptime failed\n");					
+					else{
+						local = timegm(&result);
+						info = localtime( &local );
+						//info->tm_hour+=tmz_off;
+						printf("Sunset: %d:%d:%d\n", info->tm_hour,info->tm_min,info->tm_sec );
+					}
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+#endif // _GET_ALL_WEATHER_PARAMS_
+			}
+#ifdef _GET_ALL_WEATHER_PARAMS_
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"feels_like")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				printf("Feels like: %s\n", key);
+				xmlFree(key);
+			}				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"humidity")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				printf("Humidity: %s%%\n", key);
+				xmlFree(key);
+			}				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"lastupdate")) ){
+				// 2021-02-20T18:44:07
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+					printf("\nstrptime failed\n");					
+				else{
+					//time_t local = timelocal(&result);
+					local = timegm(&result);
+					info = localtime( &local );
+					//info->tm_hour+=tmz_off;
+					//printf("Current local time and date: %s", asctime(info));
+					printf("Last Update: %s\n", asctime(info));
+				}
+				xmlFree(key);
+			}
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"wind")) ){
+				key = (xmlChar *)"speed";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"value");
+					key2 = xmlGetProp(child, (const xmlChar *)"unit");
+					printf("Wind Speed: %s %s\n", key, key2);
+					xmlFree(key);
+					xmlFree(key2);
+					key = xmlGetProp(child, (const xmlChar *)"name");
+					printf(" ( %s )\n", key);
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+				//<direction value="210" code="SSW" name="South-southwest"/>
+				key = (xmlChar *)"direction";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"name");
+					if( key ){
+						key2 = xmlGetProp(child, (const xmlChar *)"value");
+						printf("  direction: %s (%s degrees)\n", key, key2);
+						xmlFree(key2);
+					}
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+				key = (xmlChar *)"gusts";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"value");
+					if( key ){
+						printf("  gusts: %s\n", key);
+						xmlFree(key);
+					}
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}					
+			}				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"clouds")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"name");
+				printf("%s\n", key);
+				xmlFree(key);
+			}
+			//.mode Possible values are 'no", name of weather phenomena as 'rain', 'snow'				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"precipitation")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				if( key ){
+					key2 = xmlGetProp(cur, (const xmlChar *)"mode");
+					printf("precipitation: %smm, %s\n", key,key2);
+					xmlFree(key2);
+				}
+				else{
+					printf("precipitation: %s\n", "none");
+				}
+				xmlFree(key);
+			}
+#endif // _GET_ALL_WEATHER_PARAMS_
+			cur = cur->next;
+		}			
+		xmlFreeDoc(xmlDoc);
+		free(pXmlStr->ptr);
+	}
+	return true;	
+}
+	
+/*
+ * weather_updater - thread body for weather handler
+ */
+void *weather_updater(void *data)
+{
+	if( data )
 	{
+		ci_debug_printf(1, "\n*** weather updater started ***\n");
 		CURL *curl;
-		CURLcode res;
+		TESTER_DATA	*pData = data;
+		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
+		char api_buffer[APIBUFFLEN+1];
+		unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
 		curl = curl_easy_init();
 		if(curl)
 		{
+			WEATHER_DATA weatherData;
 			struct string xmlStr;
 			init_string(&xmlStr);
-			// appid=85cd2a23af95429c1dbbc7b308463346  is valid
-			strncpy( pTester->m_AppId, "85cd2a23af95429c1dbbc7b308463346", MAX_DB_NAMELEN );
-			snprintf(api_buffer, APIBUFFLEN, api_endpoint, pTester->m_AppId, pTester->m_Zipcode );
-			
+			snprintf(api_buffer, APIBUFFLEN, api_endpoint, pData->m_AppId, pData->m_Zipcode );
 			curl_easy_setopt(curl, CURLOPT_URL, api_buffer);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
-			//curl_easy_setopt(curl, CURLOPT_CAPATH , getenv("SSL_CERT_DIR"));
-
-			//puts("*** curl_easy_perform(curl) ***");
-			res = curl_easy_perform(curl);
-			if(res != CURLE_OK){
-				fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-			} else {
-				//printf("string len: %ld\n",xmlStr.len);
-				//printf("%s\n",xmlStr.ptr);
-				xmlNodePtr cur;
-				xmlDocPtr xmlDoc;
-				xmlDoc = xmlParseMemory(xmlStr.ptr, xmlStr.len);
-				if (xmlDoc == NULL){
-					printf("XML Document not parsed successfully.\n");
-					return 0;
-				}
-				cur = xmlDocGetRootElement(xmlDoc);
-				if (cur == NULL){
-					printf("Failed to get XML ROOT\n");
-					xmlFreeDoc(xmlDoc);
-					return 0;
-				}
-				cur = cur->xmlChildrenNode;
-				while (cur != NULL)
-				{
-					if ((!xmlStrcmp(cur->name, (const xmlChar *)"temperature")))
-					{
-						xmlChar *key;
-						if(cur->xmlChildrenNode == NULL){
-							key = xmlGetProp(cur, (const unsigned char *)"value");
-							printf("Current Temp: %s\n", key);
-							xmlFree(key);
-							/ *key = xmlGetProp(cur, (const unsigned char *)"min");
-							printf("Min Temp: %s\n", key);
-							xmlFree(key);
-							key = xmlGetProp(cur, (const unsigned char *)"max");
-							printf("Max Temp: %s\n", key);
-							xmlFree(key);
-							key = xmlGetProp(cur, (const unsigned char *)"unit");
-							printf("Temp Units: %s\n", key);
-							xmlFree(key);* /
-						}	
+			
+			do{
+				ci_debug_printf(3,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
+				ci_debug_printf(3,"      using AppID: %s\n", pData->m_AppId);		
+				if( update_weather( curl, &xmlStr, &weatherData ) ) {
+					if( weatherData.bSuccess ) {
+						currtemp = weatherData.currentTemp;
+						ci_debug_printf(3,"Current Temp: %d\n", currtemp);
 					}
-					cur = cur->next;
-				}			
-				xmlFreeDoc(xmlDoc);
-				free(xmlStr.ptr);
-			}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
+					}
+					if( weatherData.city ) {
+						ci_debug_printf(3,"City: %s\n", weatherData.city);
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
+					}
+					//if( bShowAll ){
+					//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
+					//}
+				}
+				else{
+					ci_debug_printf(0,"\nERROR Updating Weather.\n");
+					break;
+				}
+				ci_debug_printf(3, "\n*** weather updated ***\n");
+				sleep( seconds );
+				init_string(&xmlStr);
+			} while( true );
 			curl_easy_cleanup(curl); 
-		}
+		}		
 	}
-//#endif
-*/
+	else{
+		ci_debug_printf(0, "\n*** weather_updater:: NULL data passed.\n");
+	}
+	// pthread_exit can cause 5 blocks allocated from functions called by pthread_exit() 
+	// that is unfreed but still reachable at process exit
+	//pthread_exit(NULL);
+	return(NULL);
+}
 
 /*
  * This function called exactly when the service is loaded by c-icap.
@@ -867,12 +1094,20 @@ bool GetActiveRules( gchar *pdbFile ){
 	 CI_DEBUG_LEVEL can be set the "-d" param on the cmdline:
 			sudo /usr/local/bin/c-icap -N -D -d 1
 		lower values print less than higher
+		
+       reconfigure
+              The service will reread the config file without the need to stop and restart the c-
+              icap server. The services will be reinitialized
+	Examples:
+		To reconfigure c-icap:
+			echo -n "reconfigure" > /var/run/c-icap.ctl		
+		
  */
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
 	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01a ***\n");
-
+	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
 
@@ -910,147 +1145,8 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
 	gchar    *BizFile = "/home/msspeak/BizRules.db"; // .cfg
-	/*gsize num_groups, num_keys;
-	gchar **keys=NULL, *curr_key;
-	gchar *str_value, *curr_grp;
-	guint64	value64;
-	gsize length;
-	guint group, key;
-	*/
-	
 	const char *LogPath="/var/log/srv_msp.log";
-	/*
-	BIZ_RULE *pBzd;
-	size_t 	size;
-	GError   *error = NULL;
-	
-	GKeyFile *BizCfgFile = g_key_file_new();
-	if (!g_key_file_load_from_file (BizCfgFile, BizFile, G_KEY_FILE_NONE, &error))
-	{
-		if( !g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT) ){
-			ci_debug_printf(0, "    Error loading Business Rule file: %s", error->message);
-		}
-		else{
-			ci_debug_printf(0, "    Business Rule File Load Failed.\n");
-		}
-		g_critical("%s", error->message);
-		g_key_file_free(BizCfgFile);
-		exit( -2 );
-		//return CI_ERROR;
-	}
-	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	if( CI_DEBUG_LEVEL >= 1 ){
-		printf("  %s\n", g_key_file_to_data(BizCfgFile, &length, &error));
-	}
 
-	gchar   **pgGroups;
-	pgGroups = g_key_file_get_groups(BizCfgFile, &num_groups);
-	NumBizRecs = num_groups-1; //deduct "Settings" group
-	size = NumBizRecs * sizeof(BIZ_DATA);
-
-	pBizRecords = (BIZ_DATA *)malloc(size);
-	memset(pBizRecords, WILDCARD, size);// preset any missing fields
-	pBzd = pBizRecords;
-	for(group = 0;group < num_groups;group++)
-	{
-		error = NULL;
-		curr_grp = pgGroups[group];
-		if( strlen(curr_grp) > MAX_GROUPLEN-1){
-			g_critical("Group Name '%s' exceeds max. length.", curr_grp);
-			exit( -1 );
-		}
-
-		if( !strcmp(curr_grp, "Settings")){
-			str_value = g_key_file_get_value (BizCfgFile, "Settings", "LogFile", &error);
-			if( str_value == NULL )
-			{
-				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
-				{
-					LogPath = "/var/log/srv_msp.log";
-					error = NULL;
-				}
-				else
-				{
-					if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND) )
-					{
-						g_critical( "Group Error While Getting Value for Key '%s': %s\n", "LogFile", error->message);
-					}
-					else{
-						g_critical( "Unexpected Error(%s) While Getting Value for Key '%s'\n", error->message, "LogFile");
-					}
-					exit(-1);
-				}
-			}
-			else
-			{
-				LogPath = str_value;
-			}
-			continue;
-		}
-
-		pBzd->m_ValidRequestNum = 0;
-		pBzd->m_TotalRequestNum = 0;
-
-		keys = g_key_file_get_keys(BizCfgFile, curr_grp, &num_keys, &error);
-		for(key = 0;key < num_keys;key++)
-		{
-			curr_key = keys[key];
-			/ *
-				If key cannot be found then 0 is returned and error is set to G_KEY_FILE_ERROR_KEY_NOT_FOUND.
-				Likewise, if the value associated with key cannot be interpreted as an integer, or is out of
-				range for a gint, then 0 is returned and error is set to G_KEY_FILE_ERROR_INVALID_VALUE.
-			* /
-			value64 = g_key_file_get_uint64(BizCfgFile, curr_grp, curr_key, &error);
-			if( value64 == 0 )
-			{
-				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
-				{
-					g_critical( "Sanity Failure Getting Key Value: '%s'\n", error->message);
-					exit(-1);
-				}
-				else if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE) )
-				{
-					g_critical( "Invalid Key Value, Error: '%s'\n", error->message);
-					exit(-1);
-				}
-				// else must be a valid value of zero
-			}
-			// Note, any non-existant keys will have already been preset to WILDCARD
-			if( !strcmp(curr_key, "numReq")){
-				pBzd->m_numReq = value64;
-			}
-			else if( !strcmp(curr_key, "minTemp")){
-				pBzd->m_minTemp = value64;
-			}
-			else if( !strcmp(curr_key, "maxTemp")){
-				pBzd->m_maxTemp = value64;
-			}
-			else if( !strcmp(curr_key, "minHour")){
-				pBzd->m_minHour = value64;
-			}
-			else if( !strcmp(curr_key, "maxHour")){
-				pBzd->m_maxHour = value64;
-			}
-			else{
-				g_critical( "Key Lookup Sanity Failure: %s\n", curr_key);
-				exit(-1);
-			}
-		} //  for keys in group
-
-		strncpy( pBzd->m_Method, curr_grp, MAX_GROUPLEN-1 );
-		pBzd->m_Method[MAX_GROUPLEN-1] = 0x00;
-		strtok(pBzd->m_Method, "@");
-		pBzd->m_EndPoint = strtok(NULL, "@");
-		if( pBzd->m_EndPoint == (gchar *)WILDCARD ){
-		   g_critical("%s", "Failed to get Method/Endpoint\n");
-		   exit(-1);
-		}
-		pBzd++;
-	} //  for groups in keyfile
-	g_strfreev(keys);
-	g_strfreev(pgGroups);
-	g_key_file_free(BizCfgFile);
-	*/
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 
 	LogFile = fopen(LogPath, "a");
@@ -1060,27 +1156,35 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		exit( -2 );
 	}
 	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
-	if( !GetActiveRules( BizFile ) )
+	pTester = GetTesterData( BizFile );
+	if( !pTester )
 	{
 		ci_debug_printf(0, "    Error loading Business Rules");
 		exit( -2 );
 	}
 	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
 	if( CI_DEBUG_LEVEL >= 1 ){
-		printf("  %s\n", "TBD: Dump database");
-	}	
+		ci_debug_printf(3,"  %s\n", "TBD: Dump database");
+	}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
+	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
+
+#ifdef FAKE_TEMPS
 	srand(currtime);
 	//currtemp = (rand() % (90 - 32 + 1)) + 32;
 	currtemp = 45;
-	
 	hour = tm_struct->tm_hour;
 	currday = tm_struct->tm_mday;
-	//ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
-	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
-	WriteLog( 1, LogFile, "    Current Temperature is %d\n", currtemp);
-		
+	WriteLog( 1, LogFile, "    Current (fake) Temperature is %d\n", currtemp);	
+#else
+	if( pTester->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
+	{
+		// Create weather update thread, must be called after GetTesterData
+		pthread_create(&thread_weather, NULL, weather_updater, pTester);
+	}
+#endif	
+
 	return CI_OK;
 }
 
@@ -1091,6 +1195,11 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 void msp_close_service()
 {
 	ci_debug_printf(5, "\n*** msp_close_service::\n");
+	
+	pthread_cancel(thread_weather);
+	pthread_join(thread_weather, NULL);
+	ci_debug_printf(1, "\n*** weather thread joined ***\n");
+	
 	if( LogFile){
 		if( MainThread) // huh, this doesn't work, still see 4 of the below msgs:
 			WriteLog(0, LogFile, "The MSP Service is Shutting Down...");
@@ -1930,11 +2039,11 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 			}
 		}
 		else {
-			printf("Failed to get child node element for '%s'\n", "Body");
+			ci_debug_printf(0,"Failed to get child node element for '%s'\n", "Body");
 		}
 	}
 	else {
-		printf("Failed to get child node '%s' for '%s'\n", "Body", "root");
+		ci_debug_printf(0,"Failed to get child node '%s' for '%s'\n", "Body", "root");
 	}
 
 	if (*pMsgInfo->xmlnspace != 0x00 && *pMsgInfo->method != 0x00 && *pMsgInfo->endpoint != 0x00)

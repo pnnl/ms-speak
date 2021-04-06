@@ -56,6 +56,7 @@ int sendmail(const char *to, const char *from,
 
 // sudo apt-get install sendmail
 // gcc MailTest.c -o MailTest
+// add into icap
 int main(int argc, char** argv)
 {
 	const char *to, *from, *subject, *message;

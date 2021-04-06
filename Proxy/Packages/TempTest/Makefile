@@ -8,7 +8,7 @@ INCLUDES += -I$(INC)
 
 all:	$(PROJECT_BINARY_NAME)
 
-CFLAGS  += -Wall -O
+CFLAGS  += -Wall -O -fsanitize=address
 CFLAGS  += -DDEBUG
 
 LDLIBS  += -lcurl -lxml2

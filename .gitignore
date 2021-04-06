@@ -62,5 +62,5 @@ libs/
 Sql/OneRule.db
 Proxy/MSP
 Proxy/Packages/install/c-icap.conf.tmp
-
+*.Plo
 
