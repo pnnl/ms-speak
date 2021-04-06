@@ -29,6 +29,7 @@
 
 typedef signed long gint64;
 typedef char   gchar;
+gchar    *BizFile = "BizRules.db";
 
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
 //		the string placed in dest will not be null-terminated.
@@ -85,6 +86,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 				continue;
 			gchar *curr_key = columns[i];
 			// Note, any non-existant keys will have already been preset to WILDCARD
+			// strncmp is not necessary when comapring #defined strings
 			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
 				pBzd->m_numReq = atoll(values[i]);
 			}
@@ -206,8 +208,8 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
 		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
 		" INNER JOIN methods ON methods.id = rules.method"\
 		" INNER JOIN testers ON testers.id = rules.tester"\
-		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"\
-
+		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
+		
 // sudo apt-get install libsqlite3-dev
 // make -f icapMakefile		./IcapTest
 // gcc IcapTest.c -o IcapTest -lsqlite3 -lcurl -lxml2
@@ -217,9 +219,8 @@ int main(int argc, char* argv[]) {
 	int rc;
 	int iRet = -1;
 	char *sql;
-
 	/* Open database */
-	rc = sqlite3_open_v2("BizRules.db", &db, SQLITE_OPEN_READONLY, NULL);  
+	rc = sqlite3_open_v2(BizFile, &db, SQLITE_OPEN_READONLY, NULL);  
 	if( rc ) {
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
 		return(iRet);

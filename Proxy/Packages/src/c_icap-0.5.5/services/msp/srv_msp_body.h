@@ -49,10 +49,11 @@
  */
  /*
  -------------------------------------------------------------------------------
- History
- 05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
- 06/19/2019 - CHM - added MEMORY body_type, mem_buff to store union.
- ---------------------------------------------------------------------------------
+ 	History
+		05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
+		06/19/2019 - CHM - added MEMORY body_type, mem_buff to store union.
+ 		04/05/2021 - CHM: support Phase3 enhancements.
+---------------------------------------------------------------------------------
  */
 #include "body.h"
 
