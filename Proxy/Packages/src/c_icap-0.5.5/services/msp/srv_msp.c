@@ -480,7 +480,7 @@ typedef struct _bizrule {
 	gchar  m_Email[MAX_DB_NAMELEN+1];
 } BIZ_RULE;
 
-TESTER_DATA	*pTester=NULL;
+TESTER_DATA	 TesterData={};
 BIZ_RULE	*pBizRules=NULL;
 
 int NumBizRules;
@@ -574,22 +574,32 @@ static int MSP_DATA_POOL = -1;
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 /*
 typedef int (*sqlite3_callback)(
-   void*,    // Data provided in the 4th argument of sqlite3_exec() 
-   int,      // The number of columns in row 
-   char**,   // An array of strings representing fields in the row 
-   char**    // An array of strings representing column names 
+   void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., pBizRules
+   int    colcount // The number of columns in row 
+   char** values   // An array of strings representing fields in the row 
+   char** columns  // An array of strings representing column names 
 );
+	* If callback returns non-zero, the sqlite3_exec() routine returns 
+	* SQLITE_ABORT without invoking the callback again and without running
+	*  any subsequent SQL statements.
 */
 static int callback(void *data, int colcount, char **values, char **columns){
 	int i;
+	if( !data ){
+		ci_debug_printf(0, "callback Sanity Failure: %s\n", "null data ptr");
+		RowCnt = 0;
+		return -1;
+	}
 	if( RowCnt < NumBizRules ){
+		TESTER_DATA	*pTester=&TesterData;
 		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
 		BIZ_RULE *pBzd = &pBizRecs[RowCnt++];
 		pBzd->m_ValidRequestNum = 0;
-		pBzd->m_TotalRequestNum = 0;		
+		pBzd->m_TotalRequestNum = 0;
 		for(i = 0; i<colcount; i++){
-			if( !values[i] )
+			if( !values[i] ){
 				continue;
+			}
 			gchar *curr_key = columns[i];
 			// Note, any non-existant keys will have already been preset to WILDCARD
 			// strncmp is not necessary when comapring #defined strings
@@ -614,17 +624,17 @@ static int callback(void *data, int colcount, char **values, char **columns){
 			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
 				if( RowCnt == 1 ){ // we only need store Tester name once
 					strncpy( pTester->m_Tester, values[i], MAX_DB_NAMELEN );
-				}				
+				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_APPID) ){
 				if( RowCnt == 1 ){
 					strncpy( pTester->m_AppId, values[i], MAX_DB_NAMELEN );
-				}				
+				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_ZIPCODE) ){
 				if( RowCnt == 1 ){
 					strncpy( pTester->m_Zipcode, values[i], MAX_DB_ZIPLEN );
-				}				
+				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_EMAIL) ){
 				strncpy( pBzd->m_Email, values[i], MAX_DB_NAMELEN );
@@ -646,12 +656,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 	else{
 		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", RowCnt);
 	}
-   /*
-	* If callback returns non-zero, the sqlite3_exec() routine returns 
-	* SQLITE_ABORT without invoking the callback again and without running
-	*  any subsequent SQL statements.
-	*/
-   return 0;
+	return 0;
 }
 
 /*
@@ -664,6 +669,9 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	int rc;
 	char *sql;
 	/* Open database */
+
+	ci_debug_printf(2, "Opening database: %s\n", pdbFile);
+
 	rc = sqlite3_open_v2(pdbFile, &db, SQLITE_OPEN_READONLY, NULL);  
 	if( rc ){
 		ci_debug_printf(0, "Can't open database: %s\n", sqlite3_errmsg(db));
@@ -671,7 +679,7 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	} else {
 		;//ci_debug_printf(0, "Opened database successfully\n");
 	}
-		
+
 	sql = "SELECT Count(*)" SQL_FROM_QUERY;  // get coount of rules for active counter
 
 	sqlite3_stmt *stmt;
@@ -679,6 +687,7 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	if (rc != SQLITE_OK){
 		ci_debug_printf(0, "PREPARE failed: %s\n", sqlite3_errmsg(db));
 		ci_debug_printf(0, "QUERY: %s\n", sql);
+		sqlite3_close(db);
 		return(pRetData);
 	}
 	bool bOnce = false;
@@ -691,71 +700,84 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 		else{
 			ci_debug_printf(0, "SANITY FAILURE: %s\n", "mutliple rows for Count(*)");
 			sqlite3_finalize(stmt);	
+			sqlite3_close(db);
 			return(pRetData);
 		}
 	}
 	if (rc != SQLITE_DONE){
 		ci_debug_printf(0, "SELECT failed: %s\n", sqlite3_errmsg(db));
 		sqlite3_finalize(stmt);	
+		sqlite3_close(db);
 		return(pRetData);
 	}
 	sqlite3_finalize(stmt);	
 
 	if( NumBizRules == 0 ){
 		ci_debug_printf(0, "DATABASE FAILURE: %s\n", "No Active Tester Rules Found");
+		sqlite3_close(db);
 		return(pRetData);
 	}else{
-		ci_debug_printf(3, "%d Active Tester Rules Found\n", NumBizRules);
+		ci_debug_printf(2, "%d Active Tester Rules Found\n", NumBizRules);
 	}
-	
+
 	size_t size = NumBizRules * sizeof(BIZ_RULE);
+	pBizRules = (BIZ_RULE *)calloc(1,size);
+	//pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
 	RowCnt = 0;
 
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
-	A pointer to a struct to fill would be useful.	
-	, functions.Name
+	A pointer to a struct to fill would be useful.
 	*/
 	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
 		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
-		 SQL_FROM_QUERY;	
+		 SQL_FROM_QUERY;
 	rc = sqlite3_exec(db, sql, callback, (void*)pBizRules, &zErrMsg);
 	if( rc != SQLITE_OK ){
 		ci_debug_printf(0, "SQL error getting Active Rules: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
+		free( pBizRules );
+		sqlite3_close(db);
 		return(pRetData);
 	} else {
 		;//ci_debug_printf(0, "Operation done successfully\n");
 	}
 	sqlite3_close(db);
+	ci_debug_printf(2, "Closed Database: %s\n", pdbFile);
 
 	if( RowCnt > NumBizRules ){
 		ci_debug_printf(0, "SANITY FAILURE: %s\n", "excess rows for query");
+		free( pBizRules );
 	}
 	else{
-		// assure all string buffs will be null-termed
-		pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
-		pBizRules = (BIZ_RULE *)calloc(1,size);
-		for( int i=0; i<NumBizRules; i++ ){
-			pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-			pBizRules[i].m_numRPH = WILDCARD;
-			pBizRules[i].m_minTemp = WILDCARD;
-			pBizRules[i].m_maxTemp = WILDCARD;
-			pBizRules[i].m_minHour = WILDCARD;
-			pBizRules[i].m_maxHour = WILDCARD;
+		if( TesterData.m_Tester ){ // should have been set in 'callback'
+			pRetData = &TesterData;
+			// assure all string buffs will be null-termed
+			for( int i=0; i<NumBizRules; i++ ){
+				pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+				pBizRules[i].m_numRPH = WILDCARD;
+				pBizRules[i].m_minTemp = WILDCARD;
+				pBizRules[i].m_maxTemp = WILDCARD;
+				pBizRules[i].m_minHour = WILDCARD;
+				pBizRules[i].m_maxHour = WILDCARD;
+			}
+			ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
+			BIZ_RULE *pBizRecs = pBizRules;
+			for( int i=0; i<NumBizRules; i++ ){
+				ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
+					   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
+				ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
+					pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
+				ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
+				pBizRecs++;
+			}
 		}
-		ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
-		BIZ_RULE *pBizRecs = pBizRules;
-		for( int i=0; i<NumBizRules; i++ ){
-			ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
-				   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
-			ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
-				pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
-			ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
-			pBizRecs++;
+		else{
+			ci_debug_printf(0, "SANITY FAILURE: %s\n", "null TesterData.m_Tester");
+			free( pBizRules );
+			return(NULL);
 		}
 	}
-	
 	return pRetData;
 }
 
@@ -1073,7 +1095,7 @@ void *weather_updater(void *data)
 				init_string(&xmlStr);
 			} while( true );
 			curl_easy_cleanup(curl); 
-		}		
+		}
 	}
 	else{
 		ci_debug_printf(0, "\n*** weather_updater:: NULL data passed.\n");
@@ -1081,6 +1103,7 @@ void *weather_updater(void *data)
 	// pthread_exit can cause 5 blocks allocated from functions called by pthread_exit() 
 	// that is unfreed but still reachable at process exit
 	//pthread_exit(NULL);
+		ci_debug_printf(0, "\n*** weather_updater exiting...\n");
 	return(NULL);
 }
 
@@ -1106,7 +1129,7 @@ void *weather_updater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01a ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01b ***\n");
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1156,15 +1179,15 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		exit( -2 );
 	}
 	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
-	pTester = GetTesterData( BizFile );
-	if( !pTester )
+	TESTER_DATA	*pTesterData = GetTesterData( BizFile );
+	if( !pTesterData )
 	{
-		ci_debug_printf(0, "    Error loading Business Rules");
+		ci_debug_printf(0, "    Error loading Business Rules\n");
 		exit( -2 );
 	}
 	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
 	if( CI_DEBUG_LEVEL >= 1 ){
-		ci_debug_printf(3,"  %s\n", "TBD: Dump database");
+		ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
 	}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
@@ -1178,10 +1201,10 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 	currday = tm_struct->tm_mday;
 	WriteLog( 1, LogFile, "    Current (fake) Temperature is %d\n", currtemp);	
 #else
-	if( pTester->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
+	if( pTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
 	{
 		// Create weather update thread, must be called after GetTesterData
-		pthread_create(&thread_weather, NULL, weather_updater, pTester);
+		pthread_create(&thread_weather, NULL, weather_updater, pTesterData);
 	}
 #endif	
 

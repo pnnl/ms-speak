@@ -22,7 +22,8 @@
 			you may need to first do:
 				sudo apt-get install automake
 			run
-				automake (requies Makefile.am)
+				cd /home/msspeak/msspeak/Packages/c_icap-0.5.5
+				automake (requires Makefile.am)
 				if you get this error:
 					You should recreate configure.ac:19: aclocal.m4 with aclocal and run automake again
 					do this:
@@ -32,14 +33,25 @@
 			then do 
 				make
 				sudo make install	
+						/usr/bin/ld: cannot find -lcurl  (on wsl ubuntu)
+							sudo apt install libcurl-dev
+							Package libcurl-dev is a virtual package provided by:
+							  libcurl4-openssl-dev 7.58.0-2ubuntu3.12
+							  libcurl4-nss-dev 7.58.0-2ubuntu3.12
+							  libcurl4-gnutls-dev 7.58.0-2ubuntu3.12
+							sudo apt install libcurl4-openssl-dev
+
 
 services/msp/Makefile was not getting created, so I added services/msp/Makefile
-to AC_OUTPUT([ ... 
-but it still was not created after doing ./configuration
+to AC_OUTPUT([ ...  in configure.ac
+
+but it still was not created after doing ./configure
 because i did not run autoconf yet...
 
- run autoconf to turn our configure.ac into a configure script, and 
- automake to turn our Makefile.am into a Makefile.in
+ run autoconf  ( might need do sudo apt install autoconf )
+	to turn our configure.ac into a configure script, and 
+ automake 
+	to turn our Makefile.am into a Makefile.in
  
  now it shows it is created when i run ./configure:
 	config.status: creating services/echo/Makefile
@@ -226,7 +238,7 @@ then after running make, Makefile.in in /msp shows
 		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist, and must be recreated: you may see the following error when starting c-icap:
 			Cannot open the pid file: /var/run/c-icap/c-icap.pid or c-icap.ctl
 										or
-			Error opening control socket No such file or directory: /var/run/c-icap/c-icap.ctl.							
+			Error opening control socket No such file or directory: /var/run/c-icap/c-icap.ctl.
 		do:
 			sudo mkdir /var/run/c-icap
 		this happens because /var/run is a tmpfs filesystem, so it
