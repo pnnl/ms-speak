@@ -1,15 +1,28 @@
-#!/bin/sh -e
-#
+#!/bin/sh
+set -e
+
 # dash(Debian Almquist shell) is a POSIX-compliant implementation of /bin/sh
-#   -x runs in debug mode, -e exits if any command fails
-#  retrieve this file from the repository:
-#		wget https://raw.githubusercontent.com/pnnl/ms-speak/Phase2/Multispeaker/mspInstall.sh
+# this script works under bash but not dash
+# The problem is the unexpected operator. That is referring to the = which is non-POSIX. 
+#	use = instead of = in comparison
+#
+#   -x runs in debug mode,
+#		print everything as if it were executed, after substitution and expansion is applied
+#		indicate the depth-level of the subshell (by default by prefixing a + (plus) sign to the displayed command)
+# -e exits if any command fails
+#
+#  retrieve this file from the repository:
+#		wget https://raw.githubusercontent.com/pnnl/ms-speak/Phase3/Multispeaker/mspInstall.sh
 #
 #	if ERROR: The certificate of ‘raw.githubusercontent.com’ is not trusted.
-#	   ERROR: The certificate of ‘raw.githubusercontent.com’ hasn't got a known issuer.
+#	   ERROR: The certificate of ‘raw.githubusercontent.com’ hasn't got a known issuer.
 #			If you are using Debian or Ubuntu operating system please install the package
-#   			sudo apt-get install ca-certificates
+#   			sudo apt-get install ca-certificates
+# RUN:
+#     cd ~
+#     . mspInstall
 #
+
 ORIG_DIR=
 NEW_DIR=
 
@@ -37,13 +50,14 @@ fi
 
 # required packages
 echo "The Following required packages will now be installed:"
-echo "    g++, libglib2.0-dev, libxml2-dev, libxml2 & uuid-dev git"
+#echo "   g++, libglib2.0-dev, libxml2-dev, libxml2 & uuid-dev git"
+echo "    g++, libsqlite3-dev, libxml2-dev, libxml2 & uuid-dev git"
 echo "\nPress just the [Enter] key to continue with this Installation, or"
 echo "  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:"
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
 	echo "Installation of Required Packages Cancelled."
-	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
+	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
 		echo "Skipping this step."
 	else
 		echo "Installation Terminated.\n"
@@ -52,7 +66,8 @@ if [ ! -z "$DO_INSTALL" ]; then
 else
 	echo "Installing Required Packages..."
 	if sudo apt-get install g++; then						# did NOT try to install
-		if sudo apt-get install libglib2.0-dev; then		# did NOT try to install
+		#if sudo apt-get install libglib2.0-dev; then		# not needed for phase3
+		if sudo apt-get install libsqlite3-dev; then		# new for phase3
 			if sudo apt-get install libxml2; then	# libxml2 is already the newest version (2.9.4+dfsg1-7+deb10u1).
 				if sudo apt-get install libxml2-dev; then	# installed ok
 					if sudo apt-get install uuid-dev; then	# installed ok
@@ -75,7 +90,8 @@ else
 				false
 			fi
 		else
-			echo "Failed to Install libglib2.0-dev, can not continue"
+		#	echo "Failed to Install libglib2.0-dev, can not continue"
+			echo "Failed to Install libsqlite3-dev, can not continue"
 			false
 		fi
 	else
@@ -139,7 +155,7 @@ echo "Press [Enter] to clone, 'S' to skip this step, or 'N' to terminate complet
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
 	echo "Cloning of Repository Cancelled."
-	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
+	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
 		echo "Skipping this step."
 		SKIP=1;
 	else
@@ -174,7 +190,7 @@ cd $NEW_DIR/Packages
 #read DO_INSTALL
 #if [ ! -z "$DO_INSTALL" ]; then
 #	echo "Extraction of Tarballs Cancelled."
-#	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
+#	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
 #		echo "Skipping this step."
 #	else
 #		echo "Installation Terminated.\n"
@@ -209,7 +225,7 @@ echo "Press [Enter] to install, 'S' to skip this step, or 'N' to terminate compl
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
 	echo "Installation of Squid Cancelled."
-	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
+	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
 		echo "Skipping this step."
 	else
 		echo "Installation Terminated.\n"
@@ -253,7 +269,7 @@ echo "Press [Enter] to install, 'S' to skip this step, or 'N' to terminate compl
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
 	echo "Installation of c-icap Cancelled."
-	if [ "$DO_INSTALL" == "S" ] || [ "$DO_INSTALL" == "s" ]; then
+	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
 		echo "Skipping this step."
 	else
 		echo "Installation Terminated.\n"
@@ -264,17 +280,20 @@ else
 	if cd $NEW_DIR/Packages; then
 		if cp install/c_icap/configure c_icap-0.5.5; then
 			if cp install/c_icap/c-icap.conf.in c_icap-0.5.5; then
-				mkdir -p c_icap-0.5.5/services/msp
-				if cp -r install/c_icap/services/msp/* c_icap-0.5.5/services/msp; then
-					if cp install/c_icap/services/Makefile.am c_icap-0.5.5/services/Makefile.am; then
-						cp install/c_icap/services/Makefile.in c_icap-0.5.5/services/Makefile.in
-						retval=$?
+				if cp install/c_icap/configure.ac c_icap-0.5.5; then
+					mkdir -p c_icap-0.5.5/services/msp
+					if cp -r install/c_icap/services/msp/* c_icap-0.5.5/services/msp; then
+						if cp install/c_icap/services/Makefile.am c_icap-0.5.5/services/Makefile.am; then
+							cp install/c_icap/services/Makefile.in c_icap-0.5.5/services/Makefile.in
+							retval=$?
+						else
+							retval=$?
+						fi
 					else
 						retval=$?
 					fi
 				else
 					retval=$?
-				fi
 			else
 				retval=$?
 			fi
@@ -303,7 +322,7 @@ else
 						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en	; then		
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
-								sudo cp install/BizRules.cfg $NEW_DIR
+								#sudo cp install/BizRules.cfg $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
 								sudo ln -s $NEW_DIR /home/msspeak
 								retval=$?
@@ -351,13 +370,3 @@ return 0
 # cd /usr/local/bin
 # sudo ln -s /home/carl/mspInstall/msspeak /home/msspeak
 # sudo ln -s $NEW_DIR /home/msspeak
-
-	
-	
-	
-	
-	
-	
-	
-	
-	

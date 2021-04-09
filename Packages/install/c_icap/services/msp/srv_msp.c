@@ -1,7 +1,7 @@
 ﻿/*-------------------------------------------------------------------------------
 
   Multi-Speak - Secure Protocol Enterprise Access Kit(MS_SPEAK)
-  Copyright © 2019, Battelle Memorial Institute
+  Copyright © 2021, Battelle Memorial Institute
   All rights reserved.
   1.	Battelle Memorial Institute (hereinafter Battelle) hereby grants permission to any person or
 		entity lawfully obtaining a copy of this software and associated documentation files
@@ -58,8 +58,9 @@
 		06/05/2019 - CHM: only increment m_ValidRequestNum upon seeing a response.
 		06/20/2019 - CHM: ingest the complete packet, so can parse the well-formed xml inside.
 		06/29/2019 - CHM: support all methods/endpoints.
+		04/05/2021 - CHM: support Phase3 enhancements.
 -------------------------------------------------------------------------------
-	NOTE:  the following build instructions apply to a linux debian 9 system
+	NOTE:  the following build instructions apply to a linux debian 10 system
 
 	to build squid:
 		download the most recent nightly build of Squid from http://www.squid-cache.org/Versions/v4/
@@ -232,16 +233,17 @@
 				do:
 					sudo ldconfig
 			
-		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist,
-				  and must be recreated: you may see the following error when starting c-icap:
-						Cannot open the pid file: /var/run/c-icap/c-icap.pid or c-icap.ctl
-					do:
-						sudo mkdir /var/run/c-icap
-				this happens because /var/run is a tmpfs filesystem, so it
-				is emptied at each boot, to have a directory created in it each
-				boot, add a .conf file to /run/tmpfiles.d:
-					/usr/lib/tmpfiles.d/c-icap.conf
-						d /var/run/c-icap 0755 - - -
+		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist, and must be recreated: you may see the following error when starting c-icap:
+			Cannot open the pid file: /var/run/c-icap/c-icap.pid or c-icap.ctl
+										or
+			Error opening control socket No such file or directory: /var/run/c-icap/c-icap.ctl.							
+		do:
+			sudo mkdir /var/run/c-icap
+		this happens because /var/run is a tmpfs filesystem, so it
+		is emptied at each boot, to have this directory created after each
+		boot, add a .conf file to /run/tmpfiles.d:
+			/usr/lib/tmpfiles.d/c-icap.conf with the follow content:
+				d /var/run/c-icap 0755 - - -
 
 				NOTE: the icap daemon will create the actual lock file in the directory when started.
 				
@@ -258,12 +260,6 @@
 					 --header="Content-Type: text/xml"
 					 --header="SOAPAction: \"http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect\"" -O response.xml
 
-
-
-	to build the business rule editor:
-		TODO....
-		see ~/.bash_history from Irene
-
 	others packages that may need to be installed:
 		sudo apt-get install libglib2.0-dev
 		sudo apt-get install libxml2
@@ -276,12 +272,14 @@
 #include <stdlib.h> 
 #include <stdarg.h>
 #include <ctype.h>
-#include <glib.h>
-#include <glib/gprintf.h>
 #include <time.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include <uuid/uuid.h> 
+#include <sqlite3.h> 
+#include <curl/curl.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "c-icap.h"
@@ -383,6 +381,58 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
 #define LOG_URL_SIZE 256
 #define LOW_BUFF 256
 
+#define MAX_DB_NAMELEN  50
+#define MAX_DB_ZIPLEN    5
+
+#define DB_COLNAME_TESTER	"Tester"
+#define DB_COLNAME_APPID	"AppId"
+#define DB_COLNAME_ZIPCODE	"Zipcode"
+#define DB_COLNAME_FUNCTION "Function"
+#define DB_COLNAME_ENDPOINT "Endpoint"
+#define DB_COLNAME_METHOD	"Method"
+#define DB_COLNAME_MAXTEMP	"maxTemp"
+#define DB_COLNAME_MINTEMP	"minTemp"
+#define DB_COLNAME_MAXHOUR	"maxHour"
+#define DB_COLNAME_MINHOUR	"minHour"
+#define DB_COLNAME_NUMREQ	"numReq"
+#define DB_COLNAME_NUMRPH	"numRPH"
+#define DB_COLNAME_EMAIL	"email"
+#define APIBUFFLEN     				250
+#define WEATHER_UPDATE_INTERVAL     5   // minutes
+
+//char *strptime(const char *s, const char *format, struct tm *tm);
+//time_t timelocal(struct tm *tm);
+
+pthread_t thread_weather;
+
+/*  https://openweathermap.org/current
+	<current>
+	<city id="0" name="Richland">
+		<coord lon="-119.288" lat="46.2522"/>
+		<country>US</country>
+		<timezone>-28800</timezone>
+		<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
+	</city>
+	<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
+	<feels_like value="21.83" unit="fahrenheit"/>
+	<humidity value="93" unit="%"/>
+	<pressure value="1021" unit="hPa"/>
+	<wind>
+		<speed value="7.58" unit="mph" name="Light breeze"/>
+		<gusts/>
+		<direction value="210" code="SSW" name="South-southwest"/>
+	</wind>
+	<clouds value="90" name="overcast clouds"/>
+	<visibility value="10000"/>
+	<precipitation mode="no"/>
+	<weather number="804" value="overcast clouds" icon="04d"/>
+	<lastupdate value="2021-02-19T17:45:04"/>
+	</current>
+*/
+
+typedef signed long gint64;
+typedef char   		gchar;
+
 /*
  * The srv_msp_data structure will store the data required to serve an ICAP request.
  */
@@ -407,18 +457,46 @@ struct srv_msp_data {
 	int isReqmod;
 };
 
-typedef struct _bizdata {
+// strncpy() Warning: If there is no null byte among the first n bytes of src, 
+//		the string placed in dest will not be null-terminated.
+typedef struct _tester {
+	gchar  m_Tester[MAX_DB_NAMELEN+1];
+	gchar  m_AppId[MAX_DB_NAMELEN+1];
+	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
+} TESTER_DATA;
+
+typedef struct _bizrule {
 	gint64 m_numReq;
+	gint64 m_numRPH;
 	gint64 m_minTemp;
 	gint64 m_maxTemp;
 	gint64 m_minHour;
 	gint64 m_maxHour;
 	gint64 m_ValidRequestNum;
 	gint64 m_TotalRequestNum;
-	gchar  m_Method[MAX_GROUPLEN];
-	gchar *m_EndPoint;
-} BIZ_DATA;
+	gchar  m_Function[MAX_DB_NAMELEN+1];
+	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
+	gchar  m_Method[MAX_DB_NAMELEN+1];
+	gchar  m_Email[MAX_DB_NAMELEN+1];
+} BIZ_RULE;
 
+TESTER_DATA	 TesterData={};
+BIZ_RULE	*pBizRules=NULL;
+
+int NumBizRules;
+int RowCnt;
+struct string {
+    char *ptr;
+    size_t len;
+};
+typedef struct _wd {
+	int currentTemp;
+	bool bSuccess;
+	char city[APIBUFFLEN+1];
+} WEATHER_DATA;
+
+void init_string(struct string *);
+size_t writefunc(void *, size_t, size_t, struct string *);
 int fmt_srv_msp_namespace(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_msgid(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_timestamp(ci_request_t *, char *, int, const char *);
@@ -464,29 +542,570 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 };
 
 // general prototypes
-int handle_request_preview(BIZ_DATA *);
-int handle_response_preview(BIZ_DATA *);
+int handle_request_preview(BIZ_RULE *);
+int handle_response_preview(BIZ_RULE *);
 void WriteLog(int, FILE *, const char *, ...);
 void msp_dumphex(char *, int);
-BIZ_DATA *GetBusinessRecord(struct srv_msp_data *, int *);
+BIZ_RULE *GetBusinessRecord(struct srv_msp_data *, int *);
 static ci_membuf_t *generate_error_page(ci_request_t *);
 static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 
 // globals
-char str[800];
+#define STRBUFF_LEN 800
+char str[STRBUFF_LEN];
 int currtemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
 int currday;
 int hour;
 int MainThread = 0;
 int NumBizRecs;
 FILE *LogFile = NULL;
-BIZ_DATA *pBizRecords;
 
 // statics
 static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
 static int MSP_DATA_POOL = -1;
+
+#define SQL_FROM_QUERY " FROM rules"\
+		" INNER JOIN functions ON functions.id = rules.function"\
+		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
+		" INNER JOIN methods ON methods.id = rules.method"\
+		" INNER JOIN testers ON testers.id = rules.tester"\
+		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
+/*
+typedef int (*sqlite3_callback)(
+   void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., pBizRules
+   int    colcount // The number of columns in row 
+   char** values   // An array of strings representing fields in the row 
+   char** columns  // An array of strings representing column names 
+);
+	* If callback returns non-zero, the sqlite3_exec() routine returns 
+	* SQLITE_ABORT without invoking the callback again and without running
+	*  any subsequent SQL statements.
+*/
+static int callback(void *data, int colcount, char **values, char **columns){
+	int i;
+	if( !data ){
+		ci_debug_printf(0, "callback Sanity Failure: %s\n", "null data ptr");
+		RowCnt = 0;
+		return -1;
+	}
+	if( RowCnt < NumBizRules ){
+		TESTER_DATA	*pTester=&TesterData;
+		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
+		BIZ_RULE *pBzd = &pBizRecs[RowCnt++];
+		pBzd->m_ValidRequestNum = 0;
+		pBzd->m_TotalRequestNum = 0;
+		for(i = 0; i<colcount; i++){
+			if( !values[i] ){
+				continue;
+			}
+			gchar *curr_key = columns[i];
+			// Note, any non-existant keys will have already been preset to WILDCARD
+			// strncmp is not necessary when comapring #defined strings
+			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
+				pBzd->m_numReq = atoll(values[i]);
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_NUMRPH) ){
+				pBzd->m_numRPH = atoll(values[i]);
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_MINTEMP) ){
+				pBzd->m_minTemp = atoll(values[i]);
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_MAXTEMP) ){
+				pBzd->m_maxTemp = atoll(values[i]);
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_MINHOUR) ){
+				pBzd->m_minHour = atoll(values[i]);
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_MAXHOUR) ){
+				pBzd->m_maxHour = atoll(values[i]);
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
+				if( RowCnt == 1 ){ // we only need store Tester name once
+					strncpy( pTester->m_Tester, values[i], MAX_DB_NAMELEN );
+				}
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_APPID) ){
+				if( RowCnt == 1 ){
+					strncpy( pTester->m_AppId, values[i], MAX_DB_NAMELEN );
+				}
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_ZIPCODE) ){
+				if( RowCnt == 1 ){
+					strncpy( pTester->m_Zipcode, values[i], MAX_DB_ZIPLEN );
+				}
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_EMAIL) ){
+				strncpy( pBzd->m_Email, values[i], MAX_DB_NAMELEN );
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_FUNCTION) ){
+				strncpy( pBzd->m_Function, values[i], MAX_DB_NAMELEN );
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_ENDPOINT) ){
+				strncpy( pBzd->m_EndPoint, values[i], MAX_DB_NAMELEN );
+			}
+			else if( !strcmp(curr_key, DB_COLNAME_METHOD) ){
+				strncpy( pBzd->m_Method, values[i], MAX_DB_NAMELEN );
+			}
+			else{
+				ci_debug_printf(0, "Key Lookup Sanity Failure: %s\n", curr_key);
+			}
+		}
+	}
+	else{
+		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", RowCnt);
+	}
+	return 0;
+}
+
+/*
+ * GetTesterData - reads the business rules for the Active Tester from the DB
+ */
+TESTER_DATA	*GetTesterData( gchar *pdbFile ){
+	TESTER_DATA	*pRetData=NULL;
+	sqlite3 *db;
+	char *zErrMsg = 0;
+	int rc;
+	char *sql;
+	/* Open database */
+
+	ci_debug_printf(2, "Opening database: %s\n", pdbFile);
+
+	rc = sqlite3_open_v2(pdbFile, &db, SQLITE_OPEN_READONLY, NULL);  
+	if( rc ){
+		ci_debug_printf(0, "Can't open database: %s\n", sqlite3_errmsg(db));
+		return(pRetData);
+	} else {
+		;//ci_debug_printf(0, "Opened database successfully\n");
+	}
+
+	sql = "SELECT Count(*)" SQL_FROM_QUERY;  // get coount of rules for active counter
+
+	sqlite3_stmt *stmt;
+	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+	if (rc != SQLITE_OK){
+		ci_debug_printf(0, "PREPARE failed: %s\n", sqlite3_errmsg(db));
+		ci_debug_printf(0, "QUERY: %s\n", sql);
+		sqlite3_close(db);
+		return(pRetData);
+	}
+	bool bOnce = false;
+	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+		if( !bOnce ){
+			NumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
+			//ci_debug_printf(0,"NumBizRules = %d\n", NumBizRules);
+			bOnce = true;
+		}
+		else{
+			ci_debug_printf(0, "SANITY FAILURE: %s\n", "mutliple rows for Count(*)");
+			sqlite3_finalize(stmt);	
+			sqlite3_close(db);
+			return(pRetData);
+		}
+	}
+	if (rc != SQLITE_DONE){
+		ci_debug_printf(0, "SELECT failed: %s\n", sqlite3_errmsg(db));
+		sqlite3_finalize(stmt);	
+		sqlite3_close(db);
+		return(pRetData);
+	}
+	sqlite3_finalize(stmt);	
+
+	if( NumBizRules == 0 ){
+		ci_debug_printf(0, "DATABASE FAILURE: %s\n", "No Active Tester Rules Found");
+		sqlite3_close(db);
+		return(pRetData);
+	}else{
+		ci_debug_printf(2, "%d Active Tester Rules Found\n", NumBizRules);
+	}
+
+	size_t size = NumBizRules * sizeof(BIZ_RULE);
+	pBizRules = (BIZ_RULE *)calloc(1,size);
+	//pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
+	RowCnt = 0;
+
+	/* Execute SQL statement 
+	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
+	A pointer to a struct to fill would be useful.
+	*/
+	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
+		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
+		 SQL_FROM_QUERY;
+	rc = sqlite3_exec(db, sql, callback, (void*)pBizRules, &zErrMsg);
+	if( rc != SQLITE_OK ){
+		ci_debug_printf(0, "SQL error getting Active Rules: %s\n", zErrMsg);
+		sqlite3_free(zErrMsg);
+		free( pBizRules );
+		sqlite3_close(db);
+		return(pRetData);
+	} else {
+		;//ci_debug_printf(0, "Operation done successfully\n");
+	}
+	sqlite3_close(db);
+	ci_debug_printf(2, "Closed Database: %s\n", pdbFile);
+
+	if( RowCnt > NumBizRules ){
+		ci_debug_printf(0, "SANITY FAILURE: %s\n", "excess rows for query");
+		free( pBizRules );
+	}
+	else{
+		if( TesterData.m_Tester ){ // should have been set in 'callback'
+			pRetData = &TesterData;
+			// assure all string buffs will be null-termed
+			for( int i=0; i<NumBizRules; i++ ){
+				pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+				pBizRules[i].m_numRPH = WILDCARD;
+				pBizRules[i].m_minTemp = WILDCARD;
+				pBizRules[i].m_maxTemp = WILDCARD;
+				pBizRules[i].m_minHour = WILDCARD;
+				pBizRules[i].m_maxHour = WILDCARD;
+			}
+			ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
+			BIZ_RULE *pBizRecs = pBizRules;
+			for( int i=0; i<NumBizRules; i++ ){
+				ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
+					   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
+				ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
+					pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
+				ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
+				pBizRecs++;
+			}
+		}
+		else{
+			ci_debug_printf(0, "SANITY FAILURE: %s\n", "null TesterData.m_Tester");
+			free( pBizRules );
+			return(NULL);
+		}
+	}
+	return pRetData;
+}
+
+/*
+ * init_string - initializer for weather update string struct
+ */
+void init_string(struct string *s){
+    s->len = 0;
+    s->ptr = malloc(s->len+1);
+    if( s->ptr == NULL){
+      ci_debug_printf(0, "in init_string(), malloc() failed\n");
+      exit(EXIT_FAILURE);
+    }
+    s->ptr[0] = '\0';
+}
+
+/*
+ * writefunc - curl handler for weather updates
+ */
+size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
+{
+    size_t new_len = s->len + size*nmemb;
+    s->ptr = realloc(s->ptr, new_len+1);
+    if( s->ptr == NULL){
+      ci_debug_printf(0, "realloc() failed\n");
+      exit(EXIT_FAILURE);
+    }
+    memcpy(s->ptr+s->len, ptr, size*nmemb);
+    s->ptr[new_len] = '\0';
+    s->len = new_len;
+
+    return size*nmemb;
+}
+
+/*
+ * parseNode
+ * 		http://www.xmlsoft.org/tutorial/ar01s04.html
+ */
+xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
+{
+	xmlNodePtr child = NULL;
+    xmlNodePtr nxt = cur->xmlChildrenNode;
+    while (nxt != NULL)
+    {
+        if ((!xmlStrcmp(nxt->name, subchild)))
+        {
+			child = nxt;
+			break;
+        }
+        nxt = nxt->next;
+    }
+    return child;
+}
+
+/*
+ * update_weather - called by thread body for weather handler
+ */
+bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
+{
+    CURLcode res;
+
+	pWd->currentTemp = -273;
+	pWd->bSuccess = false;
+	pWd->city[0]=0; // APIBUFFLEN+1];
+	
+	res = curl_easy_perform(pCurl);
+	if(res != CURLE_OK) {
+		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+		return false;
+	} else {
+		xmlNodePtr cur;
+		xmlDocPtr xmlDoc;
+		xmlDoc = xmlParseMemory(pXmlStr->ptr, pXmlStr->len);
+		if (xmlDoc == NULL) {
+			printf("XML Document not parsed successfully.\n");
+			return false;
+		}
+		cur = xmlDocGetRootElement(xmlDoc);
+		if (cur == NULL) {
+			printf("Failed to get XML ROOT\n");
+			xmlFreeDoc(xmlDoc);
+			return false;
+		}
+		cur = cur->xmlChildrenNode;
+		//printf("\n\n");
+#ifdef _GET_ALL_WEATHER_PARAMS_
+		xmlNodePtr child;
+		xmlChar   *key2;
+		struct tm *info;
+		struct tm  result;
+		time_t 	   local;
+#endif
+		xmlChar *key;
+		while (cur != NULL)
+		{
+			//printf("Current Name: '%s'\n", cur->name);
+			if( (!xmlStrcmp(cur->name, (const xmlChar *)"temperature")) )
+			{
+				if(cur->xmlChildrenNode == NULL){
+					key = xmlGetProp(cur, (const xmlChar *)"value");
+					//printf("Current Temp: %s\n", key);
+					
+					pWd->currentTemp = (int) strtol((const char *)key, (char **)NULL, 10);
+					pWd->bSuccess = true;
+					
+					xmlFree(key);
+					key = xmlGetProp(cur, (const xmlChar *)"min");
+					printf("Min Temp: %s\n", key);
+					xmlFree(key);
+					key = xmlGetProp(cur, (const xmlChar *)"max");
+					printf("Max Temp: %s\n", key);
+					xmlFree(key);
+					key = xmlGetProp(cur, (const xmlChar *)"unit");
+					printf("Temp Units: %s\n", key);
+					xmlFree(key);
+				}	
+			}
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"city")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"name");
+				//printf("City: %s\n", key);
+				strncpy(pWd->city, (const char *)key, APIBUFFLEN);
+				xmlFree(key);
+#ifdef _GET_ALL_WEATHER_PARAMS_
+				key = (xmlChar *)"coord";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"lat");
+					printf("Lat: %s\n", key);
+					xmlFree(key);
+					key = xmlGetProp(child, (const xmlChar *)"lon");
+					printf("Lon: %s\n", key);
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+				key = (xmlChar *)"sun";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"rise");
+					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+						printf("\nstrptime failed\n");					
+					else{
+						local = timegm(&result);
+						info = localtime( &local );
+						//info->tm_hour+=tmz_off;
+						printf("Sunrise: %d:%d:%d\n", info->tm_hour,info->tm_min,info->tm_sec );
+					}
+					xmlFree(key);
+					key = xmlGetProp(child, (const xmlChar *)"set");
+					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+						printf("\nstrptime failed\n");					
+					else{
+						local = timegm(&result);
+						info = localtime( &local );
+						//info->tm_hour+=tmz_off;
+						printf("Sunset: %d:%d:%d\n", info->tm_hour,info->tm_min,info->tm_sec );
+					}
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+#endif // _GET_ALL_WEATHER_PARAMS_
+			}
+#ifdef _GET_ALL_WEATHER_PARAMS_
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"feels_like")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				printf("Feels like: %s\n", key);
+				xmlFree(key);
+			}				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"humidity")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				printf("Humidity: %s%%\n", key);
+				xmlFree(key);
+			}				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"lastupdate")) ){
+				// 2021-02-20T18:44:07
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+					printf("\nstrptime failed\n");					
+				else{
+					//time_t local = timelocal(&result);
+					local = timegm(&result);
+					info = localtime( &local );
+					//info->tm_hour+=tmz_off;
+					//printf("Current local time and date: %s", asctime(info));
+					printf("Last Update: %s\n", asctime(info));
+				}
+				xmlFree(key);
+			}
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"wind")) ){
+				key = (xmlChar *)"speed";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"value");
+					key2 = xmlGetProp(child, (const xmlChar *)"unit");
+					printf("Wind Speed: %s %s\n", key, key2);
+					xmlFree(key);
+					xmlFree(key2);
+					key = xmlGetProp(child, (const xmlChar *)"name");
+					printf(" ( %s )\n", key);
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+				//<direction value="210" code="SSW" name="South-southwest"/>
+				key = (xmlChar *)"direction";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"name");
+					if( key ){
+						key2 = xmlGetProp(child, (const xmlChar *)"value");
+						printf("  direction: %s (%s degrees)\n", key, key2);
+						xmlFree(key2);
+					}
+					xmlFree(key);
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}
+				key = (xmlChar *)"gusts";
+				child = parseNode( cur, key);
+				if( child ){
+					key = xmlGetProp(child, (const xmlChar *)"value");
+					if( key ){
+						printf("  gusts: %s\n", key);
+						xmlFree(key);
+					}
+				}
+				else{
+					printf("ERROR: Failed to locate '%s'\n", key );
+				}					
+			}				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"clouds")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"name");
+				printf("%s\n", key);
+				xmlFree(key);
+			}
+			//.mode Possible values are 'no", name of weather phenomena as 'rain', 'snow'				
+			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"precipitation")) ){
+				key = xmlGetProp(cur, (const xmlChar *)"value");
+				if( key ){
+					key2 = xmlGetProp(cur, (const xmlChar *)"mode");
+					printf("precipitation: %smm, %s\n", key,key2);
+					xmlFree(key2);
+				}
+				else{
+					printf("precipitation: %s\n", "none");
+				}
+				xmlFree(key);
+			}
+#endif // _GET_ALL_WEATHER_PARAMS_
+			cur = cur->next;
+		}			
+		xmlFreeDoc(xmlDoc);
+		free(pXmlStr->ptr);
+	}
+	return true;	
+}
+	
+/*
+ * weather_updater - thread body for weather handler
+ */
+void *weather_updater(void *data)
+{
+	if( data )
+	{
+		ci_debug_printf(1, "\n*** weather updater started ***\n");
+		CURL *curl;
+		TESTER_DATA	*pData = data;
+		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
+		char api_buffer[APIBUFFLEN+1];
+		unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
+		curl = curl_easy_init();
+		if(curl)
+		{
+			WEATHER_DATA weatherData;
+			struct string xmlStr;
+			init_string(&xmlStr);
+			snprintf(api_buffer, APIBUFFLEN, api_endpoint, pData->m_AppId, pData->m_Zipcode );
+			curl_easy_setopt(curl, CURLOPT_URL, api_buffer);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
+			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
+			
+			do{
+				ci_debug_printf(3,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
+				ci_debug_printf(3,"      using AppID: %s\n", pData->m_AppId);		
+				if( update_weather( curl, &xmlStr, &weatherData ) ) {
+					if( weatherData.bSuccess ) {
+						currtemp = weatherData.currentTemp;
+						ci_debug_printf(3,"Current Temp: %d\n", currtemp);
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
+					}
+					if( weatherData.city ) {
+						ci_debug_printf(3,"City: %s\n", weatherData.city);
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
+					}
+					//if( bShowAll ){
+					//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
+					//}
+				}
+				else{
+					ci_debug_printf(0,"\nERROR Updating Weather.\n");
+					break;
+				}
+				ci_debug_printf(3, "\n*** weather updated ***\n");
+				sleep( seconds );
+				init_string(&xmlStr);
+			} while( true );
+			curl_easy_cleanup(curl); 
+		}
+	}
+	else{
+		ci_debug_printf(0, "\n*** weather_updater:: NULL data passed.\n");
+	}
+	// pthread_exit can cause 5 blocks allocated from functions called by pthread_exit() 
+	// that is unfreed but still reachable at process exit
+	//pthread_exit(NULL);
+		ci_debug_printf(0, "\n*** weather_updater exiting...\n");
+	return(NULL);
+}
 
 /*
  * This function called exactly when the service is loaded by c-icap.
@@ -494,12 +1113,24 @@ static int MSP_DATA_POOL = -1;
 	 param srv_xdata  - Pointer to the ci_service_xdata_t object of this service
 	 param server_conf- Pointer to the struct holds the main c-icap server configuration
 	 return CI_OK on success, CI_ERROR on any error. 
+	 
+	 CI_DEBUG_LEVEL can be set the "-d" param on the cmdline:
+			sudo /usr/local/bin/c-icap -N -D -d 1
+		lower values print less than higher
+		
+       reconfigure
+              The service will reread the config file without the need to stop and restart the c-
+              icap server. The services will be reinitialized
+	Examples:
+		To reconfigure c-icap:
+			echo -n "reconfigure" > /var/run/c-icap.ctl		
+		
  */
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v2.0 ***\n");
-
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01b ***\n");
+	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
 
@@ -513,7 +1144,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 
 	/*initialize mempools          */
 	MSP_DATA_POOL = ci_object_pool_register("srv_msp_data", sizeof(struct srv_msp_data));
-	if (MSP_DATA_POOL < 0)
+	if( MSP_DATA_POOL < 0)
 		return CI_ERROR;
 
 	/*Tell to the icap clients to send preview data for all files*/
@@ -536,201 +1167,47 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	gchar    *BizFile = "/home/msspeak/BizRules.cfg";
-	gsize num_groups, num_keys;
-	gchar **keys=NULL, *curr_key;
-	gchar *str_value, *curr_grp;
-	guint64	value64;
-	gsize length;
-	BIZ_DATA *pBzd;
-	size_t 	size;
-	const char *LogPath="";
-	guint group, key;
+	gchar    *BizFile = "/home/msspeak/BizRules.db"; // .cfg
+	const char *LogPath="/var/log/srv_msp.log";
 
-	GError   *error = NULL;
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
-	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
-	
-	GKeyFile *BizCfgFile = g_key_file_new();
-	if (!g_key_file_load_from_file (BizCfgFile, BizFile, G_KEY_FILE_NONE, &error))
-	{
-		if( !g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT) ){
-			ci_debug_printf(0, "    Error loading Business Rule file: %s", error->message);
-		}
-		else{
-			ci_debug_printf(0, "    Business Rule File Load Failed.\n");
-		}
-		g_critical("%s", error->message);
-		g_key_file_free(BizCfgFile);
-		exit( -2 );
-		//return CI_ERROR;
-	}
-	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	if( CI_DEBUG_LEVEL >= 1 ){
-		printf("  %s\n", g_key_file_to_data(BizCfgFile, &length, &error));
-	}
-	/*
-	[Settings]
-	LogFile = /home/msspeak/srv_msp.log
-
-	[GetCDSupportedMeters@CD_Server]
-	minHour = 5
-	maxHour = 17
-	minTemp = 32
-	maxTemp = 90
-	numReq = 6
-
-	[InitiateConnectDisconnect@CD_Server]
-	minTemp = 32
-	maxTemp = 83
-	numReq = 7
-	minHour = 8
-	maxHour = 14
-
-	[GetLatestMeterReadings@MR_Server]
-	minHour = 0
-	maxHour = 23
-	minTemp = 32
-	maxTemp = 100
-	numReq = 23
-
-	[ChangeMeterData@CB_Server]
-	numReq = 10
-
-	[InitiateEndDevicePings@OD_Server]
-	numReq = 12
-	minHour = 9
-	maxHour = 17	
-	*/
-
-	time_t currtime = time(NULL);
-	struct tm *tm_struct = localtime(&currtime);
-	gchar   **pgGroups;
-
-
-	srand(currtime);
-	//currtemp = (rand() % (90 - 32 + 1)) + 32;
-	currtemp = 45;
-
-	pgGroups = g_key_file_get_groups(BizCfgFile, &num_groups);
-	NumBizRecs = num_groups-1; //deduct "Settings" group
-	size = NumBizRecs * sizeof(BIZ_DATA);
-
-	pBizRecords = (BIZ_DATA *)malloc(size);
-	memset(pBizRecords, WILDCARD, size);// preset any missing fields
-	pBzd = pBizRecords;
-	for(group = 0;group < num_groups;group++)
-	{
-		error = NULL;
-		curr_grp = pgGroups[group];
-		if( strlen(curr_grp) > MAX_GROUPLEN-1){
-			g_critical("Group Name '%s' exceeds max. length.", curr_grp);
-			exit( -1 );
-		}
-
-		if( !strcmp(curr_grp, "Settings")){
-			str_value = g_key_file_get_value (BizCfgFile, "Settings", "LogFile", &error);
-			if( str_value == NULL )
-			{
-				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
-				{
-					LogPath = "/var/log/srv_msp.log";
-					error = NULL;
-				}
-				else
-				{
-					if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND) )
-					{
-						g_critical( "Group Error While Getting Value for Key '%s': %s\n", "LogFile", error->message);
-					}
-					else{
-						g_critical( "Unexpected Error(%s) While Getting Value for Key '%s'\n", error->message, "LogFile");
-					}
-					exit(-1);
-				}
-			}
-			else
-			{
-				LogPath = str_value;
-			}
-			continue;
-		}
-
-		pBzd->m_ValidRequestNum = 0;
-		pBzd->m_TotalRequestNum = 0;
-
-		keys = g_key_file_get_keys(BizCfgFile, curr_grp, &num_keys, &error);
-		for(key = 0;key < num_keys;key++)
-		{
-			curr_key = keys[key];
-			/*
-				If key cannot be found then 0 is returned and error is set to G_KEY_FILE_ERROR_KEY_NOT_FOUND.
-				Likewise, if the value associated with key cannot be interpreted as an integer, or is out of
-				range for a gint, then 0 is returned and error is set to G_KEY_FILE_ERROR_INVALID_VALUE.
-			*/
-			value64 = g_key_file_get_uint64(BizCfgFile, curr_grp, curr_key, &error);
-			if( value64 == 0 )
-			{
-				if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND) )
-				{
-					g_critical( "Sanity Failure Getting Key Value: '%s'\n", error->message);
-					exit(-1);
-				}
-				else if( g_error_matches (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE) )
-				{
-					g_critical( "Invalid Key Value, Error: '%s'\n", error->message);
-					exit(-1);
-				}
-				// else must be a valid value of zero
-			}
-			// Note, any non-existant keys will have already been preset to WILDCARD
-			if( !strcmp(curr_key, "numReq")){
-				pBzd->m_numReq = value64;
-			}
-			else if( !strcmp(curr_key, "minTemp")){
-				pBzd->m_minTemp = value64;
-			}
-			else if( !strcmp(curr_key, "maxTemp")){
-				pBzd->m_maxTemp = value64;
-			}
-			else if( !strcmp(curr_key, "minHour")){
-				pBzd->m_minHour = value64;
-			}
-			else if( !strcmp(curr_key, "maxHour")){
-				pBzd->m_maxHour = value64;
-			}
-			else{
-				g_critical( "Key Lookup Sanity Failure: %s\n", curr_key);
-				exit(-1);
-			}
-		} //  for keys in group
-
-		strncpy( pBzd->m_Method, curr_grp, MAX_GROUPLEN-1 );
-		pBzd->m_Method[MAX_GROUPLEN-1] = 0x00;
-		strtok(pBzd->m_Method, "@");
-		pBzd->m_EndPoint = strtok(NULL, "@");
-		if( pBzd->m_EndPoint == (gchar *)WILDCARD ) {
-		   g_critical("%s", "Failed to get Method/Endpoint\n");
-		   exit(-1);
-		}
-		pBzd++;
-	} //  for groups in keyfile
-	g_strfreev(keys);
-	g_strfreev(pgGroups);
-	g_key_file_free(BizCfgFile);
 
 	LogFile = fopen(LogPath, "a");
-	if (LogFile == NULL)
+	if( LogFile == NULL )
 	{
 		ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LogPath);
 		exit( -2 );
 	}
+	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
+	TESTER_DATA	*pTesterData = GetTesterData( BizFile );
+	if( !pTesterData )
+	{
+		ci_debug_printf(0, "    Error loading Business Rules\n");
+		exit( -2 );
+	}
+	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
+	if( CI_DEBUG_LEVEL >= 1 ){
+		ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
+	}
+	time_t currtime = time(NULL);
+	struct tm *tm_struct = localtime(&currtime);
+	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
+
+#ifdef FAKE_TEMPS
+	srand(currtime);
+	//currtemp = (rand() % (90 - 32 + 1)) + 32;
+	currtemp = 45;
 	hour = tm_struct->tm_hour;
 	currday = tm_struct->tm_mday;
-	//ci_debug_printf(1, "\n\nCurrent Local Time is %d:%d:%d\n", tm_struct->tm_hour, tm_struct->tm_min, tm_struct->tm_sec);
-	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
-	WriteLog( 1, LogFile, "    Current Temperature is %d\n", currtemp);
-		
+	WriteLog( 1, LogFile, "    Current (fake) Temperature is %d\n", currtemp);	
+#else
+	if( pTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
+	{
+		// Create weather update thread, must be called after GetTesterData
+		pthread_create(&thread_weather, NULL, weather_updater, pTesterData);
+	}
+#endif	
+
 	return CI_OK;
 }
 
@@ -741,13 +1218,18 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 void msp_close_service()
 {
 	ci_debug_printf(5, "\n*** msp_close_service::\n");
-	if (LogFile) {
-		if (MainThread) // huh, this doesn't work, still see 4 of the below msgs:
+	
+	pthread_cancel(thread_weather);
+	pthread_join(thread_weather, NULL);
+	ci_debug_printf(1, "\n*** weather thread joined ***\n");
+	
+	if( LogFile){
+		if( MainThread) // huh, this doesn't work, still see 4 of the below msgs:
 			WriteLog(0, LogFile, "The MSP Service is Shutting Down...");
 		fclose(LogFile);
 	}
 	ci_object_pool_unregister(MSP_DATA_POOL); // per url_check
-	free( pBizRecords );
+	free( pBizRules );
 }
 
 /*
@@ -780,7 +1262,7 @@ void msp_release_request_data(void *data)
 	ci_debug_printf(5, "\n*** msp_release_request_data:: ***\n");
 	/*The data points to the echo_req_data struct we allocated in function echo_init_service */
 	struct srv_msp_data *mspd = data;
-	if (mspd->body.type) {
+	if( mspd->body.type){
 		body_data_destroy(&mspd->body);
 	}
 	ci_object_pool_free(mspd);    /*Return object to pool..... */
@@ -824,12 +1306,12 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
-	MainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_DATA struct ...
+	MainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
 	//return CI_MOD_CONTINUE;
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
-	if (!ci_req_hasbody(req)) {
+	if (!ci_req_hasbody(req)){
 		ci_debug_printf(0, "msp_preview_handler::no body data, will not process further...\n");
 		return CI_ERROR;
 	}
@@ -856,19 +1338,19 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	ci_headers_list_t *pHeader = NULL;
 
 	const int REQ_TYPE = ci_req_type(req);
-	if (REQ_TYPE == ICAP_REQMOD) {	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
+	if( REQ_TYPE == ICAP_REQMOD){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		mspd->isReqmod = 1;
 		pHeader = ci_http_request_headers(req);
 	}
 	else {
 		pHeader = ci_http_response_headers(req);
 	}
-	if (!pHeader) {
+	if (!pHeader){
 		ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
 		return CI_ERROR; 
 	}
 
-	if (REQ_TYPE == ICAP_REQMOD) {	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
+	if( REQ_TYPE == ICAP_REQMOD){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		/*
 		what Multispeaker sends is:
 		POST / HTTP/1.1
@@ -892,7 +1374,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		;
 	}
 	else {
-		if (showHeader) {
+		if( showHeader){
 			char buf[1000];
 			size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 			ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
@@ -923,12 +1405,12 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd->expectedData = content_len;
 
 	/*If we do not have content len, for simplicity do not proccess it*/
-	if (content_len <= 0) {
+	if( content_len <= 0){
 		ci_debug_printf(0, "msp_preview_handler::no Content-Length, will not process\n");
 		return CI_ERROR;
 	}
 
-	if (content_len > mspd->maxBodyData) {
+	if( content_len > mspd->maxBodyData){
 		ci_debug_printf(0, "msp_preview_handler::content-length=%"PRINTF_OFF_T" > %ld will not process\n", (CAST_OFF_T)content_len, mspd->maxBodyData);
 		return CI_ERROR;
 	}
@@ -940,7 +1422,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	  data of the encapsulated HTTP object is included in preview data.
 	  Use the ci_req_hasalldata macro to identify these cases.
 	*/
-	if (preview_data_len) {
+	if( preview_data_len){
 		ci_debug_printf(0, "msp_preview_handler::preview_data_len\n");
 		
 		body_data_write(&mspd->body, preview_data, preview_data_len, ci_req_hasalldata(req));
@@ -953,13 +1435,18 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 /*
 * This function will be called if we returned CI_MOD_CONTINUE in
 *  msp_check_preview_handler function, after we read all the
-* data from the ICAP client.  Called when the ICAP client has sent all its data.
-param req - pointer to the related ci_request struct
-returns   -  CI_MOD_DONE if all are OK, CI_MOD_ALLOW204 if the ICAP client request supports 204 responses
-* and we are not planning to modify anything, or CI_ERROR on errors.
+*  data from the ICAP client.  Called when the ICAP client has sent all its data.
+* 
+	returns CI_MOD_DONE if all are OK. 
+			CI_MOD_ALLOW204 if the ICAP client request supports 204 responses and we 
+* 				are not planning to modify anything.
+			CI_ERROR on errors.
 * The service must not return CI_MOD_ALLOW204 if has already send some data to the client, or the
 * client does not support allow204 responses. To examine if client supports 204 responses the
 * developer should use the ci_req_allow204 macro
+
+	param req - pointer to the related ci_request struct
+
 */
 int msp_end_of_data_handler(ci_request_t * req)
 {
@@ -970,15 +1457,15 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	ci_debug_printf(5, "\n*** msp_end_of_data_handler:: ***\n");
 
-	/*if (mspd->abort) {
+	/*if( mspd->abort){
 		// We had already start sending data....
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	if (mspd->isReqmod) {
+	if( mspd->isReqmod){
 		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
-		if (REQ_TYPE != ICAP_REQMOD) {
+		if( REQ_TYPE != ICAP_REQMOD){
 			ci_debug_printf(0, "*** SANITY CHECK FAILURE: REQ_TYPE != ICAP_REQMOD!\n");
 			unlock_data(req);
 			return CI_ERROR;
@@ -993,10 +1480,10 @@ int msp_end_of_data_handler(ci_request_t * req)
 	//ci_debug_printf(0, "    Message Type: %s\n", ci_method_string(REQ_TYPE));
 
 	int ErrRet;
-	BIZ_DATA *pBizData = GetBusinessRecord(mspd, &ErrRet);
-	if (!pBizData)
+	BIZ_RULE *pRuleData = GetBusinessRecord(mspd, &ErrRet);
+	if (!pRuleData)
 	{
-		if (ErrRet != MSP_OK){
+		if( ErrRet != MSP_OK){
 			WriteLog(0, LogFile, "Error Looking up Request Business Record.");
 			unlock_data(req);
 			return CI_ERROR;
@@ -1006,12 +1493,12 @@ int msp_end_of_data_handler(ci_request_t * req)
 		return CI_MOD_ALLOW204;
 	}
 
-	if (REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
+	if( REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
 	{
-		msRet = handle_request_preview(pBizData);
+		msRet = handle_request_preview(pRuleData);
 		if(msRet == MSP_BIZ_VIO)
 		{		
-			if (!ci_req_sent_data(req)) {
+			if (!ci_req_sent_data(req)){
 				ci_membuf_t *err_page = generate_error_page(req);
 				body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
 			}
@@ -1020,10 +1507,10 @@ int msp_end_of_data_handler(ci_request_t * req)
 			}
 			icRet = CI_MOD_DONE;
 		}
-		else if (msRet == MSP_ERROR) {
+		else if( msRet == MSP_ERROR){
 			icRet = CI_ERROR;
 		}
-		else if (msRet == MSP_OK) {
+		else if( msRet == MSP_OK){
 			icRet = CI_MOD_ALLOW204;
 		}
 		else {
@@ -1031,14 +1518,14 @@ int msp_end_of_data_handler(ci_request_t * req)
 			icRet = CI_ERROR;
 		}
 	}
-	else if (REQ_TYPE == ICAP_RESPMOD)
+	else if( REQ_TYPE == ICAP_RESPMOD)
 	{
 		ci_debug_printf(5, "*** handling_response_preview ...\n");
-		msRet = handle_response_preview(pBizData);
-		if (msRet == MSP_ERROR) {
+		msRet = handle_response_preview(pRuleData);
+		if( msRet == MSP_ERROR){
 			icRet = CI_ERROR;
 		}
-		else if (msRet == MSP_OK) {
+		else if( msRet == MSP_OK){
 			icRet = CI_MOD_ALLOW204;
 		}
 		else {
@@ -1046,7 +1533,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 			icRet = CI_ERROR;
 		}
 	}
-	else if (REQ_TYPE == ICAP_OPTIONS)
+	else if( REQ_TYPE == ICAP_OPTIONS)
 	{
 		WriteLog( 0, LogFile, "ICAP OPTIONS: ignoring...");
 	}
@@ -1101,9 +1588,9 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 		return CI_OK;
 	}
 	//write the data read from icap_client(i.e., Squid) to the mspd->body
-	if (rlen && rbuf) {
-		if (mspd->body.store.ring == NULL &&
-		    (mspd->body.size + *rlen) > mspd->maxBodyData) {
+	if( rlen && rbuf){
+		if( mspd->body.store.ring == NULL &&
+		    (mspd->body.size + *rlen) > mspd->maxBodyData){
 			ci_debug_printf(0, "msp_io::content-length: %" PRIu64 " bigger than maxBodyData: %" PRId64 "\n",
 			                (mspd->body.size + *rlen), mspd->maxBodyData);
 			ci_debug_printf(0, "TODO: call srv_cf_body_to_ring\n");
@@ -1126,8 +1613,8 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 		}
 	}
 	/*
-	else if (iseof) {
-	//if (iseof) {
+	else if( iseof){
+	//if( iseof){
 		ci_debug_printf(0, "    iseof\n");
 		//msp_dumphex(wbuf, *wlen);
 		body_data_write(&mspd->body, NULL, 0, iseof); // should return ret = CI_OK
@@ -1141,7 +1628,7 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 
 	// read some data from the srv_content_filtering_data->body and put them to the
 	// write buffer to be send to the ICAP client
-	if( /*mspd->body.type &&*/ wbuf && wlen) {
+	if( /*mspd->body.type &&*/ wbuf && wlen){
 		ci_debug_printf(5, "    mspd->body.type && wbuf && wlen\n");
 		*wlen = body_data_read(&mspd->body, wbuf, *wlen);
 		if (*wlen == CI_ERROR){
@@ -1161,9 +1648,10 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 /************************** AUXILLIARY ROUTINES ********************************************/
 
 /*
-* handle_request_preview
+* handle_request_preview - is only called if GetBusinessRecord() finds a match for the
+* 							method and endpoint in the packet.
 */
-int handle_request_preview(BIZ_DATA *pBizData)
+int handle_request_preview(BIZ_RULE *pRuleData)
 {
 
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
@@ -1171,39 +1659,39 @@ int handle_request_preview(BIZ_DATA *pBizData)
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	hour = tm_struct->tm_hour;
-	if (currday != tm_struct->tm_mday) {
+	if( currday != tm_struct->tm_mday){
 		currday = tm_struct->tm_mday;
-		pBizData->m_ValidRequestNum = 0;
-		pBizData->m_TotalRequestNum = 0;
+		pRuleData->m_ValidRequestNum = 0;
+		pRuleData->m_TotalRequestNum = 0;
 	}
-	pBizData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
+	pRuleData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
 	// TODO: handle WILDCARDs for temp and time too
-	if ((pBizData->m_numReq != WILDCARD) && (pBizData->m_ValidRequestNum >= pBizData->m_numReq)) {
+	if ((pRuleData->m_numReq != WILDCARD) && (pRuleData->m_ValidRequestNum >= pRuleData->m_numReq)){
 		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
 		    "   Only %d requests per day are allowed.",
-		    pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint, pBizData->m_numReq);
+		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_numReq);
 		return MSP_BIZ_VIO;
 	}
-	else if ((hour>pBizData->m_maxHour) || (hour<pBizData->m_minHour)) {
+	else if ((hour>pRuleData->m_maxHour) || (hour<pRuleData->m_minHour)){
 		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n"
 		    "   These type of requests are only allowed between the hours of %d and %d.",
-		    pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint, pBizData->m_minHour, pBizData->m_maxHour);
+		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
 		WriteLog(1, LogFile, "Current Hour is %d\n", hour);
 		return MSP_BIZ_VIO;
 	}
-	else if ((currtemp>pBizData->m_maxTemp) || (currtemp<pBizData->m_minTemp)) {
+	else if ((currtemp>pRuleData->m_maxTemp) || (currtemp<pRuleData->m_minTemp)){
 		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n"
 		    "   These type of requests are only allowed when the temperature is between %d and %d degrees.",
-		    pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint, pBizData->m_minTemp, pBizData->m_maxTemp);
+		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
 		WriteLog(1, LogFile, "Current Temperature is %d\n", currtemp);
 		return MSP_BIZ_VIO;
 	}
 	else {
 		// TODO: don't increment this count until we see a response come back from the endpoint
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
-		//pBizData->m_ValidRequestNum++;
+		//pRuleData->m_ValidRequestNum++;
 		WriteLog(1, LogFile, "*** ACCEPTing %d of %d daily '%s' requests(%d attempts) from '%s' Endpoint ***",
-		    pBizData->m_ValidRequestNum+1, pBizData->m_numReq, pBizData->m_Method, pBizData->m_TotalRequestNum, pBizData->m_EndPoint);
+		    pRuleData->m_ValidRequestNum+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint);
 		return MSP_OK;
 	}
 }
@@ -1211,18 +1699,18 @@ int handle_request_preview(BIZ_DATA *pBizData)
 /*
 * handle_response_preview
 */
-int handle_response_preview(BIZ_DATA *pBizData)
+int handle_response_preview(BIZ_RULE *pRuleData)
 {
 	ci_debug_printf(5, "    --->handle_response_preview::\n");
-	/* TODO: get ip address and lookup the right BIZ_DATA per IP....
-	 * ultimately, we'd want to index the src/dest ips to find the BIZ_DATA
-	 * then check if the method is part of that connection's BIZ_DATA...
+	/* TODO: get ip address and lookup the right BIZ_RULE per IP....
+	 * ultimately, we'd want to index the src/dest ips to find the BIZ_RULE
+	 * then check if the method is part of that connection's BIZ_RULE...
 	 */
 	//WriteLog(4, LogFile, "got ICAP_RESPMOD, ignoring...");
 	
-	pBizData->m_ValidRequestNum++;
+	pRuleData->m_ValidRequestNum++;
 	WriteLog(1, LogFile, "*** Response ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
-		pBizData->m_Method, pBizData->m_ValidRequestNum, pBizData->m_numReq, pBizData->m_EndPoint);
+		pRuleData->m_Method, pRuleData->m_ValidRequestNum, pRuleData->m_numReq, pRuleData->m_EndPoint);
 
 	return MSP_OK; // always pass the response on to client;
 }
@@ -1258,7 +1746,7 @@ int handle_response_preview(BIZ_DATA *pBizData)
         "</Body>"
     "</soapenv:Envelope>";
 */
-BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
+BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 {
 	char *pMethod=NULL;
 	char *pEndpoint=NULL;
@@ -1274,25 +1762,25 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		return NULL;
 	}
 
-	if (showData) {
-		if (!mspd->isReqmod) {
+	if( showData){
+		if (!mspd->isReqmod){
 			msp_dumphex(buf, mspd->expectedData);
 		}
 	}
 	xmlDoc = xmlParseMemory(buf, mspd->expectedData);
-	if (xmlDoc == NULL) {
+	if( xmlDoc == NULL){
 		ci_debug_printf(0, "XML Document not parsed successfully.\n");
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
 	root = xmlDocGetRootElement(xmlDoc);
-	if (root == NULL) {
+	if( root == NULL){
 		ci_debug_printf(0, "Failed to get XML ROOT\n");
 		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
-	if (xmlStrcmp(root->name, (const xmlChar *)"Envelope")) {
+	if( xmlStrcmp(root->name, (const xmlChar *)"Envelope")){
 		ci_debug_printf(0, "\ndocument of the wrong type, root node != 'Envelope'\n");
 		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
@@ -1303,7 +1791,7 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	struct srv_msp_msg_info *pMsgInfo = &mspd->msginfo;
 	memset(pMsgInfo, 0x00, sizeof(struct srv_msp_msg_info));
 
-	if (get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
+	if( get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
 	{
 		pMethod = pMsgInfo->method;
 		pEndpoint = pMsgInfo->endpoint;
@@ -1324,55 +1812,55 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 
 	ci_debug_printf(4, "Current XML Method is: '%s@%s'\n", pMethod, pEndpoint);
 
-	// TODO, find pBizData from IP Addresses (src/dest) ??
+	// TODO, find pRuleData from IP Addresses (src/dest) ??
 	//		we may not need to do that, if each separate connection is handled by a separate
-	//		c-icap thread, with it's own copy of BIZ_DATA....
+	//		c-icap thread, with it's own copy of BIZ_RULE....
 
-	BIZ_DATA *pBizData = pBizRecords;
+	BIZ_RULE *pRuleData = pBizRules;
 	for(i = 0; i < NumBizRecs; i++)
 	{
-		if( !strcmp( pBizData->m_EndPoint, pEndpoint) )
+		if( !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
-			if( !strcmp( pBizData->m_Method, pMethod) ){
+			if( !strcmp( pRuleData->m_Method, pMethod) ){
 				ci_debug_printf(4, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
 				break;
 			}
 			else{
 				ci_debug_printf(4, "Checking Business Record for %s@%s:\n",
-				                pBizData->m_Method,  pBizData->m_Method);
+				                pRuleData->m_Method,  pRuleData->m_Method);
 			}
 		}
-		pBizData++;
+		pRuleData++;
 	}
 	if( i == NumBizRecs )
 	{
-		if (mspd->isReqmod) {
+		if( mspd->isReqmod){
 			ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Request.\n", pMethod, pEndpoint );
 		}
 		//else{
 		//	ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Response.\n", pMethod, pEndpoint );
 		//}
 		*pErrRet = MSP_OK;
-		pBizData = NULL;
+		pRuleData = NULL;
 	}
 	else {
-		if (mspd->isReqmod) {
+		if( mspd->isReqmod){
 			// while we have the xml parsed into memory, squirrel some info that might be needed 
 			// for returning a business rule violation error page
 			if( !get_caller_info(root, pMsgInfo) ) // squirrel away some info needed for returning a business rule violation error page
 			{
 				ci_debug_printf(0, "*** ERROR getting caller information ...\n");
 				*pErrRet = MSP_ERROR;
-				pBizData = NULL;
+				pRuleData = NULL;
 			}
 			else {
 				*pErrRet = MSP_OK;
-				pBizData = pBizData;
+				pRuleData = pRuleData;
 			}
 		}
 		else {
 			*pErrRet = MSP_OK;
-			pBizData = pBizData;
+			pRuleData = pRuleData;
 		}
 	}
 
@@ -1380,7 +1868,7 @@ BIZ_DATA *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	//xmlFree((void *)pMethod);
 	xmlFreeDoc(xmlDoc); 
 
-	return pBizData;
+	return pRuleData;
 }
 
 /*
@@ -1402,7 +1890,7 @@ static ci_membuf_t *generate_error_page(ci_request_t *req)
 	ci_membuf_t *err_page;
 	ci_http_response_create(req, 1, 1); /*Build the response headers */
 	/*
-	if (ci_http_response_headers(req)) {
+	if( ci_http_response_headers(req)){
 		ci_http_response_reset_headers(req);
 	}
 	else {
@@ -1420,7 +1908,7 @@ static ci_membuf_t *generate_error_page(ci_request_t *req)
 	err_page = ci_txt_template_build_content(req, "msp", "MSP_RESPONSE", MspFmtTable);
 
 	lang = ci_membuf_attr_get(err_page, "lang");
-	if (lang) {
+	if( lang){
 		snprintf(buf, sizeof(buf), "Content-Language: %s", lang);
 		buf[sizeof(buf) - 1] = '\0';
 		ci_http_response_add_header(req, buf);
@@ -1440,7 +1928,7 @@ int fmt_srv_msp_namespace(ci_request_t *req, char *buf, int len, const char *par
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_namespace ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if (uc) {
+	if( uc){
 		return snprintf(buf, len, "%s", uc->msginfo.xmlnspace);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -1490,7 +1978,7 @@ int fmt_srv_msp_appname(ci_request_t *req, char *buf, int len, const char *param
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_appname ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if (uc) {
+	if( uc){
 		return snprintf(buf, len, "%s", uc->msginfo.appname);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -1503,7 +1991,7 @@ int fmt_srv_msp_company(ci_request_t *req, char *buf, int len, const char *param
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_company ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if (uc) {
+	if( uc){
 		return snprintf(buf, len, "%s", uc->msginfo.company);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -1516,7 +2004,7 @@ int fmt_srv_msp_method(ci_request_t *req, char *buf, int len, const char *param)
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_method ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if (uc) {
+	if( uc){
 		return snprintf(buf, len, "%s", uc->msginfo.method);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -1529,8 +2017,8 @@ int fmt_srv_msp_transactionid(ci_request_t *req, char *buf, int len, const char 
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_transactionid ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if (uc) {
-		if (*uc->msginfo.xactid != 0x00) {
+	if( uc){
+		if (*uc->msginfo.xactid != 0x00){
 			return snprintf(buf, len, "<tns:transactionID>%s</tns:transactionID>", uc->msginfo.xactid);
 		}
 		return 0;
@@ -1543,30 +2031,30 @@ int fmt_srv_msp_transactionid(ci_request_t *req, char *buf, int len, const char 
 static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 {
 	xmlNodePtr pReturnedNode = getChildNode(root->children, (const xmlChar *)"Body");
-	if (pReturnedNode)
+	if( pReturnedNode)
 	{
 		xmlNodePtr chld_node = pReturnedNode->xmlChildrenNode;
 		while (chld_node != NULL)
 		{
-			if (chld_node->type == XML_ELEMENT_NODE) {
+			if( chld_node->type == XML_ELEMENT_NODE){
 				break;
 			}
 			chld_node = chld_node->next;
 		}
-		if (chld_node) {
+		if( chld_node){
 			strncpy(pMsgInfo->method, (char *)chld_node->name, CI_MAXMETHODLEN);
-			if (chld_node->ns) {
+			if( chld_node->ns){
 				const xmlChar *pNsRef = chld_node->ns->href;
 				strncpy(pMsgInfo->xmlnspace, (char *)pNsRef, CI_MAXNSLEN);
 				char *p = strrchr((char *)pNsRef, '/');
-				if (p) {
+				if( p){
 					strncpy(pMsgInfo->endpoint, p + 1, CI_MAXENDPOINTLEN);
 				}
 			}
 			xmlNodePtr body_chld = NULL;
-			for (body_chld = chld_node->children; body_chld; body_chld = body_chld->next) {
-				if (body_chld->type == XML_ELEMENT_NODE) {
-					if ((!xmlStrcasecmp(body_chld->name, (const xmlChar *)"transactionID"))) {
+			for (body_chld = chld_node->children; body_chld; body_chld = body_chld->next){
+				if( body_chld->type == XML_ELEMENT_NODE){
+					if ((!xmlStrcasecmp(body_chld->name, (const xmlChar *)"transactionID"))){
 						strncpy(pMsgInfo->xactid, (char *)xmlNodeGetContent(body_chld), CI_MAXXACTIDLEN);
 						break;
 					}
@@ -1574,11 +2062,11 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 			}
 		}
 		else {
-			printf("Failed to get child node element for '%s'\n", "Body");
+			ci_debug_printf(0,"Failed to get child node element for '%s'\n", "Body");
 		}
 	}
 	else {
-		printf("Failed to get child node '%s' for '%s'\n", "Body", "root");
+		ci_debug_printf(0,"Failed to get child node '%s' for '%s'\n", "Body", "root");
 	}
 
 	if (*pMsgInfo->xmlnspace != 0x00 && *pMsgInfo->method != 0x00 && *pMsgInfo->endpoint != 0x00)
@@ -1598,14 +2086,14 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 	int num_gotten = 0;
 	bool bFound = false;
 
-	for (cur_node = root; cur_node; cur_node = cur_node->next) {
-		if (bFound)
+	for (cur_node = root; cur_node; cur_node = cur_node->next){
+		if( bFound)
 			return false;
-		if (cur_node->type == XML_ELEMENT_NODE)
+		if( cur_node->type == XML_ELEMENT_NODE)
 		{
 			if ((!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")))
 			{
-				for (chld_node = cur_node->children; chld_node; chld_node = chld_node->next) {
+				for (chld_node = cur_node->children; chld_node; chld_node = chld_node->next){
 					if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"AppName")))
 					{
 						strncpy(pMsgInfo->appname, (char *)xmlNodeGetContent(chld_node), CI_MAXAPPNAMELEN);
@@ -1616,7 +2104,7 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 						strncpy(pMsgInfo->company, (char *)xmlNodeGetContent(chld_node), CI_MAXCOMPANYLEN);
 						num_gotten++;
 					}
-					if (num_gotten == num_needed) {
+					if( num_gotten == num_needed){
 						bFound = true;
 						break;
 					}
@@ -1653,14 +2141,14 @@ void msp_dumphex(  char *data, int len )
 
 		for (i = 0; i < 16; i++)
 		{
-			if (current + i < data + len)
+			if( current + i < data + len)
 				printf("%02x ",current[i]);
 			else
 				printf("   ");
 		}
 		for (i = 0; i < 16; i++)
 		{
-			if (current + i < data + len)
+			if( current + i < data + len)
 				printf("%c", isprint(current[i]) ? current[i] : '.');
 			else
 				printf(" ");
@@ -1680,7 +2168,7 @@ xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem)
 	//	return NULL;
 	for (n = currnode; n; n = n->next)
 	{
-		if (n->type == XML_ELEMENT_NODE)
+		if( n->type == XML_ELEMENT_NODE)
 		{
 			if ((!xmlStrcasecmp(n->name, elem)))
 			{
@@ -1690,7 +2178,7 @@ xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem)
 			else {
 				//printf("Not Found element '%s' @ '%s'\n", elem, n->name);
 				pRet = getChildNode(n->next, elem);
-				if (pRet)
+				if( pRet)
 					return pRet;
 			}
 		}
@@ -1709,19 +2197,25 @@ void WriteLog(int loglevel, FILE *pFile, const char *format, ...)
 	va_list args;
 	va_start(args, format);
 
-	if (pFile && (loglevel == 0))
+	if( pFile && (loglevel == 0))
 	{
 		time_t currtime = time(NULL);
 		struct tm *tm_struct = localtime(&currtime);
 		pStr = asctime(tm_struct);
-		// asctime seems to append a <CR> so overwrite it by using len-1
-		len = strlen(pStr) - 1;
-		strncpy(str, pStr, len);
-		strcpy(&str[len], ": ");
-		vsnprintf(&str[len + 2], 800 - (len + 2), format, args);
-		fprintf(pFile, "\n%s", str);
-		fflush(pFile);
-		ci_debug_printf(loglevel, "%s\n", &str[len + 1]);
+		len = strnlen(pStr,STRBUFF_LEN);
+		if( len == STRBUFF_LEN ){
+			ci_debug_printf(loglevel, "%s\n", str);
+		}
+		else{
+			// asctime seems to append a <CR> so overwrite it by using len-1
+			len--;
+			strncpy(str, pStr, len);
+			strcpy(&str[len], ": ");
+			vsnprintf(&str[len + 2], STRBUFF_LEN - (len + 2), format, args);
+			fprintf(pFile, "\n%s", str);
+			fflush(pFile);
+			ci_debug_printf(loglevel, "%s\n", &str[len + 1]);
+		}
 	}
 	else {
 		vsprintf(str, format, args);
