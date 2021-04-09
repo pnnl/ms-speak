@@ -69,4 +69,7 @@ BizRules.db
 Sql/avBizRules.db
 msspeak
 srv_msp.log
-
+MultiSpeaker.VC.db
+MultiSpeaker.pro.user.2652adc
+MultiSpeaker/GeneratedFiles/
+MultiSpeakerServer/GeneratedFiles/
