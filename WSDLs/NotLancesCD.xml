@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Header>
+	  <request:MultiSpeakRequestMsgHeader xmlns:com="http://www.multispeak.org/V5.0/commonTypes" 
+			  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+			  xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" 
+			  xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" 
+			  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+			  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:response="http://www.multispeak.org/V5.0/ws/response" 
+			  xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:ns9="http://www.w3.org/2005/08/addressing" 
+			  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2"
+				DefaultRegisteredName="DefaultRegisteredResponse"
+				TimeStamp="2018-09-15T12:00:00-05:01" 
+                DefaultSystemName="System235"
+                DefaultUtility="Bonneville Power Admin"
+                DefaultCurrencyCode="USD"
+                RegistrationID="644e1dd7-2a7f-18fb-b8ed-ed78c3f92c2b"
+                MessageID="CD Request"
+                MessageCreatedTimeStamp="2018-09-15T12:00:00-05:00"
+                Context="Testing"
+                any_attribute="Some Attrib" >
+      <request:MultiSpeakVersion>
+        <com:MajorVersion>5</com:MajorVersion>
+        <com:MinorVersion>0</com:MinorVersion>
+        <com:Build>1</com:Build>
+        <com:Branch>2</com:Branch>
+		<com:BuildString>Release</com:BuildString>
+      </request:MultiSpeakVersion>
+      <request:Caller>
+          <com:AppName>v5MultiSpeaker Transformer</com:AppName>
+          <com:AppVersion>0.0.1.Branch</com:AppVersion>
+          <com:Company>Pacific Northwest National Laboratory</com:Company>
+          <com:AuditID>MillerC</com:AuditID>
+          <com:AuditPassword>MyPW17458</com:AuditPassword>
+          <com:SystemID>SysID002</com:SystemID>
+          <com:Password>MyPW17458</com:Password>
+      </request:Caller>
+      <request:CodedNames>
+          <com:codedName codedNameType="GlobalDomain">
+              <com:codedValue>GD</com:codedValue>
+              <com:namePart>GlobalDomainPart</com:namePart>
+              <com:description>Part of Name</com:description>
+          </com:codedName>
+          <com:codedName codedNameType="SystemName">
+              <com:codedValue>SN</com:codedValue>
+              <com:namePart>SystemNamePart</com:namePart>
+              <com:description>Part of SystemName</com:description>
+          </com:codedName>
+          <com:codedName codedNameType="RegisteredName">
+              <com:codedValue>RN</com:codedValue>
+              <com:namePart>RegisteredNamepart</com:namePart>
+              <com:description>Part of RegisteredName</com:description>
+          </com:codedName>
+      </request:CodedNames>
+      <request:CoordinateSystemInformation>
+          <com:CSUnits otherKind="inches">USSurveyFeet</com:CSUnits>
+          <com:CSAuthorities>
+              <com:CSAuthority>
+                  <com:CSAuthorityName otherKind="otherSPCS">SPCS</com:CSAuthorityName>
+                  <com:CoordinateSystemAuthorityCode>0401</com:CoordinateSystemAuthorityCode>
+                  <com:Datum>WGS84</com:Datum>
+              </com:CSAuthority>
+          </com:CSAuthorities>
+      </request:CoordinateSystemInformation>
+      <request:DataSetState>
+      		<com:PublishDataSetState>
+      			<com:DataSetID>DS-ID-234</com:DataSetID>
+      			<com:PreviousDataSetID>DS-ID-233</com:PreviousDataSetID>
+      		</com:PublishDataSetState>
+      </request:DataSetState>
+    </request:MultiSpeakRequestMsgHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:InitiateConnectDisconnect xmlns:msp="http://www.multispeak.org/V5.0" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2"/>
+  </soap:Body>
+</soap:Envelope>

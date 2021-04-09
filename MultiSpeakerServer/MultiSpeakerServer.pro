@@ -15,7 +15,7 @@ QT += core xml network gui widgets xmlpatterns
 #LIBS += -L/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server -ljvm
 CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB _MSS_
-QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant
+#QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant
 INCLUDEPATH += \
 	. #\
 #    ../Valid8or

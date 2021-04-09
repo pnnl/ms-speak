@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header>
+    <request:MultiSpeakRequestMsgHeader MessageID="CD Response" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" TimeStamp="2019-01-03T10:25:00-05:01" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+      <request:MultiSpeakVersion>
+        <com:MajorVersion>5</com:MajorVersion>
+        <com:MinorVersion>0</com:MinorVersion>
+        <com:Build>1</com:Build>
+      </request:MultiSpeakVersion>
+      <request:Caller>
+        <com:AppName>v5MultiSpeaker Transformer</com:AppName>
+        <com:Company>Pacific Northwest National Laboratory</com:Company>
+      </request:Caller>
+    </request:MultiSpeakRequestMsgHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:InitiateConnectDisconnect xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"/>
+  </soap:Body>
+</soap:Envelope>

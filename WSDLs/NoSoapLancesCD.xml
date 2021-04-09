@@ -1,0 +1,14 @@
+<Request>
+  <request:MultiSpeakRequestMsgHeader xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" MessageID="3" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" TimeStamp="2018-09-15T12:00:00-05:01" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/">
+    <request:MultiSpeakVersion>
+      <com:MajorVersion>5</com:MajorVersion>
+      <com:MinorVersion>0</com:MinorVersion>
+      <com:Build>07</com:Build>
+    </request:MultiSpeakVersion>
+    <request:Caller>
+      <com:AppName>MS_SPEAKER</com:AppName>
+      <com:Company>PNNL</com:Company>
+    </request:Caller>
+  </request:MultiSpeakRequestMsgHeader>
+  <tns:InitiateConnectDisconnect xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:msp="http://www.multispeak.org/V5.0"/>
+</Request>

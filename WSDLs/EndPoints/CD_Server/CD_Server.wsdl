@@ -1,0 +1,425 @@
+<wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/CD_Server" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns9="http://www.w3.org/2005/08/addressing" targetNamespace="http://www.multispeak.org/V5.0/wsdl/CD_Server">
+	<wsdl:types>
+		<s:schema>
+			<s:import namespace="http://www.multispeak.org/V5.0/ws/request" schemaLocation="../../xsd/MultiSpeakWebServicesRequestMsgHeader.xsd"/>
+			<s:import namespace="http://www.multispeak.org/V5.0/ws/response" schemaLocation="../../xsd/MultiSpeakWebServicesResponseMsgHeader.xsd"/>
+		</s:schema>
+		<s:schema elementFormDefault="qualified" targetNamespace="http://www.multispeak.org/V5.0/wsdl/CD_Server">
+			<s:include schemaLocation="CD_Server.xsd"/>
+		</s:schema>
+	</wsdl:types>
+	<wsdl:message name="MultiSpeakResponseMsgHeader">
+		<wsdl:part name="MultiSpeakResponseMsgHeader" element="response:MultiSpeakResponseMsgHeader"/>
+	</wsdl:message>
+	<wsdl:message name="MultiSpeakRequestMsgHeader">
+		<wsdl:part name="MultiSpeakRequestMsgHeader" element="request:MultiSpeakRequestMsgHeader"/>
+	</wsdl:message>
+	<wsdl:message name="GetAllCDDevicesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAllCDDevices"/>
+	</wsdl:message>
+	<wsdl:message name="GetAllCDDevicesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAllCDDevicesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetAllDomainsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAllDomains"/>
+	</wsdl:message>
+	<wsdl:message name="GetAllDomainsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAllDomainsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetAttachmentsByObjectRefsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAttachmentsByObjectRefs"/>
+	</wsdl:message>
+	<wsdl:message name="GetAttachmentsByObjectRefsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAttachmentsByObjectRefsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetCDDeviceStatesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetCDDeviceStates"/>
+	</wsdl:message>
+	<wsdl:message name="GetCDDeviceStatesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetCDDeviceStatesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetCDEnabledMetersSoapIn">
+		<wsdl:part name="parameters" element="tns:GetCDEnabledMeters"/>
+	</wsdl:message>
+	<wsdl:message name="GetCDEnabledMetersSoapOut">
+		<wsdl:part name="parameters" element="tns:GetCDEnabledMetersResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetCDMeterCollectionChangesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetCDMeterCollectionChanges"/>
+	</wsdl:message>
+	<wsdl:message name="GetCDMeterCollectionChangesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetCDMeterCollectionChangesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainNamesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetDomainNames"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainNamesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetDomainNamesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainsByDomainNamesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetDomainsByDomainNames"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainsByDomainNamesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetDomainsByDomainNamesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMethodsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMethods"/>
+	</wsdl:message>
+	<wsdl:message name="GetMethodsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMethodsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetObjectRefsByNounAndPrimaryIdentifiersSoapIn">
+		<wsdl:part name="parameters" element="tns:GetObjectRefsByNounAndPrimaryIdentifiers"/>
+	</wsdl:message>
+	<wsdl:message name="GetObjectRefsByNounAndPrimaryIdentifiersSoapOut">
+		<wsdl:part name="parameters" element="tns:GetObjectRefsByNounAndPrimaryIdentifiersResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateCDStateRequestSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateCDStateRequest"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateCDStateRequestSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateCDStateRequestResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateConnectDisconnectSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateConnectDisconnect"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateConnectDisconnectSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateConnectDisconnectResponse"/>
+	</wsdl:message>
+	<wsdl:message name="IsCDSupportedSoapIn">
+		<wsdl:part name="parameters" element="tns:IsCDSupported"/>
+	</wsdl:message>
+	<wsdl:message name="IsCDSupportedSoapOut">
+		<wsdl:part name="parameters" element="tns:IsCDSupportedResponse"/>
+	</wsdl:message>
+	<wsdl:message name="LinkAttachmentsToObjectsSoapIn">
+		<wsdl:part name="parameters" element="tns:LinkAttachmentsToObjects"/>
+	</wsdl:message>
+	<wsdl:message name="LinkAttachmentsToObjectsSoapOut">
+		<wsdl:part name="parameters" element="tns:LinkAttachmentsToObjectsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="PingURLSoapIn">
+		<wsdl:part name="parameters" element="tns:PingURL"/>
+	</wsdl:message>
+	<wsdl:message name="PingURLSoapOut">
+		<wsdl:part name="parameters" element="tns:PingURLResponse"/>
+	</wsdl:message>
+	<wsdl:message name="SetCDDevicesDisabledSoapIn">
+		<wsdl:part name="parameters" element="tns:SetCDDevicesDisabled"/>
+	</wsdl:message>
+	<wsdl:message name="SetCDDevicesDisabledSoapOut">
+		<wsdl:part name="parameters" element="tns:SetCDDevicesDisabledResponse"/>
+	</wsdl:message>
+	<wsdl:message name="SetCDDevicesEnabledSoapIn">
+		<wsdl:part name="parameters" element="tns:SetCDDevicesEnabled"/>
+	</wsdl:message>
+	<wsdl:message name="SetCDDevicesEnabledSoapOut">
+		<wsdl:part name="parameters" element="tns:SetCDDevicesEnabledResponse"/>
+	</wsdl:message>
+	<wsdl:message name="UnlinkAttachmentsFromObjectsSoapIn">
+		<wsdl:part name="parameters" element="tns:UnlinkAttachmentsFromObjects"/>
+	</wsdl:message>
+	<wsdl:message name="UnlinkAttachmentsFromObjectsSoapOut">
+		<wsdl:part name="parameters" element="tns:UnlinkAttachmentsFromObjectsResponse"/>
+	</wsdl:message>
+	<wsdl:portType name="CD_ServerSoap">
+		<wsdl:operation name="GetAllCDDevices">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all connect disconnect devices (CDDevices) from the system of record.</wsdl:documentation>
+			<wsdl:input message="tns:GetAllCDDevicesSoapIn"/>
+			<wsdl:output message="tns:GetAllCDDevicesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetAllDomains">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all domains supported by a server.</wsdl:documentation>
+			<wsdl:input message="tns:GetAllDomainsSoapIn"/>
+			<wsdl:output message="tns:GetAllDomainsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetAttachmentsByObjectRefs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests an array of attachments associated with specific objects, given their objectRefs.</wsdl:documentation>
+			<wsdl:input message="tns:GetAttachmentsByObjectRefsSoapIn"/>
+			<wsdl:output message="tns:GetAttachmentsByObjectRefsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetCDDeviceStates">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns current state of an array of connect/disconnect devices associated with specified meterIDs.  It should be noted that the CD system SHALL return information for CDDevices that are external to, but associated with the specified meters, as well as those CDDevices that are internal to the specified meters. The default condition is Cconnected.    Connected implies that commodity units may flow to the service. For an electric system, this is the "closed" switch state.  For fluid flow, this is the "opened" valve state.
+</wsdl:documentation>
+			<wsdl:input message="tns:GetCDDeviceStatesSoapIn"/>
+			<wsdl:output message="tns:GetCDDeviceStatesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetCDEnabledMeters">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all meters that have connect/disconnect capability AND have that capability enabled.  Note that in the context of this method call, enabled means both that the meter is CAPABLE of being disconnected (whether that capability is inherent in the meter or is provided in a separate disconnect collar) AND that the disconnection/reconnection capability is ENABLED.</wsdl:documentation>
+			<wsdl:input message="tns:GetCDEnabledMetersSoapIn"/>
+			<wsdl:output message="tns:GetCDEnabledMetersSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetCDMeterCollectionChanges">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all meters that have Connect/Disconnect capability and that have been modified since the time of a previousDataSetID, which is specified in the message header.  Meters that have been created since the previous data set was sent SHALL be included in the created container for the meters of the appropriate type (for instance createdElectricMeters for electricMeters). Meters that have been changed since the previous data set SHALL be included in the changed container (for instance changedElectricMeters) and objectDeletions SHALL be included in the deleted container for meters that have been deleted by the system of record (for instance the deletedElectricMeters). The requester may choose whether or not to actually delete meter records in its system, based on its own business rules. The element MultiSpeakRequestMsgHeader.DataSetState.RequestDataSetState.PreviousDataSetID SHALL be populated with an appropriate data set identifier.
+</wsdl:documentation>
+			<wsdl:input message="tns:GetCDMeterCollectionChangesSoapIn"/>
+			<wsdl:output message="tns:GetCDMeterCollectionChangesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainNames">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The client requests from the server a list of names of domains supported by the server. This method is used, along with the GetDomainsByDomainName method to enable systems to exchange information about application-specific or installation-specific lists of information, such as the lists of counties for this installation or the list of serviceStatusCodes used by the server.  The value referred to as being the domainName is the domain.primaryIdentifier element. It is recommended that domain names be returned in the form of the name of a named object (noun) in the MultiSpeak schema dotted with the field name of interest. For instance, if the system of record is returning workFlowStatus identifiers that would be used on designs, it is suggested that the domain name be called design.workflowStatus, using the same spelling and capitalization used in the MultiSpeak schema.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetDomainNamesSoapIn"/>
+			<wsdl:output message="tns:GetDomainNamesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainsByDomainNames">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The client requests from the server the members of specific domains of information, identified by the domainName parameter, which are supported by the server. This method is used, along with the GetDomainNames method to enable systems to exchange information about application-specific or installation-specific lists of information, such as the lists of counties for this installation or the list of serviceStatusCodes used by the server.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetDomainsByDomainNamesSoapIn"/>
+			<wsdl:output message="tns:GetDomainsByDomainNamesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMethods">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests a list of methods supported by Responder.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetMethodsSoapIn"/>
+			<wsdl:output message="tns:GetMethodsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetObjectRefsByNounAndPrimaryIdentifiers">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests that the server return an array of objectRefs for data instances, specified by primaryIdentifiers, of a specifc noun type for which the server is the system of record.  It is anticipated that in some cases this method might return a large number of records.</wsdl:documentation>
+			<wsdl:input message="tns:GetObjectRefsByNounAndPrimaryIdentifiersSoapIn"/>
+			<wsdl:output message="tns:GetObjectRefsByNounAndPrimaryIdentifiersSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateCDStateRequest">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester initiates a switch status check directly from one or more Connect/Disconnect devices. The CD switch state check function returns information asynchronously about this switch state using the CDStateNotification to the URL specified in the responseURL calling parameter.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateCDStateRequestSoapIn"/>
+			<wsdl:output message="tns:InitiateCDStateRequestSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateConnectDisconnect">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester initiates a connection or disconnection action by issuing one or more connectDisconnectEvent objects to the CD. The connect/disconnect function returns information about this action using the CDStatesChangedNotification to the URL specified in the responseURL calling parameter and references the transactionID specified to link the transaction to this Initiate request.  If the boolean readingRequested is true, then the responder SHALL return a meter reading as part of the CDStateChange payload on the CDStateChangesNotification sent in response to this method call.  If the boolean readingRequested is false or missing, then the meterReading SHALL NOT be returned as part of the CDStateChange.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateConnectDisconnectSoapIn"/>
+			<wsdl:output message="tns:InitiateConnectDisconnectSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="IsCDSupported">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">This method permits the Requester to request of the connect/disconnect system whether or not the utility service is equipped with remote connection/disconnection capability. If no RCD switch exists at a service then remote disconnection/reconnection of the service will not be possible until the RCD switch is installed. In this sense, 'Supported' means BOTH that the meter is CAPABLE of being disconnected (whether that capability is inherent in the meter or is provided in a separate disconnect collar) AND that the disconnection/reconnection capability is ENABLED. If BOTH of these conditions are true then the CD SHALL return 'True'. If EITHER of these conditions is not true then the CD_Server SHALL return 'False'.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:IsCDSupportedSoapIn"/>
+			<wsdl:output message="tns:IsCDSupportedSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="LinkAttachmentsToObjects">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests that receiver link the provided attachments to objects specified by their objectRefs.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:LinkAttachmentsToObjectsSoapIn"/>
+			<wsdl:output message="tns:LinkAttachmentsToObjectsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="PingURL">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester pings URL of Responder to determine its readiness to respond.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:PingURLSoapIn"/>
+			<wsdl:output message="tns:PingURLSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="SetCDDevicesDisabled">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests the CD to disable one or more Connect/Disconnect devices.  The CD function returns information asynchronously about this switch action using  the CDStateChangedNotification to the URL specified in the responseURL calling parameter and references the transactionID specified to link the transaction to this Initiate request..</wsdl:documentation>
+			<wsdl:input message="tns:SetCDDevicesDisabledSoapIn"/>
+			<wsdl:output message="tns:SetCDDevicesDisabledSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="SetCDDevicesEnabled">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests the CD to enable one or more Connect/Disconnect devices. The CD function returns information asynchronously about this switch action using  the CDStateChangedNotification to the URL specified in the responseURL calling parameter and references the transactionID specified to link the transaction to this Initiate request.</wsdl:documentation>
+			<wsdl:input message="tns:SetCDDevicesEnabledSoapIn"/>
+			<wsdl:output message="tns:SetCDDevicesEnabledSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="UnlinkAttachmentsFromObjects">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that attachments, specified by attachmentID, which is the objectID of the attachment to be unlinked from the referenced object. It is up to the receiver of this method to determine, according to its business rules, whether the attachment should be deleted or retained after it is unlinked.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:UnlinkAttachmentsFromObjectsSoapIn"/>
+			<wsdl:output message="tns:UnlinkAttachmentsFromObjectsSoapOut"/>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="CD_ServerSoap" type="tns:CD_ServerSoap">
+		<soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="GetAllCDDevices">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAllCDDevices" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetAllDomains">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAllDomains" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetAttachmentsByObjectRefs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAttachmentsByObjectRefs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetCDDeviceStates">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetCDDeviceStates" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetCDEnabledMeters">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetCDEnabledMeters" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetCDMeterCollectionChanges">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetCDMeterCollectionChanges" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainNames">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetDomainNames" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainsByDomainNames">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetDomainsByDomainNames" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMethods">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMethods" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetObjectRefsByNounAndPrimaryIdentifiers">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetObjectRefsByNounAndPrimaryIdentifiers" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateCDStateRequest">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateCDStateRequest" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateConnectDisconnect">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateConnectDisconnect" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="IsCDSupported">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/IsCDSupported" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="LinkAttachmentsToObjects">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/LinkAttachmentsToObjects" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="PingURL">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/PingURL" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="SetCDDevicesDisabled">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/SetCDDevicesDisabled" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="SetCDDevicesEnabled">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/SetCDDevicesEnabled" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="UnlinkAttachmentsFromObjects">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/UnlinkAttachmentsFromObjects" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="CD_Server">
+		<wsdl:port name="CD_ServerSoap" binding="tns:CD_ServerSoap">
+			<soap:address location="http://www.msp5.0.example.org"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

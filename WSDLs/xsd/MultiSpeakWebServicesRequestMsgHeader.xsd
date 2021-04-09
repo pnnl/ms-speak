@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2014 sp1 (x64) (http://www.altova.com) by Gary A McNaughton (private) -->
+<!-- -->
+<!--MultiSpeak Web Services Request Message Header Schema V5.0.7 Release (Version = "V5.0.7 Release") Dated: 2/20/2015.   Cooperative Energy Services (CES) reserves exclusive discretion to determine the content and definition of MultiSpeak®,a federally registered trademark of NRECA. Copyright © 2000-2015 CES.  -->
+<!-- -->
+<!--Disclaimer: Modifications of this document have been made, and will be made, on the -->
+<!--basis of consensus among the participants of the MultiSpeak Initiative. Cornice -->
+<!--Engineering, Inc. (Cornice) hereby prepared this document to reflect the input provided by the -->
+<!--participants as of the date listed above.  This work is being completed under contract to -->
+<!--the National Rural Electric Cooperative Association (NRECA).-->
+<!--Neither Cornice nor NRECA (i) makes any representation or warranty, express -->
+<!--or implied, as to the suitability of this information for any purpose whatsoever, or (ii) assumes-->
+<!--any responsibility for damages or other liability whatsoever. -->
+<!-- -->
+<xsd:schema xmlns="http://www.multispeak.org/V5.0/ws/request" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.multispeak.org/V5.0/ws/request" elementFormDefault="qualified" attributeFormDefault="unqualified" version="5.0.7">
+	<xsd:import namespace="http://www.multispeak.org/V5.0/commonTypes" schemaLocation="mspCommonTypes.xsd"/>
+	<xsd:import namespace="http://www.multispeak.org/V5.0/primitives" schemaLocation="mspPrimitives.xsd"/>
+	<xsd:import namespace="http://www.multispeak.org/V5.0/enumerations" schemaLocation="mspEnumerations.xsd"/>
+	<xsd:element name="MultiSpeakRequestMsgHeader" type="MultiSpeakRequestMsgHeader"/>
+	<xsd:complexType name="MultiSpeakRequestMsgHeader">
+		<xsd:sequence>
+			<xsd:element name="MultiSpeakVersion" type="com:MultiSpeakVersion"/>
+			<xsd:element name="Caller" type="com:Caller"/>
+			<xsd:element name="CodedNames" type="com:CodedNames" minOccurs="0"/>
+			<xsd:element name="CoordinateSystemInformation" type="com:CoordinateSystemInformation" minOccurs="0"/>
+			<xsd:element name="DataSetState" type="com:DataSetState" minOccurs="0"/>
+			<xsd:element name="DoNotReply" type="com:registrationIDs" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>This element has been added so that a subscriber may specify to a publisher that subsequent notification messages should be suppressed for notifications that result solely from handling the payload of this message.  It should be noted that support for this request is optional, but suggested, on all publishers.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="DefaultRegisteredName" type="prim:alphaNumericRestrictedString">
+			<xsd:annotation>
+				<xsd:documentation>For all objectRefs in this message, this is the default registeredName.  This name is part of an optional dotted-quad notation that may be used when necessary to create unique object identifers.  The fully-qualified name is of the form of RegisteredName.SystemName.NounType.objectGUID.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="DefaultSystemName" type="prim:alphaNumericRestrictedString">
+			<xsd:annotation>
+				<xsd:documentation>For all objectRefs in this message, this is the default systemName. This name is part of an optional dotted-quad notation that may be used when necessary to create unique object identifers.  The fully-qualified name is of the form of RegisteredName.SystemName.NounType.objectGUID.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="DefaultUtility" type="xsd:string">
+			<xsd:annotation>
+				<xsd:documentation>String that is used to identify the default utility that is associated with objects contained in this message.   It may be a text string or a pointer to an organization.  If it is a text string, it is suggested that the string be the Internet domain name for the owner in valid XS:anyURI format.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="DefaultCurrencyCode" type="enum:currencyCode" use="optional">
+			<xsd:annotation>
+				<xsd:documentation>This is the default currencyCode for money transactions sent in this file.  Values of currencyCode are defined in the MultiSpeak core data schema as enumeration of the currencyCode simple type, beginning in Version 4.0.0, release candidate a. For instance, USD is the currency code for united states dollars.  </xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="RegistrationID" type="prim:MultiSpeakGUID">
+			<xsd:annotation>
+				<xsd:documentation>This is a unique identifier for a specific registration for service (subscription).</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="MessageID" type="xsd:string" use="required">
+			<xsd:annotation>
+				<xsd:documentation>This is a unique identifier for this instance of a message.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="TimeStamp" type="xsd:dateTime" use="required">
+			<xsd:annotation>
+				<xsd:documentation>The time the message was sent.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="MessageCreatedTimeStamp" type="xsd:dateTime">
+			<xsd:annotation>
+				<xsd:documentation>This is the time that the message was originally created.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:attribute name="Context" type="com:MessageContext">
+			<xsd:annotation>
+				<xsd:documentation>If used, this attribute tells the receiver the context in which this message is being sent. It is suggested that the receiver treat any message without a contexxt as a production message.</xsd:documentation>
+			</xsd:annotation>
+		</xsd:attribute>
+		<xsd:anyAttribute namespace="##any" processContents="lax"/>
+	</xsd:complexType>
+</xsd:schema>
