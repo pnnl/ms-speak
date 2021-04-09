@@ -6,6 +6,8 @@
 # Remove it when you are finished editing this file.
 #message("You are running qmake on a generated .pro file. This may not work!")
 
+# NOTE: rebuilt using Qt5.11.3 since those libraries are native to
+#		Debian 10 (Buster)
 
 TEMPLATE = subdirs
 SUBDIRS += \
