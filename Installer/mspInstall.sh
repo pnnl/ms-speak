@@ -23,9 +23,24 @@ set -e
 #     . mspInstall
 #
 # NOTE:
+#        Wayland is a display server protocol which was introduced as the default in GNOME.
+#	It is said that Wayland will eventually replace X11 as the default display 
+#	server on Linux and many distributions have begun implementation of Wayland. Wayland is enabled 
+#	by default in the GNOME Desktop.
+#
 #        Gnome 3.22 uses wayland by default, To run the MS-SPEAK apps, set the Qt Platform Abstraction (QPA)
 #				export QT_QPA_PLATFORM=wayland  (vs QT_QPA_PLATFORM=xcb)
 #		set via /etc/profile.d/qt.qpa.sh
+#       Files in /etc/profile.d/ are run when a user logs in (unless you've 
+#			modified /etc/profile to not do this) 
+#		to see what display server you are using:
+#			echo $XDG_SESSION_TYPE
+#				x11
+#		echo $DESKTOP_SESSION
+#			/usr/share/xsessions/cinnamon
+#				this does not appear to use wayland...
+#
+#		to use X11:  ./IdsEditor -platform xcb
 #
 ORIG_DIR=
 NEW_DIR=
@@ -51,6 +66,19 @@ if [ $# -ne 0 ]; then
 	echo "  then run c-icap again."
 	return 0
 fi
+
+#		NOTE:  if the icap machine is rebooted, the directories for the icap lock file will no longer exist, 
+#		and must be recreated: you may see the following error when starting c-icap:
+#			Cannot open the pid file: /var/run/c-icap/c-icap.pid or c-icap.ctl
+#										or
+#			Error opening control socket No such file or directory: /var/run/c-icap/c-icap.ctl.
+#		do:
+#			sudo mkdir /var/run/c-icap
+#		this happens because /var/run is a tmpfs filesystem, so it
+#		is emptied at each boot, to have this directory created after each
+#		boot, add a .conf file to /usr/lib/tmpfiles.d:
+#			/usr/lib/tmpfiles.d/c-icap.conf with the follow content:
+#				d /var/run/c-icap 0755 - - -
 
 # required packages
 echo "The Following required packages will now be installed:"
@@ -329,6 +357,7 @@ else
 						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en	; then		
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
+								sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
 								sudo cp install/BizRules.db $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
 								sudo ln -s $NEW_DIR /home/msspeak
@@ -365,7 +394,14 @@ else
 		sudo ldconfig
 	fi
 fi
-export QT_QPA_PLATFORM=wayland
+# export QT_QPA_PLATFORM=wayland  this only appiles to the current cmd window
+echo export QT_QPA_PLATFORM=wayland >> ~/.bashrc
+echo "alias RuleEdit='~/msspeak/Install/run/IdsEditor 2>/dev/null'" >> ~/.bashrc
+echo "alias sqid='sudo /usr/local/squid/sbin/squid -N -d'" >> ~/.bashrc
+echo "alias cap='sudo /usr/local/bin/c-icap -N -D -d'" >> ~/.bashrc
+# sudo echo "msuser     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+source ~/.bashrc
+
 echo "\n*** Installation Completed Successfully."
 echo "to run squid use the following command:"
 echo "     sudo /usr/local/squid/sbin/squid -N -d 1"

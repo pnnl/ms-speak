@@ -9,6 +9,10 @@
 # NOTE: rebuilt using Qt5.11.3 since those libraries are native to
 #		Debian 10 (Buster)
 
+# qDebug is also preprocessor-controlled, but it has its own special macro,
+#		 QT_NO_DEBUG_OUTPUT.
+# If you add that to your Release build defines, it will not print out.
+
 TEMPLATE = subdirs
 SUBDIRS += \
 	IdsEditor/IdsEditor.pro \

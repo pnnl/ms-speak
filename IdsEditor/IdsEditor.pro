@@ -64,8 +64,19 @@ DESTDIR = ../run
 QT += core gui sql network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+CONFIG(debug, debug|release) {
+	DEFINES += _DEBUG_
+	DESTDIR = $${_PRO_FILE_PWD_}/../builds/Debug
+	message("CONFIG is : " Debug)
+}
+CONFIG(release, debug|release) {
+	DEFINES += QT_NO_DEBUG_OUTPUT
+	DESTDIR = $${_PRO_FILE_PWD_}/../builds/Release
+	message("CONFIG is : " Release)
+	QMAKE_CXXFLAGS += -Ofast
+}
 #CONFIG += release
-CONFIG += deubg
+#CONFIG += deubg
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use

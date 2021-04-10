@@ -243,8 +243,8 @@ then after running make, Makefile.in in /msp shows
 			sudo mkdir /var/run/c-icap
 		this happens because /var/run is a tmpfs filesystem, so it
 		is emptied at each boot, to have this directory created after each
-		boot, add a .conf file to /run/tmpfiles.d:
-			/usr/lib/tmpfiles.d/c-icap.conf with the follow content:
+		boot, add a .conf file to /usr/lib/tmpfiles.d/ with the follow content, i.e.:
+			/usr/lib/tmpfiles.d/c-icap.conf 
 				d /var/run/c-icap 0755 - - -
 
 				NOTE: the icap daemon will create the actual lock file in the directory when started.

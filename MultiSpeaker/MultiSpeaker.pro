@@ -10,15 +10,24 @@
 
 TEMPLATE = app
 TARGET = MultiSpeaker
-DESTDIR = ../run
+#DESTDIR = ../run
 QT += core xml network gui widgets #xmlpatterns
-CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB _MS_ #WIN64
 #QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant
 INCLUDEPATH += \
 	. #\
 #	../Valid8or \
-
+CONFIG(debug, debug|release) {
+	DEFINES += _DEBUG_
+	DESTDIR = $${_PRO_FILE_PWD_}/../builds/Debug
+	message("CONFIG is : " Debug)
+}
+CONFIG(release, debug|release) {
+	DEFINES += QT_NO_DEBUG_OUTPUT
+	DESTDIR = $${_PRO_FILE_PWD_}/../builds/Release
+	message("CONFIG is : " Release)
+	QMAKE_CXXFLAGS += -Ofast
+}
 DEPENDPATH += .
 MOC_DIR += GeneratedFiles
 OBJECTS_DIR += obj
