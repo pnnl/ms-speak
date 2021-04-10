@@ -50,8 +50,7 @@ fi
 
 # required packages
 echo "The Following required packages will now be installed:"
-#echo "   g++, libglib2.0-dev, libxml2-dev, libxml2 & uuid-dev git"
-echo "    g++, libsqlite3-dev, libxml2-dev, libxml2 & uuid-dev git"
+echo "    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git & libcurl4"
 echo "\nPress just the [Enter] key to continue with this Installation, or"
 echo "  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:"
 read DO_INSTALL
@@ -65,14 +64,18 @@ if [ ! -z "$DO_INSTALL" ]; then
 	fi
 else
 	echo "Installing Required Packages..."
-	if sudo apt-get install g++; then						# did NOT try to install
-		#if sudo apt-get install libglib2.0-dev; then		# not needed for phase3
-		if sudo apt-get install libsqlite3-dev; then		# new for phase3
-			if sudo apt-get install libxml2; then	# libxml2 is already the newest version (2.9.4+dfsg1-7+deb10u1).
-				if sudo apt-get install libxml2-dev; then	# installed ok
-					if sudo apt-get install uuid-dev; then	# installed ok
-						if sudo apt-get install git; then	# did NOT try to install
-							echo "\n*** Successfully Installed required packages"
+	if sudo apt-get install g++; then
+		if sudo apt-get install libsqlite3-dev; then
+			if sudo apt-get install libxml2; then
+				if sudo apt-get install libxml2-dev; then
+					if sudo apt-get install uuid-dev; then
+						if sudo apt-get install git; then
+							if sudo apt-get install libcurl4-openssl-dev; then
+								echo "\n*** Successfully Installed required packages"
+							else
+								echo "Failed to Install libcurl4, can not continue"
+								false
+							fi
 						else
 							echo "Failed to Install git, can not continue"
 							false
@@ -90,7 +93,6 @@ else
 				false
 			fi
 		else
-		#	echo "Failed to Install libglib2.0-dev, can not continue"
 			echo "Failed to Install libsqlite3-dev, can not continue"
 			false
 		fi
@@ -294,6 +296,7 @@ else
 					fi
 				else
 					retval=$?
+				fi
 			else
 				retval=$?
 			fi
@@ -322,7 +325,7 @@ else
 						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en	; then		
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
-								#sudo cp install/BizRules.cfg $NEW_DIR
+								sudo cp install/BizRules.db $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
 								sudo ln -s $NEW_DIR /home/msspeak
 								retval=$?
