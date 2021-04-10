@@ -83,10 +83,11 @@ bool CLEAR_SETTINGS_ON_EXIT = false; // Used for the clear settings shortcut fea
 //-------------------------------------------------------------------------------
 // IdsEditor
 //
+// 	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString()),
 IdsEditor::IdsEditor(QWidget* parent)
 	: QMainWindow(parent),
 	  m_clearSettingsShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+C")), this, SLOT(OnClearSettings())),
-	  m_dbFileName(QSettings().value(SK_DB_FILE_NAME, DB_FILE_NAME).toString()),
+	  m_dbFileName(DB_FILE_NAME),
 	  m_prompt(false),
 	  m_saveErr(false),
 	  m_DBmods(false)
@@ -960,7 +961,7 @@ void IdsEditor::OnFileOpen()
 	QString err;
 	if( ReadDbFile(m_dbFileName, err) ){
 		//UpdateObjectModel(); this is done inside ReadDbFile
-		QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
+//		QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 		ui.btnEditTester->setEnabled(true);
 		//ui.cmbTesters->setEnabled(true);
@@ -968,8 +969,13 @@ void IdsEditor::OnFileOpen()
 	else{
 		ui.btnEditTester->setEnabled(false);
 		//ui.cmbTesters->setEnabled(false);
-		QString qs = QStringLiteral("Unable to Open File: %1\n%2").arg(m_dbFileName).arg(err);
 		QString qs2 = QStringLiteral("Unable to Open File: %1").arg(m_dbFileName);
+#ifdef Q_OS_WIN
+		QString qs = QStringLiteral("Unable to Open File: %1\n%2").arg(m_dbFileName).arg(err);
+#else
+		QString qs3 = QStringLiteral("Assure you have a soft link to '%1'").arg(IDS_EDITOR_HOME_PATH);
+		QString qs = QStringLiteral("Unable to Open File: %1\n%2\n\n%3").arg(m_dbFileName).arg(err).arg(qs3);
+#endif
 		m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs2));
 		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
 							 qs, QMessageBox::Ok, QMessageBox::Ok);
@@ -1356,7 +1362,7 @@ void IdsEditor::OnFileSaveAs()
 	OnFileSave();
 	//m_dbFileName = fileName; 3.28 why here?
 
-	QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
+	//QSettings().setValue(SK_DB_FILE_NAME, m_dbFileName);
 	m_dbFileNameLabel.setText(QDir::toNativeSeparators(m_dbFileName));
 }
 

@@ -54,7 +54,6 @@
 //                  Lance Irvine, LMI Developments, LLC.
 //		02.09.2021 CHM - Populate from Sqlite DB, added DB_FILE_NAME.
 //-------------------------------------------------------------------------------
-//
 // Summary: IdsSettings.h
 //-------------------------------------------------------------------------------
 
@@ -65,15 +64,18 @@
 #include <QString>
 
 const QString DB_CONNECTION_NAME = QStringLiteral("BizConn");
-
+#ifdef Q_OS_WIN
 const QString IDS_EDITOR_HOME_PATH = QStringLiteral("%1/.msspeak-ids").arg(QDir::homePath());
+#else
+const QString IDS_EDITOR_HOME_PATH = QStringLiteral("/home/msspeak"); // this should be a soft link
+#endif
 const QString DB_FILE_NAME = QStringLiteral("%1/%2").arg(IDS_EDITOR_HOME_PATH, QStringLiteral("BizRules.db"));
 const QString IDS_EDITOR_DOCS_FOLDER = QStringLiteral("%1/docs").arg(IDS_EDITOR_HOME_PATH);
 const QString IDS_EDITOR_HELP_PDF = QStringLiteral("%1/userguide.pdf").arg(IDS_EDITOR_DOCS_FOLDER);
 const QString IDS_EDITOR_HELP_RESOURCE_PDF = QStringLiteral(":/IdsEditor/Resources/userguide.pdf");
 
 //const QString SK_DB_HOST = QStringLiteral("sk_host");
-const QString SK_DB_FILE_NAME = QStringLiteral("sk_db_file");
+//const QString SK_DB_FILE_NAME = QStringLiteral("sk_db_file");
 const QString SK_MAIN_GEOMETRY = QStringLiteral("sk_main_geometry");
 const QString SK_MAIN_STATE = QStringLiteral("sk_main_state");
 const QString SK_RULE_GEOMETRY = QStringLiteral("sk_rule_geometry");

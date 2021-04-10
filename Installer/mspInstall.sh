@@ -22,7 +22,11 @@ set -e
 #     cd ~
 #     . mspInstall
 #
-
+# NOTE:
+#        Gnome 3.22 uses wayland by default, To run the MS-SPEAK apps, set the Qt Platform Abstraction (QPA)
+#				export QT_QPA_PLATFORM=wayland  (vs QT_QPA_PLATFORM=xcb)
+#		set via /etc/profile.d/qt.qpa.sh
+#
 ORIG_DIR=
 NEW_DIR=
 
@@ -50,7 +54,7 @@ fi
 
 # required packages
 echo "The Following required packages will now be installed:"
-echo "    g++, libsqlite3-dev, libxml2-dev, libxml2 & uuid-dev git"
+echo "    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git & libcurl4"
 echo "\nPress just the [Enter] key to continue with this Installation, or"
 echo "  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:"
 read DO_INSTALL
@@ -70,7 +74,12 @@ else
 				if sudo apt-get install libxml2-dev; then
 					if sudo apt-get install uuid-dev; then
 						if sudo apt-get install git; then
-							echo "\n*** Successfully Installed required packages"
+							if sudo apt-get install libcurl4-openssl-dev; then
+								echo "\n*** Successfully Installed required packages"
+							else
+								echo "Failed to Install libcurl4, can not continue"
+								false
+							fi
 						else
 							echo "Failed to Install git, can not continue"
 							false
@@ -320,9 +329,10 @@ else
 						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en	; then		
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
-								sudo cp install/BizRules.cfg $NEW_DIR
+								sudo cp install/BizRules.db $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
 								sudo ln -s $NEW_DIR /home/msspeak
+								sudo cp install/qt.qpa.sh /etc/profile.d
 								retval=$?
 							else
 								retval=$?
@@ -355,7 +365,7 @@ else
 		sudo ldconfig
 	fi
 fi
-
+export QT_QPA_PLATFORM=wayland
 echo "\n*** Installation Completed Successfully."
 echo "to run squid use the following command:"
 echo "     sudo /usr/local/squid/sbin/squid -N -d 1"

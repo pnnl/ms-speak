@@ -69,11 +69,9 @@ BizRules.db
 Sql/avBizRules.db
 msspeak
 srv_msp.log
-<<<<<<< HEAD
 MultiSpeaker.VC.db
 MultiSpeaker.pro.user.2652adc
 MultiSpeaker/GeneratedFiles/
 MultiSpeakerServer/GeneratedFiles/
-=======
-MultiSpeaker.pro.user.4b87cb9
->>>>>>> d2ed6f0b5ef30aed3b9b14b43a3e8783fb284b1f
+Sql/BizRules (for install).db
+
