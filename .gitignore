@@ -73,4 +73,5 @@ MultiSpeaker.pro.user.2652adc
 MultiSpeaker/GeneratedFiles/
 MultiSpeakerServer/GeneratedFiles/
 Sql/BizRules (for install).db
-
+MspDev
+Packages/4InstallBranch
