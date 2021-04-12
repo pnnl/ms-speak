@@ -203,7 +203,7 @@ void RuleEditor::UpdateUi( bool init )
 	ui.EndPointCombo->clear();
 	QString function = m_ruleObject.m_Function;
 	if( function.isEmpty() ){
-		OnFunctionComboChanged(0);
+		ChangeFunctionCombo();
 		function = m_ruleObject.m_Function;
 	}
 	ui.FunctionCombo->setCurrentIndex(ui.FunctionCombo->findText(function));
@@ -299,11 +299,20 @@ void RuleEditor::UpdateUi( bool init )
 void RuleEditor::OnFunctionComboChanged(int index)
 {
 	Q_UNUSED(index);
+	ChangeFunctionCombo();
+	//if( !bfromUpdateUi)// avoid recursive call
+	UpdateUi();
+}
+
+//-------------------------------------------------------------------------------
+// ChangeFunctionCombo
+//
+void RuleEditor::ChangeFunctionCombo()
+{
 	QString function = ui.FunctionCombo->currentText();
 	m_ruleObject.m_Function = function;
 	m_ruleObject.m_EndPoint = m_functions[function].first();
 	m_ruleObject.m_Method = m_methods.value( m_ruleObject.m_EndPoint).first();
-	UpdateUi();
 }
 
 //-------------------------------------------------------------------------------

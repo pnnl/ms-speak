@@ -554,7 +554,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 		fn =  query.value(0).toString();
 		ep =  query.value(1).toString();
 		me =  query.value(2).toString();
-		//qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
+		qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
 		if( !m_functions[fn].contains(ep) )
 			m_functions[fn].append(ep);
 		if( !m_methods[ep].contains(me) )
@@ -585,7 +585,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 		m_ActTester = query.value(0).toString();
 	}
 	m_ActTesterOrig = m_ActTester;
-	qDebug() << "Active Tester is: " << m_ActTesterOrig;
+	//qDebug() << "Active Tester is: " << m_ActTesterOrig;
 
 	strQuery = QStringLiteral("SELECT Name, AppId, Zipcode FROM %1").arg(DB_TABLE_TESTERS);
 	if( !query.prepare(strQuery) ){

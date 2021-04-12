@@ -103,6 +103,7 @@ protected:
 
 private:
 	void InitFunctions();
+	void ChangeFunctionCombo();
 	void RestoreGeometry();
 	void SaveGeometry();
 	void UpdateUi(bool b=false);

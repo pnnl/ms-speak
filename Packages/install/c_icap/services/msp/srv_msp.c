@@ -293,6 +293,10 @@
 #include "srv_msp_body.h"
 
 /*
+ * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
+ */
+
+/*
 
 ci_stat_uint64_inc(UC_CNT_REQUESTS, 1);
 int UC_CNT_REQUESTS = -1;
@@ -878,12 +882,10 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 			{
 				if(cur->xmlChildrenNode == NULL){
 					key = xmlGetProp(cur, (const xmlChar *)"value");
-					//printf("Current Temp: %s\n", key);
-					
 					pWd->currentTemp = (int) strtol((const char *)key, (char **)NULL, 10);
 					pWd->bSuccess = true;
-					
 					xmlFree(key);
+#ifdef _GET_ALL_WEATHER_PARAMS_					
 					key = xmlGetProp(cur, (const xmlChar *)"min");
 					printf("Min Temp: %s\n", key);
 					xmlFree(key);
@@ -893,6 +895,7 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 					key = xmlGetProp(cur, (const xmlChar *)"unit");
 					printf("Temp Units: %s\n", key);
 					xmlFree(key);
+#endif
 				}	
 			}
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"city")) ){
@@ -1065,19 +1068,19 @@ void *weather_updater(void *data)
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
 			
+			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
+			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);		
 			do{
-				ci_debug_printf(3,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
-				ci_debug_printf(3,"      using AppID: %s\n", pData->m_AppId);		
 				if( update_weather( curl, &xmlStr, &weatherData ) ) {
 					if( weatherData.bSuccess ) {
 						currtemp = weatherData.currentTemp;
-						ci_debug_printf(3,"Current Temp: %d\n", currtemp);
+						ci_debug_printf(2,"Current Temp: %d\n", currtemp);
 					}
 					else{
 						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
 					}
 					if( weatherData.city ) {
-						ci_debug_printf(3,"City: %s\n", weatherData.city);
+						ci_debug_printf(2,"City: %s\n", weatherData.city);
 					}
 					else{
 						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
@@ -1129,7 +1132,7 @@ void *weather_updater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01b ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01c ***\n");
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1186,9 +1189,11 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		exit( -2 );
 	}
 	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	if( CI_DEBUG_LEVEL >= 1 ){
-		ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
-	}
+	ci_debug_printf(1, "\nActive Tester: '%s'\n\n", pTesterData->m_Tester);
+
+	//if( CI_DEBUG_LEVEL >= 1 ){
+	//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
+	//}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
