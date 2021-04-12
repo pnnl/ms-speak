@@ -75,6 +75,7 @@
 #include "IdsSettings.h"
 #include "Rule.h"
 #include "RuleConst.h"
+#include "DbConst.h"
 #include "RuleEditor.h"
 #include "TesterEditor.h"
 
@@ -309,6 +310,29 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr,
 // CreateBizDB
 bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 {
+/*	QString tstStr;
+	QString function;
+	QStringList epl;
+	QHash<QString, QStringList>::const_iterator it = ENDPOINT_LIST.constBegin();
+	for (it = ENDPOINT_LIST.constBegin(); it != ENDPOINT_LIST.constEnd(); ++it){
+		function = it.key();
+		epl = it.value();
+		tstStr = QStringLiteral("'%1'").arg(function);
+		qDebug("%s", qPrintable(tstStr));
+
+		for( const QString & ep : qAsConst(epl) ){
+			qDebug() << "   " << ep;
+			if( METHOD_LIST.contains(ep) ){
+				QStringList mel;
+				mel = METHOD_LIST[ep];
+				for( const QString & me : qAsConst(mel) ){
+					qDebug() << "      " << me;
+				}
+			}
+		}
+	}
+	return false;
+*/
 	bool bRet = OpenBizDB( fileName, errStr, QString(""), true );
 	if( !bRet ){
 		return bRet;
@@ -365,10 +389,6 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 		m_db.close();
 		return bRet;
 	}
-	bool bInsert = query.exec("insert into Functions (Name) VALUES ('Customer Billing');");
-	bInsert &= query.exec("insert into Functions (Name) VALUES ('Metering Management');");
-	bInsert &= query.exec("insert into Functions (Name) VALUES ('Outage Management');");
-
 	// create EndPoints table
 	strQuery = QStringLiteral(
 	"CREATE TABLE [EndPoints] ("
@@ -384,20 +404,6 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 		m_db.close();
 		return bRet;
 	}
-	// set function keys
-	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
-	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'CB_Server');");
-	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
-	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'MDM_Server');" );
-	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
-	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'PG_Server');");
-	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
-	"	((SELECT Id FROM Functions WHERE Name ='Metering Management'), 'CD_Server');");
-	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
-	"	((SELECT Id FROM Functions WHERE Name ='Metering Management'), 'MR_Server');");
-	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
-	"	((SELECT Id FROM Functions WHERE Name ='Outage Management'), 'OD_Server');");
-
 	// create Methods table
 	strQuery = QStringLiteral(
 	"CREATE TABLE [Methods] ("
@@ -413,6 +419,117 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 		m_db.close();
 		return bRet;
 	}
+	// create Rules table
+	strQuery = QStringLiteral(
+	"CREATE TABLE [Rules] ("
+	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
+	"	[Tester] INTEGER NOT NULL,"
+	"   [Function] INTEGER NOT NULL,"
+	"	[Endpoint] INTEGER NOT NULL,"
+	"	[Method] INTEGER NOT NULL,"
+	"	[maxTemp] INTEGER CHECK( (maxTemp = NULL) OR (maxTemp between 32 and 120) ),"
+	"	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),"
+	"	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),"
+	"	[minHour] INTEGER CHECK( (minHour = NULL) OR (minHour between 0 and 23) ),"
+	"	[numReq] INTEGER,"
+	"	[numRPH] INTEGER,"
+	"	[email] NVARCHAR(50),"
+	"	UNIQUE(Tester,Endpoint,Method),"
+	"	CHECK( (maxTemp = NULL AND minTemp = NULL) OR (maxTemp > minTemp) ),"
+	"	CHECK( (maxHour = NULL AND minHour = NULL) OR (maxHour > minHour) ),"
+	"	FOREIGN KEY(Tester) REFERENCES Testers(Id),"
+	"   FOREIGN KEY(Function) REFERENCES Functions(Id),"
+	"	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),"
+	"	FOREIGN KEY(Method) REFERENCES Methods(Id) );"
+	);
+	if( !query.exec(strQuery) ){
+		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+	bool bInsert = false;
+	QString function;
+	QStringList epl;
+	QHash<QString, QStringList>::const_iterator it = ENDPOINT_LIST.constBegin();
+	for (it = ENDPOINT_LIST.constBegin(); it != ENDPOINT_LIST.constEnd(); ++it){
+		function = it.key();
+		epl = it.value();
+		query.prepare("insert into Functions (Name) VALUES (:FuncName);");
+		query.bindValue(":FuncName", function);
+		bInsert = query.exec();
+		if( bInsert ){
+			for( const QString & ep : qAsConst(epl) ){
+				query.prepare("INSERT INTO EndPoints (Function, Name ) VALUES "
+				"	((SELECT Id FROM Functions WHERE Name =:FuncName), :EpName);");
+				query.bindValue(":FuncName", function);
+				query.bindValue(":EpName", ep);
+				bInsert = query.exec();
+				if( bInsert ){
+					query.prepare("INSERT INTO Methods (EndPoint, Name ) VALUES"
+					"	((SELECT Id FROM EndPoints WHERE Name = :EpName), :MetName);");
+					query.bindValue(":EpName", ep);
+					query.bindValue(":MetName", GETMETHODS);
+					bInsert = query.exec();
+					if( bInsert ){
+						query.prepare("INSERT INTO Methods (EndPoint, Name ) VALUES"
+						"	((SELECT Id FROM EndPoints WHERE Name = :EpName), :MetName);");
+						query.bindValue(":EpName", ep);
+						query.bindValue(":MetName", PINGURL);
+						bInsert = query.exec();
+					}
+				}
+				if( bInsert ){
+					if( METHOD_LIST.contains(ep) ){
+						QStringList mel;
+						mel = METHOD_LIST[ep];
+						for( const QString & me : qAsConst(mel) ){
+							query.prepare("INSERT INTO Methods (EndPoint, Name ) VALUES "
+							"	((SELECT Id FROM EndPoints WHERE Name = :EpName), :MetName);");
+							query.bindValue(":EpName", ep);
+							query.bindValue(":MetName", me);
+							bInsert = query.exec();
+							if( !bInsert ){
+								break;
+							}
+						} // for endpoint methods
+					}
+				}
+				if( !bInsert ){
+					break;
+				}
+			} // for function endpoints
+		}
+		else{
+			break;
+		}
+	}// for functions
+	if( !bInsert ){
+		errStr = QStringLiteral("Error With Insert Queries:\n%1").arg(query.lastError().text());
+		qDebug("%s", qPrintable(errStr));
+		m_db.close();
+		return bRet;
+	}
+
+	/*
+	bool bInsert = query.exec("insert into Functions (Name) VALUES ('Customer Billing');");
+	bInsert &= query.exec("insert into Functions (Name) VALUES ('Metering Management');");
+	bInsert &= query.exec("insert into Functions (Name) VALUES ('Outage Management');");
+
+	// set function keys
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'CB_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'MDM_Server');" );
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Customer Billing'), 'PG_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Metering Management'), 'CD_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Metering Management'), 'MR_Server');");
+	bInsert &= query.exec("INSERT INTO EndPoints (Function, Name ) VALUES "
+	"	((SELECT Id FROM Functions WHERE Name ='Outage Management'), 'OD_Server');");
+
 	// set Endpoint keys
 	bInsert &= query.exec("INSERT INTO Methods (EndPoint, Name ) VALUES "
 	"	((SELECT Id FROM EndPoints WHERE Name ='CB_Server'), 'ChangeCustomerData');");
@@ -466,40 +583,12 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	//INSERT INTO Methods (EndPoint, Name ) VALUES
 	//	((SELECT Id FROM EndPoints WHERE Name ='OD_Server'), 'PingURL"); 	
 	if( !bInsert ){
-		errStr = QStringLiteral("Error preparing Insert queryies:\n%1").arg(query.lastError().text());
+		errStr = QStringLiteral("Error preparing Insert queries:\n%1").arg(query.lastError().text());
 		qDebug("%s", qPrintable(errStr));
 		m_db.close();
 		return bRet;
 	}
-	// create Rules table
-	strQuery = QStringLiteral(
-	"CREATE TABLE [Rules] ("
-	"	[Id] INTEGER NOT NULL PRIMARY KEY,"
-	"	[Tester] INTEGER NOT NULL,"
-	"   [Function] INTEGER NOT NULL,"
-	"	[Endpoint] INTEGER NOT NULL,"
-	"	[Method] INTEGER NOT NULL,"
-	"	[maxTemp] INTEGER CHECK( (maxTemp = NULL) OR (maxTemp between 32 and 120) ),"
-	"	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),"
-	"	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),"
-	"	[minHour] INTEGER CHECK( (minHour = NULL) OR (minHour between 0 and 23) ),"
-	"	[numReq] INTEGER,"
-	"	[numRPH] INTEGER,"
-	"	[email] NVARCHAR(50),"
-	"	UNIQUE(Tester,Endpoint,Method),"
-	"	CHECK( (maxTemp = NULL AND minTemp = NULL) OR (maxTemp > minTemp) ),"
-	"	CHECK( (maxHour = NULL AND minHour = NULL) OR (maxHour > minHour) ),"
-	"	FOREIGN KEY(Tester) REFERENCES Testers(Id),"
-	"   FOREIGN KEY(Function) REFERENCES Functions(Id),"
-	"	FOREIGN KEY(Endpoint) REFERENCES Endpoints(Id),"
-	"	FOREIGN KEY(Method) REFERENCES Methods(Id) );"
-	);
-	if( !query.exec(strQuery) ){
-		errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQuery).arg(query.lastError().text());
-		qDebug("%s", qPrintable(errStr));
-		m_db.close();
-		return bRet;
-	}
+	*/
 	return true;
 }
 
@@ -946,6 +1035,10 @@ void IdsEditor::OnFileNew()
 //
 void IdsEditor::OnFileOpen()
 {
+	QString qs;
+	//CreateBizDB(m_dbFileName, qs);
+	//QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+	//					 "DEBUG", QMessageBox::Ok, QMessageBox::Ok);
 	if( m_prompt ){
 		QString fileName = QFileDialog::getOpenFileName(this, QStringLiteral("Business Rules Database"),
 														m_dbFileName, QStringLiteral("Sqlite DB File (*.db)"));

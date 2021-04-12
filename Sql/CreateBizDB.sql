@@ -168,7 +168,7 @@ CREATE TABLE [Methods] (
 --     OD and OA
 
 --  Metering and Service Management Methods
---     Connect/disconnect Endpoint
+--     Connect/Disconnect Endpoint
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='CD_Server'), "GetMethods");
 INSERT INTO Methods (EndPoint, Name ) VALUES 
@@ -188,8 +188,6 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "GetMethods");
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "PingURL");
-INSERT INTO Methods (EndPoint, Name ) VALUES 
-	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), "InitiateBillingDeterminants");
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MR_Server'), "GetLatestMeterReadings");
 INSERT INTO Methods (EndPoint, Name ) VALUES 
@@ -279,6 +277,8 @@ INSERT INTO Methods (EndPoint, Name ) VALUES
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='CP_Server'), "PingURL");
 --     Meter Data Management Endpoint
+INSERT INTO Methods (EndPoint, Name ) VALUES 
+	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), "InitiateBillingDeterminants");
 INSERT INTO Methods (EndPoint, Name ) VALUES 
 	((SELECT Id FROM EndPoints WHERE Name ='MDM_Server'), "GetMethods");
 INSERT INTO Methods (EndPoint, Name ) VALUES 

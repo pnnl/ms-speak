@@ -75,8 +75,6 @@ CONFIG(release, debug|release) {
 	message("CONFIG is : " Release)
 	QMAKE_CXXFLAGS += -Ofast
 }
-#CONFIG += release
-#CONFIG += deubg
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use
@@ -110,6 +108,7 @@ RCC_DIR += GeneratedFiles
 HEADERS += IdsSettings.h \
 	Rule.h \
 	RuleConst.h \
+	DbConst.h \
 	IdsEditor.h \
 	RuleEditor.h \
 	TesterEditor.h
