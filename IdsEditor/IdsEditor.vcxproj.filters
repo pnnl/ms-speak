@@ -45,6 +45,9 @@
     <ClCompile Include="Rule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TesterEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="IdsEditor.h">
@@ -56,6 +59,9 @@
     <QtMoc Include="RuleEditor.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="TesterEditor.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="IdsEditor.ui">
@@ -65,6 +71,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="RuleEditor.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="TesterEditor.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>
@@ -83,5 +92,11 @@
     <ClInclude Include="RuleConst.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DbConst.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="sqlite3.lib" />
   </ItemGroup>
 </Project>

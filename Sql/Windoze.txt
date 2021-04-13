@@ -1,0 +1,6 @@
+
+In Visual Studio 2010, click on "Tools, VS Command Prompt"
+In the command line window, enter, for example:
+	lib /DEF:"C:\SQLite\sqlite3.def" /OUT:"C:\SQLite\sqlite3.lib"
+
+In the Solution Explorer window, right-click on your project, add the "sqlite3.lib" file
