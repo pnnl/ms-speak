@@ -138,14 +138,13 @@ private:
 
 	FunctionBlockDock& FunctionBlockDockkRef() {if (!m_functionBlockDock) CreateFunctionBlockDock(); return *m_functionBlockDock;}
 	LogDock& LogDockRef() {if (!m_logDock) CreateLogDock(); return *m_logDock;}
-
+	WsdlDock& WsdlDockRef() { if (!m_wsdlDock) CreateWsdlDock(); return *m_wsdlDock; }
 	MethodDock& MethodDockRef() {if (!m_methodDock) CreateMethodDock(); return *m_methodDock;}
 	LogDock& MiniNetCmdDockRef() {if (!m_miniNetCmdDock) CreateMiniNetCmdDock(); return *m_miniNetCmdDock;}
 
 	void RestoreState();
 	void SaveState();
 
-	WsdlDock& WsdlDockRef() {if (!m_wsdlDock) CreateWsdlDock(); return *m_wsdlDock;}
 
 signals:
 private slots:
@@ -169,7 +168,10 @@ private slots:
 	void OnTimelineSpanChanged(int timeSpan);
 	void OnTimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
 	void OnToolBarVisibilityChanged(bool visible) { if (!visible) qobject_cast<QToolBar*>(sender())->setVisible(true); } // Prevent user from hiding the main tool bar
-	void OnWsdl() {WsdlDockRef().show();}
+	void OnWsdl() {
+		WsdlDockRef().show();
+		MethodDockRef().show(); // chm 4.14.21
+	}
 	void OnWsdlFileChanged(const QString& host);
 	void OnWsdlTest();
 	void OnBrowseRoot();
