@@ -8,8 +8,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F58A5A61-D60E-4B83-AD6D-5D7E99B500B5}}
 AppName=MultiSpeaker
-AppVersion=21.04.08
-;AppVerName=MultiSpeaker 19.06.16
+AppVersion=21.04.15
+;AppVerName=MultiSpeaker 21.04.15
 AppPublisher=Pacific Northwest National Laboratory
 AppPublisherURL=http://www.pnnl.gov
 AppSupportURL=http://www.pnnl.gov
@@ -23,12 +23,12 @@ AppUpdatesURL=http://www.pnnl.gov
 ArchitecturesInstallIn64BitMode=x64
 DefaultDirName={pf}\PNNL\MultiSpeaker
 DefaultGroupName=PNNL\MultiSpeaker
-OutputBaseFilename=MultiSpeaker-21.04.08-win10-setup
+OutputBaseFilename=MultiSpeaker-21.04.15-win10-setup
 Compression=lzma
 SolidCompression=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
-VersionInfoVersion=21.04.08
+VersionInfoVersion=21.04.15
 VersionInfoCompany=Pacific Northwest National Laboratory
 
 [Languages]
@@ -47,31 +47,35 @@ Source: "vc_redist.x64.exe"; DestDir: "{tmp}"; check: Is64BitInstallMode
 Source: "..\x64\Release\IdsEditor.exe"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\MultiSpeaker.exe"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\MultiSpeakerServer.exe"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
-Source: "..\x64\Release\Qt5Core.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\Qt5Gui.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
-Source: "..\x64\Release\Qt5Network.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\Qt5Xml.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\Qt5Sql.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\Qt5Core.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\Qt5Network.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\Qt5Widgets.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\ssleay32.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\libeay32.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\imageformats\*.*"; DestDir: "{app}\imageformats"; check: Is64BitInstallMode
 Source: "..\x64\Release\platforms\*.*"; DestDir: "{app}\platforms"; check: Is64BitInstallMode;
+Source: "..\x64\Release\sqldrivers\*.*"; DestDir: "{app}\sqldrivers"; check: Is64BitInstallMode;
+Source: "..\x64\Release\IdsEditor.ico"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\MultiSpeaker.ico"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\MultiSpeakerServer.ico"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\WSDLs\EndPoints\*"; DestDir: "{app}\EndPoints"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 Source: "..\WSDLs\xsd\*"; DestDir: "{app}\xsd"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 ; MyFile.txt is an empty text file
 ;Source: "MyFile.txt"; DestDir: "{app}"; Attribs: hidden; AfterInstall: WriteToFile
 
 [Icons]
-Name: "{group}\IdsEditor"; Filename: "{app}\IdsEditor.exe"; IconFilename: "{app}\MultiSpeaker.ico"
+Name: "{group}\IdsEditor"; Filename: "{app}\IdsEditor.exe"; IconFilename: "{app}\IdsEditor.ico"
 Name: "{group}\MultiSpeaker"; Filename: "{app}\MultiSpeaker.exe"; IconFilename: "{app}\MultiSpeaker.ico"
-Name: "{group}\MultiSpeakerServer"; Filename: "{app}\MultiSpeakerServer.exe"; IconFilename: "{app}\MultiSpeaker.ico"
-Name: "{commondesktop}\IdsEditor"; Filename: "{app}\IdsEditor.exe"; IconFilename: "{app}\MultiSpeaker.ico"; Tasks: desktopicon
+Name: "{group}\MultiSpeakerServer"; Filename: "{app}\MultiSpeakerServer.exe"; IconFilename: "{app}\MultiSpeakerServer.ico"
+Name: "{commondesktop}\IdsEditor"; Filename: "{app}\IdsEditor.exe"; IconFilename: "{app}\IdsEditor.ico"; Tasks: desktopicon
 Name: "{commondesktop}\MultiSpeaker"; Filename: "{app}\MultiSpeaker.exe"; IconFilename: "{app}\MultiSpeaker.ico"; Tasks: desktopicon
-Name: "{commondesktop}\MultiSpeakerServer"; Filename: "{app}\MultiSpeakerServer.exe"; IconFilename: "{app}\MultiSpeaker.ico"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\IdsEditor"; Filename: "{app}\IdsEditor.exe"; IconFilename: "{app}\MultiSpeaker.ico"; Tasks: quicklaunchicon
+Name: "{commondesktop}\MultiSpeakerServer"; Filename: "{app}\MultiSpeakerServer.exe"; IconFilename: "{app}\MultiSpeakerServer.ico"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\IdsEditor"; Filename: "{app}\IdsEditor.exe"; IconFilename: "{app}\IdsEditor.ico"; Tasks: quicklaunchicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\MultiSpeaker"; Filename: "{app}\MultiSpeaker.exe"; IconFilename: "{app}\MultiSpeaker.ico"; Tasks: quicklaunchicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\MultiSpeakerServer"; Filename: "{app}\MultiSpeakerServer.exe"; IconFilename: "{app}\MultiSpeaker.ico"; Tasks: quicklaunchicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\MultiSpeakerServer"; Filename: "{app}\MultiSpeakerServer.exe"; IconFilename: "{app}\MultiSpeakerServer.ico"; Tasks: quicklaunchicon
 
 [Registry]
 Root: HKCU; Subkey: "Software\PNNL\IdsEditor"; Flags: createvalueifdoesntexist uninsdeletevalue

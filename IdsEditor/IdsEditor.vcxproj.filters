@@ -96,7 +96,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="sqlite3.lib" />
-  </ItemGroup>
 </Project>

@@ -93,8 +93,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>UNICODE;WIN32;WIN64;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;QT_XML_LIB;QT_SQL_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;.\GeneratedFiles;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtXml;$(QTDIR)\include\QtSql;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>UNICODE;WIN64;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;QT_XML_LIB;QT_SQL_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;.\GeneratedFiles;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtXml;$(QTDIR)\include\QtSql;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -105,24 +105,18 @@
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>qtmaind.lib;Qt5Guid.lib;Qt5Networkd.lib;Qt5Widgetsd.lib;Qt5Xmld.lib;Qt5Sqld.lib;sqlite3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Networkd.lib;Qt5Widgetsd.lib;Qt5Xmld.lib;Qt5Sqld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(QtDir)\bin\Qt5Core.dll" "$(TargetDir)"
-copy "$(QtDir)\bin\Qt5Gui.dll" "$(TargetDir)"
-copy "$(QtDir)\bin\Qt5Widgets.dll" "$(TargetDir)"
-
-md "$(TargetDir)platforms
-copy "$(QtDir)\plugins\platforms\qwindows.dll" "$(TargetDir)platforms"
-
-md "$(TargetDir)imageformats
-copy "$(QtDir)\plugins\imageformats\qico.dll" "$(TargetDir)imageformats"
-
-copy "$(ProjectDir)icon.ico" "$(TargetDir)"</Command>
+      <Command>copy "$(QtDir)\bin\Qt5Sqld.dll" "$(TargetDir)"
+md "$(TargetDir)sqldrivers"
+copy "$(QtDir)\plugins\sqldrivers\qsqlited.dll" "$(TargetDir)sqldrivers"
+copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)
+</Command>
     </PostBuildEvent>
     <QtMoc>
-      <Define>UNICODE;WIN32;WIN64;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;QT_XML_LIB;QT_SQL_LIB;%(PreprocessorDefinitions)</Define>
-      <IncludePath>.;.\GeneratedFiles;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtXml;$(QTDIR)\include\QtSql;%(AdditionalIncludeDirectories)</IncludePath>
+      <Define>UNICODE;WIN64;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;QT_XML_LIB;QT_SQL_LIB;%(PreprocessorDefinitions)</Define>
+      <IncludePath>.;.\GeneratedFiles;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtXml;$(QTDIR)\include\QtSql;%(AdditionalIncludeDirectories)</IncludePath>
     </QtMoc>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -164,6 +158,13 @@ copy "$(ProjectDir)icon.ico" "$(TargetDir)"</Command>
       <Define>UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_WIDGETS_LIB;QT_XML_LIB;QT_SQL_LIB;%(PreprocessorDefinitions)</Define>
       <IncludePath>.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtXml;$(QTDIR)\include\QtSql;%(AdditionalIncludeDirectories)</IncludePath>
     </QtMoc>
+    <PostBuildEvent>
+      <Command>copy "$(QtDir)\bin\Qt5Sql.dll" "$(TargetDir)"
+md "$(TargetDir)sqldrivers"
+copy "$(QtDir)\plugins\sqldrivers\qsqlite.dll" "$(TargetDir)sqldrivers"
+copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="IdsEditor.cpp" />
@@ -223,9 +224,6 @@ copy "$(ProjectDir)icon.ico" "$(TargetDir)"</Command>
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtNetwork;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtXml;$(QTDIR)\include\QtSql</IncludePath>
     </QtMoc>
     <QtMoc Include="RuleEditor.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="sqlite3.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

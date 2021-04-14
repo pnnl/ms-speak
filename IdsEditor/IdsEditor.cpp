@@ -285,6 +285,7 @@ bool IdsEditor::OpenBizDB(const QString& fileName, QString& errStr,
 		if( !m_db.isValid() ){
 			qDebug("Error occurred adding the database.");
 			qDebug("%s.", qPrintable(m_db.lastError().text()));
+			errStr = qPrintable(m_db.lastError().text());
 			return bRet;
 		}
 	}

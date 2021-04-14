@@ -1,6 +1,18 @@
+The drivers need to be placed under "sqldrivers", not in the same directory as the executable (they are loaded on runtime, and Qt looks for them in "sqldrivers"
+C:\Qt\5.15.0\msvc2015_64\plugins\sqldrivers\qsqlite.dll
 
+there are actually 2 files per plugin - in this case qsqlite.dll and qsqlited.dll. The one with the d is used for debug builds, and the other one for release builds.
+
+**** don't bother with any of the following ***********
 In Visual Studio 2010, click on "Tools, VS Command Prompt"
 In the command line window, enter, for example:
 	lib /DEF:"C:\SQLite\sqlite3.def" /OUT:"C:\SQLite\sqlite3.lib"
 
 In the Solution Explorer window, right-click on your project, add the "sqlite3.lib" file
+
+How to Build the QSQLITE Plugin
+SQLite version 3 is included as a third-party library within Qt. It can be built by passing the -qt-sqlite parameter to the configure script.
+
+If you do not want to use the SQLite library included with Qt, you can pass -system-sqlite to the configure script to use the SQLite libraries of the operating system. This is recommended whenever possible, as it reduces the installation size and removes one component for which you need to track security advisories.
+
+On Unix and macOS (replace $SQLITE with the directory where SQLite resides):
