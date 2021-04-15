@@ -286,7 +286,7 @@ void MultiSpeakerServer::OnInitHostAddress()
 			list << ip.toString();
 		}
 	}
-	# add 0.0.0.0 to enable connections from local WSL sessions
+	// add 0.0.0.0 to enable connections from local WSL sessions
 	list << "0.0.0.0";
 
 	ui.HostCombo->insertItems(0, list);

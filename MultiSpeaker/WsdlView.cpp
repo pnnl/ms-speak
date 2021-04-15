@@ -127,7 +127,7 @@ void WsdlView::OnBrowse()
 
 	QStringList nativeFileNames;
 	foreach (QString name, fileNames)
-	nativeFileNames << QDir::toNativeSeparators(name);
+		nativeFileNames << QDir::toNativeSeparators(name);
 
 	ui.FileNameLabel->setText(nativeFileNames.join(","));
 	ui.FileNameLabel->setToolTip(nativeFileNames.join("\n"));

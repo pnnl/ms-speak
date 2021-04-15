@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 -     bumped TIMELINE_SCENE_HEIGHT to match SCENE_HEIGHT.
 //-------------------------------------------------------------------------------
 //
 // Summary: Settings.h
@@ -168,6 +169,6 @@ const QString SK_HTTP_OUT_HOSTS = QStringLiteral("sk_http_out_hosts");
 const QString SK_IGNORE_SSL_SELF_CERT_ERROR = QStringLiteral("sk_ignore_ssl_self_cert_error");
 
 // Timeline Scene
-const int TIMELINE_SCENE_HEIGHT = 60;
+const int TIMELINE_SCENE_HEIGHT = 90; //  60;
 
 #endif // SPEAKERSETTINGS_H

@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 -     set SCENE_HEIGHT based on settings.h TIMELINE_SCENE_HEIGHT
 //-------------------------------------------------------------------------------
 //
 // Summary: TimelineScene.cpp
@@ -84,7 +85,7 @@
 #include "WsdlFile.h"
 
 const int BORDER_MARGIN = 0;
-const int SCENE_HEIGHT = 60;
+const int SCENE_HEIGHT = TIMELINE_SCENE_HEIGHT; //  90, 60 
 
 //------------------------------------------------------------------------------
 // TimelineScene
