@@ -53,6 +53,7 @@
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
 //		2019 -		add uuid to response.
+//		2021 - Carl Miller- for Phase3
 //-------------------------------------------------------------------------------
 //
 // Summary: ServerWorker.cpp
@@ -148,7 +149,7 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 			}
 		}
 		else{
-			errString =   "Failed to read Content Length ";
+			errString =   "Failed to read Content Length";
 		}
 		if (!m_headerRead)
 		{

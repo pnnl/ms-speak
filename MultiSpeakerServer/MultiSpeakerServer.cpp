@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - Carl Miller- for Phase3
 //-------------------------------------------------------------------------------
 //
 // Summary: MultiSpeakerServer.cpp
@@ -222,10 +223,11 @@ void MultiSpeakerServer::ServerListen()
 		  .arg(m_server->errorString()));
 		return;
 	}
-	qDebug() << "Server The server is running on IP:" << m_server->serverAddress().toString() << "Port:" << m_server->serverPort();
-	ui.plainTextEdit->appendPlainText(QString("Server The server is running on IP: %1 Port: %2")
+	qDebug() << "The server is running on IP:" << m_server->serverAddress().toString() << "Port:" << m_server->serverPort();
+	ui.plainTextEdit->appendPlainText(QString("The server is running on IP: %1 Port: %2")
 	.arg(m_server->serverAddress().toString())
 	.arg(m_server->serverPort()));
+	ui.plainTextEdit->appendPlainText(QString(""));
 
 	ui.ListenAct->setEnabled(false);
 	ui.StopAct->setEnabled(true);
