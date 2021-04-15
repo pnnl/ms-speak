@@ -59,6 +59,8 @@
 		06/20/2019 - CHM: ingest the complete packet, so can parse the well-formed xml inside.
 		06/29/2019 - CHM: support all methods/endpoints.
 		04/05/2021 - CHM: support Phase3 enhancements.
+		04/15/2021 - CHM: handle version 3 MS headers with no endpoint.
+							see V3_NULL_ENDPOINT.
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -404,6 +406,8 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
 #define APIBUFFLEN     				250
 #define WEATHER_UPDATE_INTERVAL     5   // minutes
 
+#define V3_NULL_ENDPOINT "V3_Server"
+
 //char *strptime(const char *s, const char *format, struct tm *tm);
 //time_t timelocal(struct tm *tm);
 
@@ -438,7 +442,7 @@ typedef signed long gint64;
 typedef char   		gchar;
 
 /*
- * The srv_msp_data structure will store the data required to serve an ICAP request.
+ * The srv_msp_data structure will store the data required to service an ICAP request.
  */
 struct srv_msp_msg_info {
 	char xmlnspace[CI_MAXNSLEN + 1];
@@ -449,6 +453,7 @@ struct srv_msp_msg_info {
 	char company[CI_MAXCOMPANYLEN + 1];
 	//char msgid[CI_MAXMSGIDLEN + 1];
 	//char timestamp[CI_MAXTIMESTAMPLEN + 
+	bool	bIsV3;
 };
 
 struct srv_msp_data {
@@ -1132,7 +1137,7 @@ void *weather_updater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01c ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01d ***\n");
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1799,7 +1804,16 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	if( get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
 	{
 		pMethod = pMsgInfo->method;
-		pEndpoint = pMsgInfo->endpoint;
+		// seems that most (not PingURL) V3 msgs don't include an endpoint
+		if (!strcasecmp(pMsgInfo->endpoint, "Version")) { // Version_3.0
+			if (!strcmp(pMsgInfo->endpoint, "3")) {
+				pEndpoint = V3_NULL_ENDPOINT;
+				pMsgInfo->bIsV3 = true;
+			}
+		}
+		else {
+			pEndpoint = pMsgInfo->endpoint;
+		}
 		ci_debug_printf(4, "Namespace is: '%s'\n", pMsgInfo->xmlnspace);
 		ci_debug_printf(4, "Method is: '%s'\n", pMethod);
 		ci_debug_printf(4, "Endpoint is: '%s'\n", pEndpoint);
@@ -1824,7 +1838,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	BIZ_RULE *pRuleData = pBizRules;
 	for(i = 0; i < NumBizRecs; i++)
 	{
-		if( !strcmp( pRuleData->m_EndPoint, pEndpoint) )
+		if( MsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
 			if( !strcmp( pRuleData->m_Method, pMethod) ){
 				ci_debug_printf(4, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
@@ -2109,13 +2123,13 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 			}
 			chld_node = chld_node->next;
 		}
-		if( chld_node){
+		if( chld_node ){
 			strncpy(pMsgInfo->method, (char *)chld_node->name, CI_MAXMETHODLEN);
 			if( chld_node->ns){
 				const xmlChar *pNsRef = chld_node->ns->href;
 				strncpy(pMsgInfo->xmlnspace, (char *)pNsRef, CI_MAXNSLEN);
 				char *p = strrchr((char *)pNsRef, '/');
-				if( p){
+				if( p ){
 					strncpy(pMsgInfo->endpoint, p + 1, CI_MAXENDPOINTLEN);
 				}
 			}
