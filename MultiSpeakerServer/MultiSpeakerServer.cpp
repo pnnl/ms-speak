@@ -280,10 +280,14 @@ void MultiSpeakerServer::OnInitHostAddress()
 {
 	QStringList list;
 	QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
-	foreach(const QHostAddress ip, ipAddressesList)
+	foreach(const QHostAddress ip, ipAddressesList){
 		// Select just IPv4 Addresses
-		if( ip.protocol() == QAbstractSocket::IPv4Protocol )
+		if( ip.protocol() == QAbstractSocket::IPv4Protocol ){
 			list << ip.toString();
+		}
+	}
+	# add 0.0.0.0 to enable connections from local WSL sessions
+	list << "0.0.0.0";
 
 	ui.HostCombo->insertItems(0, list);
 	QString ip;

@@ -2032,7 +2032,70 @@ int fmt_srv_msp_transactionid(ci_request_t *req, char *buf, int len, const char 
 }
 
 //
-//////////////
+/////////////
+/*
+	Version 5 PingURL:
+	<?xml version="1.0" encoding="utf-8"?>
+	<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	  <soap:Header>
+		<request:MultiSpeakRequestMsgHeader xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" MessageID="?" TimeStamp="?" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">
+		  <request:MultiSpeakVersion>
+			<com:MajorVersion>?</com:MajorVersion>
+			<com:MinorVersion>?</com:MinorVersion>
+			<com:Build>?</com:Build>
+		  </request:MultiSpeakVersion>
+		  <request:Caller>
+			<com:AppName>?</com:AppName>
+			<com:Company>?</com:Company>
+		  </request:Caller>
+		</request:MultiSpeakRequestMsgHeader>
+	  </soap:Header>
+	  <soap:Body>
+		<tns:PingURL xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">?</tns:PingURL>
+	  </soap:Body>
+	</soap:Envelope>
+
+	Version 3 PingURL: it is using a V5 header!
+	<?xml version="1.0" encoding="utf-8"?>
+	<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	  <soap:Header>
+		<request:MultiSpeakRequestMsgHeader xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" MessageID="?" TimeStamp="?" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">
+		  <request:MultiSpeakVersion>
+			<com:MajorVersion>?</com:MajorVersion>
+			<com:MinorVersion>?</com:MinorVersion>
+			<com:Build>?</com:Build>
+		  </request:MultiSpeakVersion>
+		  <request:Caller>
+			<com:AppName>?</com:AppName>
+			<com:Company>?</com:Company>
+		  </request:Caller>
+		</request:MultiSpeakRequestMsgHeader>
+	  </soap:Header>
+	  <soap:Body>
+		<tns:PingURL xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">?</tns:PingURL>
+	  </soap:Body>
+	</soap:Envelope>
+
+	NOTE: xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server"
+
+
+BUT: this is the ODEventNotification (v3 only)
+it is using a V3 header
+
+SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Header>
+    <tns:MultiSpeakMsgHeader xmlns:tns="http://www.multispeak.org/Version_3.0" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">?</tns:MultiSpeakMsgHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:ODEventNotification xmlns:tns="http://www.multispeak.org/Version_3.0" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"/>
+  </soap:Body>
+</soap:Envelope>
+
+	NOTE: xmlns:tns="http://www.multispeak.org/Version_3.0"
+
+*/
 static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 {
 	xmlNodePtr pReturnedNode = getChildNode(root->children, (const xmlChar *)"Body");
