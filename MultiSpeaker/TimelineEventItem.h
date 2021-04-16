@@ -91,7 +91,7 @@ public:
 
   virtual QPainterPath shape() const {return m_path;}
 
-  int TimeStamp() const {return m_timelineEvent.TimeStamp();;}
+  int TimeStamp() const {return m_timelineEvent.TimeStamp();}
   virtual int type() const {return Type;}
 
 protected:

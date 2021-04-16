@@ -65,7 +65,7 @@
 #include "TimelineEventItem.h"
 #include "TimelineScene.h"
 
-const int HEIGHT = TIMELINE_SCENE_HEIGHT - 20;
+const int HEIGHT = TIMELINE_SCENE_HEIGHT -20;
 
 //------------------------------------------------------------------------------
 // TimelineEventItem
@@ -80,9 +80,10 @@ TimelineEventItem::TimelineEventItem(TimelineEvent& te, QGraphicsItem* parent)
 	setCursor(Qt::PointingHandCursor);
 
 	if (te.Type() == TimelineEvent::Request)
-		m_path.addRoundedRect(-2, 2, 5, (HEIGHT * 0.80) - 2, 2, 2);
+		m_path.addRoundedRect(-2, 2, 5, (HEIGHT * 0.70) - 2, 2, 2);
 	else if (te.Type() == TimelineEvent::Response)
-		m_path.addRoundedRect(-2, 2 + (HEIGHT * 0.20), 5, (HEIGHT * 0.80) - 2, 2, 2);
+		m_path.addRoundedRect(-2, 4 + (HEIGHT * 0.20), 5, (HEIGHT * 0.70) - 2, 2, 2);
+		//m_path.addRoundedRect(-2, 2 + (HEIGHT * 0.20), 5, (HEIGHT * 0.80) - 2, 2, 2);
 }
 //------------------------------------------------------------------------------
 // ~TimelineEventItem

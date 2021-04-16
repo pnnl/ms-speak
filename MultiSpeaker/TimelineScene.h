@@ -165,6 +165,7 @@ private slots:
   void OnZoomIn();
   void OnZoomOut();
   void OnZoomReset();
+  void HideScrolls();
 
   friend TimelineEventItem;
 };

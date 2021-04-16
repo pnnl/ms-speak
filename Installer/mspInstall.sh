@@ -34,36 +34,38 @@ set -e
 #       Files in /etc/profile.d/ are run when a user logs in (unless you've 
 #			modified /etc/profile to not do this) 
 #		to see what display server you are using:
-#			echo $XDG_SESSION_TYPE
+#			printf $XDG_SESSION_TYPE
 #				x11
-#		echo $DESKTOP_SESSION
+#		printf $DESKTOP_SESSION
 #			/usr/share/xsessions/cinnamon
 #				this does not appear to use wayland...
 #
 #		to use X11:  ./IdsEditor -platform xcb
 #
+# return 0 in all cases so as not to abort a wsl session (zero for success).
+
 ORIG_DIR=
 NEW_DIR=
 
 if [ $# -ne 0 ]; then
-	echo "to run Squid use the following command:"
-	echo "     sudo /usr/local/squid/sbin/squid -N -d 1"
-	echo "  if you see this error:"
-	echo "      logfileHandleWrite: daemon:/var/logs/access.log: error writing ((32) Broken pipe"
-	echo "  do the following:"
-	echo "      add your user to the staff group:"
-	echo "         sudo usermod -a -G staff yourusername"
-	echo "            (then shutdown, restart)"
-	echo "      sudo chmod 777 /usr/local/squid -R"
-	
-	echo "\nto run c-icap use the following command:"
-	echo "     sudo /usr/local/bin/c-icap -N -D -d 1"
-	echo "  if you see this error:"
-	echo "      /usr/local/bin/c-icap: error while loading shared libraries libicapapi.so.5:"
-	echo "               cannot open shared object file: No such file or directory"
-	echo "  do the following:"
-	echo "      sudo ldconfig"
-	echo "  then run c-icap again."
+	printf "\nto run Squid use the following command:\n"
+	printf "\n     sudo /usr/local/squid/sbin/squid -N -d 1"
+	printf "\n  if you see this error:"
+	printf "\n      logfileHandleWrite: daemon:/var/logs/access.log: error writing ((32) Broken pipe"
+	printf "\n  do the following:"
+	printf "\n      add your user to the staff group:"
+	printf "\n         sudo usermod -a -G staff yourusername"
+	printf "\n            (then shutdown, restart)"
+	printf "\n      sudo chmod 777 /usr/local/squid -R"
+
+	printf "\n\nto run c-icap use the following command:"
+	printf "\n     sudo /usr/local/bin/c-icap -N -D -d 1"
+	printf "\n  if you see this error:"
+	printf "\n      /usr/local/bin/c-icap: error while loading shared libraries libicapapi.so.5:"
+	printf "\n               cannot open shared object file: No such file or directory"
+	printf "\n  do the following:"
+	printf "\n      sudo ldconfig"
+	printf "\n  then run c-icap again."
 	return 0
 fi
 
@@ -81,21 +83,21 @@ fi
 #				d /var/run/c-icap 0755 - - -
 
 # required packages
-echo "The Following required packages will now be installed:"
-echo "    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git & libcurl4"
-echo "\nPress just the [Enter] key to continue with this Installation, or"
-echo "  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:"
+printf "\nThe Following required packages will now be installed:"
+printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git & libcurl4"
+printf "\n\nPress just the [Enter] key to continue with this Installation, or"
+printf "\n  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:\n"
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
-	echo "Installation of Required Packages Cancelled."
+	printf "\nInstallation of Required Packages Cancelled."
 	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
-		echo "Skipping this step."
+		printf "\nSkipping this step."
 	else
-		echo "Installation Terminated.\n"
-		return -1
+		printf "\nInstallation Terminated.\n"
+		return 0
 	fi
 else
-	echo "Installing Required Packages..."
+	printf "\nInstalling Required Packages..."
 	if sudo apt-get install g++; then
 		if sudo apt-get install libsqlite3-dev; then
 			if sudo apt-get install libxml2; then
@@ -103,48 +105,48 @@ else
 					if sudo apt-get install uuid-dev; then
 						if sudo apt-get install git; then
 							if sudo apt-get install libcurl4-openssl-dev; then
-								echo "\n*** Successfully Installed required packages"
+								printf "\n\n*** Successfully Installed required packages"
 							else
-								echo "Failed to Install libcurl4, can not continue"
+								printf "\nFailed to Install libcurl4, can not continue"
 								false
 							fi
 						else
-							echo "Failed to Install git, can not continue"
+							printf "\nFailed to Install git, can not continue"
 							false
 						fi
 					else
-						echo "Failed to Install uuid-dev, can not continue"
+						printf "\nFailed to Install uuid-dev, can not continue"
 						false
 					fi
 				else
-					echo "Failed to Install libxml2-dev, can not continue"
+					printf "\nFailed to Install libxml2-dev, can not continue"
 					false
 				fi
 			else
-				echo "Failed to Install libxml2, can not continue"
+				printf "\nFailed to Install libxml2, can not continue"
 				false
 			fi
 		else
-			echo "Failed to Install libsqlite3-dev, can not continue"
+			printf "\nFailed to Install libsqlite3-dev, can not continue"
 			false
 		fi
 	else
-		echo "Failed to Install g++, can not continue"
+		printf "\nFailed to Install g++, can not continue"
 		false
 	fi
 	retval=$?
 	if [ $retval -ne 0 ]; then
-		echo "Failed to Successfully Install all required packages, can not continue"
+		printf "\nFailed to Successfully Install all required packages, can not continue\n"
 		read -p "Press [Enter] to exit."
-		return 1
+		return 0
 	fi
 fi
 
 ORIG_DIR=$(pwd)
 SUBDIR="msspeak"
-echo "Enter the sub-directory name to install Squid & c-icap to [default: $SUBDIR]:"
-echo "   NOTE: files will be installed as a sub-directory of the current folder: $(pwd)"
-echo "  *** WARNING: any existing files in this directory will be deleted. ***"
+printf "\nEnter the sub-directory name to install Squid & c-icap to [default: $SUBDIR]:"
+printf "\n   NOTE: files will be installed as a sub-directory of the current folder: $(pwd)"
+printf "\n  *** WARNING: any existing files in this directory will be deleted. ***\n"
 read SUBDIR
 if [ -z "$SUBDIR" ]; then
 	SUBDIR="msspeak"
@@ -156,46 +158,46 @@ if [ ! -d "$NEW_DIR" ]; then
 	mkdir -p $NEW_DIR
 fi
 #
-echo "Installing to $NEW_DIR"
+printf "\nInstalling to $NEW_DIR"
 cd $NEW_DIR
 retval=$?
 if [ $retval -ne 0 ]; then
-	echo "Failed to change to $NEW_DIR"
-	return -1
+	printf "\nFailed to change to $NEW_DIR\n"
+	return 0
 else
 	cd ../
 	retval=$?
 	if [ $retval -ne 0 ]; then
-		echo "Failed to change to parent of $NEW_DIR"
-		return -1
+		printf "\nFailed to change to parent of $NEW_DIR"
+		return 0
 	fi
 fi
 
-#echo "Press [Enter] key to continue with the Installation, else 'N' to terminate:"
+#printf "\nPress [Enter] key to continue with the Installation, else 'N' to terminate:\n"
 #read DO_INSTALL
 #if [ -z "$DO_INSTALL" ]
 #then
 #	pwd
-#	echo "Cloning repository to" $NEW_DIR
+#	printf "\nCloning repository to" $NEW_DIR
 #else
-#	echo "Installation Cancelled."
-#	return -1
+#	printf "\nInstallation Cancelled."
+#	return 0
 #fi
 
 SKIP=0;
-echo "\nThe MS-SPEAK source repository will now be cloned to" $NEW_DIR
-echo "  *** WARNING: any existing files in this directory will be deleted. ***"
-echo "Press [Enter] to clone, 'S' to skip this step, or 'N' to terminate completely:"
+printf "\n\nThe MS-SPEAK source repository will now be cloned to" $NEW_DIR
+printf "\n  *** WARNING: any existing files in this directory will be deleted. ***"
+printf "\nPress [Enter] to clone, 'S' to skip this step, or 'N' to terminate completely:\n"
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
-	echo "Cloning of Repository Cancelled."
+	printf "\nCloning of Repository Cancelled."
 	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
-		echo "Skipping this step."
+		printf "\nSkipping this step."
 		SKIP=1;
 	else
-		echo "Installation Terminated.\n"
+		printf "\nInstallation Terminated.\n"
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 else
 	if [ ! -d "$NEW_DIR" ]; then
@@ -209,62 +211,62 @@ else
 	git clone --branch Install https://github.com/pnnl/ms-speak $NEW_DIR
 	retval=$?
 	if [ $retval -ne 0 ]; then
-		echo "Failed to clone Install repository, can not continue"
+		printf "\nFailed to clone Install repository, can not continue\n"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 fi
 
 cd $NEW_DIR/Packages
 
 #Extract Packages:
-#echo "\nSquid & c-icap will now be extracted to $NEW_DIR/Packages"
-#echo "Press [Enter] to extract, 'S' to skip this step, or 'N' to terminate completely:"
+#printf "\n\nSquid & c-icap will now be extracted to $NEW_DIR/Packages"
+#printf "\nPress [Enter] to extract, 'S' to skip this step, or 'N' to terminate completely:\n"
 #read DO_INSTALL
 #if [ ! -z "$DO_INSTALL" ]; then
-#	echo "Extraction of Tarballs Cancelled."
+#	printf "\nExtraction of Tarballs Cancelled."
 #	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
-#		echo "Skipping this step."
+#		printf "\nSkipping this step."
 #	else
-#		echo "Installation Terminated.\n"
+#		printf "\nInstallation Terminated.\n"
 #		cd $ORIG_DIR
-#		return -1
+#		return 0
 #	fi
 #else
 if [ $SKIP -eq 0 ]; then
 	if tar xzf install/squid/squid-4.7.tar.gz; then
 		mv squid-4.7-20190507-r2e17b0261 squid-4.7
 		if tar xzf install/c_icap/c_icap-0.5.5.tar.gz; then
-			echo "Packages Extracted Successfully.."
+			printf "\nPackages Extracted Successfully.."
 		else
-			echo "Failed to extract i-cap Package, can not continue"
+			printf "\nFailed to extract i-cap Package, can not continue\n"
 			read -p "Press [Enter] to exit."
 			cd $ORIG_DIR
-			return -1
+			return 0
 		fi
 	else
-		echo "Failed to extract Squid Package, can not continue"
+		printf "\nFailed to extract Squid Package, can not continue\n"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 fi
 #fi
 
 #SQUID:
-echo "\nSquid will now be installed to $NEW_DIR/Packages"
-echo "     (this typically takes 20 to 30 minutes to complete)"
-echo "Press [Enter] to install, 'S' to skip this step, or 'N' to terminate completely:"
+printf "\n\nSquid will now be installed to $NEW_DIR/Packages"
+printf "\n     (this typically takes 20 to 30 minutes to complete)"
+printf "\nPress [Enter] to install, 'S' to skip this step, or 'N' to terminate completely:\n"
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
-	echo "Installation of Squid Cancelled."
+	printf "\nInstallation of Squid Cancelled."
 	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
-		echo "Skipping this step."
+		printf "\nSkipping this step.\n"
 	else
-		echo "Installation Terminated.\n"
+		printf "\nInstallation Terminated.\n"
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 else
 	cd squid-4.7
@@ -274,9 +276,9 @@ else
 				cd ../
 				if sudo cp install/squid/squid.conf /usr/local/squid/etc/; then
 					sudo chmod 777 /usr/local/squid -R
-					echo "Squid Installed Successfully."
+					printf "\nSquid Installed Successfully."
 				else
-					echo "Failed to copy squid.conf to local directory."
+					printf "\nFailed to copy squid.conf to local directory."
 					false # this should set $? to 1
 				fi
 			else
@@ -290,25 +292,25 @@ else
 	fi
 	#retval=$?
 	if [ $retval -ne 0 ]; then
-		echo "Failed to Successfully Install Squid, can not continue"
+		printf "\nFailed to Successfully Install Squid, can not continue"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 fi
 
 #c-icap config:
-echo "\nc-icap will now be installed to $NEW_DIR/Packages"
-echo "Press [Enter] to install, 'S' to skip this step, or 'N' to terminate completely:"
+printf "\n\nc-icap will now be installed to $NEW_DIR/Packages"
+printf "\nPress [Enter] to install, 'S' to skip this step, or 'N' to terminate completely:\n"
 read DO_INSTALL
 if [ ! -z "$DO_INSTALL" ]; then
-	echo "Installation of c-icap Cancelled."
+	printf "\nInstallation of c-icap Cancelled."
 	if [ "$DO_INSTALL" = "S" ] || [ "$DO_INSTALL" = "s" ]; then
-		echo "Skipping this step."
+		printf "\nSkipping this step.\n"
 	else
-		echo "Installation Terminated.\n"
+		printf "\nInstallation Terminated.\n"
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 else
 	if cd $NEW_DIR/Packages; then
@@ -339,10 +341,10 @@ else
 		retval=$?
 	fi
 	if [ $retval -ne 0 ]; then
-		echo "Failed to successfully copy c-icap configuration files, can not continue"
+		printf "\nFailed to successfully copy c-icap configuration files, can not continue\n"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
-		return -1
+		return 0
 	fi
 
 	#c-icap make
@@ -354,14 +356,18 @@ else
 					sudo mkdir -p /usr/local/share/c_icap
 					sudo mkdir -p /usr/local/share/c_icap/templates
 					if sudo mkdir -p /usr/local/share/c_icap/templates/msp; then
-						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en	; then		
+						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en; then
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
 								sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
 								sudo cp install/BizRules.db $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
-								sudo ln -s $NEW_DIR /home/msspeak
-								sudo cp install/qt.qpa.sh /etc/profile.d
+								if sudo ln -s $NEW_DIR /home/msspeak; then
+									#sudo cp install/qt.qpa.sh /etc/profile.d
+									echo '/home/msspeak link created.'
+								else
+									echo '/home/msspeak link could not be made.'
+								fi
 								retval=$?
 							else
 								retval=$?
@@ -385,30 +391,33 @@ else
 		retval=$?
 	fi
 	if [ $retval -ne 0 ]; then
-		echo "Failed to Successfully Install c-icap, can not continue"
+		printf "\nFailed to Successfully Install c-icap, can not continue\n"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
-		return -1
+		return 0
 	else
-		echo "c-icap Installed Successfully."
+		printf "\nc-icap Installed Successfully."
 		sudo ldconfig
 	fi
 fi
 # export QT_QPA_PLATFORM=wayland  this only appiles to the current cmd window
-echo export QT_QPA_PLATFORM=wayland >> ~/.bashrc
+echo "export QT_QPA_PLATFORM=wayland" >> ~/.bashrc
 echo "alias RuleEdit='~/msspeak/Install/run/IdsEditor 2>/dev/null'" >> ~/.bashrc
 echo "alias sqid='sudo /usr/local/squid/sbin/squid -N -d'" >> ~/.bashrc
 echo "alias cap='sudo /usr/local/bin/c-icap -N -D -d'" >> ~/.bashrc
 # sudo echo "msuser     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-source ~/.bashrc
+# source is a command implemented in bash, but not in sh, so
+# Use dot command to make script bourne compatible
+# still does not work
+#  . ~/.bashrc
 
-echo "\n*** Installation Completed Successfully."
-echo "to run squid use the following command:"
-echo "     sudo /usr/local/squid/sbin/squid -N -d 1"
-echo "to run c-icap use the following command:"
-echo "     sudo /usr/local/bin/c-icap -N -D -d 1"
-echo "\nFor help with these commands, run this script with the '-h' option:"
-echo "   . mspInstall.sh -h\n"
+printf "\n\n*** Installation Completed Successfully."
+printf "\nto run squid use the following command:"
+printf "\n     sudo /usr/local/squid/sbin/squid -N -d 1"
+printf "\nto run c-icap use the following command:"
+printf "\n     sudo /usr/local/bin/c-icap -N -D -d 1"
+printf "\n\nFor help with these commands, run this script with the '-h' option:"
+printf "\n   . mspInstall.sh -h\n"
 cd $ORIG_DIR
 return 0
 # cd /usr/local/bin
