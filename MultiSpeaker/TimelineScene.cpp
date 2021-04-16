@@ -105,6 +105,7 @@ TimelineScene::TimelineScene(QObject* parent)
 {
 	setSceneRect(1, 1, 1, 1); // arbitrary value just to init will be changed when view is resized
 	connect(this, SIGNAL(sceneRectChanged(const QRectF&)), this, SLOT(OnCalcSceneConst(const QRectF&)));
+	QTimer::singleShot(100, this, SLOT(HideScrolls()));
 }
 //------------------------------------------------------------------------------
 // ~TimelineScene
@@ -114,6 +115,17 @@ TimelineScene::~TimelineScene()
 	m_parentWidget = Q_NULLPTR; // When the scene finally destructs (statically) then this widget is no longer valid
 	Clear();
 }
+//------------------------------------------------------------------------------
+// HideScrolls
+//
+void TimelineScene::HideScrolls()
+{
+	QList<QGraphicsView*> list = views();
+	QGraphicsView* view = list.first();
+	view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);   // ScrollBarAsNeeded
+	//view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff); // ScrollBarAlwaysOff
+}
+
 //------------------------------------------------------------------------------
 // AppendTimelineEvent
 //
@@ -648,7 +660,12 @@ void TimelineScene::OnZoomIn()
 	m_zoomFactor *= 1.25;
 	QList<QGraphicsView*> list = views();
 	QGraphicsView* view = list.first();
-	setSceneRect(1.0, 1.0, (view->width() * Timeline().ZoomFactor()) - 2.0, view->height() - 2.0);
+
+	QRectF rectum = QRectF(1.0, 1.0, (view->width() * Timeline().ZoomFactor()) - 2.0, view->height() - 2.0);
+	setSceneRect(rectum);
+	//setSceneRect(1.0, 1.0, (view->width() * Timeline().ZoomFactor()) - 2.0, view->height() - 2.0);
+	//view->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	//view->ensureVisible(rectum);
 	UpdateScene();
 }
 //------------------------------------------------------------------------------
@@ -671,6 +688,7 @@ void TimelineScene::OnZoomReset()
 	QList<QGraphicsView*> list = views();
 	QGraphicsView* view = list.first();
 	setSceneRect(1.0, 1.0, (view->width() * Timeline().ZoomFactor()) - 2.0, view->height() - 2.0);
+	//view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	UpdateScene();
 }
 //------------------------------------------------------------------------------

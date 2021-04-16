@@ -111,11 +111,14 @@ void HttpOutEditor::Init(const Host& host)
 	ui.RequestHostIpEdit->setDuplicatesEnabled(false);
     ui.RequestHostIpEdit->lineEdit()->setAlignment(Qt::AlignCenter);
     ui.RequestHostIpEdit->lineEdit()->setInputMask( "000.000.000.000" );
+	QFont ipFont("MS Shell Dlg 2", 9);
+	ui.RequestHostIpEdit->lineEdit()->setFont(ipFont);
 
 	ui.ResponseHostIpEdit->setEditable(true);
 	ui.ResponseHostIpEdit->setDuplicatesEnabled(false);
     ui.ResponseHostIpEdit->lineEdit()->setAlignment(Qt::AlignCenter);
     ui.ResponseHostIpEdit->lineEdit()->setInputMask( "000.000.000.000" );
+	ui.ResponseHostIpEdit->lineEdit()->setFont(ipFont);
 
 	QStringList ipList = getIpAddresses();
 	ui.RequestHostIpEdit->insertItems(0, ipList);
@@ -159,11 +162,13 @@ void HttpOutEditor::Init(const Host& host)
 	connect(ui.ResponseGroup, SIGNAL(toggled(bool)), this, SLOT(OnRespHostEnableChanged(bool)));
 	connect(ui.ResponseHostPortSpin, SIGNAL(valueChanged(int)), this, SLOT(OnRespHostPortChanged(int)));
 
+	ui.RequestHostPortSpin->setFont(ipFont);
+	ui.ResponseHostPortSpin->setFont(ipFont);
+
 	ui.EnableSslCheck->setChecked(host.EnableSsl());
 	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(OnAccept()));
 	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 	connect(ui.EnableSslCheck, SIGNAL(toggled(bool)), this, SLOT(OnEnableSslCheck(bool)));
-
 
 	ui.EnableProxyCheck->setChecked(false);
 	connect(ui.EnableProxyCheck, SIGNAL(toggled(bool)), this, SLOT(OnEnableProxyCheck(bool)));
