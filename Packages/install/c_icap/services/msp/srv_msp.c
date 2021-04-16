@@ -59,6 +59,8 @@
 		06/20/2019 - CHM: ingest the complete packet, so can parse the well-formed xml inside.
 		06/29/2019 - CHM: support all methods/endpoints.
 		04/05/2021 - CHM: support Phase3 enhancements.
+		04/15/2021 - CHM: handle version 3 MS headers with no endpoint.
+							see V3_NULL_ENDPOINT.
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -293,6 +295,10 @@
 #include "srv_msp_body.h"
 
 /*
+ * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
+ */
+
+/*
 
 ci_stat_uint64_inc(UC_CNT_REQUESTS, 1);
 int UC_CNT_REQUESTS = -1;
@@ -400,6 +406,8 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
 #define APIBUFFLEN     				250
 #define WEATHER_UPDATE_INTERVAL     5   // minutes
 
+#define V3_NULL_ENDPOINT "V3_Server"
+
 //char *strptime(const char *s, const char *format, struct tm *tm);
 //time_t timelocal(struct tm *tm);
 
@@ -434,7 +442,7 @@ typedef signed long gint64;
 typedef char   		gchar;
 
 /*
- * The srv_msp_data structure will store the data required to serve an ICAP request.
+ * The srv_msp_data structure will store the data required to service an ICAP request.
  */
 struct srv_msp_msg_info {
 	char xmlnspace[CI_MAXNSLEN + 1];
@@ -445,6 +453,7 @@ struct srv_msp_msg_info {
 	char company[CI_MAXCOMPANYLEN + 1];
 	//char msgid[CI_MAXMSGIDLEN + 1];
 	//char timestamp[CI_MAXTIMESTAMPLEN + 
+	bool bIsV3;
 };
 
 struct srv_msp_data {
@@ -453,8 +462,10 @@ struct srv_msp_data {
 	int64_t maxBodyData;
 	int64_t expectedData;
 	/*flag for marking the eof*/
-	int eof;
-	int isReqmod;
+	int  eof;
+	int  isReqmod;
+	bool bHasCommand;
+	int  Command;
 };
 
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
@@ -514,6 +525,8 @@ struct ci_fmt_entry MspFmtTable [] = {
 	{ "%MSTXID", "XActID", fmt_srv_msp_transactionid },
     { NULL, NULL, NULL}
 };
+
+// curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
 
 // module prototypes
 int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
@@ -878,12 +891,10 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 			{
 				if(cur->xmlChildrenNode == NULL){
 					key = xmlGetProp(cur, (const xmlChar *)"value");
-					//printf("Current Temp: %s\n", key);
-					
 					pWd->currentTemp = (int) strtol((const char *)key, (char **)NULL, 10);
 					pWd->bSuccess = true;
-					
 					xmlFree(key);
+#ifdef _GET_ALL_WEATHER_PARAMS_					
 					key = xmlGetProp(cur, (const xmlChar *)"min");
 					printf("Min Temp: %s\n", key);
 					xmlFree(key);
@@ -893,6 +904,7 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 					key = xmlGetProp(cur, (const xmlChar *)"unit");
 					printf("Temp Units: %s\n", key);
 					xmlFree(key);
+#endif
 				}	
 			}
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"city")) ){
@@ -1065,19 +1077,19 @@ void *weather_updater(void *data)
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
 			
+			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
+			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);		
 			do{
-				ci_debug_printf(3,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
-				ci_debug_printf(3,"      using AppID: %s\n", pData->m_AppId);		
 				if( update_weather( curl, &xmlStr, &weatherData ) ) {
 					if( weatherData.bSuccess ) {
 						currtemp = weatherData.currentTemp;
-						ci_debug_printf(3,"Current Temp: %d\n", currtemp);
+						ci_debug_printf(2,"Current Temp: %d\n", currtemp);
 					}
 					else{
 						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
 					}
 					if( weatherData.city ) {
-						ci_debug_printf(3,"City: %s\n", weatherData.city);
+						ci_debug_printf(2,"City: %s\n", weatherData.city);
 					}
 					else{
 						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
@@ -1129,7 +1141,7 @@ void *weather_updater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01b ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01d ***\n");
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1186,9 +1198,11 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		exit( -2 );
 	}
 	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	if( CI_DEBUG_LEVEL >= 1 ){
-		ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
-	}
+	ci_debug_printf(1, "\nActive Tester: '%s'\n\n", pTesterData->m_Tester);
+
+	//if( CI_DEBUG_LEVEL >= 1 ){
+	//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
+	//}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
@@ -1298,11 +1312,17 @@ void msp_release_request_data(void *data)
 	 #define CI_MOD_ALLOW204 204
 	 #define CI_MOD_ALLOW206 206
 	 #define CI_MOD_ERROR     -1
+	 206 (Partial Content) responses is an ICAP extension that allows the
+	ICAP agents to optionally combine adapted and original HTTP message
+	content.
+	 back channel commands:  browse to http://172.18.77.1:3128/icap?2
  */
 int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t * req)
 {
-	ci_off_t content_len;
 	int showHeader = 0;
+	ci_off_t content_len;
+	ci_headers_list_t *pHeader = NULL;
+	struct srv_msp_data *mspd = NULL;
 
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
@@ -1312,11 +1332,48 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
 	if (!ci_req_hasbody(req)){
-		ci_debug_printf(0, "msp_preview_handler::no body data, will not process further...\n");
-		return CI_ERROR;
+		ci_debug_printf(4, "msp_preview_handler::no body data.\n");
+		pHeader = ci_http_request_headers(req);
+		if (!pHeader){
+			ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
+			unlock_data(req);// this appears to prevent the browser cache having to be cleared each time
+			return CI_ERROR; 
+		}
+		ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
+		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2
+		if( !referer ){
+			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
+			unlock_data(req);
+			return CI_ERROR;
+		}
+		ci_debug_printf(4, "Referer: %s.\n", referer);
+		char const *needle = "icap?cmd=";
+		size_t needle_length = strlen(needle);
+		char const *needle_pos = strstr(referer, needle);
+		// not found, at end of referer:
+		if( !needle_pos || !needle_pos[needle_length] )
+		{
+			ci_debug_printf(4, "Command not found from \"%s\".\n\n", needle);
+			unlock_data(req);
+			return CI_ERROR; // actually, still has to be done if return CI_MOD_DONE
+		}
+		// extract the word following the word at needle_pos:
+		int cmd;
+		//char buf[1000];
+		//size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+		//msp_dumphex(buf, len);
+		//ci_debug_printf(4, "needle_pos: %s, needle_length: %d.\n", needle_pos, needle_length);
+		const char *cmdstr = needle_pos + needle_length;
+		//ci_debug_printf(4, "cmdstr: %s.\n", cmdstr);
+		cmd = atoi(cmdstr);
+		//ci_debug_printf(4, "Command Received: %d.\n", cmd);
+		mspd = ci_service_data(req);
+		mspd->bHasCommand = true;
+		mspd->Command = cmd;
+		return CI_MOD_CONTINUE;
 	}
 
-	struct srv_msp_data *mspd = ci_service_data(req);
+	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
 	mspd->isReqmod = 0;
 
@@ -1335,8 +1392,6 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	*/
 
 	// Extract the HTTP header from the request/response
-	ci_headers_list_t *pHeader = NULL;
-
 	const int REQ_TYPE = ci_req_type(req);
 	if( REQ_TYPE == ICAP_REQMOD){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		mspd->isReqmod = 1;
@@ -1462,7 +1517,14 @@ int msp_end_of_data_handler(ci_request_t * req)
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	if( mspd->isReqmod){
+	
+	if( mspd->bHasCommand ){
+		ci_debug_printf(4, "Received User Command: %d\n", mspd->Command);
+		unlock_data(req); // this appears to prevent the browser cache having to be cleared each time
+		return CI_ERROR;  // actually, still has to be done if return CI_MOD_DONE
+	}
+	
+	if( mspd->isReqmod ){
 		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
 		if( REQ_TYPE != ICAP_REQMOD){
@@ -1794,7 +1856,16 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	if( get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
 	{
 		pMethod = pMsgInfo->method;
-		pEndpoint = pMsgInfo->endpoint;
+		// seems that most (not PingURL) V3 msgs don't include an endpoint
+		if (!strncasecmp(pMsgInfo->endpoint, "Version", 7)) { // Version_3.0
+			//if (!strcmp(pMsgInfo->endpoint, "3")) {
+				pEndpoint = V3_NULL_ENDPOINT;
+				pMsgInfo->bIsV3 = true;
+			//}
+		}
+		else {
+			pEndpoint = pMsgInfo->endpoint;
+		}
 		ci_debug_printf(4, "Namespace is: '%s'\n", pMsgInfo->xmlnspace);
 		ci_debug_printf(4, "Method is: '%s'\n", pMethod);
 		ci_debug_printf(4, "Endpoint is: '%s'\n", pEndpoint);
@@ -1819,7 +1890,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	BIZ_RULE *pRuleData = pBizRules;
 	for(i = 0; i < NumBizRecs; i++)
 	{
-		if( !strcmp( pRuleData->m_EndPoint, pEndpoint) )
+		if( pMsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
 			if( !strcmp( pRuleData->m_Method, pMethod) ){
 				ci_debug_printf(4, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
@@ -2027,7 +2098,70 @@ int fmt_srv_msp_transactionid(ci_request_t *req, char *buf, int len, const char 
 }
 
 //
-//////////////
+/////////////
+/*
+	Version 5 PingURL:
+	<?xml version="1.0" encoding="utf-8"?>
+	<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	  <soap:Header>
+		<request:MultiSpeakRequestMsgHeader xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" MessageID="?" TimeStamp="?" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">
+		  <request:MultiSpeakVersion>
+			<com:MajorVersion>?</com:MajorVersion>
+			<com:MinorVersion>?</com:MinorVersion>
+			<com:Build>?</com:Build>
+		  </request:MultiSpeakVersion>
+		  <request:Caller>
+			<com:AppName>?</com:AppName>
+			<com:Company>?</com:Company>
+		  </request:Caller>
+		</request:MultiSpeakRequestMsgHeader>
+	  </soap:Header>
+	  <soap:Body>
+		<tns:PingURL xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">?</tns:PingURL>
+	  </soap:Body>
+	</soap:Envelope>
+
+	Version 3 PingURL: it is using a V5 header!
+	<?xml version="1.0" encoding="utf-8"?>
+	<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	  <soap:Header>
+		<request:MultiSpeakRequestMsgHeader xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" MessageID="?" TimeStamp="?" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">
+		  <request:MultiSpeakVersion>
+			<com:MajorVersion>?</com:MajorVersion>
+			<com:MinorVersion>?</com:MinorVersion>
+			<com:Build>?</com:Build>
+		  </request:MultiSpeakVersion>
+		  <request:Caller>
+			<com:AppName>?</com:AppName>
+			<com:Company>?</com:Company>
+		  </request:Caller>
+		</request:MultiSpeakRequestMsgHeader>
+	  </soap:Header>
+	  <soap:Body>
+		<tns:PingURL xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:ns9="http://www.w3.org/2005/08/addressing">?</tns:PingURL>
+	  </soap:Body>
+	</soap:Envelope>
+
+	NOTE: xmlns:tns="http://www.multispeak.org/V5.0/wsdl/OA_Server"
+
+
+BUT: this is the ODEventNotification (v3 only)
+it is using a V3 header
+
+SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Header>
+    <tns:MultiSpeakMsgHeader xmlns:tns="http://www.multispeak.org/Version_3.0" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">?</tns:MultiSpeakMsgHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:ODEventNotification xmlns:tns="http://www.multispeak.org/Version_3.0" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"/>
+  </soap:Body>
+</soap:Envelope>
+
+	NOTE: xmlns:tns="http://www.multispeak.org/Version_3.0"
+
+*/
 static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 {
 	xmlNodePtr pReturnedNode = getChildNode(root->children, (const xmlChar *)"Body");
@@ -2041,13 +2175,13 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 			}
 			chld_node = chld_node->next;
 		}
-		if( chld_node){
+		if( chld_node ){
 			strncpy(pMsgInfo->method, (char *)chld_node->name, CI_MAXMETHODLEN);
 			if( chld_node->ns){
 				const xmlChar *pNsRef = chld_node->ns->href;
 				strncpy(pMsgInfo->xmlnspace, (char *)pNsRef, CI_MAXNSLEN);
 				char *p = strrchr((char *)pNsRef, '/');
-				if( p){
+				if( p ){
 					strncpy(pMsgInfo->endpoint, p + 1, CI_MAXENDPOINTLEN);
 				}
 			}
