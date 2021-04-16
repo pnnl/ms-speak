@@ -155,10 +155,13 @@ const QString PROCESS_PAYMENT_TRANSACTIONS = QStringLiteral("ProcessPaymentTrans
 
 //  Distribution Operations Methods
 //     Outage Detection Endpoint
-const QString OD_EVENT_NOTIFICATION = QStringLiteral("ODEventNotification");
+// the closest in the V3 OD WSDL is OutageEventChangedNotification
+//const QString OD_EVENT_NOTIFICATION = QStringLiteral("ODEventNotification");
+const QString OD_EVENT_NOTIFICATION = QStringLiteral("OutageEventChangedNotification");
 const QString GET_METER_IDS_BY_END_DEVICE_STATE_TYPES = QStringLiteral("GetMeterIDsByEndDeviceStateTypes");
 const QString INITIATE_END_DEVICE_PINGS = QStringLiteral("InitiateEndDevicePings");
 //     Outage Analysis Endpoint
+// this is in the V3 OA WSDL
 const QString OA_EVENT_NOTIFICATION = QStringLiteral("ODEventNotification");
 
 // assign function endpoints

@@ -135,6 +135,7 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	QString install_ver = "n/a";
 	if( QSettings().contains(SK_INSTALL_CHECK) ){ // QSettings in HKEY_CURRENT_USER\Software\PNNL\MultiSpeaker
 		install_ver = QSettings().value(SK_INSTALL_CHECK, "badhat").toString();
+		install_ver = "n/a";
 	}
 	if( install_ver != SOFTWARE_VERSION ){
 		//QString defDir = qApp->applicationDirPath()+"/Wsdls"; // C:\Program Files\PNNL\MultiSpeaker

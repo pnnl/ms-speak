@@ -165,7 +165,7 @@ CREATE TABLE [Methods] (
 --        GetMethods & PingURL
 --
 -- need support v3 ODEventNotification msg for Benton REA
---     OD and OA
+--     OD and OA, the closest in the V3 WSDL is OutageEventChangedNotification
 
 --  Metering and Service Management Methods
 --     Connect/Disconnect Endpoint
