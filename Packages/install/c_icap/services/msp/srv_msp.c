@@ -453,7 +453,7 @@ struct srv_msp_msg_info {
 	char company[CI_MAXCOMPANYLEN + 1];
 	//char msgid[CI_MAXMSGIDLEN + 1];
 	//char timestamp[CI_MAXTIMESTAMPLEN + 
-	bool	bIsV3;
+	bool bIsV3;
 };
 
 struct srv_msp_data {
@@ -462,8 +462,10 @@ struct srv_msp_data {
 	int64_t maxBodyData;
 	int64_t expectedData;
 	/*flag for marking the eof*/
-	int eof;
-	int isReqmod;
+	int  eof;
+	int  isReqmod;
+	bool bHasCommand;
+	int  Command;
 };
 
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
@@ -523,6 +525,8 @@ struct ci_fmt_entry MspFmtTable [] = {
 	{ "%MSTXID", "XActID", fmt_srv_msp_transactionid },
     { NULL, NULL, NULL}
 };
+
+// curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
 
 // module prototypes
 int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
@@ -1308,11 +1312,17 @@ void msp_release_request_data(void *data)
 	 #define CI_MOD_ALLOW204 204
 	 #define CI_MOD_ALLOW206 206
 	 #define CI_MOD_ERROR     -1
+	 206 (Partial Content) responses is an ICAP extension that allows the
+	ICAP agents to optionally combine adapted and original HTTP message
+	content.
+	 back channel commands:  browse to http://172.18.77.1:3128/icap?2
  */
 int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t * req)
 {
-	ci_off_t content_len;
 	int showHeader = 0;
+	ci_off_t content_len;
+	ci_headers_list_t *pHeader = NULL;
+	struct srv_msp_data *mspd = NULL;
 
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
@@ -1322,11 +1332,48 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
 	if (!ci_req_hasbody(req)){
-		ci_debug_printf(0, "msp_preview_handler::no body data, will not process further...\n");
-		return CI_ERROR;
+		ci_debug_printf(4, "msp_preview_handler::no body data.\n");
+		pHeader = ci_http_request_headers(req);
+		if (!pHeader){
+			ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
+			unlock_data(req);// this appears to prevent the browser cache having to be cleared each time
+			return CI_ERROR; 
+		}
+		ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
+		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2
+		if( !referer ){
+			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
+			unlock_data(req);
+			return CI_ERROR;
+		}
+		ci_debug_printf(4, "Referer: %s.\n", referer);
+		char const *needle = "icap?cmd=";
+		size_t needle_length = strlen(needle);
+		char const *needle_pos = strstr(referer, needle);
+		// not found, at end of referer:
+		if( !needle_pos || !needle_pos[needle_length] )
+		{
+			ci_debug_printf(4, "Command not found from \"%s\".\n\n", needle);
+			unlock_data(req);
+			return CI_ERROR; // actually, still has to be done if return CI_MOD_DONE
+		}
+		// extract the word following the word at needle_pos:
+		int cmd;
+		//char buf[1000];
+		//size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+		//msp_dumphex(buf, len);
+		//ci_debug_printf(4, "needle_pos: %s, needle_length: %d.\n", needle_pos, needle_length);
+		const char *cmdstr = needle_pos + needle_length;
+		//ci_debug_printf(4, "cmdstr: %s.\n", cmdstr);
+		cmd = atoi(cmdstr);
+		//ci_debug_printf(4, "Command Received: %d.\n", cmd);
+		mspd = ci_service_data(req);
+		mspd->bHasCommand = true;
+		mspd->Command = cmd;
+		return CI_MOD_CONTINUE;
 	}
 
-	struct srv_msp_data *mspd = ci_service_data(req);
+	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
 	mspd->isReqmod = 0;
 
@@ -1345,8 +1392,6 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	*/
 
 	// Extract the HTTP header from the request/response
-	ci_headers_list_t *pHeader = NULL;
-
 	const int REQ_TYPE = ci_req_type(req);
 	if( REQ_TYPE == ICAP_REQMOD){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		mspd->isReqmod = 1;
@@ -1472,7 +1517,14 @@ int msp_end_of_data_handler(ci_request_t * req)
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	if( mspd->isReqmod){
+	
+	if( mspd->bHasCommand ){
+		ci_debug_printf(4, "Received User Command: %d\n", mspd->Command);
+		unlock_data(req); // this appears to prevent the browser cache having to be cleared each time
+		return CI_ERROR;  // actually, still has to be done if return CI_MOD_DONE
+	}
+	
+	if( mspd->isReqmod ){
 		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
 		if( REQ_TYPE != ICAP_REQMOD){
@@ -1805,11 +1857,11 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	{
 		pMethod = pMsgInfo->method;
 		// seems that most (not PingURL) V3 msgs don't include an endpoint
-		if (!strcasecmp(pMsgInfo->endpoint, "Version")) { // Version_3.0
-			if (!strcmp(pMsgInfo->endpoint, "3")) {
+		if (!strncasecmp(pMsgInfo->endpoint, "Version", 7)) { // Version_3.0
+			//if (!strcmp(pMsgInfo->endpoint, "3")) {
 				pEndpoint = V3_NULL_ENDPOINT;
 				pMsgInfo->bIsV3 = true;
-			}
+			//}
 		}
 		else {
 			pEndpoint = pMsgInfo->endpoint;
@@ -1838,7 +1890,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	BIZ_RULE *pRuleData = pBizRules;
 	for(i = 0; i < NumBizRecs; i++)
 	{
-		if( MsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
+		if( pMsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
 			if( !strcmp( pRuleData->m_Method, pMethod) ){
 				ci_debug_printf(4, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
