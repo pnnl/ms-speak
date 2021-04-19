@@ -39,14 +39,14 @@
   views and opinions of authors expressed herein do not necessarily state or reflect those of the
   United States Government or any agency thereof.
 									 PACIFIC NORTHWEST NATIONAL LABORATORY
-											    operated by
+												operated by
 												  BATTELLE
-											      for the
+												  for the
 									  UNITED STATES DEPARTMENT OF ENERGY
 									   under Contract DE-AC05-76RL01830
 
 
-    This notice including this sentence must appear on any copies of this computer software.
+	This notice including this sentence must appear on any copies of this computer software.
 */
 //-------------------------------------------------------------------------------
 //	History
@@ -65,15 +65,15 @@
 // CertInfoDlg
 //
 CertInfoDlg::CertInfoDlg(QWidget* parent)
-  : QDialog(parent)
+	: QDialog(parent)
 {
-  ui.setupUi(this);
-  QList<int> sizes;
-  sizes << 10 << 75 << 2000;
-  ui.MySplitter->setSizes(sizes);
-  connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-  connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-  connect(ui.CertificationPathView, SIGNAL(currentRowChanged(int)), this, SLOT(OnCurrentRowChanged(int)));
+	ui.setupUi(this);
+	QList<int> sizes;
+	sizes << 10 << 75 << 2000;
+	ui.MySplitter->setSizes(sizes);
+	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+	connect(ui.CertificationPathView, SIGNAL(currentRowChanged(int)), this, SLOT(OnCurrentRowChanged(int)));
 }
 //------------------------------------------------------------------------------
 // ~CertInfoDlg
@@ -86,57 +86,57 @@ CertInfoDlg::~CertInfoDlg()
 //
 void CertInfoDlg::SetCertificateChain(const QList<QSslCertificate>& chain)
 {
-  m_chain.clear();
-  m_chain = chain;
-  ui.CertificationPathView->clear();
+	m_chain.clear();
+	m_chain = chain;
+	ui.CertificationPathView->clear();
 
-  for (int i = 0; i < m_chain.size(); i++)
-  {
-    const QSslCertificate &cert = chain.at(i);
-    ui.CertificationPathView->addItem(QString("%1%2 (%3)").arg(!i ? QString() : "Issued by: ")
-      .arg(cert.subjectInfo(QSslCertificate::Organization).join(", "))
-      .arg(cert.subjectInfo(QSslCertificate::CommonName).join(", ")));
-    }
-  ui.CertificationPathView->setCurrentRow(0);
+	for (int i = 0; i < m_chain.size(); i++)
+	{
+		const QSslCertificate &cert = chain.at(i);
+		ui.CertificationPathView->addItem(QString("%1%2 (%3)").arg(!i ? QString() : "Issued by: ")
+										  .arg(cert.subjectInfo(QSslCertificate::Organization).join(", "))
+										  .arg(cert.subjectInfo(QSslCertificate::CommonName).join(", ")));
+	}
+	ui.CertificationPathView->setCurrentRow(0);
 }
 //------------------------------------------------------------------------------
 // SetCipherInfo
 //
 void CertInfoDlg::SetCipherInfo(QSslCipher& cipher)
 {
-  QString cipherStr = QString("%1, %2 (%3/%4)")
-    .arg(cipher.authenticationMethod())
-    .arg(cipher.name())
-    .arg(cipher.usedBits())
-    .arg(cipher.supportedBits());
-  ui.CipherEdit->setText(cipherStr);
+	QString cipherStr = QString("%1, %2 (%3/%4)")
+			.arg(cipher.authenticationMethod())
+			.arg(cipher.name())
+			.arg(cipher.usedBits())
+			.arg(cipher.supportedBits());
+	ui.CipherEdit->setText(cipherStr);
 }
 //------------------------------------------------------------------------------
 // UpdateCertInfo
 //
 void CertInfoDlg::UpdateCertInfo(int idx)
 {
-  ui.CertificateInfoView->clear();
-  if (idx >= 0 && idx < m_chain.size()) 
-  {
-    const QSslCertificate& cert = m_chain.at(idx);
-    QStringList lines;
-    lines << tr("Organization: %1").arg(cert.subjectInfo(QSslCertificate::Organization).join(", "))
-    << tr("Subunit: %1").arg(cert.subjectInfo(QSslCertificate::OrganizationalUnitName).join(", "))
-    << tr("Country: %1").arg(cert.subjectInfo(QSslCertificate::CountryName).join(", "))
-    << tr("Locality: %1").arg(cert.subjectInfo(QSslCertificate::LocalityName).join(", "))
-    << tr("State/Province: %1").arg(cert.subjectInfo(QSslCertificate::StateOrProvinceName).join(", "))
-    << tr("Common Name: %1").arg(cert.subjectInfo(QSslCertificate::CommonName).join(", "))
-    << QString()
-    << tr("Issuer Organization: %1").arg(cert.issuerInfo(QSslCertificate::Organization).join(", "))
-    << tr("Issuer Unit Name: %1").arg(cert.issuerInfo(QSslCertificate::OrganizationalUnitName).join(", "))
-    << tr("Issuer Country: %1").arg(cert.issuerInfo(QSslCertificate::CountryName).join(", "))
-    << tr("Issuer Locality: %1").arg(cert.issuerInfo(QSslCertificate::LocalityName).join(", "))
-    << tr("Issuer State/Province: %1").arg(cert.issuerInfo(QSslCertificate::StateOrProvinceName).join(", "))
-    << tr("Issuer Common Name: %1").arg(cert.issuerInfo(QSslCertificate::CommonName).join(", "));
-    foreach (QString line, lines)
-      ui.CertificateInfoView->addItem(line);
-  } 
-  else 
-    ui.CertificateInfoView->clear();
+	ui.CertificateInfoView->clear();
+	if (idx >= 0 && idx < m_chain.size())
+	{
+		const QSslCertificate& cert = m_chain.at(idx);
+		QStringList lines;
+		lines << tr("Organization: %1").arg(cert.subjectInfo(QSslCertificate::Organization).join(", "))
+			  << tr("Subunit: %1").arg(cert.subjectInfo(QSslCertificate::OrganizationalUnitName).join(", "))
+			  << tr("Country: %1").arg(cert.subjectInfo(QSslCertificate::CountryName).join(", "))
+			  << tr("Locality: %1").arg(cert.subjectInfo(QSslCertificate::LocalityName).join(", "))
+			  << tr("State/Province: %1").arg(cert.subjectInfo(QSslCertificate::StateOrProvinceName).join(", "))
+			  << tr("Common Name: %1").arg(cert.subjectInfo(QSslCertificate::CommonName).join(", "))
+			  << QString()
+			  << tr("Issuer Organization: %1").arg(cert.issuerInfo(QSslCertificate::Organization).join(", "))
+			  << tr("Issuer Unit Name: %1").arg(cert.issuerInfo(QSslCertificate::OrganizationalUnitName).join(", "))
+			  << tr("Issuer Country: %1").arg(cert.issuerInfo(QSslCertificate::CountryName).join(", "))
+			  << tr("Issuer Locality: %1").arg(cert.issuerInfo(QSslCertificate::LocalityName).join(", "))
+			  << tr("Issuer State/Province: %1").arg(cert.issuerInfo(QSslCertificate::StateOrProvinceName).join(", "))
+			  << tr("Issuer Common Name: %1").arg(cert.issuerInfo(QSslCertificate::CommonName).join(", "));
+		foreach (QString line, lines)
+			ui.CertificateInfoView->addItem(line);
+	}
+	else
+		ui.CertificateInfoView->clear();
 }

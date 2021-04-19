@@ -118,7 +118,7 @@
           <item>
            <layout class="QGridLayout" name="gridLayout">
             <item row="0" column="0">
-             <widget class="QLabel" name="label_5">
+             <widget class="QLabel" name="CertFolderLabel2">
               <property name="font">
                <font>
                 <weight>75</weight>
@@ -345,7 +345,7 @@
      <x>0</x>
      <y>0</y>
      <width>743</width>
-     <height>26</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>

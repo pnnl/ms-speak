@@ -82,9 +82,9 @@ fi
 #			/usr/lib/tmpfiles.d/c-icap.conf with the follow content:
 #				d /var/run/c-icap 0755 - - -
 
-# required packages
+# required packages  libssl1.0-dev ? for MSS
 printf "\nThe Following required packages will now be installed:"
-printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git & libcurl4"
+printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git, libcurl4-openssl & libssl-dev"
 printf "\n\nPress just the [Enter] key to continue with this Installation, or"
 printf "\n  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:\n"
 read DO_INSTALL
@@ -105,7 +105,12 @@ else
 					if sudo apt-get install uuid-dev; then
 						if sudo apt-get install git; then
 							if sudo apt-get install libcurl4-openssl-dev; then
-								printf "\n\n*** Successfully Installed required packages"
+                                if sudo apt-get install libssl-dev; then
+                                    printf "\n\n*** Successfully Installed required packages"
+                                else
+                                    printf "\nFailed to Install libssl-dev, can not continue"
+                                    false
+                                fi
 							else
 								printf "\nFailed to Install libcurl4, can not continue"
 								false
@@ -270,13 +275,34 @@ if [ ! -z "$DO_INSTALL" ]; then
 	fi
 else
 	cd squid-4.7
-	if ./configure; then
+	# if ./configure; then
+	if ./configure --with-openssl --enable-ssl-crtd; then
 		if make; then
 			if sudo make install; then
 				cd ../
 				if sudo cp install/squid/squid.conf /usr/local/squid/etc/; then
 					sudo chmod 777 /usr/local/squid -R
-					printf "\nSquid Installed Successfully."
+					if sudo mkdir /usr/local/squid/ssl_cert; then
+                        sudo chown nobody:nogroup /usr/local/squid/ssl_cert
+                        if sudo cp install/squid/mspCA.pem /usr/local/squid/ssl_cert; then
+                            sudo chown nobody:nogroup /usr/local/squid/ssl_cert/mspCA.pem
+                            sudo chmod 700 /usr/local/squid/ssl_cert
+                            # import  mspCA.der into browser/mspeaker
+                            if sudo /usr/local/squid/libexec/security_file_certgen -c -s /var/lib/ssl_db -M 4MB; then
+                                sudo chown nobody:nogroup -R /var/lib/ssl_db
+                                printf "\nSquid Installed Successfully."
+                            else
+                                printf "\nFailed to copy ssl certificate to ssl_cert directory."
+                                false
+                            fi                    
+                        else
+                            printf "\nFailed to copy ssl certificate to ssl_cert directory."
+                            false
+                        fi
+					else
+                        printf "\nFailed to mkdir ssl_cert directory."
+                        false
+					fi
 				else
 					printf "\nFailed to copy squid.conf to local directory."
 					false # this should set $? to 1

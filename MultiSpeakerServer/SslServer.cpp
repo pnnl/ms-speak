@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - CHM: for Phase3
 //-------------------------------------------------------------------------------
 //
 // Summary: SslServer.cpp
@@ -75,20 +76,48 @@ SslServer::SslServer(QObject* parent)
 	m_sslLocalCertificate(),
 	m_sslPrivateKey(),
 	m_sslProtocol(QSsl::TlsV1_2OrLater),
-
 	m_bufferSize(0),
 	m_bytesRead(0),
+	m_srcId(0),
 	m_dstId(0),
-	m_headerRead(false),
 	m_headerSize(sizeof(quint32)),
+	m_headerRead(false),
 	m_parseContentLengthFlag(false),
 	m_parseSourceAndDestIdFlag(false),
-	m_srcId(0)
+	m_Supported(false)
 {
-	if (!QSslSocket::supportsSsl())
-		QMessageBox::information(Q_NULLPTR, "Secure Socket Client", "This system does not support OpenSSL.");
+	/*
+	 * qt.network.ssl: Incompatible version of OpenSSL
+	qDebug() << QSslSocket::sslLibraryBuildVersionString();
+		"OpenSSL 1.0.2k-fips  26 Jan 2017"
+	I've copied libcrypto.so and libssl.so (v1.0.2) to my current compiler lib directory
+	(<QTDIR>/5.11.1/gcc_64/lib). In my case I took theese 2 libs in /usr/lib/x86_64-linux-gnu/:
+	libssl.so.1.0.0 and libcrypto.so.1.0.0, copied and renamed. It worked for me.
+		sudo cp libssl.so.1.1 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libssl.so.1.0.0
+		sudo cp libcrypto.so.1.1 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libcrypto.so.1.0.0
+		this did not work, tried this:
+			make/install openssl-1.0.2k.tar.gz
+			cd /usr/local/ssl/lib
+			sudo cp libssl.so.1.0.0 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libssl.so
+			sudo cp libcrypto.so.1.0.0 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libcrypto.so
+		got this:
+			error while loading shared libraries: libssl.so.1.0.0: cannot open shared object file: No such file or directory
+		so did this:
+			cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
+			sudo ln -s libcrypto.so libssl.so.1.0.0
+			sudo ln -s libcrypto.so libcrypto.so.1.0.0
+		and this worked!
+	*/
 
-	connect(this, SIGNAL(newConnection()), this, SLOT(OnNewConnection()));
+	if (!QSslSocket::supportsSsl()){
+		QString qs2 = QSslSocket::sslLibraryBuildVersionString();
+		QString qs = QStringLiteral("System does not support Qt OpenSSL Version:\n%1").arg(qs2);
+		QMessageBox::information(Q_NULLPTR, "Unsupported Secure Socket Layer", qs);
+	}
+	else{
+		m_Supported = true;
+		connect(this, SIGNAL(newConnection()), this, SLOT(OnNewConnection()));
+	}
 }
 //------------------------------------------------------------------------------
 // ~SslServer
@@ -135,10 +164,14 @@ void SslServer::incomingConnection(qintptr socketDescriptor)
 //
 bool SslServer::SetSslCertFolder(const QString& folder)
 {
+	/*
+	 * 2021 - don't see any reason to have this, certfolder never used
 	if (!QFileInfo::exists(folder))
 		return false;
 
 	m_sslCertFolder = folder;
+	*/
+	Q_UNUSED(folder)
 	return true;
 }
 //------------------------------------------------------------------------------

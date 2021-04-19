@@ -39,19 +39,20 @@
   views and opinions of authors expressed herein do not necessarily state or reflect those of the
   United States Government or any agency thereof.
 									 PACIFIC NORTHWEST NATIONAL LABORATORY
-											    operated by
+												operated by
 												  BATTELLE
-											      for the
+												  for the
 									  UNITED STATES DEPARTMENT OF ENERGY
 									   under Contract DE-AC05-76RL01830
 
 
-    This notice including this sentence must appear on any copies of this computer software.
+	This notice including this sentence must appear on any copies of this computer software.
 */
 //-------------------------------------------------------------------------------
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - CHM: for Phase3, added m_Supported.
 //-------------------------------------------------------------------------------
 //
 // Summary: SslServer.h
@@ -71,57 +72,57 @@ class QSslSocket;
 
 class SslServer : public Server
 {
-  Q_OBJECT
+	Q_OBJECT
 private:
-  QString m_sslCertFolder;
-  QSslCertificate m_sslLocalCertificate;
-  QSslKey m_sslPrivateKey;
-  QSsl::SslProtocol m_sslProtocol;
-
-
-  QByteArray m_buffer;
-  quint32 m_bufferSize;
-  quint32 m_bytesRead;
-  int m_dstId;
-  bool m_headerRead;
-  int m_headerSize;
-  bool m_parseContentLengthFlag;
-  bool m_parseSourceAndDestIdFlag;
-  int m_srcId;
+	QString m_sslCertFolder;
+	QSslCertificate m_sslLocalCertificate;
+	QSslKey m_sslPrivateKey;
+	QSsl::SslProtocol m_sslProtocol;
+	QByteArray m_buffer;
+	quint32 m_bufferSize;
+	quint32 m_bytesRead;
+	int  m_srcId;
+	int  m_dstId;
+	int  m_headerSize;
+	bool m_headerRead;
+	bool m_parseContentLengthFlag;
+	bool m_parseSourceAndDestIdFlag;
+	bool m_Supported;
 
 public:
-  SslServer(QObject* parent = Q_NULLPTR);
-  ~SslServer();
+	SslServer(QObject* parent = Q_NULLPTR);
+	~SslServer();
 
-  QString SslCertFolder() const { return m_sslCertFolder; }
-  const QSslCertificate& SslLocalCertificate() const {return m_sslLocalCertificate;}
-  const QSslKey& SslPrivateKey() const {return m_sslPrivateKey;}
-  QSsl::SslProtocol SslProtocol() const {return m_sslProtocol;}
+	QString SslCertFolder() const { return m_sslCertFolder; }
+	const QSslCertificate& SslLocalCertificate() const {return m_sslLocalCertificate;}
+	const QSslKey& SslPrivateKey() const {return m_sslPrivateKey;}
+	QSsl::SslProtocol SslProtocol() const {return m_sslProtocol;}
 
-  bool SetSslCertFolder(const QString& folder);
+	bool IsSupported() const {return m_Supported;}
+	bool SetSslCertFolder(const QString& folder);
 
-  void SetSslLocalCertificate(const QSslCertificate& certificate) {m_sslLocalCertificate = certificate;}
-  bool SetSslLocalCertificate(const QString& path, QSsl::EncodingFormat format = QSsl::Pem);
+	void SetSslLocalCertificate(const QSslCertificate& certificate) {m_sslLocalCertificate = certificate;}
+	bool SetSslLocalCertificate(const QString& path, QSsl::EncodingFormat format = QSsl::Pem);
 
-  void SetSslPrivateKey(const QSslKey& key) {m_sslPrivateKey = key;}
-  bool SetSslPrivateKey(const QString& fileName, QSsl::KeyAlgorithm algorithm = QSsl::Rsa, QSsl::EncodingFormat format = QSsl::Pem, const QByteArray &passPhrase = QByteArray());
-  void SetSslProtocol(QSsl::SslProtocol protocol) {m_sslProtocol = protocol;}
+	void SetSslPrivateKey(const QSslKey& key) {m_sslPrivateKey = key;}
+	bool SetSslPrivateKey(const QString& fileName, QSsl::KeyAlgorithm algorithm = QSsl::Rsa, QSsl::EncodingFormat format = QSsl::Pem, const QByteArray &passPhrase = QByteArray());
+	void SetSslProtocol(QSsl::SslProtocol protocol) {m_sslProtocol = protocol;}
 
 protected:
-  void incomingConnection(qintptr socketDescriptor) override final;
+	void incomingConnection(qintptr socketDescriptor) override final;
 
 private:
-  void ReadMessage(QSslSocket* socket);
+	void ReadMessage(QSslSocket* socket);
 
 private slots:
-  void OnConnected();
-  void OnDisconnected();
-  void OnEncrypted();
-  void OnError(QAbstractSocket::SocketError error);
-  void OnNewConnection();
-  void OnReadyRead();
-  void OnSslErrors(const QList<QSslError>& errors);
-  void OnPeerVerifyError(const QSslError& error);
+	void OnConnected();
+	void OnDisconnected();
+	void OnEncrypted();
+	void OnError(QAbstractSocket::SocketError error);
+	void OnNewConnection();
+	void OnReadyRead();
+	void OnSslErrors(const QList<QSslError>& errors);
+	void OnPeerVerifyError(const QSslError& error);
 
 };
 

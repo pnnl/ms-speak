@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - CHM:  don't crash if xsd file not found.
 //-------------------------------------------------------------------------------
 //
 // Summary: HostMethodListWidget.cpp
@@ -140,10 +141,23 @@ void HostMethodListWidget::OnListViewDoubleClicked(const QModelIndex& index)
 
 	QString methodName = index.data(Qt::DisplayRole).toString();
 	QString hostName = index.data(HOST_ROLE).toString();
+	//TimelineEvent reqEvent(id, TimelineEvent::Request, 0, hostName, methodName, wsdl->MethodTemplateRequest(methodName), wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
+	//TimelineEvent resEvent(id+1, TimelineEvent::Response, 500, hostName, methodName, wsdl->MethodTemplateResponse(methodName), wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
+
 	WsdlFile* wsdl = WsInfo().Wsdl(hostName);
 	int id = Timeline().NextTimelineEventId(); // Get the current max Id in TimelineScene
-	TimelineEvent reqEvent(id, TimelineEvent::Request, 0, hostName, methodName, wsdl->MethodTemplateRequest(methodName), wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
-	TimelineEvent resEvent(id+1, TimelineEvent::Response, 500, hostName, methodName, wsdl->MethodTemplateResponse(methodName), wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
+	QDomDocument tmpdoc = wsdl->MethodTemplateRequest(methodName);
+	QDomNode n = tmpdoc.firstChild();
+	if( n.isNull() ){
+		return;
+	}
+	QDomDocument tmpdoc2 = wsdl->MethodTemplateResponse(methodName);
+	n = tmpdoc2.firstChild();
+	if( n.isNull() ){
+		return;
+	}
+	TimelineEvent reqEvent(id, TimelineEvent::Request, 0, hostName, methodName, tmpdoc, wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
+	TimelineEvent resEvent(id+1, TimelineEvent::Response, 500, hostName, methodName, tmpdoc2, wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
 	TimelineEventEditor dlg(reqEvent, resEvent, this);
 	if (dlg.exec())
 	{

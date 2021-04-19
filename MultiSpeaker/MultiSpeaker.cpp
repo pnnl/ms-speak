@@ -132,7 +132,7 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 
 	// check if this is first running after a fresh install, if so, clear old file settings since
 	// prior wsdl/xsd settings may not be compatible with new 
-	QString install_ver = "n/a";
+	/*QString install_ver = "n/a";
 	if( QSettings().contains(SK_INSTALL_CHECK) ){ // QSettings in HKEY_CURRENT_USER\Software\PNNL\MultiSpeaker
 		install_ver = QSettings().value(SK_INSTALL_CHECK, "badhat").toString();
 		install_ver = "n/a";
@@ -162,7 +162,7 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 			}
 		}
 	}
-
+	*/
 	Utils::CreateRootHomePath(); // Make sure the .MultiSpeaker dir exists under current user, i.e.: C:/Users/d3m907/.MultiSpeaker
 
 	CreateTitleToolBar();

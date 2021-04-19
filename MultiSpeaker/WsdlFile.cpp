@@ -72,6 +72,7 @@
 #include "NamespaceInfo.h"
 #include "TimelineEvent.h"
 #include "WsdlFile.h"
+#include "WsdlLayout.h"
 
 const QString SUFFIX_WSDL = "wsdl";
 const QString SUFFIX_XSD = "xsd";
@@ -241,12 +242,35 @@ QDomDocument WsdlFile::MethodTemplate(const QString& method)
 		if (WsdlMethod* wm = m_wsdlMethods.value(method, Q_NULLPTR))
 		{
 			QList<QDomDocument> list;
-			list.append(Parse(wm->RequestHeader));
-			list.append(Parse(wm->Input));
-			list.append(Parse(wm->ResponseHeader));
-			list.append(Parse(wm->Output));
-			doc = Join(method, list);
-			SaveMethodTemplate(method, doc);
+			QDomDocument tmpdoc;
+			tmpdoc = Parse(wm->RequestHeader);
+			QDomNode n = tmpdoc.firstChild();
+			if( !n.isNull() ){
+				list.append(tmpdoc);
+				tmpdoc = Parse(wm->Input);
+				n = tmpdoc.firstChild();
+				if( !n.isNull() ){
+					list.append(tmpdoc);
+					tmpdoc = Parse(wm->ResponseHeader);
+					n = tmpdoc.firstChild();
+					if( !n.isNull() ){
+						list.append(tmpdoc);
+						tmpdoc = Parse(wm->Output);
+						n = tmpdoc.firstChild();
+						if( !n.isNull() ){
+							list.append(tmpdoc);
+							doc = Join(method, list);
+							SaveMethodTemplate(method, doc);
+						}
+					}
+				}
+			}
+			//list.append(Parse(wm->RequestHeader));
+			//list.append(Parse(wm->Input));
+			//list.append(Parse(wm->ResponseHeader));
+			//list.append(Parse(wm->Output));
+			//doc = Join(method, list);
+			//SaveMethodTemplate(method, doc);
 		}
 		return doc;
 	}
@@ -274,18 +298,19 @@ QDomDocument WsdlFile::MethodTemplateRequest(const QString& method)
 {
 	QDomDocument doc;
 	QDomElement templateRoot = MethodTemplate(method).documentElement();
-	QDomElement root = doc.createElement(STR_REQUEST);
-	doc.appendChild(root);
+	if( !templateRoot.isNull() ){
+		QDomElement root = doc.createElement(STR_REQUEST);
+		doc.appendChild(root);
 
-	QDomElement templateNode = templateRoot.firstChildElement();
-	QDomElement node = templateNode.cloneNode().toElement(); // REQ Header
-	Filter(node, true, false); // removeUnchecked, removeInfo
-	root.appendChild(node);
+		QDomElement templateNode = templateRoot.firstChildElement();
+		QDomElement node = templateNode.cloneNode().toElement(); // REQ Header
+		Filter(node, true, false); // removeUnchecked, removeInfo
+		root.appendChild(node);
 
-	node = templateNode.nextSibling().cloneNode().toElement(); // REQ Body
-	Filter(node, true, false);
-	root.appendChild(node);
-
+		node = templateNode.nextSibling().cloneNode().toElement(); // REQ Body
+		Filter(node, true, false);
+		root.appendChild(node);
+	}
 	return doc;
 }
 //------------------------------------------------------------------------------
@@ -331,7 +356,13 @@ QDomDocument WsdlFile::Parse(const QString& methodType)
 		root.setTagName(methodType);
 		QString path = m_wsdlInfo.Path;
 		QDomDocument* doc = DomDocByNameSpace(m_wsdlInfo.PrefixNamespaceLookup.value(ns), m_wsdlInfo, path);
-		Q_ASSERT(doc);
+		if( Q_NULLPTR == doc ){
+			QDomDocument nulldoc;
+			//QDomDocument nulldoc("NULLDOC");
+			//qDebug() << nulldoc.doctype().name();
+			return nulldoc;
+		}
+		// Q_ASSERT(doc);
 
 		SchemaInfo info(path);
 		ParseSchemaInfo(doc, info);
@@ -819,8 +850,8 @@ QDomDocument* WsdlFile::DomDocByNameSpace(const QString& ns, const SchemaInfo& i
 		QFileInfo fileInfo(fileName);
 		if (!fileInfo.exists())
 		{
+			/*
 			qDebug() << "Error" << QString("%1 Does not Exist!").arg(fileName);
-
 			QString dirs = "";
 			int idx = path.lastIndexOf("/"); // linux
 			if(idx == -1){
@@ -832,12 +863,18 @@ QDomDocument* WsdlFile::DomDocByNameSpace(const QString& ns, const SchemaInfo& i
 				QString ep = QString( "    ..\\EndPoints\\%1\\%2.wsdl & %3.xsd\n").arg(endpoint).arg(endpoint).arg(endpoint);
 				dirs += ep+ "    ..\\xsd\\*.xsd";
 			}
+
 			QMessageBox messageBox;
 			//messageBox.setFixedSize(1800,1200);
 			//messageBox.critical(Q_NULLPTR,"Error",QString("File '%1' Could Not Be Located.").arg(fileName));
 			QString err=QString("'%1'").arg(fileName);
 			err += dirs;
 			messageBox.critical (Q_NULLPTR,"File Could Not Be Located", err );
+			*/
+			QMessageBox messageBox;
+			messageBox.critical (Q_NULLPTR,"File Could Not Be Located", QString("%1 Does not Exist!").arg(fileName) );
+			WsdlLayout wsl;
+			wsl.exec();
 			return Q_NULLPTR;
 		}
 

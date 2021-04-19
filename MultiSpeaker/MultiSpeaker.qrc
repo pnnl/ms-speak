@@ -14,5 +14,6 @@
         <file>Resources/zoomreset.png</file>
         <file>Resources/httpout.png</file>
         <file>Resources/squid.png</file>
+        <file>Resources/WsdlLayout.png</file>
     </qresource>
 </RCC>

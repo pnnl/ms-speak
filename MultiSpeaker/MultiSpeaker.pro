@@ -81,7 +81,8 @@ HEADERS += \
     WsdlMethodTemplateEditor.h \
     WsdlMethodView.h \
     WsdlTreeViewHeaderWidget.h \
-	WsdlXmlViewHeaderWidget.h
+	WsdlXmlViewHeaderWidget.h \
+	WsdlLayout.h
 	#\
 	#../Valid8or/Valid8.h \
 	#../Valid8or/Process.h \
@@ -134,7 +135,8 @@ SOURCES += \
     WsdlMethodTemplateEditor.cpp \
     WsdlMethodView.cpp \
     WsdlTreeViewHeaderWidget.cpp \
-	WsdlXmlViewHeaderWidget.cpp
+	WsdlXmlViewHeaderWidget.cpp \
+	WsdlLayout.cpp
 	#\
 	#../Valid8or/Valid8.cpp \
 	#../Valid8or/Process.cpp \
@@ -163,7 +165,8 @@ FORMS += \
     WsdlMethodTemplateEditor.ui \
     WsdlMethodView.ui \
     WsdlTreeViewHeaderWidget.ui \
-	WsdlXmlViewHeaderWidget.ui
+	WsdlXmlViewHeaderWidget.ui \
+	WsdlLayout.ui
 	#\
 	#../Valid8or/Valid8.ui \
 	#../Valid8or/ProgressWidget.ui

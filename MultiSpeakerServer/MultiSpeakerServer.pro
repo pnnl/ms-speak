@@ -13,6 +13,7 @@ TARGET = MultiSpeakerServer
 #DESTDIR = ../run
 QT += core xml network gui widgets xmlpatterns
 #LIBS += -L/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server -ljvm
+LIBS += -L/opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib -lssl -lcrypto
 #CONFIG += debug
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB _MSS_
 #QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant

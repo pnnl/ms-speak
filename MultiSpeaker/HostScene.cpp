@@ -844,6 +844,9 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 		thread->start();
 	}*/
 	Host* host;
+
+	// QSslSocket::addDefaultCaCertificates("example.pem"); // 2021
+
 	// Initiate Connection to Request Destination Host, if enabled
 	//if (s.value(SK_HTTP_OUT_REQ_FLAG, false).toBool() && e.Type() == TimelineEvent::Request)
 	if ( e.Type() == TimelineEvent::Request && (host = HostById(e.DstHostId())))

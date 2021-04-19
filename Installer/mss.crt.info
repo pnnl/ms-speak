@@ -1,0 +1,60 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            5a:cc:d7:ae:43:28:0e:39:e5:05:03:bf:cb:f1:6a:79:5f:5b:ad:e0
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = US, ST = WA, L = Richland, O = PNNL, OU = EED, CN = MS_USER, emailAddress = ms_user@ms.org
+        Validity
+            Not Before: Apr 19 00:10:08 2021 GMT
+            Not After : Apr 19 00:10:08 2022 GMT
+        Subject: C = US, ST = WA, L = Richland, O = PNNL, OU = EED, CN = MS_USER, emailAddress = ms_user@ms.org
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:db:aa:fa:f3:25:d2:13:b3:97:2b:43:54:88:03:
+                    13:e7:bd:3a:61:14:f9:7a:ce:60:d3:b7:ab:b0:e3:
+                    22:da:71:5b:03:02:a4:cb:71:45:a2:42:e0:3f:47:
+                    b8:4a:f9:2e:13:4b:48:e1:aa:1d:61:4e:95:81:c8:
+                    2a:25:3d:5c:8c:fc:3f:31:d3:e8:87:3e:9a:fc:5d:
+                    5c:a1:db:b0:4b:db:e5:41:9f:e8:1a:65:45:5b:fb:
+                    af:c3:74:28:6c:49:ce:2a:c5:a8:17:85:ae:d4:3f:
+                    ff:96:d7:bd:de:ad:df:e7:01:cc:b5:d6:c7:fc:1e:
+                    77:91:96:f5:f5:b7:8a:e4:7f:4e:eb:15:52:da:9b:
+                    50:21:8e:3e:c2:f4:13:90:e3:70:ae:74:4b:4c:5a:
+                    e4:6f:57:40:d4:f3:fc:64:c1:c1:99:51:b3:72:65:
+                    2a:61:d7:8d:15:59:89:ea:53:b4:24:d0:56:c6:5b:
+                    43:c5:72:2a:a1:ea:1c:31:15:1f:b4:ec:c1:9a:24:
+                    94:94:fe:67:80:01:07:f6:1e:34:ed:45:a8:81:dc:
+                    53:88:63:96:b3:84:d5:3d:e5:72:7f:05:21:52:7d:
+                    ce:4e:c8:0b:9b:ef:6a:66:67:05:b4:af:ed:30:99:
+                    93:45:93:bf:63:09:17:bb:e4:f8:56:27:00:c8:7c:
+                    58:37
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Key Usage: 
+                Certificate Sign, CRL Sign
+            X509v3 Subject Key Identifier: 
+                F6:C3:17:89:91:69:AC:66:26:61:88:F0:14:30:B8:0F:3D:AA:3F:F2
+            X509v3 Authority Key Identifier: 
+                keyid:F6:C3:17:89:91:69:AC:66:26:61:88:F0:14:30:B8:0F:3D:AA:3F:F2
+
+            X509v3 Basic Constraints: critical
+                CA:TRUE
+    Signature Algorithm: sha256WithRSAEncryption
+         31:b6:48:9f:30:e8:83:10:11:eb:2f:e3:4f:1d:c5:ca:65:c5:
+         93:78:c7:88:72:eb:64:a3:86:f3:62:45:df:1a:08:4d:a2:02:
+         c2:bf:34:81:3a:1a:2c:36:1c:72:70:12:a4:a9:6e:96:5e:4c:
+         e6:ba:d1:76:e7:69:68:16:f1:04:e2:48:b3:57:f3:cd:5c:a2:
+         1b:7a:b1:d5:c6:3a:04:47:d1:08:ab:aa:49:29:cd:85:cd:e3:
+         29:69:8b:a7:f4:12:8d:f0:3b:7e:41:c2:6d:d9:ad:0c:b7:cd:
+         a0:b4:d0:6e:db:c2:3e:f3:76:d0:5e:62:6b:50:05:2e:fb:d3:
+         05:6f:11:42:dc:b9:54:a5:5f:bf:cc:f3:b3:53:7b:ac:64:54:
+         cc:ea:9c:a4:59:e0:83:52:2d:35:9c:e1:90:7a:40:54:f2:93:
+         56:9e:d0:63:68:37:d9:c6:a1:9d:59:9a:1d:10:76:2c:c1:9d:
+         7a:fb:36:4b:f6:6a:75:66:d3:6c:59:bb:9f:57:d9:df:bc:be:
+         3d:2f:5f:4f:72:5a:c9:6e:b4:62:70:d9:34:24:6c:0d:d6:d3:
+         b1:1f:00:3a:f0:db:3b:b8:79:b9:5e:03:4c:54:88:01:b0:a3:
+         b7:91:39:48:44:a1:6b:2f:87:8a:5d:26:45:21:cd:03:e5:ee:
+         61:9c:59:0d
