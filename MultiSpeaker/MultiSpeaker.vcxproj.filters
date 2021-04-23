@@ -404,15 +404,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_CertInfoDlg.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="SslErrorDlg.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_SslErrorDlg.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_SslErrorDlg.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_scTextEdit.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -430,6 +421,15 @@
     </ClCompile>
     <ClCompile Include="SquidOutEditor.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WsdlLayout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_WsdlLayout.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_WsdlLayout.cpp">
+      <Filter>Generated Files\Release</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -619,12 +619,6 @@
     <CustomBuild Include="CertInfoDlg.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="SslErrorDlg.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="SslErrorDlg.ui">
-      <Filter>Form Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="scTextEdit.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
@@ -633,6 +627,12 @@
     </CustomBuild>
     <CustomBuild Include="SquidOutEditor.h">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="WsdlLayout.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="WsdlLayout.ui">
+      <Filter>Form Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -702,9 +702,6 @@
     <ClInclude Include="GeneratedFiles\ui_CertInfoDlg.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="GeneratedFiles\ui_SslErrorDlg.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Valid8or\Status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -712,6 +709,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_SquidOutEditor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_WsdlLayout.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

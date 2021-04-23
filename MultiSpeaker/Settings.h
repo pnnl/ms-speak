@@ -53,6 +53,7 @@
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
 //		2021 -     bumped TIMELINE_SCENE_HEIGHT to match SCENE_HEIGHT.
+//					set SSL_SELF_CERT_CN as ssl cert CN.
 //-------------------------------------------------------------------------------
 //
 // Summary: Settings.h
@@ -167,6 +168,7 @@ const QString SK_HTTP_OUT_PROXY = QStringLiteral("sk_http_out_proxy");
 const QString SK_HTTP_OUT_HOSTS = QStringLiteral("sk_http_out_hosts");
 
 const QString SK_IGNORE_SSL_SELF_CERT_ERROR = QStringLiteral("sk_ignore_ssl_self_cert_error");
+const QString SSL_SELF_CERT_CN = QStringLiteral("multispeaker.server.org");
 
 // Timeline Scene
 const int TIMELINE_SCENE_HEIGHT = 90; //  60;

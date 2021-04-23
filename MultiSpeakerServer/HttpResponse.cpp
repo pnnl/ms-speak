@@ -71,6 +71,9 @@
 			soapAction="http://www5v80.elsyarres.net/searchFlights"
 		style="document" />
 */
+
+#include <QSslSocket>
+
 #include "HttpResponse.h"
 
 HttpResponse::HttpResponse(QTcpSocket* socket)
@@ -81,6 +84,18 @@ HttpResponse::HttpResponse(QTcpSocket* socket)
     sentHeaders=false;
     sentLastPart=false;
     chunkedMode=false;
+	isSSL = false;
+}
+
+HttpResponse::HttpResponse(QSslSocket* socket)
+{
+	this->ssocket = socket;
+	statusCode = 200;
+	statusText = "OK";
+	sentHeaders = false;
+	sentLastPart = false;
+	chunkedMode = false;
+	isSSL = true;
 }
 
 void HttpResponse::setHeader(QByteArray name, QByteArray value)
@@ -138,12 +153,42 @@ void HttpResponse::writeHeaders()
         buffer.append("\r\n");
 	}*/
     buffer.append("\r\n");
-    writeToSocket(buffer);
+	//if( isSSL )
+	//	writeToSSocket(buffer);
+	//else
+		writeToSocket(buffer);
     sentHeaders=true;
+}
+
+bool HttpResponse::writeToSSocket(QByteArray data)
+{
+	int remaining = data.size();
+	char* ptr = data.data();
+	while( ssocket->isOpen() && remaining>0 )
+	{
+		// If the output buffer has become large, then wait until it has been sent.
+		if (ssocket->bytesToWrite()>16384)
+		{
+			ssocket->waitForBytesWritten(-1);
+		}
+
+		int written = ssocket->write(ptr, remaining);	
+		if (written == -1)
+		{
+			return false;
+		}
+		ptr += written;
+		remaining -= written;
+	}
+	return true;
 }
 
 bool HttpResponse::writeToSocket(QByteArray data)
 {
+	if (isSSL) {
+		return writeToSSocket(data);
+	}
+
     int remaining=data.size();
     char* ptr=data.data();
     while (socket->isOpen() && remaining>0)
@@ -222,9 +267,14 @@ void HttpResponse::write(QByteArray data, bool lastPart)
         {
             writeToSocket("0\r\n\r\n");
         }
-        socket->flush();
-        sentLastPart=true;
-    }
+		if (isSSL) {
+			ssocket->flush();
+		}
+		else {
+			socket->flush();
+		}
+		sentLastPart = true;
+	}
 }
 
 bool HttpResponse::hasSentLastPart() const
@@ -241,12 +291,18 @@ void HttpResponse::redirect(const QByteArray& url)
 
 void HttpResponse::flush()
 {
-    socket->flush();
+	if (isSSL)
+		ssocket->flush();
+	else
+		socket->flush();
 }
 
 bool HttpResponse::isConnected() const
 {
-    return socket->isOpen();
+	if (isSSL)
+		return ssocket->isOpen();
+	else
+		return socket->isOpen();
 }
 /*
  *  this method makes the HTTP header for the response

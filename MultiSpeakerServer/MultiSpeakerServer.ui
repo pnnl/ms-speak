@@ -17,6 +17,13 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QGroupBox" name="groupBox_2">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
       <property name="title">
        <string>Connection</string>
       </property>
@@ -27,8 +34,9 @@
           <widget class="QLabel" name="label_2">
            <property name="font">
             <font>
-             <weight>50</weight>
-             <bold>false</bold>
+             <pointsize>9</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
             </font>
            </property>
            <property name="text">
@@ -46,7 +54,7 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>115</width>
+             <width>150</width>
              <height>0</height>
             </size>
            </property>
@@ -56,14 +64,22 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
           </widget>
          </item>
          <item>
           <widget class="QLabel" name="label">
            <property name="font">
             <font>
-             <weight>50</weight>
-             <bold>false</bold>
+             <pointsize>9</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
             </font>
            </property>
            <property name="text">
@@ -73,6 +89,13 @@
          </item>
          <item>
           <widget class="QSpinBox" name="PortSpin">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="minimum">
             <number>0</number>
            </property>
@@ -101,6 +124,13 @@
        </item>
        <item row="1" column="0">
         <widget class="QCheckBox" name="EnableSslCheck">
+         <property name="font">
+          <font>
+           <pointsize>9</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>Enable SSL Encryption</string>
          </property>
@@ -121,6 +151,7 @@
              <widget class="QLabel" name="CertFolderLabel2">
               <property name="font">
                <font>
+                <pointsize>10</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -132,6 +163,13 @@
             </item>
             <item row="0" column="1">
              <widget class="QLabel" name="CertFolderLabel">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -148,6 +186,7 @@
              <widget class="QLabel" name="label_3">
               <property name="font">
                <font>
+                <pointsize>10</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -165,6 +204,13 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -181,6 +227,7 @@
              <widget class="QLabel" name="label_4">
               <property name="font">
                <font>
+                <pointsize>10</pointsize>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -198,6 +245,13 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -214,6 +268,9 @@
           </item>
           <item>
            <widget class="QCheckBox" name="IgnoreSelfSignedCertCheck">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Ignore Self Signed Certificate Error</string>
             </property>
@@ -345,7 +402,7 @@
      <x>0</x>
      <y>0</y>
      <width>743</width>
-     <height>24</height>
+     <height>26</height>
     </rect>
    </property>
   </widget>

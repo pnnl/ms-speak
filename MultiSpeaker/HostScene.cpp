@@ -52,6 +52,8 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - Carl Miller- for Phase3
+//					use SSL_SELF_CERT_CN for ssl cert CN.
 //-------------------------------------------------------------------------------
 //
 // Summary: HostScene.cpp
@@ -743,36 +745,44 @@ void HostScene::OnReplyEncrypted()
 //
 void HostScene::OnReplyError(QNetworkReply::NetworkError error)
 {
-    // Q_UNUSED(error);
+	QString qsError;
 	switch( error ){
 		case QNetworkReply::ProxyConnectionRefusedError:
-			qDebug() << "  ** ProxyConnectionRefusedError **";
+			qsError =  "  ** ProxyConnectionRefusedError **";
 			break;
 		case QNetworkReply::ProxyConnectionClosedError:
-			qDebug() << "  ** ProxyConnectionClosedError **";
+			qsError =  "  ** ProxyConnectionClosedError **";
 			break;
 		case QNetworkReply::ProxyNotFoundError:
-			qDebug() << "  ** ProxyNotFoundError **";
+			qsError =  "  ** ProxyNotFoundError **";
 			break;
 		case QNetworkReply::ProxyTimeoutError:
-			qDebug() << "  ** ProxyTimeoutError **";
+			qsError =  "  ** ProxyTimeoutError **";
 			break;
 		case QNetworkReply::ProxyAuthenticationRequiredError:
-			qDebug() << "  ** ProxyAuthenticationRequiredError **";
+			qsError =  "  ** ProxyAuthenticationRequiredError **";
+			break;
+		case QNetworkReply::ConnectionRefusedError:
+			qsError = "  ** ConnectionRefusedError **";
 			break;
 		default:
-			qDebug() << "** Error: " << error;
+			qsError = QString( "** Error: %1").arg( error );
 			break;
 	}
+	qDebug() << qsError;
 
     if (QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender()))
     {
         qDebug() << "HostScene::OnReplyError()" << reply->errorString();
+		qsError = QString("HostScene::OnReplyError(): %1").arg(reply->errorString());
     }
 	else
 	{
 		qDebug() << "else HostScene::OnReplyError: " << error;
+		qsError = QString("HostScene::OnReplyError(): %1").arg(error);
 	}
+	emit LogMsg(QString("\n%1").arg(qsError));
+
 }
 //------------------------------------------------------------------------------
 // OnReplyFinished
@@ -806,19 +816,37 @@ void HostScene::OnReplyFinished()
 }
 //------------------------------------------------------------------------------
 // OnReplySslErrors
-//
+/*
+Error: "The host name did not match any of the valid hosts for this certificate"
+Common name (CN) has to match the other side's IP and the certificate needs to be 
+signed by a CA that is among those your operating system considers trusted and not by any CA.
+You can ignore those errors if you wish by connecting appropriate signal to appropriate slot
+in your application. It's all described in QSslSocket docs.
+
+if the error returned by OpenSSL would contain a certificate, like with 
+QSslError::SelfSignedCertificate, you must always pass a certificate to QSslError constructor, 
+or the comparison would fail.
+you can also ignore the error manually by connecting the signal sslError() to a slot 
+where you check that the error list contains only a self signed certificate error, and 
+then call ignoreSslErrors() (without any parameter).
+
+*/
 void HostScene::OnReplySslErrors(const QList<QSslError>& errors)
 {
 	qDebug() << "HostScene::OnReplySslErrors()";
 	if (QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender()))
 	{
 		QList<QSslError> expectedSslErrors;
+		QString SslErrors;
 		foreach(QSslError error, errors)
 		{
 			qDebug() << "Error:" << error.error() << error.errorString();
+			SslErrors += error.errorString() +"\n";
 			expectedSslErrors.append(error);
 		}
-		reply->ignoreSslErrors(expectedSslErrors);
+		emit LogMsg(QString("\n%1").arg(SslErrors));
+		//reply->ignoreSslErrors(expectedSslErrors);
+		reply->ignoreSslErrors();
 	}
 }
 //------------------------------------------------------------------------------
@@ -877,10 +905,14 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 			qDebug() << "Port:" << host->ReqHostPort();
 
 			QNetworkRequest request;
-			//request.setUrl(QUrl("http://64.184.186.24:8080/")); // this works!!!
+			//request.setUrl(QUrl("http://64.184.186.24:8080/"));
 			//if (s.value(SK_HTTP_OUT_SSL, false).toBool())
-
 			if( host->EnableSsl() ){
+				// 2021: SSL_SELF_CERT_CN
+				//request.setPeerVerifyName(SSL_SELF_CERT_CN);
+				QSslConfiguration sslconf;
+				sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);
+				request.setSslConfiguration(sslconf);
 				request.setUrl(QUrl(QString("https://%1:%2/").arg(host->ReqHostAddress()).arg(host->ReqHostPort())));
 			}
 			else{
@@ -944,7 +976,7 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 	}
 }
 //------------------------------------------------------------------------------
-// OnReplyError
+// OnGetReplyError
 //
 void HostScene::OnGetReplyError(QNetworkReply::NetworkError error)
 {

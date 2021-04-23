@@ -217,6 +217,7 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 	//  show all data, in hex:  sudo tcpdump -i lo tcp and dst port 8888 -s0 -vv -X -c 1000
 	// reset;sudo tcpdump -i lo tcp and dst port 8888 -s0 -A -c 100 -q -t -v >= 400
 }
+
 //------------------------------------------------------------------------------
 // SendResponse
 //

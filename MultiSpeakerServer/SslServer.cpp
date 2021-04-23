@@ -53,6 +53,8 @@
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
 //		2021 - CHM: for Phase3
+//					Call setPeerVerifyMode(QSslSocket::VerifyNone)
+//					Call ReadMessage() OnReadyRead().
 //-------------------------------------------------------------------------------
 //
 // Summary: SslServer.cpp
@@ -67,11 +69,12 @@
 
 #include "ServerWorker.h"
 #include "SslServer.h"
+#include "HttpResponse.h"
 
 //------------------------------------------------------------------------------
 // SslServer
 //
-SslServer::SslServer(QObject* parent)
+SslServer::SslServer( QObject* parent)
   : Server(parent),
 	m_sslLocalCertificate(),
 	m_sslPrivateKey(),
@@ -85,6 +88,7 @@ SslServer::SslServer(QObject* parent)
 	m_parseContentLengthFlag(false),
 	m_parseSourceAndDestIdFlag(false),
 	m_Supported(false)
+	//,m_responseFile("")
 {
 	/*
 	 * qt.network.ssl: Incompatible version of OpenSSL
@@ -106,12 +110,30 @@ SslServer::SslServer(QObject* parent)
 			cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
 			sudo ln -s libcrypto.so libssl.so.1.0.0
 			sudo ln -s libcrypto.so libcrypto.so.1.0.0
-		and this worked!
+		and this worked.
+
+		but on windoze:
+			"OpenSSL 1.1.1d  10 Sep 2019"
+			On windoze, the MultiSpeaker apps are built with Qt 5.15,
+			on Linux, they are built with Qt 5.11.3 so that the are compatible with the
+			native Debian 10 Qt libraries.
+
+			I did this:
+			QT 5.15:
+				Make sure you have installed OpenSSL Toolkit using Qt Maintenance Tool
+				Go to C:\Qt\Tools\OpenSSL\Win_x64\bin and search 
+					for "libcrypto-1_1-x64.dll" and "libssl-1_1-x64.dll
+				Copy them into the compiler folder (C:\Qt\5.15.0\msvc2015_64\bin)
+			it installed OpenSSL 1.1.1j and i got
+					C:\Qt\Tools\OpenSSL
+			i now no longer get !QSslSocket::supportsSsl(), but
+			i don't see the MS packet either,added openssl-1.1.1l-dev
 	*/
 
-	if (!QSslSocket::supportsSsl()){
+	if( !QSslSocket::supportsSsl() ){
 		QString qs2 = QSslSocket::sslLibraryBuildVersionString();
 		QString qs = QStringLiteral("System does not support Qt OpenSSL Version:\n%1").arg(qs2);
+		qDebug() << qs2;
 		QMessageBox::information(Q_NULLPTR, "Unsupported Secure Socket Layer", qs);
 	}
 	else{
@@ -131,6 +153,7 @@ SslServer::~SslServer()
 void SslServer::incomingConnection(qintptr socketDescriptor)
 {
 	qDebug() << "SslServer::incomingConnection()";
+
 	QSslSocket* socket = new QSslSocket(this);
 	if (!socket->setSocketDescriptor(socketDescriptor))
 	{
@@ -150,6 +173,8 @@ void SslServer::incomingConnection(qintptr socketDescriptor)
 	m_headerRead = (m_headerSize == 0) ? true : false; // If the header size if 0 then there is no header
 
 	connect(socket, SIGNAL(encrypted()), this, SLOT(OnEncrypted()));
+	connect(socket, SIGNAL(encryptedBytesWritten(qint64)), this, SLOT(OnEncryptedBytesWritten(qint64)));
+	
 	connect(socket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(OnSslErrors(const QList<QSslError>&)));
 	connect(socket, SIGNAL(peerVerifyError(const QSslError&)), this, SLOT(OnPeerVerifyError(const QSslError&)));
 
@@ -158,6 +183,7 @@ void SslServer::incomingConnection(qintptr socketDescriptor)
 	socket->setProtocol(m_sslProtocol);
 	socket->startServerEncryption();
 	//addPendingConnection(socket);
+	socket->setPeerVerifyMode(QSslSocket::VerifyNone);
 }
 //------------------------------------------------------------------------------
 // SetSslCertFolder
@@ -207,6 +233,8 @@ void SslServer::ReadMessage(QSslSocket* socket)
 {
 	qint64 bytesAvailable = socket->bytesAvailable();
 	qDebug() << "Bytes Available:" << bytesAvailable;
+	emit Message("ReadMessage::Bytes Available\n   ");
+
 	if (bytesAvailable >= m_headerSize && !m_headerRead)
 	{
 		QDataStream in(socket);
@@ -236,7 +264,8 @@ void SslServer::ReadMessage(QSslSocket* socket)
 	{
 		block = socket->readAll(); // We are streaming so read it all
 		emit Message(block);  // We are streaming with no idea of size of message to just emit and return
-		return;
+		if( 0 ) //  allow for testing
+			return;
 	}
 	else
 		block = socket->read(m_bufferSize - m_bytesRead); // Read at most what is left in this message
@@ -253,22 +282,146 @@ void SslServer::ReadMessage(QSslSocket* socket)
 
 		in >> data;
 		//qDebug() << data.count() << data;
+		/*
 		if (m_parseSourceAndDestIdFlag)
 			//   static_cast <unsigned int>(
 			;//emit Message(m_srcId, m_dstId, static_cast <qint32>(m_bytesRead), m_buffer);
 		else
 			emit Message(static_cast <qint32>(m_bytesRead), m_buffer);
+		*/
 		m_headerRead = false;
 	}
 	if (socket->bytesAvailable())
 		ReadMessage(socket);
+
+	QString respdata = ResponseFile();
+	if (respdata.isEmpty())
+		respdata = "\n*** No Response File Selected *** ";
+
+	SendResponse(200, respdata, socket, m_buffer);
+	m_buffer.clear();
+
 }
+
+//------------------------------------------------------------------------------
+// SendResponse
+//
+void SslServer::SendResponse(int code, QString& data,
+								QSslSocket* socket, QByteArray& m_buffer)
+{
+	//socket->write("Got it!");
+	//return;
+	HttpResponse response(socket); // statusCode=200, statusText="OK";
+	if (code != 200) {
+		response.setStatusFromCode(code);
+	}
+	response.setHeader("Content-Type", response.getContentType(0));
+	response.setHeader("Content-Length", QByteArray::number(data.size()));
+	response.setHeader("Connection", "keep-alive"); // "close"
+	response.setHeader("Server", "MultiSpeakerServer");
+	response.setHeader("soapAction", "http://www.multispeak.org/Version_5.0_Release/InitiateConnectDisconnect");
+	/*
+
+	QString sMid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+	QString time_format = "yyyy-MM-dd HH:mm:ss.zzz";
+	QDateTime dt = QDateTime::currentDateTime();
+	QString sTs = dt.toString(time_format);
+	QString sAppName("");
+	QString sCompany("");
+	QString sMethod("");
+	QString sTid("");
+	QString sTid2("");
+	QString sMethodNS("");
+
+	QXmlStreamReader reader(m_buffer);
+
+	if (reader.readNextStartElement()) {
+		if (reader.name() == "Envelope") {
+			while (reader.readNextStartElement()) {
+				if (reader.name() == "Header") {
+					while (reader.readNextStartElement()) {
+						if (reader.name() == "MultiSpeakRequestMsgHeader") {
+							foreach(const QXmlStreamAttribute &attr, reader.attributes()) {
+								QString sAttrName = attr.name().toString();
+								//qDebug(qPrintable(sAttrName));
+								//if (attr.name().toString() == QLatin1String("xmlns")) {
+								//QString attribute_value = attr.value().toString();
+								//qDebug(qPrintable(attribute_value));
+								//qDebug() << "Attribute '" << qPrintable(sAttrName) << "' Has Value '" << qPrintable(attribute_value) << "'.";
+								//qDebug() << "Is in NameSpace: " << reader.namespaceUri();
+								//}
+							}
+							while (reader.readNextStartElement()) {
+								if (reader.name() == "Caller") {
+									while (reader.readNextStartElement()) {
+										if (reader.name() == "AppName") {
+											sAppName = reader.readElementText();
+											//qDebug(qPrintable(sAppName));
+										}
+										else if (reader.name() == "Company") {
+											sCompany = reader.readElementText();
+											//qDebug(qPrintable(sCompany));
+										}
+									}
+								}
+								else {
+									reader.skipCurrentElement();
+								}
+							}
+						}
+						else {
+							reader.skipCurrentElement();
+						}
+					}
+				}
+				else if (reader.name() == "Body") {
+					reader.readNextStartElement();
+					sMethod = reader.name().toString();
+					//qDebug(qPrintable(sMethod));
+					sMethodNS = reader.namespaceUri().toString();
+					//qDebug() << "Is in NameSpace: " << sMethodNS;
+
+					while (reader.readNextStartElement()) {
+						if (reader.name() == "transactionID") {
+							sTid = reader.readElementText();
+							//qDebug(qPrintable(sTid));
+						}
+					}
+				}
+				else {
+					reader.skipCurrentElement();
+				}
+			}
+		}
+		else {
+			reader.raiseError(QObject::tr("Incorrect file"));
+		}
+	}
+
+	if (reader.hasError()) {
+		qDebug() << "Error: " << reader.errorString();
+	}
+	if (!sTid.isEmpty()) {
+		sTid2 = "<tns:transactionID>%1</tns:transactionID>";
+		sTid2 = sTid2.arg(sTid);
+	}
+	QByteArray outbytes = data.arg(sMethodNS).arg(sMid).arg(sTs).arg(sAppName)
+	.arg(sCompany).arg(sMethod).arg(sMethodNS).arg(sTid2).arg(sMethod).toUtf8();
+	*/
+	QByteArray outbytes = data.arg("sMethodNS").arg("sMid").arg("sTs").arg("sAppName")
+		.arg("sCompany").arg("sMethod").arg("sMethodNS").arg("sTid2").arg("sMethod").toUtf8();
+
+	response.write(outbytes, true);
+
+}
+
 //------------------------------------------------------------------------------
 // OnConnected
 //
 void SslServer::OnConnected()
 {
 	qDebug() << "SslServer::OnConnected()";
+	emit Message("SslServer::OnConnected\n");
 }
 //------------------------------------------------------------------------------
 // OnDisconnected
@@ -279,6 +432,7 @@ void SslServer::OnDisconnected()
 	if (QSslSocket* socket = qobject_cast<QSslSocket*>(sender()))
 		socket->deleteLater();
 }
+
 //------------------------------------------------------------------------------
 // OnEncrypted
 //
@@ -289,7 +443,18 @@ void SslServer::OnEncrypted()
 	if (QSslSocket* socket = qobject_cast<QSslSocket*>(sender()))
 	{
 		connect(socket, SIGNAL(readyRead()), this, SLOT(OnReadyRead()));
+		emit Message("SslServer::OnEncrypted\n");
 	}
+}
+
+//------------------------------------------------------------------------------
+// OnEncryptedBytesWritten
+//
+void SslServer::OnEncryptedBytesWritten(qint64 written)
+{
+	QString qs = QString("SslServer::OnEncryptedBytesWritten: %1\n").arg(written);
+	QByteArray qb = qs.toUtf8();
+	emit Message(qb);
 }
 //------------------------------------------------------------------------------
 // OnError
@@ -312,31 +477,59 @@ void SslServer::OnError(QAbstractSocket::SocketError error)
 //
 void SslServer::OnNewConnection()
 {
-    if (QSslSocket* socket = qobject_cast<QSslSocket*>(nextPendingConnection()))
+	emit Message("Client connected to Server\n");
+	/*
+		Call nextPendingConnection() to accept the pending connection as a
+		connected QTcpSocket. The function returns a pointer to a QTcpSocket in
+		QAbstractSocket::ConnectedState that you can use for communicating with the
+		client.
+		If an error occurs, serverError() returns the type of error, and
+		errorString() can be called to get a human readable description of what
+		happened.
+
+		Note: The returned QTcpSocket object cannot be used from another thread. 
+		If you want to use an incoming connection from another thread, you need to 
+		override incomingConnection().
+
+	*/
+	if (QSslSocket* socket = qobject_cast<QSslSocket*>(nextPendingConnection()))
     {
         Q_UNUSED(socket);
         qDebug() << "SslServer::OnNewConnection()";
+		emit Message("SslServer::OnNewConnection\n");
     }
+	//else {
+	//	emit Message("SslServer::OnNewConnection - Socket Failure\n");
+	//}
 }
 //------------------------------------------------------------------------------
 // OnReadyRead
 //
 void SslServer::OnReadyRead()
 {
-  qDebug() << "SslServer::OnReadyRead()";
+	qDebug() << "SslServer::OnReadyRead()";
+	emit Message("SslServer::OnReadyRead\n");
+
+	if (QSslSocket* socket = qobject_cast<QSslSocket*>(sender()))
+	{
+		ReadMessage(socket);
+	}
 }
+
 //------------------------------------------------------------------------------
 // OnSslErrors
 //
 void SslServer::OnSslErrors(const QList<QSslError>& errors)
 {
-  qDebug() << "SslServer::OnSslErrors() ErrorCount:" << errors.count();
+	qDebug() << "SslServer::OnSslErrors() ErrorCount:" << errors.count();
+	emit Message("SslServer::OnSslErrors\n");
 }
 //------------------------------------------------------------------------------
 // OnPeerVerifyError
 //
 void SslServer::OnPeerVerifyError(const QSslError& error)
 {
-  qDebug() << "SslServer::OnPeerVerifyError()" << error.errorString();
+	qDebug() << "SslServer::OnPeerVerifyError()" << error.errorString();
+	emit Message("SslServer::OnPeerVerifyError\n");
 }
 

@@ -52,6 +52,8 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - Carl Miller- for Phase3
+//					added QSslSocket constructor.
 //-------------------------------------------------------------------------------
 //
 // Summary: HttpResponse.h
@@ -85,6 +87,8 @@
   before calling write(). Web Browsers use that information to display a progress bar.
 */
 
+class QSslSocket;
+
 class HttpResponse { // DECLSPEC
     Q_DISABLE_COPY(HttpResponse)
 public:
@@ -93,7 +97,8 @@ public:
       Constructor.
       @param socket used to write the response
     */
-    HttpResponse(QTcpSocket* socket);
+	HttpResponse(QTcpSocket* socket);
+	HttpResponse(QSslSocket* socket);
 
     /**
       Set a HTTP response header.
@@ -180,7 +185,8 @@ private:
     QMap<QByteArray,QByteArray> headers;
 
     /** Socket for writing output */
-    QTcpSocket* socket;
+	QTcpSocket* socket;
+	QSslSocket* ssocket;
 
     /** HTTP status code*/
     int statusCode;
@@ -195,13 +201,15 @@ private:
     bool sentLastPart;
 
     /** Whether the response is sent in chunked mode */
-    bool chunkedMode;
+	bool chunkedMode;
+	bool isSSL;
 
 	/** Cookies
 	QMap<QByteArray,HttpCookie> cookies; */
 
     /** Write raw data to the socket. This method blocks until all bytes have been passed to the TCP buffer */
-    bool writeToSocket(QByteArray data);
+	bool writeToSSocket(QByteArray data);
+	bool writeToSocket(QByteArray data);
 
     /**
       Write the response HTTP status and headers to the socket.

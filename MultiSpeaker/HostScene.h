@@ -164,8 +164,8 @@ signals:
   void MiniNetFinished(const QString& msg);
   void MiniNetStdErr(const QString& msg);
   void MiniNetStdOut(const QString& msg);
-  void TimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
-
+  //  nothing is emitting this signal:
+  //void TimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
 
 private slots:
   void slotAuthenticationRequired(QNetworkReply *, QAuthenticator * );

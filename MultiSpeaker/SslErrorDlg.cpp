@@ -84,9 +84,9 @@ SslErrorDlg::~SslErrorDlg()
 //
 void SslErrorDlg::AddErrors(const QList<QSslError>& errors)
 {
-  ui.IgnoreSelfSignedCertCheck->hide();
-  foreach(QSslError error, errors)
-  {
+	ui.IgnoreSelfSignedCertCheck->hide();
+	foreach(QSslError error, errors)
+	{
     ui.SslErrorList->addItem(error.errorString());
     if (error.error() == QSslError::SelfSignedCertificate)
     {

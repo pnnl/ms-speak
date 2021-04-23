@@ -132,7 +132,7 @@ private:
 	void CreateWsdlDock();
 
 	void DisplayCertChainInfo(const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
-	void DisplayHostSslErrors(const QList<QSslError>& errors);
+	//void DisplayHostSslErrors(const QList<QSslError>& errors);
 
 	void EditTimelineEvent(TimelineEvent& e);
 
@@ -166,7 +166,7 @@ private slots:
 	void OnTimelineMouseMove(int timeStamp);
 	void OnTimelineSpanBtnClicked();
 	void OnTimelineSpanChanged(int timeSpan);
-	void OnTimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
+	//void OnTimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain);
 	void OnToolBarVisibilityChanged(bool visible) { if (!visible) qobject_cast<QToolBar*>(sender())->setVisible(true); } // Prevent user from hiding the main tool bar
 	void OnWsdl() {
 		WsdlDockRef().show();

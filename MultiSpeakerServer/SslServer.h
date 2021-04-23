@@ -88,6 +88,7 @@ private:
 	bool m_parseContentLengthFlag;
 	bool m_parseSourceAndDestIdFlag;
 	bool m_Supported;
+	//QString m_responseFile;
 
 public:
 	SslServer(QObject* parent = Q_NULLPTR);
@@ -113,11 +114,13 @@ protected:
 
 private:
 	void ReadMessage(QSslSocket* socket);
+	void SendResponse(int, QString&, QSslSocket*, QByteArray&);
 
 private slots:
 	void OnConnected();
 	void OnDisconnected();
 	void OnEncrypted();
+	void OnEncryptedBytesWritten(qint64);
 	void OnError(QAbstractSocket::SocketError error);
 	void OnNewConnection();
 	void OnReadyRead();

@@ -171,18 +171,19 @@ void Utils::InitHostCombo(QComboBox& combo, const QStringList recentAddresses)
     }
   }
 
-  // Select the first non-localhost ipv4 address
-  QString ip;
-  for (int i = 0; i < ipAddressesList.size(); ++i)
-  {
-    if (ipAddressesList.at(i) != QHostAddress::LocalHost && ipAddressesList.at(i).toIPv4Address())
-    {
-      ip = ipAddressesList.at(i).toString();
-      break;
-    }
-  }
-  int idx = combo.findText(ip);
-  combo.setCurrentIndex(idx);
+	// Select the first non-localhost ipv4 address
+	QString ip;
+	for (int i = 0; i < ipAddressesList.size(); ++i)
+	{
+		if (ipAddressesList.at(i) != QHostAddress::LocalHost && ipAddressesList.at(i).toIPv4Address())
+		{
+			ip = ipAddressesList.at(i).toString();
+			break;
+		}
+	}
+	int idx = combo.findText(ip);
+
+	combo.setCurrentIndex(idx);
 }
 //------------------------------------------------------------------------------
 // ParseShortName

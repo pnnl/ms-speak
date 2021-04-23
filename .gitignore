@@ -76,3 +76,6 @@ Sql/BizRules (for install).db
 MspDev
 Packages/4InstallBranch
 MultiSpeaker.txt
+Installer/Output/
+MultiSpeaker.VC.VC.opendb
+MultiSpeaker/HttpOutEditor.ui.bak.ui

@@ -64,6 +64,7 @@
 #include <QNetworkInterface>
 #include <QSettings>
 #include <QTimer>
+#include <QSslSocket>
 
 #include "MultiSpeakerServer.h"
 #include "Settings.h"
@@ -81,6 +82,8 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 {
 	ui.setupUi(this);
 	ui.StopAct->setEnabled(false);
+	ui.IgnoreSelfSignedCertCheck->setEnabled(false);
+	ui.IgnoreSelfSignedCertCheck->hide();
 
 	connect(ui.CertFileBrowseBtn, SIGNAL(clicked()), this, SLOT(OnCertFileBrowse()));
 	//connect(ui.CertFolderBrowseBtn, SIGNAL(clicked()), this, SLOT(OnCertFolderBrowse()));
@@ -184,6 +187,8 @@ void MultiSpeakerServer::ServerListen()
 	bool sslEnabled = s.value(SK_SSL_ENABLED, false).toBool();
 	if (sslEnabled)
 	{
+		//QFile certFile(QStringLiteral(":/localhost.cert"));
+		//QFile keyFile(QStringLiteral(":/localhost.key"));
 		SslServer* server = new SslServer(this);
 		if( server->IsSupported() )
 		{
@@ -210,9 +215,16 @@ void MultiSpeakerServer::ServerListen()
 				OnMessage(QString("\nError Setting Cert Folder '%1'").arg(certFolder).toLatin1());
 			}
 		}
+		else {
+			sslEnabled = false;
+		}
 		if( !sslEnabled ){
 			ui.EnableSslCheck->setChecked(false);
 			OnSslEnabledCheckChanged(false);
+			QString qs2 = QSslSocket::sslLibraryBuildVersionString();
+			ui.plainTextEdit->appendPlainText(QString("%1\n%2")
+				.arg("Unsupported Secure Socket Layer")
+				.arg(qs2));
 			return;
 		}
 	}
@@ -253,7 +265,6 @@ void MultiSpeakerServer::ServerListen()
 	ui.CertFileBrowseBtn->setEnabled(false);
 	ui.CertFolderBrowseBtn->setEnabled(false);
 	ui.PrivateKeyFileBrowseBtn->setEnabled(false);
-	ui.IgnoreSelfSignedCertCheck->setEnabled(false);
 	ui.HostCombo->setEnabled(false);
 	ui.PortSpin->setEnabled(false);
 	ui.EnableSslCheck->setEnabled(false);
@@ -319,7 +330,7 @@ void MultiSpeakerServer::OnInitHostAddress()
 			break;
 		}
 	}*/
-	// Select the loopback address
+	/* Select the loopback address
 	for (int i = 0; i < ipAddressesList.size(); ++i)
 	{
 		if (ipAddressesList.at(i) == QHostAddress::LocalHost && ipAddressesList.at(i).toIPv4Address())
@@ -327,7 +338,8 @@ void MultiSpeakerServer::OnInitHostAddress()
 			ip = ipAddressesList.at(i).toString();
 			break;
 		}
-	}
+	}*/
+	ip = "0.0.0.0";
 	int idx = ui.HostCombo->findText(ip);
 	ui.HostCombo->setCurrentIndex(idx);
 }
@@ -380,7 +392,7 @@ void MultiSpeakerServer::OnServerClosed(QObject* obj)
     ui.CertFileBrowseBtn->setEnabled(true);
     ui.CertFolderBrowseBtn->setEnabled(true);
     ui.PrivateKeyFileBrowseBtn->setEnabled(true);
-    ui.IgnoreSelfSignedCertCheck->setEnabled(true);
+    //ui.IgnoreSelfSignedCertCheck->setEnabled(true);
     ui.HostCombo->setEnabled(true);
     ui.PortSpin->setEnabled(true);
     ui.EnableSslCheck->setEnabled(true);
@@ -402,7 +414,7 @@ void MultiSpeakerServer::OnSslEnabledCheckChanged(bool checked)
 {
 	ui.SslFrame->setVisible(checked);
 	if( checked )
-		ui.PortSpin->setValue(443);
+		ui.PortSpin->setValue(8443);
 	else
 		ui.PortSpin->setValue(8080);
 

@@ -101,7 +101,7 @@ public:
 private slots:
 
 	void OnAccept();
-	void OnEnableSslCheck(bool checked) {m_host.SetEnableSsl(checked);}
+	void OnEnableSslCheck(bool checked);
 	void OnEnableProxyCheck(bool checked);
 	void OnReqHostPortChanged(int port) {m_host.SetReqHostPort(port); }
 	void OnRespHostPortChanged(int port) {m_host.SetRespHostPort(port); }

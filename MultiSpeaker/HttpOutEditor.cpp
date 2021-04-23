@@ -210,6 +210,17 @@ void HttpOutEditor::OnAccept()
 }
 
 //------------------------------------------------------------------------------
+// OnEnableSslCheck
+void HttpOutEditor::OnEnableSslCheck(bool checked)
+{
+	if (checked)
+		ui.RequestHostPortSpin->setValue( 8443 );
+	else
+		ui.RequestHostPortSpin->setValue( 8080 );
+	m_host.SetEnableSsl(checked);
+}
+
+//------------------------------------------------------------------------------
 // OnEnableProxyCheck
 void HttpOutEditor::OnEnableProxyCheck(bool checked)
 {

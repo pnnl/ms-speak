@@ -75,7 +75,6 @@ private:
 	qint64 m_bytesYettoRead;
 	bool m_headerRead;
 	qintptr m_socketDescriptor;
-	//QByteArray& m_responseFile;
 	QString& m_responseFile;
 
 public:

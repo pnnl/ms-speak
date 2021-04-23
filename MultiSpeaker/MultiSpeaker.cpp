@@ -53,6 +53,8 @@
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
 //		2019 - Added Squid.
+//		2021 - Carl Miller- for Phase3
+//					use SSL_SELF_CERT_CN for ssl cert CN.
 //-------------------------------------------------------------------------------
 //
 // Summary: MultiSpeaker.cpp
@@ -83,7 +85,7 @@
 #include "MultiSpeaker.h"
 #include "Settings.h"
 #include "SquidOutEditor.h"
-#include "SslErrorDlg.h"
+//#include "SslErrorDlg.h"
 #include "TimelineEventEditor.h"
 #include "TimelineScene.h"
 #include "Utils.h"
@@ -129,6 +131,13 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 
 	// quint16 is just a typedef for unsigned short - so you can simply use QString::toUShort
 	m_proxyPort = m_proxyPortStr.toUShort();
+
+	//const QString SK_SSL_CERT_FILE = QStringLiteral("sk_ssl_cert_file"); // from MSS
+	//QSettings s;
+	//QString certFile = "C:\\Users\\D3M907\\OneDrive - PNNL\\Desktop\\Projects\\MS-SPEAK\\Phase3\\ms-speak\\Installer\\mss.crt";
+		//s.value(SK_SSL_CERT_FILE, QString()).toString();
+	//QSslSocket::addDefaultCaCertificates(certFile);
+	// QSettings().setValue(sk, fileName);
 
 	// check if this is first running after a fresh install, if so, clear old file settings since
 	// prior wsdl/xsd settings may not be compatible with new 
@@ -183,7 +192,7 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	connect(&Hosts(), SIGNAL(MiniNetFinished(const QString&)), this, SLOT(OnMiniNetMsg(const QString&)));
 	connect(&Hosts(), SIGNAL(MiniNetStdErr(const QString&)), this, SLOT(OnMiniNetMsg(const QString&)));
 	connect(&Hosts(), SIGNAL(MiniNetStdOut(const QString&)), this, SLOT(OnMiniNetMsg(const QString&)));
-	connect(&Hosts(), SIGNAL(TimelineEventSendSslErrors(const QList<QSslError>&, const QSslCipher&, const QList<QSslCertificate>&)), this, SLOT(OnTimelineEventSendSslErrors(const QList<QSslError>&, const QSslCipher&, const QList<QSslCertificate>&)));
+	//connect(&Hosts(), SIGNAL(TimelineEventSendSslErrors(const QList<QSslError>&, const QSslCipher&, const QList<QSslCertificate>&)), this, SLOT(OnTimelineEventSendSslErrors(const QList<QSslError>&, const QSslCipher&, const QList<QSslCertificate>&)));
 
 	connect(&Timeline(), SIGNAL(Error(const QString&)), this, SLOT(OnTimelineError(const QString&)));
 	connect(&Timeline(), SIGNAL(EventUpdated(TimelineEvent&)), this, SLOT(OnTimelineEventDoubleClicked(TimelineEvent&)));
@@ -544,7 +553,7 @@ void MultiSpeaker::DisplayCertChainInfo(const QSslCipher& cipher, const QList<QS
 }
 //-------------------------------------------------------------------------------
 // DisplayHostSslErrors
-//
+/*
 void MultiSpeaker::DisplayHostSslErrors(const QList<QSslError>& errors)
 {
   if (QSettings().value(SK_IGNORE_SSL_SELF_CERT_ERROR, false).toBool())
@@ -574,7 +583,8 @@ void MultiSpeaker::DisplayHostSslErrors(const QList<QSslError>& errors)
     // LGI TODO
     //m_session.IgnoreSslErrors();
   }
-}
+}*/
+
 //------------------------------------------------------------------------------
 // EditTimelineEvent
 //
@@ -877,7 +887,7 @@ void MultiSpeaker::OnTimelineSpanChanged(int timeSpan)
 }
 //------------------------------------------------------------------------------
 // OnTimelineEventSendSslErrors
-//
+/*
 void MultiSpeaker::OnTimelineEventSendSslErrors(const QList<QSslError>& errors, const QSslCipher& cipher, const QList<QSslCertificate>& certChain)
 {
 	QStringList list;
@@ -889,7 +899,7 @@ void MultiSpeaker::OnTimelineEventSendSslErrors(const QList<QSslError>& errors, 
 	DisplayCertChainInfo(cipher, certChain);
 	DisplayHostSslErrors(errors);
 	//DisplayError(QString("%1 SslErrors\n%2").arg(key).arg(list.join('\n')));
-}
+}*/
 //------------------------------------------------------------------------------
 // OnTimelineError
 //
