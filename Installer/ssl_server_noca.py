@@ -22,7 +22,7 @@ bindsocket.bind((listen_addr, listen_port))
 bindsocket.listen(5)
 
 #while True:
-print("\nListening on {} for CA Store SSL Client Secure connection...\n".format(listen_addr))
+print("\nListening on {} for SSL Client Secure connection, using {}...\n".format(listen_addr,server_cert))
 cliSock, fromaddr = bindsocket.accept()
 print("Client Connect from {} over:{}".format(fromaddr[0], fromaddr[1]))
 secSock = None
@@ -30,7 +30,7 @@ try:
 	secSock = context.wrap_socket(cliSock, server_side=True)
 	# Original socket no longer needed
 	cliSock.close()
-	print("CA Store SSL established.\nPeer: {}".format(secSock.getpeercert()))
+	print("SSL Session Established.\nPeer Cert: {}".format(secSock.getpeercert()))
 	if( False ):
 		used = secSock.cipher()
 		print("Used cipher: {}\n".format(used))
@@ -43,26 +43,25 @@ try:
 		compression = secSock.compression()
 		print("Compression cipher: {}\n".format(compression))
 
-	buf = b''  # Buffer to hold received client data
-	print("\nWaiting {}".format('for data'))
+	data = b''  # buffer to hold received client data
+	print("\nWaiting {}".format('for Client Data'))
+	replyStr = b'Good-Bye'
 	while True:
-		data = secSock.recv(1024)
-		if data:
+		buf = secSock.recv(1024)
+		if buf:
 			# Client sent us data. Append to buffer
-			print("got: {}".format(data))
-			buf += data
-			buf += b", "
-			secSock.sendall(b'ok')
+			data += buf
+			print("Received: '{}'".format(data.decode('utf-8')))
+			print("Sending Back: '{}'".format(replyStr.decode('utf-8')))
+			secSock.send(replyStr)
 		else:
-			# No more data from client. Show buffer and close Secure connection.
-			print("Received:{}".format(buf))
+			# No more buf from client. Show datafer and close Secure connection.
 			#secSock.shutdown(socket.SHUT_RD)
 			break
 except Exception as ex :
    print('Exception : %s' % ex)
 finally:
 	if( secSock ):
-		secSock.sendall(b'Done With You')
 		print("\nClosing Secure connection")
 		secSock.shutdown(socket.SHUT_RDWR) # SHUT_RDWR
 		secSock.close()
