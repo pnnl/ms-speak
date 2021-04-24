@@ -62,6 +62,9 @@
 
 #include <QString>
 
+const QString CERTIFICATE_FILE = QStringLiteral(":/MultiSpeakerServer/Resources/mss.crt");
+const QString CERTIFICATE_KEY = QStringLiteral(":/MultiSpeakerServer/Resources/mss.key");
+
 // note: the following three need to stay in sync with MultiSpeaker/settings...
 const QString SK_XSD_FILE = "sk_xsd_file";
 const QString SK_XML_FILE = "sk_xml_file";

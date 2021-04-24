@@ -39,14 +39,14 @@
   views and opinions of authors expressed herein do not necessarily state or reflect those of the
   United States Government or any agency thereof.
 									 PACIFIC NORTHWEST NATIONAL LABORATORY
-											    operated by
+												operated by
 												  BATTELLE
-											      for the
+												  for the
 									  UNITED STATES DEPARTMENT OF ENERGY
 									   under Contract DE-AC05-76RL01830
 
 
-    This notice including this sentence must appear on any copies of this computer software.
+	This notice including this sentence must appear on any copies of this computer software.
 */
 //-------------------------------------------------------------------------------
 //	History
@@ -66,12 +66,12 @@
 // SslErrorDlg
 //
 SslErrorDlg::SslErrorDlg(QWidget* parent)
-  : QDialog(parent)
+	: QDialog(parent)
 {
-  ui.setupUi(this);
-  connect(ui.CancelBtn, SIGNAL(clicked()), this, SLOT(reject()));
-  connect(ui.CertChainBtn, SIGNAL(clicked()), this, SLOT(OnCertChainInfo()));
-  connect(ui.IgnoreBtn, SIGNAL(clicked()), this, SLOT(accept()));
+	ui.setupUi(this);
+	connect(ui.CancelBtn, SIGNAL(clicked()), this, SLOT(reject()));
+	connect(ui.CertChainBtn, SIGNAL(clicked()), this, SLOT(OnCertChainInfo()));
+	connect(ui.IgnoreBtn, SIGNAL(clicked()), this, SLOT(accept()));
 }
 //------------------------------------------------------------------------------
 // ~SslErrorDlg
@@ -87,11 +87,11 @@ void SslErrorDlg::AddErrors(const QList<QSslError>& errors)
 	ui.IgnoreSelfSignedCertCheck->hide();
 	foreach(QSslError error, errors)
 	{
-    ui.SslErrorList->addItem(error.errorString());
-    if (error.error() == QSslError::SelfSignedCertificate)
-    {
-      ui.IgnoreSelfSignedCertCheck->show();
-      ui.IgnoreSelfSignedCertCheck->setChecked(QSettings().value(SK_IGNORE_SSL_SELF_CERT_ERROR, false).toBool());
-    }
-  }
+		ui.SslErrorList->addItem(error.errorString());
+		if (error.error() == QSslError::SelfSignedCertificate)
+		{
+			ui.IgnoreSelfSignedCertCheck->show();
+			ui.IgnoreSelfSignedCertCheck->setChecked(QSettings().value(SK_IGNORE_SSL_SELF_CERT_ERROR, false).toBool());
+		}
+	}
 }

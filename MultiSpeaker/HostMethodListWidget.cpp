@@ -141,8 +141,6 @@ void HostMethodListWidget::OnListViewDoubleClicked(const QModelIndex& index)
 
 	QString methodName = index.data(Qt::DisplayRole).toString();
 	QString hostName = index.data(HOST_ROLE).toString();
-	//TimelineEvent reqEvent(id, TimelineEvent::Request, 0, hostName, methodName, wsdl->MethodTemplateRequest(methodName), wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
-	//TimelineEvent resEvent(id+1, TimelineEvent::Response, 500, hostName, methodName, wsdl->MethodTemplateResponse(methodName), wsdl->NamespaceByPrefix(STR_NAMESPACE_PREFIX_TNS));
 
 	WsdlFile* wsdl = WsInfo().Wsdl(hostName);
 	int id = Timeline().NextTimelineEventId(); // Get the current max Id in TimelineScene

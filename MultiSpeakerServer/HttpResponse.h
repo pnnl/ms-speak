@@ -115,6 +115,7 @@ public:
       @param value value of the header
     */
     void setHeader(QByteArray name, int value);
+	void SetData(int code, QString& data, QByteArray& buffer, QByteArray& outbyte);
 
     /** Get the map of HTTP response headers */
     QMap<QByteArray,QByteArray>& getHeaders();

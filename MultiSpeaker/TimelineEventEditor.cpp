@@ -125,6 +125,15 @@ TimelineEventEditor::TimelineEventEditor(const TimelineEvent& request, const Tim
 	connect(ui.ResponseNamespaceEdit, SIGNAL(editingFinished()), this, SLOT(OnResponseNamespaceChanged()));
 	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(OnAccept()));
 	connect(ui.buttonBox, SIGNAL(rejected()), this, SLOT(OnReject()));
+
+	// i believe these were for mininet, to send a response to another host
+	//	has nothing to do with MultiSpeakerServer
+	ui.ResponseHeader->setEnabled(false);
+	ui.ResponseDelayLabel->setEnabled(false);
+	ui.ResponseDelayTimeEdit->setEnabled(false);
+	ui.ResponseNamespaceLabel->setEnabled(false);
+	ui.ResponseNamespaceEdit->setEnabled(false);
+
 	QTimer::singleShot(0, this, SLOT(OnInit())); // force update after the m_wsdlFile has been parsed and instantiated in its constructor
 }
 //------------------------------------------------------------------------------
@@ -193,6 +202,9 @@ void TimelineEventEditor::OnInit()
 	RestoreState();
 	ui.RequestMethodView->Init(&m_request);
 	ui.ResponseMethodView->Init(&m_response,false);
+	ui.ResponseMethodView->IsEnabled(false); // 2021
+	ui.ResponseMethodView->setEnabled(false); // 2021
+	
 }
 //------------------------------------------------------------------------------
 // OnRequestNamespaceChanged

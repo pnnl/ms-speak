@@ -85,23 +85,30 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 	ui.IgnoreSelfSignedCertCheck->setEnabled(false);
 	ui.IgnoreSelfSignedCertCheck->hide();
 
-	connect(ui.CertFileBrowseBtn, SIGNAL(clicked()), this, SLOT(OnCertFileBrowse()));
 	//connect(ui.CertFolderBrowseBtn, SIGNAL(clicked()), this, SLOT(OnCertFolderBrowse()));
+	//connect(ui.CertFileBrowseBtn, SIGNAL(clicked()), this, SLOT(OnCertFileBrowse()));
+	//connect(ui.PrivateKeyFileBrowseBtn, SIGNAL(clicked()), this, SLOT(OnPrivateKeyFileBrowse()));
 	ui.CertFolderBrowseBtn->setVisible(false);
+	ui.CertFileBrowseBtn->setVisible(false);
+	ui.PrivateKeyFileBrowseBtn->setVisible(false);
+
 	connect(ui.EnableSslCheck, SIGNAL(toggled(bool)), this, SLOT(OnSslEnabledCheckChanged(bool)));
 	connect(ui.ListenAct, SIGNAL(triggered()), this, SLOT(OnServerListen()));
-	connect(ui.PrivateKeyFileBrowseBtn, SIGNAL(clicked()), this, SLOT(OnPrivateKeyFileBrowse()));
 	connect(ui.StopAct, SIGNAL(triggered()), this, SLOT(OnServerStop()));
 	connect(ui.btnClear, SIGNAL(clicked()), this, SLOT(OnClear()));
 	connect(ui.btnResponse, SIGNAL(clicked()), this, SLOT(OnResponse()));
 
 	QSettings s;
-	ui.CertFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_CERT_FILE).toString()));
+	//ui.CertFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_CERT_FILE).toString()));
+	ui.CertFileLabel->setText(CERTIFICATE_FILE);
+
 	//ui.CertFolderLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_CERT_FOLDER).toString()));
 	ui.CertFolderLabel->setVisible(false);
 	ui.CertFolderLabel2->setVisible(false);
 
-	ui.PrivateKeyFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_PRIVATE_KEY_FILE).toString()));
+	//ui.PrivateKeyFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_PRIVATE_KEY_FILE).toString()));
+	ui.PrivateKeyFileLabel->setText(CERTIFICATE_KEY);
+
 	ui.EnableSslCheck->setChecked(s.value(SK_SSL_ENABLED, false).toBool());
 	ui.SslFrame->setVisible(s.value(SK_SSL_ENABLED, false).toBool());
 
@@ -187,33 +194,37 @@ void MultiSpeakerServer::ServerListen()
 	bool sslEnabled = s.value(SK_SSL_ENABLED, false).toBool();
 	if (sslEnabled)
 	{
-		//QFile certFile(QStringLiteral(":/localhost.cert"));
-		//QFile keyFile(QStringLiteral(":/localhost.key"));
+		bool bOtherErr = false;
+		QString certFile = CERTIFICATE_FILE;
+		QString keyFile = CERTIFICATE_KEY;
 		SslServer* server = new SslServer(this);
 		if( server->IsSupported() )
 		{
 			sslEnabled = false;
-			QString certFolder = s.value(SK_SSL_CERT_FOLDER, QString()).toString();
-			if( server->SetSslCertFolder(certFolder) ){
-				QString certFile = s.value(SK_SSL_CERT_FILE, QString()).toString();
+			//QString certFolder = s.value(SK_SSL_CERT_FOLDER, QString()).toString();
+			//if( server->SetSslCertFolder(certFolder) ){
+				//QString certFile = s.value(SK_SSL_CERT_FILE, QString()).toString();
 				if( server->SetSslLocalCertificate(certFile) ){
-					QString keyFile = s.value(SK_SSL_PRIVATE_KEY_FILE, QString()).toString();
+					//QString keyFile = s.value(SK_SSL_PRIVATE_KEY_FILE, QString()).toString();
 					if( server->SetSslPrivateKey(keyFile) ){
 						server->SetSslProtocol(QSsl::TlsV1_2);
 						m_server = server;
 						sslEnabled = true;
 					}
 					else{
+						bOtherErr = true;
 						OnMessage(QString("\nError Reading Private Key File '%1'").arg(keyFile).toLatin1());
 					}
 				}
 				else{
+					bOtherErr = true;
 					OnMessage(QString("\nError Reading Cert File '%1'").arg(certFile).toLatin1());
 				}
-			}
-			else{
-				OnMessage(QString("\nError Setting Cert Folder '%1'").arg(certFolder).toLatin1());
-			}
+			//}
+			//else{
+			//	bOtherErr = true;
+			//	OnMessage(QString("\nError Setting Cert Folder '%1'").arg(certFolder).toLatin1());
+			//}
 		}
 		else {
 			sslEnabled = false;
@@ -221,10 +232,12 @@ void MultiSpeakerServer::ServerListen()
 		if( !sslEnabled ){
 			ui.EnableSslCheck->setChecked(false);
 			OnSslEnabledCheckChanged(false);
-			QString qs2 = QSslSocket::sslLibraryBuildVersionString();
-			ui.plainTextEdit->appendPlainText(QString("%1\n%2")
-				.arg("Unsupported Secure Socket Layer")
-				.arg(qs2));
+			if (!bOtherErr) {
+				QString qs2 = QSslSocket::sslLibraryBuildVersionString();
+				ui.plainTextEdit->appendPlainText(QString("%1\n%2")
+					.arg("Unsupported Secure Socket Layer")
+					.arg(qs2));
+			}
 			return;
 		}
 	}
@@ -318,7 +331,7 @@ void MultiSpeakerServer::OnInitHostAddress()
 	}
 	// add 0.0.0.0 to enable connections from local WSL sessions
 	list << "0.0.0.0";
-
+	list << "255.255.255.255";
 	ui.HostCombo->insertItems(0, list);
 	QString ip;
 	/* Select the first non-localhost ipv4 address
@@ -342,6 +355,9 @@ void MultiSpeakerServer::OnInitHostAddress()
 	ip = "0.0.0.0";
 	int idx = ui.HostCombo->findText(ip);
 	ui.HostCombo->setCurrentIndex(idx);
+
+	ui.HostCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+
 }
 //------------------------------------------------------------------------------
 // OnMessage

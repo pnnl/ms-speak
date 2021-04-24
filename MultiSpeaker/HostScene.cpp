@@ -739,6 +739,7 @@ void HostScene::OnReplyDestroyed(QObject* obj)
 void HostScene::OnReplyEncrypted()
 {
 	qDebug() << "HostScene::OnReplyEncrypted()";
+	emit LogMsg(QString("\n%1").arg("Encrypted Session Established"));
 }
 //------------------------------------------------------------------------------
 // OnReplyError
@@ -834,6 +835,7 @@ then call ignoreSslErrors() (without any parameter).
 void HostScene::OnReplySslErrors(const QList<QSslError>& errors)
 {
 	qDebug() << "HostScene::OnReplySslErrors()";
+	//emit LogMsg(QString("\n%1").arg("OnReplySslErrors"));
 	if (QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender()))
 	{
 		QList<QSslError> expectedSslErrors;
@@ -844,7 +846,7 @@ void HostScene::OnReplySslErrors(const QList<QSslError>& errors)
 			SslErrors += error.errorString() +"\n";
 			expectedSslErrors.append(error);
 		}
-		emit LogMsg(QString("\n%1").arg(SslErrors));
+		//emit LogMsg(QString("\n%1").arg(SslErrors));
 		//reply->ignoreSslErrors(expectedSslErrors);
 		reply->ignoreSslErrors();
 	}

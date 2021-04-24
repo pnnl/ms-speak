@@ -98,7 +98,9 @@ void SquidOutEditor::Init()
 	ui.ProxyIpEdit->lineEdit()->setInputMask("000.000.000.000");
 
 	QStringList ipList = getIpAddresses();
+	ipList << "255.255.255.255";
 	ui.ProxyIpEdit->insertItems(0, ipList);
+	ui.ProxyIpEdit->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
 	QString ip = m_ProxyAddress;
 	int idx = ui.ProxyIpEdit->findText(ip);

@@ -272,15 +272,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_TimelineEvent.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="HostEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_HostEditor.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_HostEditor.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="MiniNetEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -538,12 +529,6 @@
     <CustomBuild Include="TimelineEvent.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="HostEditor.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="HostEditor.ui">
-      <Filter>Form Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="MiniNetEditor.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
@@ -664,9 +649,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_WsdlFileView.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GeneratedFiles\ui_HostEditor.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_MiniNetEditor.h">

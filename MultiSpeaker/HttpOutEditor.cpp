@@ -121,6 +121,7 @@ void HttpOutEditor::Init(const Host& host)
 	ui.ResponseHostIpEdit->lineEdit()->setFont(ipFont);
 
 	QStringList ipList = getIpAddresses();
+	ipList << "255.255.255.255";
 	ui.RequestHostIpEdit->insertItems(0, ipList);
 	ui.ResponseHostIpEdit->insertItems(0, ipList);
 
@@ -133,6 +134,7 @@ void HttpOutEditor::Init(const Host& host)
 	else{
 		ui.RequestHostIpEdit->setCurrentIndex(idx);
 	}
+	ui.RequestHostIpEdit->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
 	ip = host.RespHostAddress();
 	idx = ui.ResponseHostIpEdit->findText(ip);
@@ -143,6 +145,7 @@ void HttpOutEditor::Init(const Host& host)
 	else{
 		ui.ResponseHostIpEdit->setCurrentIndex(idx);
 	}
+	ui.ResponseHostIpEdit->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
 	// NOTE: using ui.RequestHostIpEdit->lineEdit(),SIGNAL(returnPressed()) cause SIGEV crash on slot return
 	//		 (maybe due to the HttpOutEditor widget also responding to returnPressed...
@@ -172,6 +175,13 @@ void HttpOutEditor::Init(const Host& host)
 
 	ui.EnableProxyCheck->setChecked(false);
 	connect(ui.EnableProxyCheck, SIGNAL(toggled(bool)), this, SLOT(OnEnableProxyCheck(bool)));
+
+	// i believe these were for mininet, to send a response to another host
+	//	has nothing to do with MultiSpeakerServer
+	//ui.ResponseGroup->setVisible(false);
+	ui.ResponseGroup->setEnabled(false);
+	ui.ResponseGroup->setChecked(false);
+
 }
 //------------------------------------------------------------------------------
 // eventFilter

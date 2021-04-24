@@ -52,6 +52,8 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - CHM: for Phase3
+//					Add SetResponse()
 //-------------------------------------------------------------------------------
 //
 // Summary: HttpResponse.cpp
@@ -73,6 +75,8 @@
 */
 
 #include <QSslSocket>
+#include <QUuid>
+#include <QXmlStreamReader>
 
 #include "HttpResponse.h"
 
@@ -524,4 +528,121 @@ QByteArray HttpResponse::getContentType( int type )
 	}
 
 	return s.toUtf8();
+}
+//------------------------------------------------------------------------------
+// SetData
+//
+void HttpResponse::SetData( int code, QString& data, QByteArray& buffer, QByteArray& outbytes )
+{
+	if (code != 200) { // statusCode=200, statusText="OK";
+		setStatusFromCode(code);
+	}
+	setHeader("Content-Type", getContentType(0));
+	setHeader("Content-Length", QByteArray::number(data.size()));
+	setHeader("Connection", "keep-alive"); // "close"
+	setHeader("Server", "MultiSpeakerServer");
+	setHeader("soapAction", "http://www.multispeak.org/Version_5.0_Release/InitiateConnectDisconnect");
+
+	QString sMid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+	QString time_format = "yyyy-MM-dd HH:mm:ss.zzz";
+	QDateTime dt = QDateTime::currentDateTime();
+	QString sTs = dt.toString(time_format);
+	QString sAppName("");
+	QString sCompany("");
+	QString sMethod("");
+	QString sTid("");
+	QString sTid2("");
+	QString sMethodNS("");
+
+	QXmlStreamReader reader(buffer);
+
+	if (reader.readNextStartElement()) {
+		if (reader.name() == "Envelope") {
+			while (reader.readNextStartElement()) {
+				if (reader.name() == "Header") {
+					while (reader.readNextStartElement()) {
+						if (reader.name() == "MultiSpeakRequestMsgHeader") {
+							foreach(const QXmlStreamAttribute &attr, reader.attributes()) {
+								QString sAttrName = attr.name().toString();
+								//qDebug(qPrintable(sAttrName));
+								//if (attr.name().toString() == QLatin1String("xmlns")) {
+								//QString attribute_value = attr.value().toString();
+								//qDebug(qPrintable(attribute_value));
+								//qDebug() << "Attribute '" << qPrintable(sAttrName) << "' Has Value '" << qPrintable(attribute_value) << "'.";
+								//qDebug() << "Is in NameSpace: " << reader.namespaceUri();
+								//}
+							}
+							while (reader.readNextStartElement()) {
+								if (reader.name() == "Caller") {
+									while (reader.readNextStartElement()) {
+										if (reader.name() == "AppName") {
+											sAppName = reader.readElementText();
+											//qDebug(qPrintable(sAppName));
+										}
+										else if (reader.name() == "Company") {
+											sCompany = reader.readElementText();
+											//qDebug(qPrintable(sCompany));
+										}
+									}
+								}
+								else {
+									reader.skipCurrentElement();
+								}
+							}
+						}
+						else {
+							reader.skipCurrentElement();
+						}
+					}
+				}
+				else if (reader.name() == "Body") {
+					reader.readNextStartElement();
+					sMethod = reader.name().toString();
+					//qDebug(qPrintable(sMethod));
+					sMethodNS = reader.namespaceUri().toString();
+					//qDebug() << "Is in NameSpace: " << sMethodNS;
+
+					while (reader.readNextStartElement()) {
+						if (reader.name() == "transactionID") {
+							sTid = reader.readElementText();
+							//qDebug(qPrintable(sTid));
+						}
+					}
+				}
+				else {
+					reader.skipCurrentElement();
+				}
+			}
+		}
+		else {
+			reader.raiseError(QObject::tr("Incorrect file"));
+		}
+	}
+
+	if (reader.hasError()) {
+		qDebug() << "Error: " << reader.errorString();
+	}
+	if (!sTid.isEmpty()) {
+		sTid2 = "<tns:transactionID>%1</tns:transactionID>";
+		sTid2 = sTid2.arg(sTid);
+	}
+	outbytes = data.arg(sMethodNS).arg(sMid).arg(sTs).arg(sAppName)
+		.arg(sCompany).arg(sMethod).arg(sMethodNS).arg(sTid2).arg(sMethod).toUtf8();
+
+	/*
+	https://developer.mozilla.org/en-US/docs/Web/HTTP
+	The Accept request HTTP header advertises which content types, expressed as MIME types, the client is
+	able to understand. Using content negotiation, the server then selects one of the proposals, uses it
+	and informs the client of its choice with the Content-Type response header.
+
+	The Host request header specifies the domain name of the server (for virtual hosting), and (optionally)
+	the TCP port number on which the server is listening.
+	If no port is given, the default port for the service requested (e.g., "80" for an HTTP URL) is implied.
+	A Host header field must be sent in all HTTP/1.1 request messages. A 400 (Bad Request) status code will
+	be sent to any HTTP/1.1 request message that lacks a Host header field or contains more than one.
+
+	if you are missing the Content-Length header on your HTTP response,
+	the HTTP client does not know
+	when the response is complete, so it keeps on waiting for more
+	*/
 }

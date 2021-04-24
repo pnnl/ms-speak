@@ -88,7 +88,6 @@ SslServer::SslServer( QObject* parent)
 	m_parseContentLengthFlag(false),
 	m_parseSourceAndDestIdFlag(false),
 	m_Supported(false)
-	//,m_responseFile("")
 {
 	/*
 	 * qt.network.ssl: Incompatible version of OpenSSL
@@ -306,113 +305,12 @@ void SslServer::ReadMessage(QSslSocket* socket)
 //------------------------------------------------------------------------------
 // SendResponse
 //
-void SslServer::SendResponse(int code, QString& data,
-								QSslSocket* socket, QByteArray& m_buffer)
+void SslServer::SendResponse( int code, QString& data, QSslSocket* socket, QByteArray& buffer)
 {
-	//socket->write("Got it!");
-	//return;
-	HttpResponse response(socket); // statusCode=200, statusText="OK";
-	if (code != 200) {
-		response.setStatusFromCode(code);
-	}
-	response.setHeader("Content-Type", response.getContentType(0));
-	response.setHeader("Content-Length", QByteArray::number(data.size()));
-	response.setHeader("Connection", "keep-alive"); // "close"
-	response.setHeader("Server", "MultiSpeakerServer");
-	response.setHeader("soapAction", "http://www.multispeak.org/Version_5.0_Release/InitiateConnectDisconnect");
-	/*
-
-	QString sMid = QUuid::createUuid().toString(QUuid::WithoutBraces);
-	QString time_format = "yyyy-MM-dd HH:mm:ss.zzz";
-	QDateTime dt = QDateTime::currentDateTime();
-	QString sTs = dt.toString(time_format);
-	QString sAppName("");
-	QString sCompany("");
-	QString sMethod("");
-	QString sTid("");
-	QString sTid2("");
-	QString sMethodNS("");
-
-	QXmlStreamReader reader(m_buffer);
-
-	if (reader.readNextStartElement()) {
-		if (reader.name() == "Envelope") {
-			while (reader.readNextStartElement()) {
-				if (reader.name() == "Header") {
-					while (reader.readNextStartElement()) {
-						if (reader.name() == "MultiSpeakRequestMsgHeader") {
-							foreach(const QXmlStreamAttribute &attr, reader.attributes()) {
-								QString sAttrName = attr.name().toString();
-								//qDebug(qPrintable(sAttrName));
-								//if (attr.name().toString() == QLatin1String("xmlns")) {
-								//QString attribute_value = attr.value().toString();
-								//qDebug(qPrintable(attribute_value));
-								//qDebug() << "Attribute '" << qPrintable(sAttrName) << "' Has Value '" << qPrintable(attribute_value) << "'.";
-								//qDebug() << "Is in NameSpace: " << reader.namespaceUri();
-								//}
-							}
-							while (reader.readNextStartElement()) {
-								if (reader.name() == "Caller") {
-									while (reader.readNextStartElement()) {
-										if (reader.name() == "AppName") {
-											sAppName = reader.readElementText();
-											//qDebug(qPrintable(sAppName));
-										}
-										else if (reader.name() == "Company") {
-											sCompany = reader.readElementText();
-											//qDebug(qPrintable(sCompany));
-										}
-									}
-								}
-								else {
-									reader.skipCurrentElement();
-								}
-							}
-						}
-						else {
-							reader.skipCurrentElement();
-						}
-					}
-				}
-				else if (reader.name() == "Body") {
-					reader.readNextStartElement();
-					sMethod = reader.name().toString();
-					//qDebug(qPrintable(sMethod));
-					sMethodNS = reader.namespaceUri().toString();
-					//qDebug() << "Is in NameSpace: " << sMethodNS;
-
-					while (reader.readNextStartElement()) {
-						if (reader.name() == "transactionID") {
-							sTid = reader.readElementText();
-							//qDebug(qPrintable(sTid));
-						}
-					}
-				}
-				else {
-					reader.skipCurrentElement();
-				}
-			}
-		}
-		else {
-			reader.raiseError(QObject::tr("Incorrect file"));
-		}
-	}
-
-	if (reader.hasError()) {
-		qDebug() << "Error: " << reader.errorString();
-	}
-	if (!sTid.isEmpty()) {
-		sTid2 = "<tns:transactionID>%1</tns:transactionID>";
-		sTid2 = sTid2.arg(sTid);
-	}
-	QByteArray outbytes = data.arg(sMethodNS).arg(sMid).arg(sTs).arg(sAppName)
-	.arg(sCompany).arg(sMethod).arg(sMethodNS).arg(sTid2).arg(sMethod).toUtf8();
-	*/
-	QByteArray outbytes = data.arg("sMethodNS").arg("sMid").arg("sTs").arg("sAppName")
-		.arg("sCompany").arg("sMethod").arg("sMethodNS").arg("sTid2").arg("sMethod").toUtf8();
-
+	HttpResponse response(socket);
+	QByteArray outbytes;
+	response.SetData(code, data, buffer, outbytes);
 	response.write(outbytes, true);
-
 }
 
 //------------------------------------------------------------------------------
