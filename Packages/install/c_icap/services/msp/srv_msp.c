@@ -61,6 +61,7 @@
 		04/05/2021 - CHM: support Phase3 enhancements.
 		04/15/2021 - CHM: handle version 3 MS headers with no endpoint.
 							see V3_NULL_ENDPOINT.
+		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://172.18.77.1:3128/icap?2
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -408,10 +409,23 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
 
 #define V3_NULL_ENDPOINT "V3_Server"
 
+typedef enum bc_cmd{
+	BCC_NO_CMD = 0,
+	BCC_SHOW_DB,
+	BCC_RELOAD_DB,
+	BCC_SHOW_ACT,
+	BCC_CURRENT_TEMP,
+	BCC_CURRENT_HOUR,
+	BCC_SET_CURRENT_TEMP,
+	BCC_SET_CURRENT_HOUR,
+	BCC_HELP		// keep this always as the last, for BccUsage
+} USER_CMD;
+
 //char *strptime(const char *s, const char *format, struct tm *tm);
 //time_t timelocal(struct tm *tm);
 
-pthread_t thread_weather;
+pthread_t gblWeatherThread;
+bool	  gblThreadRunning = false;
 
 /*  https://openweathermap.org/current
 	<current>
@@ -465,9 +479,12 @@ struct srv_msp_data {
 	int  eof;
 	int  isReqmod;
 	bool bHasCommand;
-	int  Command;
+	bool bHasArg;
+	USER_CMD Command;
+	int  CommandArg;
 };
 
+#define DATABASE_NAME "/home/msspeak/BizRules.db"
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
 //		the string placed in dest will not be null-terminated.
 typedef struct _tester {
@@ -491,11 +508,11 @@ typedef struct _bizrule {
 	gchar  m_Email[MAX_DB_NAMELEN+1];
 } BIZ_RULE;
 
-TESTER_DATA	 TesterData={};
-BIZ_RULE	*pBizRules=NULL;
-
-int NumBizRules;
-int RowCnt;
+TESTER_DATA  gblTesterStruct={};
+TESTER_DATA *gblpTesterData=NULL;
+BIZ_RULE	*gblpBizRules=NULL;
+int gblNumBizRules=0;
+int gblRowCnt=0;
 struct string {
     char *ptr;
     size_t len;
@@ -555,6 +572,8 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 };
 
 // general prototypes
+void BccUsage(void);
+void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
 int handle_request_preview(BIZ_RULE *);
 int handle_response_preview(BIZ_RULE *);
 void WriteLog(int, FILE *, const char *, ...);
@@ -568,12 +587,12 @@ xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 // globals
 #define STRBUFF_LEN 800
 char str[STRBUFF_LEN];
-int currtemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
-int currday;
-int hour;
-int MainThread = 0;
-int NumBizRecs;
-FILE *LogFile = NULL;
+int gblCurrentTemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
+int gblCurrentDay;
+int gblHourOfDay;
+int gblMainThread = 0;
+int gblNumBizRecs;
+FILE *gblLogFile = NULL;
 
 // statics
 static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
@@ -587,7 +606,7 @@ static int MSP_DATA_POOL = -1;
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 /*
 typedef int (*sqlite3_callback)(
-   void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., pBizRules
+   void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., gblpBizRules
    int    colcount // The number of columns in row 
    char** values   // An array of strings representing fields in the row 
    char** columns  // An array of strings representing column names 
@@ -600,13 +619,13 @@ static int callback(void *data, int colcount, char **values, char **columns){
 	int i;
 	if( !data ){
 		ci_debug_printf(0, "callback Sanity Failure: %s\n", "null data ptr");
-		RowCnt = 0;
+		gblRowCnt = 0;
 		return -1;
 	}
-	if( RowCnt < NumBizRules ){
-		TESTER_DATA	*pTester=&TesterData;
+	if( gblRowCnt < gblNumBizRules ){
+		TESTER_DATA	*pTester=&gblTesterStruct;
 		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
-		BIZ_RULE *pBzd = &pBizRecs[RowCnt++];
+		BIZ_RULE *pBzd = &pBizRecs[gblRowCnt++];
 		pBzd->m_ValidRequestNum = 0;
 		pBzd->m_TotalRequestNum = 0;
 		for(i = 0; i<colcount; i++){
@@ -635,17 +654,17 @@ static int callback(void *data, int colcount, char **values, char **columns){
 				pBzd->m_maxHour = atoll(values[i]);
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
-				if( RowCnt == 1 ){ // we only need store Tester name once
+				if( gblRowCnt == 1 ){ // we only need store Tester name once
 					strncpy( pTester->m_Tester, values[i], MAX_DB_NAMELEN );
 				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_APPID) ){
-				if( RowCnt == 1 ){
+				if( gblRowCnt == 1 ){
 					strncpy( pTester->m_AppId, values[i], MAX_DB_NAMELEN );
 				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_ZIPCODE) ){
-				if( RowCnt == 1 ){
+				if( gblRowCnt == 1 ){
 					strncpy( pTester->m_Zipcode, values[i], MAX_DB_ZIPLEN );
 				}
 			}
@@ -667,7 +686,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 		}
 	}
 	else{
-		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", RowCnt);
+		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", gblRowCnt);
 	}
 	return 0;
 }
@@ -675,8 +694,8 @@ static int callback(void *data, int colcount, char **values, char **columns){
 /*
  * GetTesterData - reads the business rules for the Active Tester from the DB
  */
-TESTER_DATA	*GetTesterData( gchar *pdbFile ){
-	TESTER_DATA	*pRetData=NULL;
+TESTER_DATA *GetTesterData( gchar *pdbFile ){
+	TESTER_DATA *pRetData=NULL;
 	sqlite3 *db;
 	char *zErrMsg = 0;
 	int rc;
@@ -706,8 +725,8 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	bool bOnce = false;
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
 		if( !bOnce ){
-			NumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
-			//ci_debug_printf(0,"NumBizRules = %d\n", NumBizRules);
+			gblNumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
+			//ci_debug_printf(0,"gblNumBizRules = %d\n", gblNumBizRules);
 			bOnce = true;
 		}
 		else{
@@ -725,18 +744,18 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	}
 	sqlite3_finalize(stmt);	
 
-	if( NumBizRules == 0 ){
+	if( gblNumBizRules == 0 ){
 		ci_debug_printf(0, "DATABASE FAILURE: %s\n", "No Active Tester Rules Found");
 		sqlite3_close(db);
 		return(pRetData);
 	}else{
-		ci_debug_printf(2, "%d Active Tester Rules Found\n", NumBizRules);
+		ci_debug_printf(2, "%d Active Tester Rules Found\n", gblNumBizRules);
 	}
 
-	size_t size = NumBizRules * sizeof(BIZ_RULE);
-	pBizRules = (BIZ_RULE *)calloc(1,size);
+	size_t size = gblNumBizRules * sizeof(BIZ_RULE);
+	gblpBizRules = (BIZ_RULE *)calloc(1,size);
 	//pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
-	RowCnt = 0;
+	gblRowCnt = 0;
 
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
@@ -745,11 +764,11 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
 		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 		 SQL_FROM_QUERY;
-	rc = sqlite3_exec(db, sql, callback, (void*)pBizRules, &zErrMsg);
+	rc = sqlite3_exec(db, sql, callback, (void*)gblpBizRules, &zErrMsg);
 	if( rc != SQLITE_OK ){
 		ci_debug_printf(0, "SQL error getting Active Rules: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
-		free( pBizRules );
+		free( gblpBizRules );
 		sqlite3_close(db);
 		return(pRetData);
 	} else {
@@ -758,42 +777,55 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	sqlite3_close(db);
 	ci_debug_printf(2, "Closed Database: %s\n", pdbFile);
 
-	if( RowCnt > NumBizRules ){
+	if( gblRowCnt > gblNumBizRules ){
 		ci_debug_printf(0, "SANITY FAILURE: %s\n", "excess rows for query");
-		free( pBizRules );
+		free( gblpBizRules );
 	}
 	else{
-		if( TesterData.m_Tester ){ // should have been set in 'callback'
-			pRetData = &TesterData;
+		if( gblTesterStruct.m_Tester ){ // should have been set in 'callback'
+			pRetData = &gblTesterStruct;
 			// assure all string buffs will be null-termed
-			for( int i=0; i<NumBizRules; i++ ){
-				pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-				pBizRules[i].m_numRPH = WILDCARD;
-				pBizRules[i].m_minTemp = WILDCARD;
-				pBizRules[i].m_maxTemp = WILDCARD;
-				pBizRules[i].m_minHour = WILDCARD;
-				pBizRules[i].m_maxHour = WILDCARD;
+			for( int i=0; i<gblNumBizRules; i++ ){
+				gblpBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+				gblpBizRules[i].m_numRPH = WILDCARD;
+				gblpBizRules[i].m_minTemp = WILDCARD;
+				gblpBizRules[i].m_maxTemp = WILDCARD;
+				gblpBizRules[i].m_minHour = WILDCARD;
+				gblpBizRules[i].m_maxHour = WILDCARD;
 			}
-			ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
-			BIZ_RULE *pBizRecs = pBizRules;
-			for( int i=0; i<NumBizRules; i++ ){
+			/*ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
+			BIZ_RULE *pBizRecs = gblpBizRules;
+			for( int i=0; i<gblNumBizRules; i++ ){
 				ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
 					   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
 				ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
 					pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
 				ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
 				pBizRecs++;
-			}
+			}*/
+			ShowDBRules( pRetData, gblpBizRules, gblNumBizRules, 3 );
 		}
 		else{
-			ci_debug_printf(0, "SANITY FAILURE: %s\n", "null TesterData.m_Tester");
-			free( pBizRules );
+			ci_debug_printf(0, "SANITY FAILURE: %s\n", "null gblTesterStruct.m_Tester");
+			free( gblpBizRules );
 			return(NULL);
 		}
 	}
 	return pRetData;
 }
 
+void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgLvl )
+{
+	ci_debug_printf(dbgLvl,"Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
+	for( int i=0; i<NumRules; i++ ){
+		ci_debug_printf(dbgLvl,"          Function: %s, Endpoint: %s, Method: %s\n",
+			   pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
+		ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
+			pRules->m_numReq,pRules->m_numRPH,pRules->m_maxTemp,pRules->m_minTemp,pRules->m_maxHour,pRules->m_minHour);
+		ci_debug_printf(dbgLvl,"          Email: %s\n\n",pRules->m_Email);
+		pRules++;
+	}
+}
 /*
  * init_string - initializer for weather update string struct
  */
@@ -1059,6 +1091,7 @@ void *weather_updater(void *data)
 {
 	if( data )
 	{
+		gblThreadRunning = true;
 		ci_debug_printf(1, "\n*** weather updater started ***\n");
 		CURL *curl;
 		TESTER_DATA	*pData = data;
@@ -1082,8 +1115,8 @@ void *weather_updater(void *data)
 			do{
 				if( update_weather( curl, &xmlStr, &weatherData ) ) {
 					if( weatherData.bSuccess ) {
-						currtemp = weatherData.currentTemp;
-						ci_debug_printf(2,"Current Temp: %d\n", currtemp);
+						gblCurrentTemp = weatherData.currentTemp;
+						ci_debug_printf(2,"Current Temp: %d\n", gblCurrentTemp);
 					}
 					else{
 						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
@@ -1110,12 +1143,13 @@ void *weather_updater(void *data)
 		}
 	}
 	else{
-		ci_debug_printf(0, "\n*** weather_updater:: NULL data passed.\n");
+		ci_debug_printf(1, "\n*** weather_updater:: NULL data passed.\n");
 	}
 	// pthread_exit can cause 5 blocks allocated from functions called by pthread_exit() 
 	// that is unfreed but still reachable at process exit
 	//pthread_exit(NULL);
-		ci_debug_printf(0, "\n*** weather_updater exiting...\n");
+	ci_debug_printf(1, "\n*** weather_updater exiting...\n");
+	gblThreadRunning = false;
 	return(NULL);
 }
 
@@ -1141,7 +1175,7 @@ void *weather_updater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01d ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01e ***\n");
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1168,6 +1202,49 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 	return CI_OK;
 }
 
+bool LoadActiveRules( ghar *pDatabaseName ){
+	bool bRetVal = false;
+
+
+TESTER_DATA  gblTesterStruct={};
+TESTER_DATA *gblpTesterData=NULL;
+BIZ_RULE	*gblpBizRules=NULL;
+int gblNumBizRules=0;
+int gblRowCnt=0;
+
+	if( gblpTesterData ){ // previously loaded a DB?
+		if( gblWeatherThread ){
+		}
+	}
+
+	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", pDatabaseName);
+	gblpTesterData = GetTesterData( pDatabaseName );
+	if( gblpTesterData )
+	{
+		bRetVal = true
+		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
+		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
+		//if( CI_DEBUG_LEVEL >= 1 ){
+		//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
+		//}
+#ifdef FAKE_TEMPS
+		srand(currtime);
+		//gblCurrentTemp = (rand() % (90 - 32 + 1)) + 32;
+		gblCurrentTemp = 45;
+		gblHourOfDay = tm_struct->tm_hour;
+		gblCurrentDay = tm_struct->tm_mday;
+		WriteLog( 1, gblLogFile, "    Current (fake) Temperature is %d\n", gblCurrentTemp);
+#else
+		if( gblpTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
+		{
+			// Create weather update thread, must be called after GetTesterData
+			pthread_create(&gblWeatherThread, NULL, weather_updater, gblpTesterData);
+		}
+#endif
+	}
+	return bRetVal;
+}
+
 /*
  * This function can be used to initialize the service. Unlike msp_init_service
  * when this function is called the c-icap has been initialized and it knows of
@@ -1179,48 +1256,27 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	gchar    *BizFile = "/home/msspeak/BizRules.db"; // .cfg
+	gchar    *BizFile = "/home/msspeak/BizRules.db"; // 
 	const char *LogPath="/var/log/srv_msp.log";
 
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 
-	LogFile = fopen(LogPath, "a");
-	if( LogFile == NULL )
+	gblLogFile = fopen(LogPath, "a");
+	if( gblLogFile == NULL )
 	{
 		ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LogPath);
 		exit( -2 );
 	}
-	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
-	TESTER_DATA	*pTesterData = GetTesterData( BizFile );
-	if( !pTesterData )
-	{
+	
+	if( !LoadActiveRules( DATABASE_NAME ) ){
 		ci_debug_printf(0, "    Error loading Business Rules\n");
 		exit( -2 );
 	}
-	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	ci_debug_printf(1, "\nActive Tester: '%s'\n\n", pTesterData->m_Tester);
-
-	//if( CI_DEBUG_LEVEL >= 1 ){
-	//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
-	//}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
 
-#ifdef FAKE_TEMPS
-	srand(currtime);
-	//currtemp = (rand() % (90 - 32 + 1)) + 32;
-	currtemp = 45;
-	hour = tm_struct->tm_hour;
-	currday = tm_struct->tm_mday;
-	WriteLog( 1, LogFile, "    Current (fake) Temperature is %d\n", currtemp);	
-#else
-	if( pTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
-	{
-		// Create weather update thread, must be called after GetTesterData
-		pthread_create(&thread_weather, NULL, weather_updater, pTesterData);
-	}
-#endif	
+	BccUsage();
 
 	return CI_OK;
 }
@@ -1233,17 +1289,17 @@ void msp_close_service()
 {
 	ci_debug_printf(5, "\n*** msp_close_service::\n");
 	
-	pthread_cancel(thread_weather);
-	pthread_join(thread_weather, NULL);
+	pthread_cancel(gblWeatherThread);
+	pthread_join(gblWeatherThread, NULL);
 	ci_debug_printf(1, "\n*** weather thread joined ***\n");
-	
-	if( LogFile){
-		if( MainThread) // huh, this doesn't work, still see 4 of the below msgs:
-			WriteLog(0, LogFile, "The MSP Service is Shutting Down...");
-		fclose(LogFile);
+	gblThreadRunning = false;
+	if( gblLogFile){
+		if( gblMainThread) // huh, this doesn't work, still see 4 of the below msgs:
+			WriteLog(0, gblLogFile, "The MSP Service is Shutting Down...");
+		fclose(gblLogFile);
 	}
 	ci_object_pool_unregister(MSP_DATA_POOL); // per url_check
-	free( pBizRules );
+	free( gblpBizRules );
 }
 
 /*
@@ -1326,7 +1382,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
-	MainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
+	gblMainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
 	//return CI_MOD_CONTINUE;
 	// If there is no body data in HTTP encapsulated object but only headers
@@ -1339,8 +1395,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			unlock_data(req);// this appears to prevent the browser cache having to be cleared each time
 			return CI_ERROR; 
 		}
-		ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
-		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2
+		//ci_debug_printf(0, "msp_preview_handler: NO BODY:\n");
+		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2 [&arg=]
 		if( !referer ){
 			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
 			unlock_data(req);
@@ -1353,23 +1409,59 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		// not found, at end of referer:
 		if( !needle_pos || !needle_pos[needle_length] )
 		{
-			ci_debug_printf(4, "Command not found from \"%s\".\n\n", needle);
+			ci_debug_printf(1, "Command not found from \"%s\".\n\n", needle);
 			unlock_data(req);
 			return CI_ERROR; // actually, still has to be done if return CI_MOD_DONE
 		}
 		// extract the word following the word at needle_pos:
-		int cmd;
 		//char buf[1000];
 		//size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 		//msp_dumphex(buf, len);
 		//ci_debug_printf(4, "needle_pos: %s, needle_length: %d.\n", needle_pos, needle_length);
+		int cmd;
 		const char *cmdstr = needle_pos + needle_length;
+		if (!strncasecmp(cmdstr, "help", 4)){
+			cmd = BCC_HELP;
+		}
+		else{
+			cmd = atoi(cmdstr);
+		}
 		//ci_debug_printf(4, "cmdstr: %s.\n", cmdstr);
-		cmd = atoi(cmdstr);
-		//ci_debug_printf(4, "Command Received: %d.\n", cmd);
+		//ci_debug_printf(3, "Command Received: %d.\n", cmd);
 		mspd = ci_service_data(req);
 		mspd->bHasCommand = true;
+		mspd->bHasArg = false;
 		mspd->Command = cmd;
+		if( (cmd == BCC_SET_CURRENT_TEMP) || (cmd == BCC_SET_CURRENT_HOUR) ){
+			// check to see if an arg also passed in
+			//	http://172.18.77.1:3128/icap?cmd=2&arg=22 
+			// &arg=22 
+			needle = "&arg=";
+			needle_length = strlen(needle);
+			needle_pos = strstr(referer, needle);
+			// not found, at end of referer:
+			if( !needle_pos || !needle_pos[needle_length] )
+			{
+				if( !needle_pos ){
+					ci_debug_printf(4, "NO COMMAND ARGUMENT PROVIDED.\n");
+				}
+				else{
+					ci_debug_printf(1, "Command Argument not found from \"%s\".\n\n", needle);
+				}
+				//unlock_data(req);
+				//return CI_ERROR; // actually, still has to be done if return CI_MOD_DONE
+			}
+			else{
+				cmdstr = needle_pos + needle_length;
+				int cmdarg = atoi(cmdstr);
+				ci_debug_printf(4, "COMMAND ARGUMENT PROVIDED: %d.\n", cmdarg);
+				mspd->bHasArg = true;
+				mspd->CommandArg = cmdarg;
+			}
+		}
+		else{
+			mspd->bHasArg = false;
+		}
 		return CI_MOD_CONTINUE;
 	}
 
@@ -1487,6 +1579,48 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	return CI_MOD_CONTINUE;
 }
 
+void BccUsage(void)
+{
+	USER_CMD cmd = BCC_NO_CMD;
+	char *pCmd = "http://proxyIP:port/icap?cmd=XX\n  i.e.,\n      http://172.18.77.1:3128/icap?cmd=4";
+	ci_debug_printf(1, "\nUser Commands Available Thru: '%s'\n",pCmd);
+	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
+	while( ++cmd <= BCC_HELP ){
+		switch( cmd ){
+			case BCC_SHOW_DB:
+				ci_debug_printf(1, "%d - Show Current Database Configuration.\n", cmd);
+				break;
+			case BCC_RELOAD_DB:
+				ci_debug_printf(1, "%d - Reload Database Configuration.\n", cmd);
+				break;
+			case BCC_SHOW_ACT:
+				ci_debug_printf(1, "%d - Show Current Active User.\n", cmd);
+				break; 
+			case BCC_CURRENT_TEMP:
+				ci_debug_printf(1, "%d - Show Current Temperature(F).\n", cmd);
+				break; 
+			case BCC_CURRENT_HOUR:
+				ci_debug_printf(1, "%d - Show Current Hour of the Day.\n", cmd);
+				break; 
+			case BCC_SET_CURRENT_TEMP:
+				ci_debug_printf(1, "%d - Set Current Temperature(F)(for testing).\n", cmd);
+				break; 
+			case BCC_SET_CURRENT_HOUR:
+				ci_debug_printf(1, "%d - Set Current Hour of the Day(for testing).\n", cmd);
+				break; 
+			case BCC_HELP:
+				ci_debug_printf(1, "%d - Show This Help.\n", cmd);
+				ci_debug_printf(1, "     (also via 'icap?cmd=help')\n");
+				break;
+			default:
+				ci_debug_printf(1, "Unsupported User Command '%d' in Usage.\n", cmd);
+				BccUsage();
+				break;
+		}
+	}
+	ci_debug_printf(1, "\n");
+}
+
 /*
 * This function will be called if we returned CI_MOD_CONTINUE in
 *  msp_check_preview_handler function, after we read all the
@@ -1517,11 +1651,84 @@ int msp_end_of_data_handler(ci_request_t * req)
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	
+
 	if( mspd->bHasCommand ){
-		ci_debug_printf(4, "Received User Command: %d\n", mspd->Command);
+		switch( mspd->Command ){
+			case BCC_NO_CMD:
+				ci_debug_printf(1, "NULL User Command Received.\n");
+				BccUsage();
+				break;
+			case BCC_SHOW_DB:  // 1
+				ci_debug_printf(3, "Show DB Command Received.\n");
+				ShowDBRules( gblpTesterData, gblpBizRules, gblNumBizRules, 1 );
+				break;
+			case BCC_RELOAD_DB:// 2
+				ci_debug_printf(1, "Reload DB Command Received(NOT YET IMPLEMENTED).\n");
+				pthread_cancel(gblWeatherThread);
+				pthread_join(gblWeatherThread, NULL);
+				ci_debug_printf(1, "\n*** weather thread joined ***\n");
+				break;
+			case BCC_SHOW_ACT: // 3
+				ci_debug_printf(3, "Show Active User Command Received.\n");
+				ci_debug_printf(1, "   The Active Tester is '%s'\n", gblpTesterData->m_Tester);
+				ci_debug_printf(1, "       Application ID is '%s'\n", gblpTesterData->m_AppId);
+				ci_debug_printf(1, "       Active Weather Zipcode is '%s'\n", gblpTesterData->m_Zipcode);
+				break;
+			case BCC_CURRENT_TEMP:
+				ci_debug_printf(3, "Show Current Temperature Command Received.\n");
+				ci_debug_printf(1, "   The Current Temperature is '%d(F)'\n", gblCurrentTemp);
+				break;
+			case BCC_CURRENT_HOUR:
+				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
+				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblHourOfDay);
+				break;
+			case BCC_SET_CURRENT_TEMP:
+				ci_debug_printf(3, "Change Current Temperature Command Received.\n");
+				if( mspd->bHasArg ){
+					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
+						gblCurrentTemp = mspd->CommandArg;
+						ci_debug_printf(1, "   Current Temperature changed to '%d(F)'\n", gblCurrentTemp);
+					}
+					else{
+						ci_debug_printf(1, "   *** ERROR, INVALID NEW TEMP VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
+						ci_debug_printf(1, "   ***        temp must be between %s ***\n", "0 and 100");
+					}
+				}
+				else{
+					ci_debug_printf(1, "   *** ERROR, NO NEW TEMPERATURE VALUE SUPPLIED ***\n");
+				}
+				break;
+			case BCC_SET_CURRENT_HOUR:
+				ci_debug_printf(3, "Change Current Hour of the Day Command Received.\n");
+				if( mspd->bHasArg ){
+					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 24) ){
+						gblHourOfDay = mspd->CommandArg;
+						ci_debug_printf(1, "   The Current Hour of the Day changed to '%d'\n", gblHourOfDay);
+					}
+					else{
+						ci_debug_printf(1, "   *** ERROR, INVALID NEW HOUR VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
+						ci_debug_printf(1, "   ***        hour must be between %s ***\n", "0 and 23");
+					}
+				}
+				else{
+					ci_debug_printf(1, "   *** ERROR, NO NEW HOUR VALUE SUPPLIED ***\n");
+				}
+				break;
+			case BCC_HELP:
+				BccUsage();
+				break;
+			default:
+				ci_debug_printf(1, "Unsupported User Command '%d' Received.\n", mspd->Command);
+				BccUsage();
+				break;
+		}
 		unlock_data(req); // this appears to prevent the browser cache having to be cleared each time
 		return CI_ERROR;  // actually, still has to be done if return CI_MOD_DONE
+		/* this doesn't work, only the first gets thru
+		mspd->eof = 1;
+		ci_req_unlock_data(req);
+		return CI_MOD_DONE;
+		*/
 	}
 	
 	if( mspd->isReqmod ){
@@ -1546,7 +1753,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	if (!pRuleData)
 	{
 		if( ErrRet != MSP_OK){
-			WriteLog(0, LogFile, "Error Looking up Request Business Record.");
+			WriteLog(0, gblLogFile, "Error Looking up Request Business Record.");
 			unlock_data(req);
 			return CI_ERROR;
 		}
@@ -1597,12 +1804,12 @@ int msp_end_of_data_handler(ci_request_t * req)
 	}
 	else if( REQ_TYPE == ICAP_OPTIONS)
 	{
-		WriteLog( 0, LogFile, "ICAP OPTIONS: ignoring...");
+		WriteLog( 0, gblLogFile, "ICAP OPTIONS: ignoring...");
 	}
 	else
 	{
 		//UNKNOWN ICAP METHOD
-		WriteLog( 0, LogFile, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
+		WriteLog( 0, gblLogFile, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
 		icRet = CI_MOD_ALLOW204;
 	}
 	
@@ -1720,39 +1927,39 @@ int handle_request_preview(BIZ_RULE *pRuleData)
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
-	hour = tm_struct->tm_hour;
-	if( currday != tm_struct->tm_mday){
-		currday = tm_struct->tm_mday;
+	gblHourOfDay = tm_struct->tm_hour;
+	if( gblCurrentDay != tm_struct->tm_mday){
+		gblCurrentDay = tm_struct->tm_mday;
 		pRuleData->m_ValidRequestNum = 0;
 		pRuleData->m_TotalRequestNum = 0;
 	}
 	pRuleData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
 	// TODO: handle WILDCARDs for temp and time too
 	if ((pRuleData->m_numReq != WILDCARD) && (pRuleData->m_ValidRequestNum >= pRuleData->m_numReq)){
-		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
 		    "   Only %d requests per day are allowed.",
 		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_numReq);
 		return MSP_BIZ_VIO;
 	}
-	else if ((hour>pRuleData->m_maxHour) || (hour<pRuleData->m_minHour)){
-		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n"
+	else if ((gblHourOfDay>pRuleData->m_maxHour) || (gblHourOfDay<pRuleData->m_minHour)){
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n"
 		    "   These type of requests are only allowed between the hours of %d and %d.",
 		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
-		WriteLog(1, LogFile, "Current Hour is %d\n", hour);
+		WriteLog(1, gblLogFile, "Current gblHourOfDay is %d\n", gblHourOfDay);
 		return MSP_BIZ_VIO;
 	}
-	else if ((currtemp>pRuleData->m_maxTemp) || (currtemp<pRuleData->m_minTemp)){
-		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n"
+	else if ((gblCurrentTemp>pRuleData->m_maxTemp) || (gblCurrentTemp<pRuleData->m_minTemp)){
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n"
 		    "   These type of requests are only allowed when the temperature is between %d and %d degrees.",
 		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
-		WriteLog(1, LogFile, "Current Temperature is %d\n", currtemp);
+		WriteLog(1, gblLogFile, "Current Temperature is %d\n", gblCurrentTemp);
 		return MSP_BIZ_VIO;
 	}
 	else {
 		// TODO: don't increment this count until we see a response come back from the endpoint
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
 		//pRuleData->m_ValidRequestNum++;
-		WriteLog(1, LogFile, "*** ACCEPTing %d of %d daily '%s' requests(%d attempts) from '%s' Endpoint ***",
+		WriteLog(1, gblLogFile, "*** ACCEPTing %d of %d daily '%s' requests(%d attempts) from '%s' Endpoint ***",
 		    pRuleData->m_ValidRequestNum+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint);
 		return MSP_OK;
 	}
@@ -1768,10 +1975,10 @@ int handle_response_preview(BIZ_RULE *pRuleData)
 	 * ultimately, we'd want to index the src/dest ips to find the BIZ_RULE
 	 * then check if the method is part of that connection's BIZ_RULE...
 	 */
-	//WriteLog(4, LogFile, "got ICAP_RESPMOD, ignoring...");
+	//WriteLog(4, gblLogFile, "got ICAP_RESPMOD, ignoring...");
 	
 	pRuleData->m_ValidRequestNum++;
-	WriteLog(1, LogFile, "*** Response ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
+	WriteLog(1, gblLogFile, "*** Response ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
 		pRuleData->m_Method, pRuleData->m_ValidRequestNum, pRuleData->m_numReq, pRuleData->m_EndPoint);
 
 	return MSP_OK; // always pass the response on to client;
@@ -1887,8 +2094,8 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	//		we may not need to do that, if each separate connection is handled by a separate
 	//		c-icap thread, with it's own copy of BIZ_RULE....
 
-	BIZ_RULE *pRuleData = pBizRules;
-	for(i = 0; i < NumBizRecs; i++)
+	BIZ_RULE *pRuleData = gblpBizRules;
+	for(i = 0; i < gblNumBizRecs; i++)
 	{
 		if( pMsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
@@ -1903,7 +2110,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		}
 		pRuleData++;
 	}
-	if( i == NumBizRecs )
+	if( i == gblNumBizRecs )
 	{
 		if( mspd->isReqmod){
 			ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Request.\n", pMethod, pEndpoint );
