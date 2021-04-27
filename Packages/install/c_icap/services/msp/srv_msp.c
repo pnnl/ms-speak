@@ -298,6 +298,168 @@
 #include "txtTemplate.h"
 #include "srv_msp_body.h"
 
+// defines
+#define CI_MAXMSGIDLEN 256
+#define CI_MAXTIMESTAMPLEN 256
+#define CI_MAXAPPNAMELEN 256
+#define CI_MAXCOMPANYLEN 256
+#define CI_MAXMETHODLEN 256
+#define CI_MAXENDPOINTLEN 256
+#define CI_MAXNSLEN 256
+#define CI_MAXXACTIDLEN 256
+#define MSP_NO_STATUS   0
+#define MSP_OK          1
+#define MSP_BIZ_VIO		2 // business rule violation
+#define MSP_ERROR		3
+#define MAX_GROUPLEN 80
+#define WILDCARD_STR "-1"
+#define WILDCARD -1
+#define LOG_URL_SIZE 256
+#define LOW_BUFF 256
+#define MAX_DB_NAMELEN  50
+#define MAX_DB_ZIPLEN    5
+#define DB_COLNAME_TESTER	"Tester"
+#define DB_COLNAME_APPID	"AppId"
+#define DB_COLNAME_ZIPCODE	"Zipcode"
+#define DB_COLNAME_FUNCTION "Function"
+#define DB_COLNAME_ENDPOINT "Endpoint"
+#define DB_COLNAME_METHOD	"Method"
+#define DB_COLNAME_MAXTEMP	"maxTemp"
+#define DB_COLNAME_MINTEMP	"minTemp"
+#define DB_COLNAME_MAXHOUR	"maxHour"
+#define DB_COLNAME_MINHOUR	"minHour"
+#define DB_COLNAME_NUMREQ	"numReq"
+#define DB_COLNAME_NUMRPH	"numRPH"
+#define DB_COLNAME_EMAIL	"email"
+#define APIBUFFLEN     				250
+#define WEATHER_UPDATE_INTERVAL     5   // minutes
+#define DATABASE_NAME "/home/msspeak/BizRules.db"
+#define V3_NULL_ENDPOINT "V3_Server"
+
+// types
+typedef enum bc_cmd{
+	BCC_NO_CMD = 0,
+	BCC_SHOW_DB,
+	BCC_RELOAD_DB,
+	BCC_SHOW_ACT,
+	BCC_CURRENT_TEMP,
+	BCC_CURRENT_HOUR,
+	BCC_SET_CURRENT_TEMP,
+	BCC_SET_CURRENT_HOUR,
+	BCC_HELP		// keep this always as the last, for BccUsage
+} USER_CMD;
+
+//char *strptime(const char *s, const char *format, struct tm *tm);
+//time_t timelocal(struct tm *tm);
+
+/*  https://openweathermap.org/current
+	<current>
+	<city id="0" name="Richland">
+		<coord lon="-119.288" lat="46.2522"/>
+		<country>US</country>
+		<timezone>-28800</timezone>
+		<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
+	</city>
+	<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
+	<feels_like value="21.83" unit="fahrenheit"/>
+	<humidity value="93" unit="%"/>
+	<pressure value="1021" unit="hPa"/>
+	<wind>
+		<speed value="7.58" unit="mph" name="Light breeze"/>
+		<gusts/>
+		<direction value="210" code="SSW" name="South-southwest"/>
+	</wind>
+	<clouds value="90" name="overcast clouds"/>
+	<visibility value="10000"/>
+	<precipitation mode="no"/>
+	<weather number="804" value="overcast clouds" icon="04d"/>
+	<lastupdate value="2021-02-19T17:45:04"/>
+	</current>
+*/
+
+typedef signed long gint64;
+typedef char   		gchar;
+typedef struct _wd {
+	int currentTemp;
+	bool bSuccess;
+	char city[APIBUFFLEN+1];
+} WEATHER_DATA;
+// strncpy() Warning: If there is no null byte among the first n bytes of src, 
+//		the string placed in dest will not be null-terminated.
+typedef struct _tester {
+	gchar  m_Tester[MAX_DB_NAMELEN+1];
+	gchar  m_AppId[MAX_DB_NAMELEN+1];
+	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
+} TESTER_DATA;
+
+typedef struct _bizrule {
+	gint64 m_numReq;
+	gint64 m_numRPH;
+	gint64 m_minTemp;
+	gint64 m_maxTemp;
+	gint64 m_minHour;
+	gint64 m_maxHour;
+	gint64 m_ValidRequestNum;
+	gint64 m_TotalRequestNum;
+	gchar  m_Function[MAX_DB_NAMELEN+1];
+	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
+	gchar  m_Method[MAX_DB_NAMELEN+1];
+	gchar  m_Email[MAX_DB_NAMELEN+1];
+} BIZ_RULE;
+
+// structs
+/*
+ * The srv_msp_data structure will store the data required to service an ICAP request.
+ */
+struct srv_msp_msg_info {
+	char xmlnspace[CI_MAXNSLEN + 1];
+	char method[CI_MAXMETHODLEN + 1];
+	char endpoint[CI_MAXENDPOINTLEN + 1];
+	char xactid[CI_MAXXACTIDLEN + 1];
+	char appname[CI_MAXAPPNAMELEN + 1];
+	char company[CI_MAXCOMPANYLEN + 1];
+	//char msgid[CI_MAXMSGIDLEN + 1];
+	//char timestamp[CI_MAXTIMESTAMPLEN + 
+	bool bIsV3;
+};
+
+struct srv_msp_data {
+	struct body_data body;
+	struct srv_msp_msg_info msginfo;
+	int64_t maxBodyData;
+	int64_t expectedData;
+	/*flag for marking the eof*/
+	int  eof;
+	int  isReqmod;
+	bool bHasCommand;
+	bool bHasArg;
+	USER_CMD Command;
+	int  CommandArg;
+};
+
+struct string {
+    char *ptr;
+    size_t len;
+};
+
+// globals, not sure what this means, since this file does not have a main in it.
+pthread_t gblWeatherThread;
+bool	  gblThreadRunning = false;
+
+TESTER_DATA  gblTesterStruct={};
+TESTER_DATA *gblpTesterData=NULL;
+BIZ_RULE	*gblpBizRules=NULL;
+FILE *gblLogFile = NULL;
+bool gblTempTestMode = false;
+bool gblHourTestMode = false;
+int gblNumBizRules=0;
+int gblRowCnt=0;
+int gblCurrentTemp = 0;
+int gblCurrentDay;
+int gblHourOfDay;
+int gblMainThread = 0;
+int gblNumBizRecs;
+
 /*
  * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
  */
@@ -371,161 +533,6 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
  * 		debug as:  sudo c-icap -N -D -d 1
  */
 
-#define CI_MAXMSGIDLEN 256
-#define CI_MAXTIMESTAMPLEN 256
-#define CI_MAXAPPNAMELEN 256
-#define CI_MAXCOMPANYLEN 256
-#define CI_MAXMETHODLEN 256
-#define CI_MAXENDPOINTLEN 256
-#define CI_MAXNSLEN 256
-#define CI_MAXXACTIDLEN 256
-
-#define MSP_NO_STATUS   0
-#define MSP_OK          1
-#define MSP_BIZ_VIO		2 // business rule violation
-#define MSP_ERROR		3
-
-#define MAX_GROUPLEN 80
-#define WILDCARD_STR "-1"
-#define WILDCARD -1
-#define LOG_URL_SIZE 256
-#define LOW_BUFF 256
-
-#define MAX_DB_NAMELEN  50
-#define MAX_DB_ZIPLEN    5
-
-#define DB_COLNAME_TESTER	"Tester"
-#define DB_COLNAME_APPID	"AppId"
-#define DB_COLNAME_ZIPCODE	"Zipcode"
-#define DB_COLNAME_FUNCTION "Function"
-#define DB_COLNAME_ENDPOINT "Endpoint"
-#define DB_COLNAME_METHOD	"Method"
-#define DB_COLNAME_MAXTEMP	"maxTemp"
-#define DB_COLNAME_MINTEMP	"minTemp"
-#define DB_COLNAME_MAXHOUR	"maxHour"
-#define DB_COLNAME_MINHOUR	"minHour"
-#define DB_COLNAME_NUMREQ	"numReq"
-#define DB_COLNAME_NUMRPH	"numRPH"
-#define DB_COLNAME_EMAIL	"email"
-#define APIBUFFLEN     				250
-#define WEATHER_UPDATE_INTERVAL     5   // minutes
-
-#define V3_NULL_ENDPOINT "V3_Server"
-
-typedef enum bc_cmd{
-	BCC_NO_CMD = 0,
-	BCC_SHOW_DB,
-	BCC_RELOAD_DB,
-	BCC_SHOW_ACT,
-	BCC_CURRENT_TEMP,
-	BCC_CURRENT_HOUR,
-	BCC_SET_CURRENT_TEMP,
-	BCC_SET_CURRENT_HOUR,
-	BCC_HELP		// keep this always as the last, for BccUsage
-} USER_CMD;
-
-//char *strptime(const char *s, const char *format, struct tm *tm);
-//time_t timelocal(struct tm *tm);
-
-pthread_t gblWeatherThread;
-bool	  gblThreadRunning = false;
-
-/*  https://openweathermap.org/current
-	<current>
-	<city id="0" name="Richland">
-		<coord lon="-119.288" lat="46.2522"/>
-		<country>US</country>
-		<timezone>-28800</timezone>
-		<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
-	</city>
-	<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
-	<feels_like value="21.83" unit="fahrenheit"/>
-	<humidity value="93" unit="%"/>
-	<pressure value="1021" unit="hPa"/>
-	<wind>
-		<speed value="7.58" unit="mph" name="Light breeze"/>
-		<gusts/>
-		<direction value="210" code="SSW" name="South-southwest"/>
-	</wind>
-	<clouds value="90" name="overcast clouds"/>
-	<visibility value="10000"/>
-	<precipitation mode="no"/>
-	<weather number="804" value="overcast clouds" icon="04d"/>
-	<lastupdate value="2021-02-19T17:45:04"/>
-	</current>
-*/
-
-typedef signed long gint64;
-typedef char   		gchar;
-
-/*
- * The srv_msp_data structure will store the data required to service an ICAP request.
- */
-struct srv_msp_msg_info {
-	char xmlnspace[CI_MAXNSLEN + 1];
-	char method[CI_MAXMETHODLEN + 1];
-	char endpoint[CI_MAXENDPOINTLEN + 1];
-	char xactid[CI_MAXXACTIDLEN + 1];
-	char appname[CI_MAXAPPNAMELEN + 1];
-	char company[CI_MAXCOMPANYLEN + 1];
-	//char msgid[CI_MAXMSGIDLEN + 1];
-	//char timestamp[CI_MAXTIMESTAMPLEN + 
-	bool bIsV3;
-};
-
-struct srv_msp_data {
-	struct body_data body;
-	struct srv_msp_msg_info msginfo;
-	int64_t maxBodyData;
-	int64_t expectedData;
-	/*flag for marking the eof*/
-	int  eof;
-	int  isReqmod;
-	bool bHasCommand;
-	bool bHasArg;
-	USER_CMD Command;
-	int  CommandArg;
-};
-
-#define DATABASE_NAME "/home/msspeak/BizRules.db"
-// strncpy() Warning: If there is no null byte among the first n bytes of src, 
-//		the string placed in dest will not be null-terminated.
-typedef struct _tester {
-	gchar  m_Tester[MAX_DB_NAMELEN+1];
-	gchar  m_AppId[MAX_DB_NAMELEN+1];
-	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
-} TESTER_DATA;
-
-typedef struct _bizrule {
-	gint64 m_numReq;
-	gint64 m_numRPH;
-	gint64 m_minTemp;
-	gint64 m_maxTemp;
-	gint64 m_minHour;
-	gint64 m_maxHour;
-	gint64 m_ValidRequestNum;
-	gint64 m_TotalRequestNum;
-	gchar  m_Function[MAX_DB_NAMELEN+1];
-	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
-	gchar  m_Method[MAX_DB_NAMELEN+1];
-	gchar  m_Email[MAX_DB_NAMELEN+1];
-} BIZ_RULE;
-
-TESTER_DATA  gblTesterStruct={};
-TESTER_DATA *gblpTesterData=NULL;
-BIZ_RULE	*gblpBizRules=NULL;
-int gblNumBizRules=0;
-int gblRowCnt=0;
-struct string {
-    char *ptr;
-    size_t len;
-};
-typedef struct _wd {
-	int currentTemp;
-	bool bSuccess;
-	char city[APIBUFFLEN+1];
-} WEATHER_DATA;
-
 void init_string(struct string *);
 size_t writefunc(void *, size_t, size_t, struct string *);
 int fmt_srv_msp_namespace(ci_request_t *, char *, int, const char *);
@@ -592,14 +599,6 @@ xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 // globals
 #define STRBUFF_LEN 800
 char str[STRBUFF_LEN];
-bool gblTempTestMode = false;
-bool gblHourTestMode = false;
-int gblCurrentTemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
-int gblCurrentDay;
-int gblHourOfDay;
-int gblMainThread = 0;
-int gblNumBizRecs;
-FILE *gblLogFile = NULL;
 
 // statics
 static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
@@ -1092,20 +1091,21 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 }
 	
 /*
- * weather_updater - thread body for weather handler
+ * WeatherUpdater - thread body for weather handler
  */
-void *weather_updater(void *data)
+void *WeatherUpdater(void *data)
 {
 	if( data )
 	{
+		TESTER_DATA *pData = data;
 		gblThreadRunning = true;
-		ci_debug_printf(1, "\n*** weather updater started ***\n");
 		CURL *curl;
-		TESTER_DATA	*pData = data;
 		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 		char api_buffer[APIBUFFLEN+1];
-		unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
+		//unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
+		unsigned seconds = WEATHER_UPDATE_INTERVAL * 2;
 		curl = curl_easy_init();
+		ci_debug_printf(1, "\n*** Weather Updater started ***\n");
 		if(curl)
 		{
 			WEATHER_DATA weatherData;
@@ -1116,9 +1116,9 @@ void *weather_updater(void *data)
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
-			
-			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
-			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);		
+
+			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);
+			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);
 			do{
 				if( gblTempTestMode ){
 					ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
@@ -1127,7 +1127,7 @@ void *weather_updater(void *data)
 					if( update_weather( curl, &xmlStr, &weatherData ) ) {
 						if( weatherData.bSuccess ) {
 							gblCurrentTemp = weatherData.currentTemp;
-							ci_debug_printf(2,"Current Temp: %d\n", gblCurrentTemp);
+							ci_debug_printf(2,"\nCurrent Temp: %d\n", gblCurrentTemp);
 						}
 						else{
 							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
@@ -1146,7 +1146,7 @@ void *weather_updater(void *data)
 						ci_debug_printf(0,"\nERROR Updating Weather.\n");
 						break;
 					}
-					ci_debug_printf(3, "\n*** weather updated ***\n");
+					ci_debug_printf(3, "*** Weather Updated ***\n");
 					init_string(&xmlStr);
 				}
 				sleep( seconds );
@@ -1155,12 +1155,12 @@ void *weather_updater(void *data)
 		}
 	}
 	else{
-		ci_debug_printf(1, "\n*** weather_updater:: NULL data passed.\n");
+		ci_debug_printf(1, "\n*** WeatherUpdater:: NULL data passed.\n");
 	}
 	// pthread_exit can cause 5 blocks allocated from functions called by pthread_exit() 
 	// that is unfreed but still reachable at process exit
 	//pthread_exit(NULL);
-	ci_debug_printf(1, "\n*** weather_updater exiting...\n");
+	ci_debug_printf(1, "\n*** WeatherUpdater exiting...\n");
 	gblThreadRunning = false;
 	return(NULL);
 }
@@ -1244,7 +1244,7 @@ bool LoadActiveRules( gchar *pDatabaseName ){
 		if( gblpTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
 		{
 			// Create weather update thread, must be called after GetTesterData
-			pthread_create(&gblWeatherThread, NULL, weather_updater, gblpTesterData);
+			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
 		}
 #endif
 	}
@@ -1663,6 +1663,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
+	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
 
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
@@ -1700,7 +1701,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
 						gblTempTestMode = true;
 						gblCurrentTemp = mspd->CommandArg;
-						ci_debug_printf(1, "   Current Temperature changed to '%d(F)'\n", gblCurrentTemp);
+						ci_debug_printf(1, "   Current Temperature changed to %d(F)\n", gblCurrentTemp);
 					}
 					else{
 						if( mspd->CommandArg == -1 ){
@@ -1723,7 +1724,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 24) ){
 						gblHourTestMode = true;
 						gblHourOfDay = mspd->CommandArg;
-						ci_debug_printf(1, "   The Current Hour of the Day changed to '%d'\n", gblHourOfDay);
+						ci_debug_printf(1, "   The Current Hour of the Day changed to %d\n", gblHourOfDay);
 					}
 					else{
 						if( mspd->CommandArg == -1 ){
@@ -1954,6 +1955,10 @@ int handle_request_preview(BIZ_RULE *pRuleData)
 {
 
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
+
+
+	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
+
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
