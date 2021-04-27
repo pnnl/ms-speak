@@ -46,7 +46,6 @@ HEADERS += \
     HeaderContainerWidget.h \
     HeaderWidget.h \
     Host.h \
-    HostEditor.h \
     HostItem.h \
     HostMethodListWidget.h \
     HostScene.h \
@@ -65,7 +64,6 @@ HEADERS += \
     TimelineEvent.h \
     TimelineEventEditor.h \
     TimelineEventItem.h \
-#    TimelineEventSendWorker.h \
     TimelineHeaderWidget.h \
     TimelineScene.h \
     TimelineView.h \
@@ -103,7 +101,6 @@ SOURCES += \
     HeaderContainerWidget.cpp \
     HeaderWidget.cpp \
     Host.cpp \
-    HostEditor.cpp \
     HostItem.cpp \
     HostMethodListWidget.cpp \
     HostScene.cpp \
@@ -150,7 +147,6 @@ FORMS += \
     FunctionGroupWidget.ui \
     HeaderContainerWidget.ui \
     HeaderWidget.ui \
-    HostEditor.ui \
     HostMethodListWidget.ui \
     HttpOutEditor.ui \
     LogDock.ui \

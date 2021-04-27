@@ -73,6 +73,8 @@ int main(int argc, char* argv[])
 	QCoreApplication::setApplicationName("MultiSpeakerServer");
 
 	QApplication a(argc, argv);
+	// qDebug()<<QCoreApplication::libraryPaths();
+
 	MultiSpeakerServer w;
 	w.show();
 	return a.exec();

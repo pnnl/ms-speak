@@ -342,6 +342,7 @@ else
 	if cd $NEW_DIR/Packages; then
 		if cp install/c_icap/configure c_icap-0.5.5; then
 			if cp install/c_icap/c-icap.conf.in c_icap-0.5.5; then
+                cp install/c_icap/request.c c_icap-0.5.5
 				if cp install/c_icap/configure.ac c_icap-0.5.5; then
 					mkdir -p c_icap-0.5.5/services/msp
 					if cp -r install/c_icap/services/msp/* c_icap-0.5.5/services/msp; then

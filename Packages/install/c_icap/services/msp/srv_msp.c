@@ -61,7 +61,10 @@
 		04/05/2021 - CHM: support Phase3 enhancements.
 		04/15/2021 - CHM: handle version 3 MS headers with no endpoint.
 							see V3_NULL_ENDPOINT.
-		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://172.18.77.1:3128/icap?2
+		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://172.18.77.1:3128/icap?cmd=7&arg=11
+							http://192.168.1.3:3128/icap?cmd=help
+							http://127.0.0.1:3128/icap?cmd=1
+							
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -546,14 +549,15 @@ struct ci_fmt_entry MspFmtTable [] = {
 // curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
 
 // module prototypes
-int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
-int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
 void msp_close_service();
 void *msp_init_request_data(ci_request_t *);
 void msp_release_request_data(void *);
+int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
+int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
 int msp_preview_handler(char *, int, ci_request_t *);
 int msp_end_of_data_handler(ci_request_t *);
 int msp_io(char *, int *, char *, int *, int, ci_request_t *);
+
 CI_DECLARE_MOD_DATA ci_service_module_t service = {
 	"msp",                         // mod_name: The service name
 	"MultiSpeak Parser Service",   // mod_short_descr: Service short description
@@ -572,6 +576,7 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 };
 
 // general prototypes
+bool LoadActiveRules( gchar * );
 void BccUsage(void);
 void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
 int handle_request_preview(BIZ_RULE *);
@@ -587,6 +592,8 @@ xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 // globals
 #define STRBUFF_LEN 800
 char str[STRBUFF_LEN];
+bool gblTempTestMode = false;
+bool gblHourTestMode = false;
 int gblCurrentTemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
 int gblCurrentDay;
 int gblHourOfDay;
@@ -1113,31 +1120,36 @@ void *weather_updater(void *data)
 			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
 			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);		
 			do{
-				if( update_weather( curl, &xmlStr, &weatherData ) ) {
-					if( weatherData.bSuccess ) {
-						gblCurrentTemp = weatherData.currentTemp;
-						ci_debug_printf(2,"Current Temp: %d\n", gblCurrentTemp);
-					}
-					else{
-						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
-					}
-					if( weatherData.city ) {
-						ci_debug_printf(2,"City: %s\n", weatherData.city);
-					}
-					else{
-						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
-					}
-					//if( bShowAll ){
-					//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
-					//}
+				if( gblTempTestMode ){
+					ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
 				}
 				else{
-					ci_debug_printf(0,"\nERROR Updating Weather.\n");
-					break;
+					if( update_weather( curl, &xmlStr, &weatherData ) ) {
+						if( weatherData.bSuccess ) {
+							gblCurrentTemp = weatherData.currentTemp;
+							ci_debug_printf(2,"Current Temp: %d\n", gblCurrentTemp);
+						}
+						else{
+							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
+						}
+						if( weatherData.city ) {
+							ci_debug_printf(2,"City: %s\n", weatherData.city);
+						}
+						else{
+							ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
+						}
+						//if( bShowAll ){
+						//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
+						//}
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather.\n");
+						break;
+					}
+					ci_debug_printf(3, "\n*** weather updated ***\n");
+					init_string(&xmlStr);
 				}
-				ci_debug_printf(3, "\n*** weather updated ***\n");
 				sleep( seconds );
-				init_string(&xmlStr);
 			} while( true );
 			curl_easy_cleanup(curl); 
 		}
@@ -1195,33 +1207,27 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 
 	/*Tell to the icap clients to send preview data for all files*/
 	// comment out for url_check ci_service_set_transfer_preview(srv_xdata, "*"); // "zip, tar"
-
-
 	//ci_debug_printf(1, "Instantiating Business Rules Key File\n");
 	
 	return CI_OK;
 }
 
-bool LoadActiveRules( ghar *pDatabaseName ){
+bool LoadActiveRules( gchar *pDatabaseName ){
 	bool bRetVal = false;
 
-
-TESTER_DATA  gblTesterStruct={};
-TESTER_DATA *gblpTesterData=NULL;
-BIZ_RULE	*gblpBizRules=NULL;
-int gblNumBizRules=0;
-int gblRowCnt=0;
-
 	if( gblpTesterData ){ // previously loaded a DB?
-		if( gblWeatherThread ){
+		if( gblThreadRunning ){
+			pthread_cancel(gblWeatherThread);
+			pthread_join(gblWeatherThread, NULL);
+			ci_debug_printf(1, "\n*** previous weather thread cancelled ***\n");
+			gblThreadRunning = false;
 		}
 	}
-
-	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", pDatabaseName);
+	ci_debug_printf(1, "    Re-Loading Business Rules from '%s'\n", pDatabaseName);
 	gblpTesterData = GetTesterData( pDatabaseName );
 	if( gblpTesterData )
 	{
-		bRetVal = true
+		bRetVal = true;
 		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
 		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
 		//if( CI_DEBUG_LEVEL >= 1 ){
@@ -1242,6 +1248,9 @@ int gblRowCnt=0;
 		}
 #endif
 	}
+	else{
+		ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
+	}
 	return bRetVal;
 }
 
@@ -1256,7 +1265,6 @@ int gblRowCnt=0;
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	gchar    *BizFile = "/home/msspeak/BizRules.db"; // 
 	const char *LogPath="/var/log/srv_msp.log";
 
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
@@ -1269,8 +1277,8 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 	}
 	
 	if( !LoadActiveRules( DATABASE_NAME ) ){
-		ci_debug_printf(0, "    Error loading Business Rules\n");
-		exit( -2 );
+		ci_debug_printf(0, "\n    Error loading Business Rules\n");
+		//exit( -2 );
 	}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
@@ -1603,10 +1611,14 @@ void BccUsage(void)
 				ci_debug_printf(1, "%d - Show Current Hour of the Day.\n", cmd);
 				break; 
 			case BCC_SET_CURRENT_TEMP:
-				ci_debug_printf(1, "%d - Set Current Temperature(F)(for testing).\n", cmd);
+				ci_debug_printf(1, "%d - Set Current Temperature(F)(enter test mode).\n", cmd);
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=XX')\n");
+				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_SET_CURRENT_HOUR:
-				ci_debug_printf(1, "%d - Set Current Hour of the Day(for testing).\n", cmd);
+				ci_debug_printf(1, "%d - Set Current Hour of the Day(enter test mode).\n", cmd);
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=XX')\n");
+				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_HELP:
 				ci_debug_printf(1, "%d - Show This Help.\n", cmd);
@@ -1663,11 +1675,11 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ShowDBRules( gblpTesterData, gblpBizRules, gblNumBizRules, 1 );
 				break;
 			case BCC_RELOAD_DB:// 2
-				ci_debug_printf(1, "Reload DB Command Received(NOT YET IMPLEMENTED).\n");
-				pthread_cancel(gblWeatherThread);
-				pthread_join(gblWeatherThread, NULL);
-				ci_debug_printf(1, "\n*** weather thread joined ***\n");
-				break;
+				ci_debug_printf(1, "Reload DB Command Received.\n");
+				if( !LoadActiveRules( DATABASE_NAME ) ){
+					ci_debug_printf(0, "    Business Rules Could not be Re-loaded\n");
+				}
+					break;
 			case BCC_SHOW_ACT: // 3
 				ci_debug_printf(3, "Show Active User Command Received.\n");
 				ci_debug_printf(1, "   The Active Tester is '%s'\n", gblpTesterData->m_Tester);
@@ -1686,12 +1698,19 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(3, "Change Current Temperature Command Received.\n");
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
+						gblTempTestMode = true;
 						gblCurrentTemp = mspd->CommandArg;
 						ci_debug_printf(1, "   Current Temperature changed to '%d(F)'\n", gblCurrentTemp);
 					}
 					else{
-						ci_debug_printf(1, "   *** ERROR, INVALID NEW TEMP VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
-						ci_debug_printf(1, "   ***        temp must be between %s ***\n", "0 and 100");
+						if( mspd->CommandArg == -1 ){
+							gblTempTestMode = false;
+							ci_debug_printf(1, "   Temperature Test Mode Disabled\n");
+						}
+						else{
+							ci_debug_printf(1, "   *** ERROR, INVALID NEW TEMP VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
+							ci_debug_printf(1, "   ***        temp must be between %s ***\n", "0 and 100");
+						}
 					}
 				}
 				else{
@@ -1702,12 +1721,19 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(3, "Change Current Hour of the Day Command Received.\n");
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 24) ){
+						gblHourTestMode = true;
 						gblHourOfDay = mspd->CommandArg;
 						ci_debug_printf(1, "   The Current Hour of the Day changed to '%d'\n", gblHourOfDay);
 					}
 					else{
-						ci_debug_printf(1, "   *** ERROR, INVALID NEW HOUR VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
-						ci_debug_printf(1, "   ***        hour must be between %s ***\n", "0 and 23");
+						if( mspd->CommandArg == -1 ){
+							gblHourTestMode = false;
+							ci_debug_printf(1, "   Hour Test Mode Disabled\n");
+						}
+						else{
+							ci_debug_printf(1, "   *** ERROR, INVALID NEW HOUR VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
+							ci_debug_printf(1, "   ***        hour must be between %s ***\n", "0 and 23");
+						}
 					}
 				}
 				else{
@@ -1730,7 +1756,11 @@ int msp_end_of_data_handler(ci_request_t * req)
 		return CI_MOD_DONE;
 		*/
 	}
-	
+	else if( !gblpTesterData ){ // no DB has been successfully loaded yet
+		ci_debug_printf(0, "*** DATABASE FAILURE: NO DATABASE HAS BEEN LOADED YET!\n");
+		unlock_data(req);
+		return CI_ERROR;
+	}
 	if( mspd->isReqmod ){
 		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
@@ -1927,11 +1957,17 @@ int handle_request_preview(BIZ_RULE *pRuleData)
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
-	gblHourOfDay = tm_struct->tm_hour;
-	if( gblCurrentDay != tm_struct->tm_mday){
-		gblCurrentDay = tm_struct->tm_mday;
-		pRuleData->m_ValidRequestNum = 0;
-		pRuleData->m_TotalRequestNum = 0;
+	
+	if( gblHourTestMode ){
+		ci_debug_printf(1,"\nSimulating Hour of %d While in Test Mode.\n",gblHourTestMode);
+	}
+	else{
+		gblHourOfDay = tm_struct->tm_hour;
+		if( gblCurrentDay != tm_struct->tm_mday){
+			gblCurrentDay = tm_struct->tm_mday;
+			pRuleData->m_ValidRequestNum = 0;
+			pRuleData->m_TotalRequestNum = 0;
+		}
 	}
 	pRuleData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
 	// TODO: handle WILDCARDs for temp and time too

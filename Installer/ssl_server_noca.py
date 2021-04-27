@@ -11,8 +11,8 @@ import ssl, time
 
 listen_addr = '0.0.0.0'
 listen_port = 8443
-server_cert = 'mss.crt'
-server_key = 'mss.key'
+server_cert = '../MultiSpeakerServer/Resources/mss.crt'
+server_key = '../MultiSpeakerServer/Resources/mss.key'
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 context.load_cert_chain(certfile=server_cert, keyfile=server_key)

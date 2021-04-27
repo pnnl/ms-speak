@@ -107,7 +107,7 @@ SslServer::SslServer( QObject* parent)
 			error while loading shared libraries: libssl.so.1.0.0: cannot open shared object file: No such file or directory
 		so did this:
 			cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
-			sudo ln -s libcrypto.so libssl.so.1.0.0
+			sudo ln -s libssl.so libssl.so.1.0.0
 			sudo ln -s libcrypto.so libcrypto.so.1.0.0
 		and this worked.
 
@@ -127,9 +127,18 @@ SslServer::SslServer( QObject* parent)
 					C:\Qt\Tools\OpenSSL
 			i now no longer get !QSslSocket::supportsSsl(), but
 			i don't see the MS packet either,added openssl-1.1.1l-dev
-	*/
 
+			Debian, runtime:
+				"QSslSocket: cannot resolve SSL_library_init"
+				"you just need to install the package libssl-dev"
+					- no, doesn't help, was already installed
+				BUT, i mistakenly linked to the wrong file:
+					libssl.so.1.0.0 -> libcrypto.so
+				fixed it and it works now:
+					libssl.so.1.0.0 -> libssl.so
+			*/
 	if( !QSslSocket::supportsSsl() ){
+		//qDebug()<<"SSL version use for run-time: "<<QSslSocket::sslLibraryVersionNumber();
 		QString qs2 = QSslSocket::sslLibraryBuildVersionString();
 		QString qs = QStringLiteral("System does not support Qt OpenSSL Version:\n%1").arg(qs2);
 		qDebug() << qs2;

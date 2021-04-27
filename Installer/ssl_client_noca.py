@@ -10,10 +10,11 @@ host_addr = '130.20.113.7' # '130.20.209.42'
 host_addr = '127.0.0.1'
 host_port = 8443
 server_sni_hostname = 'multispeaker.server.org'
-server_cert = 'mss.crt'
+server_cert = '../MultiSpeakerServer/Resources/mss.crt'
 
 print("Connecting to {} via {}, using {}".format(server_sni_hostname, host_addr, server_cert))
 
+secSock = None
 try:
 	sslCtx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=server_cert)
 	#sslCtx = ssl.create_default_context()
@@ -26,7 +27,6 @@ try:
 	try:
 		secSock.connect((host_addr, host_port))
 	except:
-		secSock = None
 		raise Exception("Failed to Connect to Server.")
 	print("SSL Session Established.\nPeer: {}".format(secSock.getpeercert()))
 	print("\n")
