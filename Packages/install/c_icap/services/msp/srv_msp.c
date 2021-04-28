@@ -55,12 +55,16 @@
 		04/01/2019 - CHM: added logging.
 		05/13/2019 - CHM: return MS response on business rule violation.
 		06/04/2019 - CHM: generalize BizData (start to at least...).
-		06/05/2019 - CHM: only increment m_ValidRequestNum upon seeing a response.
+		06/05/2019 - CHM: only increment m_NumValidRequests upon seeing a response.
 		06/20/2019 - CHM: ingest the complete packet, so can parse the well-formed xml inside.
 		06/29/2019 - CHM: support all methods/endpoints.
 		04/05/2021 - CHM: support Phase3 enhancements.
 		04/15/2021 - CHM: handle version 3 MS headers with no endpoint.
 							see V3_NULL_ENDPOINT.
+		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://172.18.77.1:3128/icap?cmd=7&arg=11
+							http://192.168.1.3:3128/icap?cmd=help
+							http://127.0.0.1:3128/icap?cmd=1
+							
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -294,6 +298,175 @@
 #include "txtTemplate.h"
 #include "srv_msp_body.h"
 
+// defines
+#define CI_MAXMSGIDLEN 256
+#define CI_MAXTIMESTAMPLEN 256
+#define CI_MAXAPPNAMELEN 256
+#define CI_MAXCOMPANYLEN 256
+#define CI_MAXMETHODLEN 256
+#define CI_MAXENDPOINTLEN 256
+#define CI_MAXNSLEN 256
+#define CI_MAXXACTIDLEN 256
+#define MSP_NO_STATUS   0
+#define MSP_OK          1
+#define MSP_BIZ_VIO		2 // business rule violation
+#define MSP_ERROR		3
+#define MAX_GROUPLEN 80
+#define WILDCARD_STR "-1"
+#define WILDCARD -1
+#define LOG_URL_SIZE 256
+#define LOW_BUFF 256
+#define MAX_DB_NAMELEN  50
+#define MAX_DB_ZIPLEN    5
+#define DB_COLNAME_TESTER	"Tester"
+#define DB_COLNAME_APPID	"AppId"
+#define DB_COLNAME_ZIPCODE	"Zipcode"
+#define DB_COLNAME_FUNCTION "Function"
+#define DB_COLNAME_ENDPOINT "Endpoint"
+#define DB_COLNAME_METHOD	"Method"
+#define DB_COLNAME_MAXTEMP	"maxTemp"
+#define DB_COLNAME_MINTEMP	"minTemp"
+#define DB_COLNAME_MAXHOUR	"maxHour"
+#define DB_COLNAME_MINHOUR	"minHour"
+#define DB_COLNAME_NUMREQ	"numReq"
+#define DB_COLNAME_NUMRPH	"numRPH"
+#define DB_COLNAME_EMAIL	"email"
+#define APIBUFFLEN     				250
+#define WEATHER_UPDATE_INTERVAL     5   // minutes
+#define DATABASE_NAME "/home/msspeak/BizRules.db"
+#define V3_NULL_ENDPOINT "V3_Server"
+#define STRBUFF_LEN 800
+#define SQL_FROM_QUERY " FROM rules"\
+		" INNER JOIN functions ON functions.id = rules.function"\
+		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
+		" INNER JOIN methods ON methods.id = rules.method"\
+		" INNER JOIN testers ON testers.id = rules.tester"\
+		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
+
+// types
+typedef enum bc_cmd{
+	BCC_NO_CMD = 0,
+	BCC_SHOW_DB,
+	BCC_RELOAD_DB,
+	BCC_SHOW_ACT,
+	BCC_CURRENT_TEMP,
+	BCC_CURRENT_HOUR,
+	BCC_SET_CURRENT_TEMP,
+	BCC_SET_CURRENT_HOUR,
+	BCC_HELP		// keep this always as the last, for BccUsage
+} USER_CMD;
+
+/*  https://openweathermap.org/current
+	<current>
+	<city id="0" name="Richland">
+		<coord lon="-119.288" lat="46.2522"/>
+		<country>US</country>
+		<timezone>-28800</timezone>
+		<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
+	</city>
+	<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
+	<feels_like value="21.83" unit="fahrenheit"/>
+	<humidity value="93" unit="%"/>
+	<pressure value="1021" unit="hPa"/>
+	<wind>
+		<speed value="7.58" unit="mph" name="Light breeze"/>
+		<gusts/>
+		<direction value="210" code="SSW" name="South-southwest"/>
+	</wind>
+	<clouds value="90" name="overcast clouds"/>
+	<visibility value="10000"/>
+	<precipitation mode="no"/>
+	<weather number="804" value="overcast clouds" icon="04d"/>
+	<lastupdate value="2021-02-19T17:45:04"/>
+	</current>
+*/
+typedef struct _wd {
+	int currentTemp;
+	bool bSuccess;
+	char city[APIBUFFLEN+1];
+} WEATHER_DATA;
+
+// strncpy() Warning: If there is no null byte among the first n bytes of src, 
+//		the string placed in dest will not be null-terminated.
+typedef struct _tester {
+	char  m_Tester[MAX_DB_NAMELEN+1];
+	char  m_AppId[MAX_DB_NAMELEN+1];
+	char  m_Zipcode[MAX_DB_ZIPLEN+1];
+} TESTER_DATA;
+
+typedef struct _bizrule {
+	signed long m_numReq;
+	signed long m_numRPH;
+	signed long m_minTemp;
+	signed long m_maxTemp;
+	signed long m_minHour;
+	signed long m_maxHour;
+	signed long m_NumTotalRequests;
+	signed long m_NumValidRequests;
+	signed long m_NumValidRequestsPH;
+	char  m_Function[MAX_DB_NAMELEN+1];
+	char  m_EndPoint[MAX_DB_NAMELEN+1];
+	char  m_Method[MAX_DB_NAMELEN+1];
+	char  m_Email[MAX_DB_NAMELEN+1];
+	time_t m_StartTime;
+} BIZ_RULE;
+
+// structs
+/*
+ * The srv_msp_data structure will store the data required to service an ICAP request.
+ */
+struct srv_msp_msg_info {
+	char xmlnspace[CI_MAXNSLEN + 1];
+	char method[CI_MAXMETHODLEN + 1];
+	char endpoint[CI_MAXENDPOINTLEN + 1];
+	char xactid[CI_MAXXACTIDLEN + 1];
+	char appname[CI_MAXAPPNAMELEN + 1];
+	char company[CI_MAXCOMPANYLEN + 1];
+	//char msgid[CI_MAXMSGIDLEN + 1];
+	//char timestamp[CI_MAXTIMESTAMPLEN + 
+	bool bIsV3;
+};
+
+struct srv_msp_data {
+	struct body_data body;
+	struct srv_msp_msg_info msginfo;
+	int64_t maxBodyData;
+	int64_t expectedData;
+	/*flag for marking the eof*/
+	int  eof;
+	int  isReqmod;
+	bool bHasCommand;
+	bool bHasArg;
+	USER_CMD Command;
+	int  CommandArg;
+};
+
+struct string {
+    char *ptr;
+    size_t len;
+};
+
+char ViolationMessage[300];
+char str[STRBUFF_LEN];
+
+// globals, not sure what this means, since this file does not have a main in it.
+pthread_t gblWeatherThread;
+bool	  gblThreadRunning = false;
+
+TESTER_DATA  gblTesterStruct={};
+TESTER_DATA *gblpTesterData=NULL;
+BIZ_RULE	*gblpBizRules=NULL;
+FILE *gblLogFile = NULL;
+bool gblTempTestMode = false;
+bool gblHourTestMode = false;
+int gblNumBizRules=0;
+int gblRowCnt=0;
+int gblCurrentTemp = 0;
+int gblCurrentDay;
+int gblHourOfDay;
+int gblMainThread = 0;
+int gblNumBizRecs;
+
 /*
  * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
  */
@@ -367,145 +540,6 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
  * 		debug as:  sudo c-icap -N -D -d 1
  */
 
-#define CI_MAXMSGIDLEN 256
-#define CI_MAXTIMESTAMPLEN 256
-#define CI_MAXAPPNAMELEN 256
-#define CI_MAXCOMPANYLEN 256
-#define CI_MAXMETHODLEN 256
-#define CI_MAXENDPOINTLEN 256
-#define CI_MAXNSLEN 256
-#define CI_MAXXACTIDLEN 256
-
-#define MSP_NO_STATUS   0
-#define MSP_OK          1
-#define MSP_BIZ_VIO		2 // business rule violation
-#define MSP_ERROR		3
-
-#define MAX_GROUPLEN 80
-#define WILDCARD_STR "-1"
-#define WILDCARD -1
-#define LOG_URL_SIZE 256
-#define LOW_BUFF 256
-
-#define MAX_DB_NAMELEN  50
-#define MAX_DB_ZIPLEN    5
-
-#define DB_COLNAME_TESTER	"Tester"
-#define DB_COLNAME_APPID	"AppId"
-#define DB_COLNAME_ZIPCODE	"Zipcode"
-#define DB_COLNAME_FUNCTION "Function"
-#define DB_COLNAME_ENDPOINT "Endpoint"
-#define DB_COLNAME_METHOD	"Method"
-#define DB_COLNAME_MAXTEMP	"maxTemp"
-#define DB_COLNAME_MINTEMP	"minTemp"
-#define DB_COLNAME_MAXHOUR	"maxHour"
-#define DB_COLNAME_MINHOUR	"minHour"
-#define DB_COLNAME_NUMREQ	"numReq"
-#define DB_COLNAME_NUMRPH	"numRPH"
-#define DB_COLNAME_EMAIL	"email"
-#define APIBUFFLEN     				250
-#define WEATHER_UPDATE_INTERVAL     5   // minutes
-
-#define V3_NULL_ENDPOINT "V3_Server"
-
-//char *strptime(const char *s, const char *format, struct tm *tm);
-//time_t timelocal(struct tm *tm);
-
-pthread_t thread_weather;
-
-/*  https://openweathermap.org/current
-	<current>
-	<city id="0" name="Richland">
-		<coord lon="-119.288" lat="46.2522"/>
-		<country>US</country>
-		<timezone>-28800</timezone>
-		<sun rise="2021-02-19T14:53:21" set="2021-02-20T01:28:51"/>
-	</city>
-	<temperature value="30.16" min="28.4" max="30.99" unit="fahrenheit"/>
-	<feels_like value="21.83" unit="fahrenheit"/>
-	<humidity value="93" unit="%"/>
-	<pressure value="1021" unit="hPa"/>
-	<wind>
-		<speed value="7.58" unit="mph" name="Light breeze"/>
-		<gusts/>
-		<direction value="210" code="SSW" name="South-southwest"/>
-	</wind>
-	<clouds value="90" name="overcast clouds"/>
-	<visibility value="10000"/>
-	<precipitation mode="no"/>
-	<weather number="804" value="overcast clouds" icon="04d"/>
-	<lastupdate value="2021-02-19T17:45:04"/>
-	</current>
-*/
-
-typedef signed long gint64;
-typedef char   		gchar;
-
-/*
- * The srv_msp_data structure will store the data required to service an ICAP request.
- */
-struct srv_msp_msg_info {
-	char xmlnspace[CI_MAXNSLEN + 1];
-	char method[CI_MAXMETHODLEN + 1];
-	char endpoint[CI_MAXENDPOINTLEN + 1];
-	char xactid[CI_MAXXACTIDLEN + 1];
-	char appname[CI_MAXAPPNAMELEN + 1];
-	char company[CI_MAXCOMPANYLEN + 1];
-	//char msgid[CI_MAXMSGIDLEN + 1];
-	//char timestamp[CI_MAXTIMESTAMPLEN + 
-	bool bIsV3;
-};
-
-struct srv_msp_data {
-	struct body_data body;
-	struct srv_msp_msg_info msginfo;
-	int64_t maxBodyData;
-	int64_t expectedData;
-	/*flag for marking the eof*/
-	int  eof;
-	int  isReqmod;
-	bool bHasCommand;
-	int  Command;
-};
-
-// strncpy() Warning: If there is no null byte among the first n bytes of src, 
-//		the string placed in dest will not be null-terminated.
-typedef struct _tester {
-	gchar  m_Tester[MAX_DB_NAMELEN+1];
-	gchar  m_AppId[MAX_DB_NAMELEN+1];
-	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
-} TESTER_DATA;
-
-typedef struct _bizrule {
-	gint64 m_numReq;
-	gint64 m_numRPH;
-	gint64 m_minTemp;
-	gint64 m_maxTemp;
-	gint64 m_minHour;
-	gint64 m_maxHour;
-	gint64 m_ValidRequestNum;
-	gint64 m_TotalRequestNum;
-	gchar  m_Function[MAX_DB_NAMELEN+1];
-	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
-	gchar  m_Method[MAX_DB_NAMELEN+1];
-	gchar  m_Email[MAX_DB_NAMELEN+1];
-} BIZ_RULE;
-
-TESTER_DATA	 TesterData={};
-BIZ_RULE	*pBizRules=NULL;
-
-int NumBizRules;
-int RowCnt;
-struct string {
-    char *ptr;
-    size_t len;
-};
-typedef struct _wd {
-	int currentTemp;
-	bool bSuccess;
-	char city[APIBUFFLEN+1];
-} WEATHER_DATA;
-
 void init_string(struct string *);
 size_t writefunc(void *, size_t, size_t, struct string *);
 int fmt_srv_msp_namespace(ci_request_t *, char *, int, const char *);
@@ -529,14 +563,15 @@ struct ci_fmt_entry MspFmtTable [] = {
 // curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
 
 // module prototypes
-int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
-int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
 void msp_close_service();
 void *msp_init_request_data(ci_request_t *);
 void msp_release_request_data(void *);
+int msp_init_service(ci_service_xdata_t *, struct ci_server_conf *);
+int msp_post_init_service(ci_service_xdata_t *, struct ci_server_conf *);
 int msp_preview_handler(char *, int, ci_request_t *);
 int msp_end_of_data_handler(ci_request_t *);
 int msp_io(char *, int *, char *, int *, int, ci_request_t *);
+
 CI_DECLARE_MOD_DATA ci_service_module_t service = {
 	"msp",                         // mod_name: The service name
 	"MultiSpeak Parser Service",   // mod_short_descr: Service short description
@@ -555,7 +590,10 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 };
 
 // general prototypes
-int handle_request_preview(BIZ_RULE *);
+bool LoadActiveRules( char * );
+void BccUsage(void);
+void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
+int handle_request_preview(BIZ_RULE *, char *);
 int handle_response_preview(BIZ_RULE *);
 void WriteLog(int, FILE *, const char *, ...);
 void msp_dumphex(char *, int);
@@ -565,29 +603,13 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 
-// globals
-#define STRBUFF_LEN 800
-char str[STRBUFF_LEN];
-int currtemp;  // NOTE: used to be able to force change of temp by sending CD_Server method other than InitiateConnectDisconnect
-int currday;
-int hour;
-int MainThread = 0;
-int NumBizRecs;
-FILE *LogFile = NULL;
-
 // statics
 static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
 static int MSP_DATA_POOL = -1;
 
-#define SQL_FROM_QUERY " FROM rules"\
-		" INNER JOIN functions ON functions.id = rules.function"\
-		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
-		" INNER JOIN methods ON methods.id = rules.method"\
-		" INNER JOIN testers ON testers.id = rules.tester"\
-		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 /*
 typedef int (*sqlite3_callback)(
-   void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., pBizRules
+   void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., gblpBizRules
    int    colcount // The number of columns in row 
    char** values   // An array of strings representing fields in the row 
    char** columns  // An array of strings representing column names 
@@ -600,20 +622,20 @@ static int callback(void *data, int colcount, char **values, char **columns){
 	int i;
 	if( !data ){
 		ci_debug_printf(0, "callback Sanity Failure: %s\n", "null data ptr");
-		RowCnt = 0;
+		gblRowCnt = 0;
 		return -1;
 	}
-	if( RowCnt < NumBizRules ){
-		TESTER_DATA	*pTester=&TesterData;
+	if( gblRowCnt < gblNumBizRules ){
+		TESTER_DATA	*pTester=&gblTesterStruct;
 		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
-		BIZ_RULE *pBzd = &pBizRecs[RowCnt++];
-		pBzd->m_ValidRequestNum = 0;
-		pBzd->m_TotalRequestNum = 0;
+		BIZ_RULE *pBzd = &pBizRecs[gblRowCnt++];
+		pBzd->m_NumValidRequests = 0;
+		pBzd->m_NumTotalRequests = 0;
 		for(i = 0; i<colcount; i++){
 			if( !values[i] ){
 				continue;
 			}
-			gchar *curr_key = columns[i];
+			char *curr_key = columns[i];
 			// Note, any non-existant keys will have already been preset to WILDCARD
 			// strncmp is not necessary when comapring #defined strings
 			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
@@ -635,17 +657,17 @@ static int callback(void *data, int colcount, char **values, char **columns){
 				pBzd->m_maxHour = atoll(values[i]);
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
-				if( RowCnt == 1 ){ // we only need store Tester name once
+				if( gblRowCnt == 1 ){ // we only need store Tester name once
 					strncpy( pTester->m_Tester, values[i], MAX_DB_NAMELEN );
 				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_APPID) ){
-				if( RowCnt == 1 ){
+				if( gblRowCnt == 1 ){
 					strncpy( pTester->m_AppId, values[i], MAX_DB_NAMELEN );
 				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_ZIPCODE) ){
-				if( RowCnt == 1 ){
+				if( gblRowCnt == 1 ){
 					strncpy( pTester->m_Zipcode, values[i], MAX_DB_ZIPLEN );
 				}
 			}
@@ -667,7 +689,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 		}
 	}
 	else{
-		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", RowCnt);
+		ci_debug_printf(0, "Row Count Sanity Failure: %d\n", gblRowCnt);
 	}
 	return 0;
 }
@@ -675,8 +697,8 @@ static int callback(void *data, int colcount, char **values, char **columns){
 /*
  * GetTesterData - reads the business rules for the Active Tester from the DB
  */
-TESTER_DATA	*GetTesterData( gchar *pdbFile ){
-	TESTER_DATA	*pRetData=NULL;
+TESTER_DATA *GetTesterData( char *pdbFile ){
+	TESTER_DATA *pRetData=NULL;
 	sqlite3 *db;
 	char *zErrMsg = 0;
 	int rc;
@@ -706,8 +728,8 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	bool bOnce = false;
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
 		if( !bOnce ){
-			NumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
-			//ci_debug_printf(0,"NumBizRules = %d\n", NumBizRules);
+			gblNumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
+			//ci_debug_printf(0,"gblNumBizRules = %d\n", gblNumBizRules);
 			bOnce = true;
 		}
 		else{
@@ -725,18 +747,18 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	}
 	sqlite3_finalize(stmt);	
 
-	if( NumBizRules == 0 ){
+	if( gblNumBizRules == 0 ){
 		ci_debug_printf(0, "DATABASE FAILURE: %s\n", "No Active Tester Rules Found");
 		sqlite3_close(db);
 		return(pRetData);
 	}else{
-		ci_debug_printf(2, "%d Active Tester Rules Found\n", NumBizRules);
+		ci_debug_printf(2, "%d Active Tester Rules Found\n", gblNumBizRules);
 	}
 
-	size_t size = NumBizRules * sizeof(BIZ_RULE);
-	pBizRules = (BIZ_RULE *)calloc(1,size);
+	size_t size = gblNumBizRules * sizeof(BIZ_RULE);
+	gblpBizRules = (BIZ_RULE *)calloc(1,size);
 	//pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
-	RowCnt = 0;
+	gblRowCnt = 0;
 
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
@@ -745,11 +767,11 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
 		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 		 SQL_FROM_QUERY;
-	rc = sqlite3_exec(db, sql, callback, (void*)pBizRules, &zErrMsg);
+	rc = sqlite3_exec(db, sql, callback, (void*)gblpBizRules, &zErrMsg);
 	if( rc != SQLITE_OK ){
 		ci_debug_printf(0, "SQL error getting Active Rules: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
-		free( pBizRules );
+		free( gblpBizRules );
 		sqlite3_close(db);
 		return(pRetData);
 	} else {
@@ -758,42 +780,55 @@ TESTER_DATA	*GetTesterData( gchar *pdbFile ){
 	sqlite3_close(db);
 	ci_debug_printf(2, "Closed Database: %s\n", pdbFile);
 
-	if( RowCnt > NumBizRules ){
+	if( gblRowCnt > gblNumBizRules ){
 		ci_debug_printf(0, "SANITY FAILURE: %s\n", "excess rows for query");
-		free( pBizRules );
+		free( gblpBizRules );
 	}
 	else{
-		if( TesterData.m_Tester ){ // should have been set in 'callback'
-			pRetData = &TesterData;
+		if( gblTesterStruct.m_Tester ){ // should have been set in 'callback'
+			pRetData = &gblTesterStruct;
 			// assure all string buffs will be null-termed
-			for( int i=0; i<NumBizRules; i++ ){
-				pBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-				pBizRules[i].m_numRPH = WILDCARD;
-				pBizRules[i].m_minTemp = WILDCARD;
-				pBizRules[i].m_maxTemp = WILDCARD;
-				pBizRules[i].m_minHour = WILDCARD;
-				pBizRules[i].m_maxHour = WILDCARD;
+			for( int i=0; i<gblNumBizRules; i++ ){
+				gblpBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+				gblpBizRules[i].m_numRPH = WILDCARD;
+				gblpBizRules[i].m_minTemp = WILDCARD;
+				gblpBizRules[i].m_maxTemp = WILDCARD;
+				gblpBizRules[i].m_minHour = WILDCARD;
+				gblpBizRules[i].m_maxHour = WILDCARD;
 			}
-			ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
-			BIZ_RULE *pBizRecs = pBizRules;
-			for( int i=0; i<NumBizRules; i++ ){
+			/*ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
+			BIZ_RULE *pBizRecs = gblpBizRules;
+			for( int i=0; i<gblNumBizRules; i++ ){
 				ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
 					   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
 				ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
 					pBizRecs->m_numReq,pBizRecs->m_numRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
 				ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
 				pBizRecs++;
-			}
+			}*/
+			ShowDBRules( pRetData, gblpBizRules, gblNumBizRules, 3 );
 		}
 		else{
-			ci_debug_printf(0, "SANITY FAILURE: %s\n", "null TesterData.m_Tester");
-			free( pBizRules );
+			ci_debug_printf(0, "SANITY FAILURE: %s\n", "null gblTesterStruct.m_Tester");
+			free( gblpBizRules );
 			return(NULL);
 		}
 	}
 	return pRetData;
 }
 
+void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgLvl )
+{
+	ci_debug_printf(dbgLvl,"Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
+	for( int i=0; i<NumRules; i++ ){
+		ci_debug_printf(dbgLvl,"          Function: %s, Endpoint: %s, Method: %s\n",
+			   pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
+		ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
+			pRules->m_numReq,pRules->m_numRPH,pRules->m_maxTemp,pRules->m_minTemp,pRules->m_maxHour,pRules->m_minHour);
+		ci_debug_printf(dbgLvl,"          Email: %s\n\n",pRules->m_Email);
+		pRules++;
+	}
+}
 /*
  * init_string - initializer for weather update string struct
  */
@@ -1053,19 +1088,21 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 }
 	
 /*
- * weather_updater - thread body for weather handler
+ * WeatherUpdater - thread body for weather handler
  */
-void *weather_updater(void *data)
+void *WeatherUpdater(void *data)
 {
 	if( data )
 	{
-		ci_debug_printf(1, "\n*** weather updater started ***\n");
+		TESTER_DATA *pData = data;
+		gblThreadRunning = true;
 		CURL *curl;
-		TESTER_DATA	*pData = data;
 		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 		char api_buffer[APIBUFFLEN+1];
-		unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
+		//unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
+		unsigned seconds = WEATHER_UPDATE_INTERVAL * 2;
 		curl = curl_easy_init();
+		ci_debug_printf(1, "\n*** Weather Updater started ***\n");
 		if(curl)
 		{
 			WEATHER_DATA weatherData;
@@ -1076,46 +1113,52 @@ void *weather_updater(void *data)
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
-			
-			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);		
-			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);		
+
+			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);
+			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);
 			do{
-				if( update_weather( curl, &xmlStr, &weatherData ) ) {
-					if( weatherData.bSuccess ) {
-						currtemp = weatherData.currentTemp;
-						ci_debug_printf(2,"Current Temp: %d\n", currtemp);
-					}
-					else{
-						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
-					}
-					if( weatherData.city ) {
-						ci_debug_printf(2,"City: %s\n", weatherData.city);
-					}
-					else{
-						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
-					}
-					//if( bShowAll ){
-					//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
-					//}
+				if( gblTempTestMode ){
+					ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
 				}
 				else{
-					ci_debug_printf(0,"\nERROR Updating Weather.\n");
-					break;
+					if( update_weather( curl, &xmlStr, &weatherData ) ) {
+						if( weatherData.bSuccess ) {
+							gblCurrentTemp = weatherData.currentTemp;
+							ci_debug_printf(2,"\nCurrent Temp: %d\n", gblCurrentTemp);
+						}
+						else{
+							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
+						}
+						if( weatherData.city ) {
+							ci_debug_printf(2,"City: %s\n", weatherData.city);
+						}
+						else{
+							ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
+						}
+						//if( bShowAll ){
+						//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
+						//}
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather.\n");
+						break;
+					}
+					ci_debug_printf(3, "*** Weather Updated ***\n");
+					init_string(&xmlStr);
 				}
-				ci_debug_printf(3, "\n*** weather updated ***\n");
 				sleep( seconds );
-				init_string(&xmlStr);
 			} while( true );
 			curl_easy_cleanup(curl); 
 		}
 	}
 	else{
-		ci_debug_printf(0, "\n*** weather_updater:: NULL data passed.\n");
+		ci_debug_printf(1, "\n*** WeatherUpdater:: NULL data passed.\n");
 	}
 	// pthread_exit can cause 5 blocks allocated from functions called by pthread_exit() 
 	// that is unfreed but still reachable at process exit
 	//pthread_exit(NULL);
-		ci_debug_printf(0, "\n*** weather_updater exiting...\n");
+	ci_debug_printf(1, "\n*** WeatherUpdater exiting...\n");
+	gblThreadRunning = false;
 	return(NULL);
 }
 
@@ -1141,7 +1184,7 @@ void *weather_updater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01d ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01e ***\n");
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1161,11 +1204,51 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 
 	/*Tell to the icap clients to send preview data for all files*/
 	// comment out for url_check ci_service_set_transfer_preview(srv_xdata, "*"); // "zip, tar"
-
-
 	//ci_debug_printf(1, "Instantiating Business Rules Key File\n");
 	
 	return CI_OK;
+}
+
+bool LoadActiveRules( char *pDatabaseName ){
+	bool bRetVal = false;
+
+	if( gblpTesterData ){ // previously loaded a DB?
+		if( gblThreadRunning ){
+			pthread_cancel(gblWeatherThread);
+			pthread_join(gblWeatherThread, NULL);
+			ci_debug_printf(1, "\n*** previous weather thread cancelled ***\n");
+			gblThreadRunning = false;
+		}
+	}
+	ci_debug_printf(1, "    Re-Loading Business Rules from '%s'\n", pDatabaseName);
+	gblpTesterData = GetTesterData( pDatabaseName );
+	if( gblpTesterData )
+	{
+		bRetVal = true;
+		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
+		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
+		//if( CI_DEBUG_LEVEL >= 1 ){
+		//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
+		//}
+#ifdef FAKE_TEMPS
+		srand(currtime);
+		//gblCurrentTemp = (rand() % (90 - 32 + 1)) + 32;
+		gblCurrentTemp = 45;
+		gblHourOfDay = tm_struct->tm_hour;
+		gblCurrentDay = tm_struct->tm_mday;
+		WriteLog( 1, gblLogFile, "    Current (fake) Temperature is %d\n", gblCurrentTemp);
+#else
+		if( gblpTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
+		{
+			// Create weather update thread, must be called after GetTesterData
+			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
+		}
+#endif
+	}
+	else{
+		ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
+	}
+	return bRetVal;
 }
 
 /*
@@ -1179,48 +1262,26 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	gchar    *BizFile = "/home/msspeak/BizRules.db"; // .cfg
 	const char *LogPath="/var/log/srv_msp.log";
 
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 
-	LogFile = fopen(LogPath, "a");
-	if( LogFile == NULL )
+	gblLogFile = fopen(LogPath, "a");
+	if( gblLogFile == NULL )
 	{
 		ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LogPath);
 		exit( -2 );
 	}
-	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", BizFile);
-	TESTER_DATA	*pTesterData = GetTesterData( BizFile );
-	if( !pTesterData )
-	{
-		ci_debug_printf(0, "    Error loading Business Rules\n");
-		exit( -2 );
+	
+	if( !LoadActiveRules( DATABASE_NAME ) ){
+		ci_debug_printf(0, "\n    Error loading Business Rules\n");
+		//exit( -2 );
 	}
-	ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-	ci_debug_printf(1, "\nActive Tester: '%s'\n\n", pTesterData->m_Tester);
-
-	//if( CI_DEBUG_LEVEL >= 1 ){
-	//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
-	//}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
 
-#ifdef FAKE_TEMPS
-	srand(currtime);
-	//currtemp = (rand() % (90 - 32 + 1)) + 32;
-	currtemp = 45;
-	hour = tm_struct->tm_hour;
-	currday = tm_struct->tm_mday;
-	WriteLog( 1, LogFile, "    Current (fake) Temperature is %d\n", currtemp);	
-#else
-	if( pTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
-	{
-		// Create weather update thread, must be called after GetTesterData
-		pthread_create(&thread_weather, NULL, weather_updater, pTesterData);
-	}
-#endif	
+	BccUsage();
 
 	return CI_OK;
 }
@@ -1233,17 +1294,17 @@ void msp_close_service()
 {
 	ci_debug_printf(5, "\n*** msp_close_service::\n");
 	
-	pthread_cancel(thread_weather);
-	pthread_join(thread_weather, NULL);
+	pthread_cancel(gblWeatherThread);
+	pthread_join(gblWeatherThread, NULL);
 	ci_debug_printf(1, "\n*** weather thread joined ***\n");
-	
-	if( LogFile){
-		if( MainThread) // huh, this doesn't work, still see 4 of the below msgs:
-			WriteLog(0, LogFile, "The MSP Service is Shutting Down...");
-		fclose(LogFile);
+	gblThreadRunning = false;
+	if( gblLogFile){
+		if( gblMainThread) // huh, this doesn't work, still see 4 of the below msgs:
+			WriteLog(0, gblLogFile, "The MSP Service is Shutting Down...");
+		fclose(gblLogFile);
 	}
 	ci_object_pool_unregister(MSP_DATA_POOL); // per url_check
-	free( pBizRules );
+	free( gblpBizRules );
 }
 
 /*
@@ -1326,7 +1387,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
-	MainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
+	gblMainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
 	//return CI_MOD_CONTINUE;
 	// If there is no body data in HTTP encapsulated object but only headers
@@ -1339,8 +1400,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			unlock_data(req);// this appears to prevent the browser cache having to be cleared each time
 			return CI_ERROR; 
 		}
-		ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
-		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2
+		//ci_debug_printf(0, "msp_preview_handler: NO BODY:\n");
+		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2 [&arg=]
 		if( !referer ){
 			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
 			unlock_data(req);
@@ -1353,23 +1414,59 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		// not found, at end of referer:
 		if( !needle_pos || !needle_pos[needle_length] )
 		{
-			ci_debug_printf(4, "Command not found from \"%s\".\n\n", needle);
+			ci_debug_printf(1, "Command not found from \"%s\".\n\n", needle);
 			unlock_data(req);
 			return CI_ERROR; // actually, still has to be done if return CI_MOD_DONE
 		}
 		// extract the word following the word at needle_pos:
-		int cmd;
 		//char buf[1000];
 		//size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 		//msp_dumphex(buf, len);
 		//ci_debug_printf(4, "needle_pos: %s, needle_length: %d.\n", needle_pos, needle_length);
+		int cmd;
 		const char *cmdstr = needle_pos + needle_length;
+		if (!strncasecmp(cmdstr, "help", 4)){
+			cmd = BCC_HELP;
+		}
+		else{
+			cmd = atoi(cmdstr);
+		}
 		//ci_debug_printf(4, "cmdstr: %s.\n", cmdstr);
-		cmd = atoi(cmdstr);
-		//ci_debug_printf(4, "Command Received: %d.\n", cmd);
+		//ci_debug_printf(3, "Command Received: %d.\n", cmd);
 		mspd = ci_service_data(req);
 		mspd->bHasCommand = true;
+		mspd->bHasArg = false;
 		mspd->Command = cmd;
+		if( (cmd == BCC_SET_CURRENT_TEMP) || (cmd == BCC_SET_CURRENT_HOUR) ){
+			// check to see if an arg also passed in
+			//	http://172.18.77.1:3128/icap?cmd=2&arg=22 
+			// &arg=22 
+			needle = "&arg=";
+			needle_length = strlen(needle);
+			needle_pos = strstr(referer, needle);
+			// not found, at end of referer:
+			if( !needle_pos || !needle_pos[needle_length] )
+			{
+				if( !needle_pos ){
+					ci_debug_printf(4, "NO COMMAND ARGUMENT PROVIDED.\n");
+				}
+				else{
+					ci_debug_printf(1, "Command Argument not found from \"%s\".\n\n", needle);
+				}
+				//unlock_data(req);
+				//return CI_ERROR; // actually, still has to be done if return CI_MOD_DONE
+			}
+			else{
+				cmdstr = needle_pos + needle_length;
+				int cmdarg = atoi(cmdstr);
+				ci_debug_printf(4, "COMMAND ARGUMENT PROVIDED: %d.\n", cmdarg);
+				mspd->bHasArg = true;
+				mspd->CommandArg = cmdarg;
+			}
+		}
+		else{
+			mspd->bHasArg = false;
+		}
 		return CI_MOD_CONTINUE;
 	}
 
@@ -1487,6 +1584,74 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	return CI_MOD_CONTINUE;
 }
 
+// https://support.google.com/accounts/answer/6010255
+// https://myaccount.google.com/lesssecureapps
+int sendmail(const char *to, const char *from, 
+			 const char *subject, const char *message)
+{
+    int retval = -1;
+    FILE *mailpipe = popen("/usr/lib/sendmail -t", "w");
+    if (mailpipe != NULL) {
+        fprintf(mailpipe, "To: %s\n", to);
+        fprintf(mailpipe, "From: %s\n", from);
+        fprintf(mailpipe, "Subject: %s\n\n", subject);
+        fwrite(message, 1, strlen(message), mailpipe);
+        fwrite(".\n", 1, 2, mailpipe);
+        pclose(mailpipe);
+        retval = 0;
+     }
+     else {
+         perror("Failed to invoke sendmail");
+     }
+     return retval;
+}
+
+void BccUsage(void)
+{
+	USER_CMD cmd = BCC_NO_CMD;
+	char *pCmd = "http://proxyIP:port/icap?cmd=XX\n  i.e.,\n      http://172.18.77.1:3128/icap?cmd=4";
+	ci_debug_printf(1, "\nUser Commands Available Thru: '%s'\n",pCmd);
+	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
+	while( ++cmd <= BCC_HELP ){
+		switch( cmd ){
+			case BCC_SHOW_DB:
+				ci_debug_printf(1, "%d - Show Current Database Configuration.\n", cmd);
+				break;
+			case BCC_RELOAD_DB:
+				ci_debug_printf(1, "%d - Reload Database Configuration.\n", cmd);
+				break;
+			case BCC_SHOW_ACT:
+				ci_debug_printf(1, "%d - Show Current Active User.\n", cmd);
+				break; 
+			case BCC_CURRENT_TEMP:
+				ci_debug_printf(1, "%d - Show Current Temperature(F).\n", cmd);
+				break; 
+			case BCC_CURRENT_HOUR:
+				ci_debug_printf(1, "%d - Show Current Hour of the Day.\n", cmd);
+				break; 
+			case BCC_SET_CURRENT_TEMP:
+				ci_debug_printf(1, "%d - Set Current Temperature(F)(enter test mode).\n", cmd);
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=XX')\n");
+				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
+				break; 
+			case BCC_SET_CURRENT_HOUR:
+				ci_debug_printf(1, "%d - Set Current Hour of the Day(enter test mode).\n", cmd);
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=XX')\n");
+				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
+				break; 
+			case BCC_HELP:
+				ci_debug_printf(1, "%d - Show This Help.\n", cmd);
+				ci_debug_printf(1, "     (also via 'icap?cmd=help')\n");
+				break;
+			default:
+				ci_debug_printf(1, "Unsupported User Command '%d' in Usage.\n", cmd);
+				BccUsage();
+				break;
+		}
+	}
+	ci_debug_printf(1, "\n");
+}
+
 /*
 * This function will be called if we returned CI_MOD_CONTINUE in
 *  msp_check_preview_handler function, after we read all the
@@ -1517,13 +1682,105 @@ int msp_end_of_data_handler(ci_request_t * req)
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	
+	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
+
 	if( mspd->bHasCommand ){
-		ci_debug_printf(4, "Received User Command: %d\n", mspd->Command);
+		switch( mspd->Command ){
+			case BCC_NO_CMD:
+				ci_debug_printf(1, "NULL User Command Received.\n");
+				BccUsage();
+				break;
+			case BCC_SHOW_DB:  // 1
+				ci_debug_printf(3, "Show DB Command Received.\n");
+				ShowDBRules( gblpTesterData, gblpBizRules, gblNumBizRules, 1 );
+				break;
+			case BCC_RELOAD_DB:// 2
+				ci_debug_printf(1, "Reload DB Command Received.\n");
+				if( !LoadActiveRules( DATABASE_NAME ) ){
+					ci_debug_printf(0, "    Business Rules Could not be Re-loaded\n");
+				}
+					break;
+			case BCC_SHOW_ACT: // 3
+				ci_debug_printf(3, "Show Active User Command Received.\n");
+				ci_debug_printf(1, "   The Active Tester is '%s'\n", gblpTesterData->m_Tester);
+				ci_debug_printf(1, "       Application ID is '%s'\n", gblpTesterData->m_AppId);
+				ci_debug_printf(1, "       Active Weather Zipcode is '%s'\n", gblpTesterData->m_Zipcode);
+				break;
+			case BCC_CURRENT_TEMP:
+				ci_debug_printf(3, "Show Current Temperature Command Received.\n");
+				ci_debug_printf(1, "   The Current Temperature is '%d(F)'\n", gblCurrentTemp);
+				break;
+			case BCC_CURRENT_HOUR:
+				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
+				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblHourOfDay);
+				break;
+			case BCC_SET_CURRENT_TEMP:
+				ci_debug_printf(3, "Change Current Temperature Command Received.\n");
+				if( mspd->bHasArg ){
+					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
+						gblTempTestMode = true;
+						gblCurrentTemp = mspd->CommandArg;
+						ci_debug_printf(1, "   Current Temperature changed to %d(F)\n", gblCurrentTemp);
+					}
+					else{
+						if( mspd->CommandArg == -1 ){
+							gblTempTestMode = false;
+							ci_debug_printf(1, "   Temperature Test Mode Disabled\n");
+						}
+						else{
+							ci_debug_printf(1, "   *** ERROR, INVALID NEW TEMP VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
+							ci_debug_printf(1, "   ***        temp must be between %s ***\n", "0 and 100");
+						}
+					}
+				}
+				else{
+					ci_debug_printf(1, "   *** ERROR, NO NEW TEMPERATURE VALUE SUPPLIED ***\n");
+				}
+				break;
+			case BCC_SET_CURRENT_HOUR:
+				ci_debug_printf(3, "Change Current Hour of the Day Command Received.\n");
+				if( mspd->bHasArg ){
+					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 24) ){
+						gblHourTestMode = true;
+						gblHourOfDay = mspd->CommandArg;
+						ci_debug_printf(1, "   The Current Hour of the Day changed to %d\n", gblHourOfDay);
+					}
+					else{
+						if( mspd->CommandArg == -1 ){
+							gblHourTestMode = false;
+							ci_debug_printf(1, "   Hour Test Mode Disabled\n");
+						}
+						else{
+							ci_debug_printf(1, "   *** ERROR, INVALID NEW HOUR VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
+							ci_debug_printf(1, "   ***        hour must be between %s ***\n", "0 and 23");
+						}
+					}
+				}
+				else{
+					ci_debug_printf(1, "   *** ERROR, NO NEW HOUR VALUE SUPPLIED ***\n");
+				}
+				break;
+			case BCC_HELP:
+				BccUsage();
+				break;
+			default:
+				ci_debug_printf(1, "Unsupported User Command '%d' Received.\n", mspd->Command);
+				BccUsage();
+				break;
+		}
 		unlock_data(req); // this appears to prevent the browser cache having to be cleared each time
 		return CI_ERROR;  // actually, still has to be done if return CI_MOD_DONE
+		/* this doesn't work, only the first gets thru
+		mspd->eof = 1;
+		ci_req_unlock_data(req);
+		return CI_MOD_DONE;
+		*/
 	}
-	
+	else if( !gblpTesterData ){ // no DB has been successfully loaded yet
+		ci_debug_printf(0, "*** DATABASE FAILURE: NO DATABASE HAS BEEN LOADED YET!\n");
+		unlock_data(req);
+		return CI_ERROR;
+	}
 	if( mspd->isReqmod ){
 		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
@@ -1546,7 +1803,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	if (!pRuleData)
 	{
 		if( ErrRet != MSP_OK){
-			WriteLog(0, LogFile, "Error Looking up Request Business Record.");
+			WriteLog(0, gblLogFile, "Error Looking up Request Business Record.");
 			unlock_data(req);
 			return CI_ERROR;
 		}
@@ -1557,9 +1814,20 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	if( REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
 	{
-		msRet = handle_request_preview(pRuleData);
+		msRet = handle_request_preview(pRuleData, &ViolationMessage[0]);
 		if(msRet == MSP_BIZ_VIO)
-		{		
+		{
+			
+			if( pRuleData->m_Email ){
+				char *from, *subject, *message;
+				from = "m_users@gmail.com";
+				subject = "MULTISPEAK RULE VIOLATION";
+				message = &ViolationMessage[0];
+				ci_debug_printf(3,"Sending Email Notification to: %s\n", pRuleData->m_Email);
+				sendmail( pRuleData->m_Email, from, subject, message );
+			}			
+			
+			
 			if (!ci_req_sent_data(req)){
 				ci_membuf_t *err_page = generate_error_page(req);
 				body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
@@ -1597,12 +1865,12 @@ int msp_end_of_data_handler(ci_request_t * req)
 	}
 	else if( REQ_TYPE == ICAP_OPTIONS)
 	{
-		WriteLog( 0, LogFile, "ICAP OPTIONS: ignoring...");
+		WriteLog( 0, gblLogFile, "ICAP OPTIONS: ignoring...");
 	}
 	else
 	{
 		//UNKNOWN ICAP METHOD
-		WriteLog( 0, LogFile, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
+		WriteLog( 0, gblLogFile, "INVALID ICAP METHOD (%d) ignoring...", REQ_TYPE);
 		icRet = CI_MOD_ALLOW204;
 	}
 	
@@ -1713,47 +1981,89 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 * handle_request_preview - is only called if GetBusinessRecord() finds a match for the
 * 							method and endpoint in the packet.
 */
-int handle_request_preview(BIZ_RULE *pRuleData)
+int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 {
 
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
+	sprintf(pVioBuff, "### TESTING pVioBuff '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		"   Only %ld requests per day are allowed.",
+		pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+	ci_debug_printf(2,pVioBuff);
+
+	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
-	hour = tm_struct->tm_hour;
-	if( currday != tm_struct->tm_mday){
-		currday = tm_struct->tm_mday;
-		pRuleData->m_ValidRequestNum = 0;
-		pRuleData->m_TotalRequestNum = 0;
+	
+	if( gblHourTestMode ){
+		ci_debug_printf(1,"\nSimulating Hour of %d While in Test Mode.\n",gblHourTestMode);
 	}
-	pRuleData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
+	else{
+		gblHourOfDay = tm_struct->tm_hour;
+		if( gblCurrentDay != tm_struct->tm_mday){
+			gblCurrentDay = tm_struct->tm_mday;
+			pRuleData->m_NumValidRequests = 0;
+			pRuleData->m_NumTotalRequests = 0;
+		}
+	}
+
+	pRuleData->m_NumTotalRequests++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
+	if( (pRuleData->m_numReq != WILDCARD) && (pRuleData->m_NumValidRequests >= pRuleData->m_numReq) ){
+		sprintf(pVioBuff, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		    "   Only %ld requests per day are allowed.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+		WriteLog(1, gblLogFile, pVioBuff);
+		//WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		//    "   Only %ld requests per day are allowed.",
+		//    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+		return MSP_BIZ_VIO;
+	}
+	else if( pRuleData->m_numRPH != WILDCARD ){
+		if( pRuleData->m_NumValidRequestsPH == 0 ){
+			time(&pRuleData->m_StartTime);
+		}
+		else{
+			time_t now;
+			time(&now);
+			double ElapsedTime = difftime(now, pRuleData->m_StartTime);// seconds
+			if( ElapsedTime >= 3600 ){
+				pRuleData->m_NumValidRequestsPH = 0;
+				time(&pRuleData->m_StartTime);
+			}
+		}		
+		
+		if( pRuleData->m_NumValidRequestsPH >= pRuleData->m_numRPH ){
+			WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		    "   Only %ld requests per hour are allowed.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numRPH);
+			return MSP_BIZ_VIO;
+		}
+	}
 	// TODO: handle WILDCARDs for temp and time too
-	if ((pRuleData->m_numReq != WILDCARD) && (pRuleData->m_ValidRequestNum >= pRuleData->m_numReq)){
-		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
-		    "   Only %d requests per day are allowed.",
-		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_numReq);
+	if( (pRuleData->m_maxHour != WILDCARD) && ((gblHourOfDay>pRuleData->m_maxHour) || (gblHourOfDay<pRuleData->m_minHour)) ){
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Time Violation:\n"
+		    "   These type of requests are only allowed between the hours of %ld and %ld.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
+		WriteLog(1, gblLogFile, "Current gblHourOfDay is %ld\n", gblHourOfDay);
 		return MSP_BIZ_VIO;
 	}
-	else if ((hour>pRuleData->m_maxHour) || (hour<pRuleData->m_minHour)){
-		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n"
-		    "   These type of requests are only allowed between the hours of %d and %d.",
-		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
-		WriteLog(1, LogFile, "Current Hour is %d\n", hour);
-		return MSP_BIZ_VIO;
-	}
-	else if ((currtemp>pRuleData->m_maxTemp) || (currtemp<pRuleData->m_minTemp)){
-		WriteLog(1, LogFile, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n"
-		    "   These type of requests are only allowed when the temperature is between %d and %d degrees.",
-		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
-		WriteLog(1, LogFile, "Current Temperature is %d\n", currtemp);
+	else if( (pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp>pRuleData->m_maxTemp) || (gblCurrentTemp<pRuleData->m_minTemp)) ){
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Temperature Violation:\n"
+		    "   These type of requests are only allowed when the temperature is between %ld and %ld degrees.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
+		WriteLog(1, gblLogFile, "Current Temperature is %ld\n", gblCurrentTemp);
 		return MSP_BIZ_VIO;
 	}
 	else {
 		// TODO: don't increment this count until we see a response come back from the endpoint
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
-		//pRuleData->m_ValidRequestNum++;
-		WriteLog(1, LogFile, "*** ACCEPTing %d of %d daily '%s' requests(%d attempts) from '%s' Endpoint ***",
-		    pRuleData->m_ValidRequestNum+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint);
+		//pRuleData->m_NumValidRequests++;
+		WriteLog(1, gblLogFile, "*** ACCEPTing %ld of %ld daily '%s' requests(%ld attempts) from '%s' Endpoint ***",
+		pRuleData->m_NumValidRequests+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint);
+		if( pRuleData->m_numRPH != WILDCARD ){
+			WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
+		    pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
+		}
 		return MSP_OK;
 	}
 }
@@ -1768,12 +2078,16 @@ int handle_response_preview(BIZ_RULE *pRuleData)
 	 * ultimately, we'd want to index the src/dest ips to find the BIZ_RULE
 	 * then check if the method is part of that connection's BIZ_RULE...
 	 */
-	//WriteLog(4, LogFile, "got ICAP_RESPMOD, ignoring...");
+	//WriteLog(4, gblLogFile, "got ICAP_RESPMOD, ignoring...");
 	
-	pRuleData->m_ValidRequestNum++;
-	WriteLog(1, LogFile, "*** Response ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
-		pRuleData->m_Method, pRuleData->m_ValidRequestNum, pRuleData->m_numReq, pRuleData->m_EndPoint);
-
+	pRuleData->m_NumValidRequests++;
+	WriteLog(1, gblLogFile, "*** Response ACCEPTED '%s' request %ld of %ld from '%s' Endpoint ***",
+		pRuleData->m_Method, pRuleData->m_NumValidRequests, pRuleData->m_numReq, pRuleData->m_EndPoint);
+	if( pRuleData->m_numRPH != WILDCARD ){
+		pRuleData->m_NumValidRequestsPH++;
+		WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
+		pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
+	}
 	return MSP_OK; // always pass the response on to client;
 }
 
@@ -1887,8 +2201,8 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	//		we may not need to do that, if each separate connection is handled by a separate
 	//		c-icap thread, with it's own copy of BIZ_RULE....
 
-	BIZ_RULE *pRuleData = pBizRules;
-	for(i = 0; i < NumBizRecs; i++)
+	BIZ_RULE *pRuleData = gblpBizRules;
+	for(i = 0; i < gblNumBizRecs; i++)
 	{
 		if( pMsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
@@ -1903,7 +2217,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		}
 		pRuleData++;
 	}
-	if( i == NumBizRecs )
+	if( i == gblNumBizRecs )
 	{
 		if( mspd->isReqmod){
 			ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Request.\n", pMethod, pEndpoint );
