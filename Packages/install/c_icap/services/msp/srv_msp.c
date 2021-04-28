@@ -55,7 +55,7 @@
 		04/01/2019 - CHM: added logging.
 		05/13/2019 - CHM: return MS response on business rule violation.
 		06/04/2019 - CHM: generalize BizData (start to at least...).
-		06/05/2019 - CHM: only increment m_ValidRequestNum upon seeing a response.
+		06/05/2019 - CHM: only increment m_NumValidRequests upon seeing a response.
 		06/20/2019 - CHM: ingest the complete packet, so can parse the well-formed xml inside.
 		06/29/2019 - CHM: support all methods/endpoints.
 		04/05/2021 - CHM: support Phase3 enhancements.
@@ -335,6 +335,13 @@
 #define WEATHER_UPDATE_INTERVAL     5   // minutes
 #define DATABASE_NAME "/home/msspeak/BizRules.db"
 #define V3_NULL_ENDPOINT "V3_Server"
+#define STRBUFF_LEN 800
+#define SQL_FROM_QUERY " FROM rules"\
+		" INNER JOIN functions ON functions.id = rules.function"\
+		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
+		" INNER JOIN methods ON methods.id = rules.method"\
+		" INNER JOIN testers ON testers.id = rules.tester"\
+		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 
 // types
 typedef enum bc_cmd{
@@ -348,9 +355,6 @@ typedef enum bc_cmd{
 	BCC_SET_CURRENT_HOUR,
 	BCC_HELP		// keep this always as the last, for BccUsage
 } USER_CMD;
-
-//char *strptime(const char *s, const char *format, struct tm *tm);
-//time_t timelocal(struct tm *tm);
 
 /*  https://openweathermap.org/current
 	<current>
@@ -376,35 +380,35 @@ typedef enum bc_cmd{
 	<lastupdate value="2021-02-19T17:45:04"/>
 	</current>
 */
-
-typedef signed long gint64;
-typedef char   		gchar;
 typedef struct _wd {
 	int currentTemp;
 	bool bSuccess;
 	char city[APIBUFFLEN+1];
 } WEATHER_DATA;
+
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
 //		the string placed in dest will not be null-terminated.
 typedef struct _tester {
-	gchar  m_Tester[MAX_DB_NAMELEN+1];
-	gchar  m_AppId[MAX_DB_NAMELEN+1];
-	gchar  m_Zipcode[MAX_DB_ZIPLEN+1];
+	char  m_Tester[MAX_DB_NAMELEN+1];
+	char  m_AppId[MAX_DB_NAMELEN+1];
+	char  m_Zipcode[MAX_DB_ZIPLEN+1];
 } TESTER_DATA;
 
 typedef struct _bizrule {
-	gint64 m_numReq;
-	gint64 m_numRPH;
-	gint64 m_minTemp;
-	gint64 m_maxTemp;
-	gint64 m_minHour;
-	gint64 m_maxHour;
-	gint64 m_ValidRequestNum;
-	gint64 m_TotalRequestNum;
-	gchar  m_Function[MAX_DB_NAMELEN+1];
-	gchar  m_EndPoint[MAX_DB_NAMELEN+1];
-	gchar  m_Method[MAX_DB_NAMELEN+1];
-	gchar  m_Email[MAX_DB_NAMELEN+1];
+	signed long m_numReq;
+	signed long m_numRPH;
+	signed long m_minTemp;
+	signed long m_maxTemp;
+	signed long m_minHour;
+	signed long m_maxHour;
+	signed long m_NumTotalRequests;
+	signed long m_NumValidRequests;
+	signed long m_NumValidRequestsPH;
+	char  m_Function[MAX_DB_NAMELEN+1];
+	char  m_EndPoint[MAX_DB_NAMELEN+1];
+	char  m_Method[MAX_DB_NAMELEN+1];
+	char  m_Email[MAX_DB_NAMELEN+1];
+	time_t m_StartTime;
 } BIZ_RULE;
 
 // structs
@@ -441,6 +445,9 @@ struct string {
     char *ptr;
     size_t len;
 };
+
+char ViolationMessage[300];
+char str[STRBUFF_LEN];
 
 // globals, not sure what this means, since this file does not have a main in it.
 pthread_t gblWeatherThread;
@@ -583,10 +590,10 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 };
 
 // general prototypes
-bool LoadActiveRules( gchar * );
+bool LoadActiveRules( char * );
 void BccUsage(void);
 void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
-int handle_request_preview(BIZ_RULE *);
+int handle_request_preview(BIZ_RULE *, char *);
 int handle_response_preview(BIZ_RULE *);
 void WriteLog(int, FILE *, const char *, ...);
 void msp_dumphex(char *, int);
@@ -596,20 +603,10 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 
-// globals
-#define STRBUFF_LEN 800
-char str[STRBUFF_LEN];
-
 // statics
 static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
 static int MSP_DATA_POOL = -1;
 
-#define SQL_FROM_QUERY " FROM rules"\
-		" INNER JOIN functions ON functions.id = rules.function"\
-		" INNER JOIN endpoints ON endpoints.id = rules.endpoint"\
-		" INNER JOIN methods ON methods.id = rules.method"\
-		" INNER JOIN testers ON testers.id = rules.tester"\
-		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 /*
 typedef int (*sqlite3_callback)(
    void*  data     // Data provided in the 4th argument of sqlite3_exec(), i.e., gblpBizRules
@@ -632,13 +629,13 @@ static int callback(void *data, int colcount, char **values, char **columns){
 		TESTER_DATA	*pTester=&gblTesterStruct;
 		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
 		BIZ_RULE *pBzd = &pBizRecs[gblRowCnt++];
-		pBzd->m_ValidRequestNum = 0;
-		pBzd->m_TotalRequestNum = 0;
+		pBzd->m_NumValidRequests = 0;
+		pBzd->m_NumTotalRequests = 0;
 		for(i = 0; i<colcount; i++){
 			if( !values[i] ){
 				continue;
 			}
-			gchar *curr_key = columns[i];
+			char *curr_key = columns[i];
 			// Note, any non-existant keys will have already been preset to WILDCARD
 			// strncmp is not necessary when comapring #defined strings
 			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
@@ -700,7 +697,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 /*
  * GetTesterData - reads the business rules for the Active Tester from the DB
  */
-TESTER_DATA *GetTesterData( gchar *pdbFile ){
+TESTER_DATA *GetTesterData( char *pdbFile ){
 	TESTER_DATA *pRetData=NULL;
 	sqlite3 *db;
 	char *zErrMsg = 0;
@@ -1212,7 +1209,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 	return CI_OK;
 }
 
-bool LoadActiveRules( gchar *pDatabaseName ){
+bool LoadActiveRules( char *pDatabaseName ){
 	bool bRetVal = false;
 
 	if( gblpTesterData ){ // previously loaded a DB?
@@ -1587,6 +1584,28 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	return CI_MOD_CONTINUE;
 }
 
+// https://support.google.com/accounts/answer/6010255
+// https://myaccount.google.com/lesssecureapps
+int sendmail(const char *to, const char *from, 
+			 const char *subject, const char *message)
+{
+    int retval = -1;
+    FILE *mailpipe = popen("/usr/lib/sendmail -t", "w");
+    if (mailpipe != NULL) {
+        fprintf(mailpipe, "To: %s\n", to);
+        fprintf(mailpipe, "From: %s\n", from);
+        fprintf(mailpipe, "Subject: %s\n\n", subject);
+        fwrite(message, 1, strlen(message), mailpipe);
+        fwrite(".\n", 1, 2, mailpipe);
+        pclose(mailpipe);
+        retval = 0;
+     }
+     else {
+         perror("Failed to invoke sendmail");
+     }
+     return retval;
+}
+
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
@@ -1795,9 +1814,20 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	if( REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
 	{
-		msRet = handle_request_preview(pRuleData);
+		msRet = handle_request_preview(pRuleData, &ViolationMessage[0]);
 		if(msRet == MSP_BIZ_VIO)
-		{		
+		{
+			
+			if( pRuleData->m_Email ){
+				char *from, *subject, *message;
+				from = "m_users@gmail.com";
+				subject = "MULTISPEAK RULE VIOLATION";
+				message = &ViolationMessage[0];
+				ci_debug_printf(3,"Sending Email Notification to: %s\n", pRuleData->m_Email);
+				sendmail( pRuleData->m_Email, from, subject, message );
+			}			
+			
+			
 			if (!ci_req_sent_data(req)){
 				ci_membuf_t *err_page = generate_error_page(req);
 				body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
@@ -1951,14 +1981,16 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 * handle_request_preview - is only called if GetBusinessRecord() finds a match for the
 * 							method and endpoint in the packet.
 */
-int handle_request_preview(BIZ_RULE *pRuleData)
+int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 {
 
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
-
+	sprintf(pVioBuff, "### TESTING pVioBuff '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		"   Only %ld requests per day are allowed.",
+		pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+	ci_debug_printf(2,pVioBuff);
 
 	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
-
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
@@ -1970,38 +2002,68 @@ int handle_request_preview(BIZ_RULE *pRuleData)
 		gblHourOfDay = tm_struct->tm_hour;
 		if( gblCurrentDay != tm_struct->tm_mday){
 			gblCurrentDay = tm_struct->tm_mday;
-			pRuleData->m_ValidRequestNum = 0;
-			pRuleData->m_TotalRequestNum = 0;
+			pRuleData->m_NumValidRequests = 0;
+			pRuleData->m_NumTotalRequests = 0;
 		}
 	}
-	pRuleData->m_TotalRequestNum++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
+
+	pRuleData->m_NumTotalRequests++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
+	if( (pRuleData->m_numReq != WILDCARD) && (pRuleData->m_NumValidRequests >= pRuleData->m_numReq) ){
+		sprintf(pVioBuff, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		    "   Only %ld requests per day are allowed.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+		WriteLog(1, gblLogFile, pVioBuff);
+		//WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		//    "   Only %ld requests per day are allowed.",
+		//    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+		return MSP_BIZ_VIO;
+	}
+	else if( pRuleData->m_numRPH != WILDCARD ){
+		if( pRuleData->m_NumValidRequestsPH == 0 ){
+			time(&pRuleData->m_StartTime);
+		}
+		else{
+			time_t now;
+			time(&now);
+			double ElapsedTime = difftime(now, pRuleData->m_StartTime);// seconds
+			if( ElapsedTime >= 3600 ){
+				pRuleData->m_NumValidRequestsPH = 0;
+				time(&pRuleData->m_StartTime);
+			}
+		}		
+		
+		if( pRuleData->m_NumValidRequestsPH >= pRuleData->m_numRPH ){
+			WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+		    "   Only %ld requests per hour are allowed.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numRPH);
+			return MSP_BIZ_VIO;
+		}
+	}
 	// TODO: handle WILDCARDs for temp and time too
-	if ((pRuleData->m_numReq != WILDCARD) && (pRuleData->m_ValidRequestNum >= pRuleData->m_numReq)){
-		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%d from %s Endpoint on Frequency Violation:\n"
-		    "   Only %d requests per day are allowed.",
-		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_numReq);
+	if( (pRuleData->m_maxHour != WILDCARD) && ((gblHourOfDay>pRuleData->m_maxHour) || (gblHourOfDay<pRuleData->m_minHour)) ){
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Time Violation:\n"
+		    "   These type of requests are only allowed between the hours of %ld and %ld.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
+		WriteLog(1, gblLogFile, "Current gblHourOfDay is %ld\n", gblHourOfDay);
 		return MSP_BIZ_VIO;
 	}
-	else if ((gblHourOfDay>pRuleData->m_maxHour) || (gblHourOfDay<pRuleData->m_minHour)){
-		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%d from %s Endpoint on Time Violation:\n"
-		    "   These type of requests are only allowed between the hours of %d and %d.",
-		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
-		WriteLog(1, gblLogFile, "Current gblHourOfDay is %d\n", gblHourOfDay);
-		return MSP_BIZ_VIO;
-	}
-	else if ((gblCurrentTemp>pRuleData->m_maxTemp) || (gblCurrentTemp<pRuleData->m_minTemp)){
-		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%d from %s Endpoint on Temperature Violation:\n"
-		    "   These type of requests are only allowed when the temperature is between %d and %d degrees.",
-		    pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
-		WriteLog(1, gblLogFile, "Current Temperature is %d\n", gblCurrentTemp);
+	else if( (pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp>pRuleData->m_maxTemp) || (gblCurrentTemp<pRuleData->m_minTemp)) ){
+		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Temperature Violation:\n"
+		    "   These type of requests are only allowed when the temperature is between %ld and %ld degrees.",
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
+		WriteLog(1, gblLogFile, "Current Temperature is %ld\n", gblCurrentTemp);
 		return MSP_BIZ_VIO;
 	}
 	else {
 		// TODO: don't increment this count until we see a response come back from the endpoint
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
-		//pRuleData->m_ValidRequestNum++;
-		WriteLog(1, gblLogFile, "*** ACCEPTing %d of %d daily '%s' requests(%d attempts) from '%s' Endpoint ***",
-		    pRuleData->m_ValidRequestNum+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_TotalRequestNum, pRuleData->m_EndPoint);
+		//pRuleData->m_NumValidRequests++;
+		WriteLog(1, gblLogFile, "*** ACCEPTing %ld of %ld daily '%s' requests(%ld attempts) from '%s' Endpoint ***",
+		pRuleData->m_NumValidRequests+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint);
+		if( pRuleData->m_numRPH != WILDCARD ){
+			WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
+		    pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
+		}
 		return MSP_OK;
 	}
 }
@@ -2018,10 +2080,14 @@ int handle_response_preview(BIZ_RULE *pRuleData)
 	 */
 	//WriteLog(4, gblLogFile, "got ICAP_RESPMOD, ignoring...");
 	
-	pRuleData->m_ValidRequestNum++;
-	WriteLog(1, gblLogFile, "*** Response ACCEPTED '%s' request %d of %d from '%s' Endpoint ***",
-		pRuleData->m_Method, pRuleData->m_ValidRequestNum, pRuleData->m_numReq, pRuleData->m_EndPoint);
-
+	pRuleData->m_NumValidRequests++;
+	WriteLog(1, gblLogFile, "*** Response ACCEPTED '%s' request %ld of %ld from '%s' Endpoint ***",
+		pRuleData->m_Method, pRuleData->m_NumValidRequests, pRuleData->m_numReq, pRuleData->m_EndPoint);
+	if( pRuleData->m_numRPH != WILDCARD ){
+		pRuleData->m_NumValidRequestsPH++;
+		WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
+		pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
+	}
 	return MSP_OK; // always pass the response on to client;
 }
 
