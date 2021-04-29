@@ -1215,57 +1215,6 @@ void *WeatherUpdater(void *data)
 	return(NULL);
 }
 
-/*
- * This function called exactly when the service is loaded by c-icap.
- * Can be used to initialize the service.
-	 param srv_xdata  - Pointer to the ci_service_xdata_t object of this service
-	 param server_conf- Pointer to the struct holds the main c-icap server configuration
-	 return CI_OK on success, CI_ERROR on any error. 
-	 
-	 CI_DEBUG_LEVEL can be set the "-d" param on the cmdline:
-			sudo /usr/local/bin/c-icap -N -D -d 1
-		lower values print less than higher
-		
-       reconfigure
-              The service will reread the config file without the need to stop and restart the c-
-              icap server. The services will be reinitialized
-	Examples:
-		To reconfigure c-icap:
-			echo -n "reconfigure" > /var/run/c-icap.ctl		
-		
- */
-int msp_init_service(ci_service_xdata_t * srv_xdata,
-					struct ci_server_conf *server_conf)
-{
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01f ***\n");
-	pid_t pid = getpid();
-	// NOTE:  this routine appears to be called by a different process than the others...
-	
-	ci_debug_printf(3, "msp_init_service pid: %d.\n",pid);
-	
-	// Tell to the icap clients that we can support up to 2K size of preview data
-	ci_service_set_preview(srv_xdata, 2048);
-
-	unsigned int xops = CI_XCLIENTIP | CI_XSERVERIP;
-	ci_service_set_xopts(srv_xdata, xops);// added from url_check
-
-	/*Tell to the icap clients that we support 204 responses*/
-	ci_service_enable_204(srv_xdata);
-	/*Tell to the icap clients that we support 206 responses, added from url_check*/
-	ci_service_enable_206(srv_xdata);
-
-	/*initialize mempools          */
-	MSP_DATA_POOL = ci_object_pool_register("srv_msp_data", sizeof(struct srv_msp_data));
-	if( MSP_DATA_POOL < 0)
-		return CI_ERROR;
-
-	/*Tell to the icap clients to send preview data for all files*/
-	// comment out for url_check ci_service_set_transfer_preview(srv_xdata, "*"); // "zip, tar"
-	//ci_debug_printf(1, "Instantiating Business Rules Key File\n");
-	
-	return CI_OK;
-}
-
 bool LoadActiveRules( char *pDatabaseName ){
 	bool bRetVal = false;
 
@@ -1310,6 +1259,56 @@ bool LoadActiveRules( char *pDatabaseName ){
 }
 
 /*
+ * This function called exactly when the service is loaded by c-icap.
+ * Can be used to initialize the service.
+	 param srv_xdata  - Pointer to the ci_service_xdata_t object of this service
+	 param server_conf- Pointer to the struct holds the main c-icap server configuration
+	 return CI_OK on success, CI_ERROR on any error. 
+	 
+	 CI_DEBUG_LEVEL can be set the "-d" param on the cmdline:
+			sudo /usr/local/bin/c-icap -N -D -d 1
+		lower values print less than higher
+		
+       reconfigure
+              The service will reread the config file without the need to stop and restart the c-
+              icap server. The services will be reinitialized
+	Examples:
+		To reconfigure c-icap:
+			echo -n "reconfigure" > /var/run/c-icap.ctl		
+		
+ */
+int msp_init_service(ci_service_xdata_t * srv_xdata,
+					struct ci_server_conf *server_conf)
+{
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01f ***\n");
+	pid_t pid = getpid();
+	// NOTE:  this routine appears to be called by a different process than the others...
+	ci_debug_printf(3, "msp_init_service pid: %d.\n",pid);
+	
+	// Tell to the icap clients that we can support up to 2K size of preview data
+	ci_service_set_preview(srv_xdata, 2048);
+
+	unsigned int xops = CI_XCLIENTIP | CI_XSERVERIP;
+	ci_service_set_xopts(srv_xdata, xops);// added from url_check
+
+	/*Tell to the icap clients that we support 204 responses*/
+	ci_service_enable_204(srv_xdata);
+	/*Tell to the icap clients that we support 206 responses, added from url_check*/
+	ci_service_enable_206(srv_xdata);
+
+	/*initialize mempools          */
+	MSP_DATA_POOL = ci_object_pool_register("srv_msp_data", sizeof(struct srv_msp_data));
+	if( MSP_DATA_POOL < 0)
+		return CI_ERROR;
+
+	/*Tell to the icap clients to send preview data for all files*/
+	// comment out for url_check ci_service_set_transfer_preview(srv_xdata, "*"); // "zip, tar"
+	//ci_debug_printf(1, "Instantiating Business Rules Key File\n");
+	
+	return CI_OK;
+}
+
+/*
  * This function can be used to initialize the service. Unlike msp_init_service
  * when this function is called the c-icap has been initialized and it knows of
  * other system parameters like the services and modules which are loaded,
@@ -1323,6 +1322,8 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 
 	BccUsage();
+	pid_t pid = getpid();
+	ci_debug_printf(3, "msp_post_init_service pid: %d.\n",pid);
 
 	gblLogFile = fopen(LOGF_NAME, "a");
 	if( gblLogFile == NULL )
