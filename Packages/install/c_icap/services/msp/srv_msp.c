@@ -285,7 +285,9 @@
 #include <sqlite3.h> 
 #include <curl/curl.h>
 #include <pthread.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "common.h"
 #include "c-icap.h"
@@ -342,6 +344,12 @@
 		" INNER JOIN methods ON methods.id = rules.method"\
 		" INNER JOIN testers ON testers.id = rules.tester"\
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
+#define LOGF_NAME "/var/log/srv_msp.log"
+#define TMPF_NAME "/tmp/myTmpFile-XXXXXX"
+#define TMPF_NAMELEN 21
+
+// buffer to hold the temporary file name
+char gblNameBuff[32]; // not sure why length is 32 and not 21
 
 // types
 typedef enum bc_cmd{
@@ -392,6 +400,7 @@ typedef struct _tester {
 	char  m_Tester[MAX_DB_NAMELEN+1];
 	char  m_AppId[MAX_DB_NAMELEN+1];
 	char  m_Zipcode[MAX_DB_ZIPLEN+1];
+	int   m_FileDesc;
 } TESTER_DATA;
 
 typedef struct _bizrule {
@@ -450,6 +459,36 @@ char ViolationMessage[300];
 char str[STRBUFF_LEN];
 
 // globals, not sure what this means, since this file does not have a main in it.
+// file /usr/local/bin/c-icap
+//		 ELF 64-bit LSB shared object
+//	"A shared object file can be a library, but also an executable."
+//	if  GCC is configured to build -pie binaries by default. These binaries really are shared libraries 
+//	(of type ET_DYN), except they run just like a normal executable would.
+//
+// .so files are dynamic libraries, .a files are static libraries, 
+// .la files are text files used by the GNU "libtools" package to describe the files that make 
+// 		up the corresponding library. 
+// .lo is generally a "library object" that contains PIC code whether manually compiled with gcc -fPIC or using libtool
+//		srv_msp_la-srv_msp.lo
+//
+// THIS IS LIKELY WHY USE OF 'globals' DOESN'T SEEM TO WORK:
+// # TAG: StartServers
+//	# Format: StartServers number
+//	# Description:
+//	#       The initial number of server processes. Each server process
+//	#       generates a number of threads, which serve the requests.
+//	# Default:
+//	#       StartServers 3
+//
+//	AND THIS:
+//	# TAG: ThreadsPerChild
+//	# Format:  ThreadsPerChild number
+//	# Description:
+//	#       The number of threads per child process.
+//	# Default:
+//	#       ThreadsPerChild     10
+//
+
 pthread_t gblWeatherThread;
 bool	  gblThreadRunning = false;
 
@@ -459,13 +498,16 @@ BIZ_RULE	*gblpBizRules=NULL;
 FILE *gblLogFile = NULL;
 bool gblTempTestMode = false;
 bool gblHourTestMode = false;
+bool gblUsingTempRule = false;
+bool gblRTTemps = false;
 int gblNumBizRules=0;
 int gblRowCnt=0;
-int gblCurrentTemp = 0;
 int gblCurrentDay;
 int gblHourOfDay;
 int gblMainThread = 0;
 int gblNumBizRecs;
+int gblCurrentTemp = 0;
+int gblFileDesc = -1;
 
 /*
  * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
@@ -590,18 +632,18 @@ CI_DECLARE_MOD_DATA ci_service_module_t service = {
 };
 
 // general prototypes
-bool LoadActiveRules( char * );
-void BccUsage(void);
-void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
 int handle_request_preview(BIZ_RULE *, char *);
 int handle_response_preview(BIZ_RULE *);
+void BccUsage(void);
+void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
 void WriteLog(int, FILE *, const char *, ...);
 void msp_dumphex(char *, int);
-BIZ_RULE *GetBusinessRecord(struct srv_msp_data *, int *);
+bool LoadActiveRules( char * );
 static ci_membuf_t *generate_error_page(ci_request_t *);
 static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
 xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
+BIZ_RULE *GetBusinessRecord(struct srv_msp_data *, int *);
 
 // statics
 static ci_off_t MaxBodyData = 4 * 1024 * 1024; // 4,194,304 (4M)
@@ -649,6 +691,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_MAXTEMP) ){
 				pBzd->m_maxTemp = atoll(values[i]);
+				gblUsingTempRule = true;
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_MINHOUR) ){
 				pBzd->m_minHour = atoll(values[i]);
@@ -881,9 +924,9 @@ xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
 }
 
 /*
- * update_weather - called by thread body for weather handler
+ * UpdateWeather - called by thread body for weather handler
  */
-bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
+bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 {
     CURLcode res;
 
@@ -1089,13 +1132,14 @@ bool update_weather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 	
 /*
  * WeatherUpdater - thread body for weather handler
+ * 		as the icap module is a library module, threads created by it apparently can not share the values
+ *		of any globals defined in this file...
  */
 void *WeatherUpdater(void *data)
 {
 	if( data )
 	{
 		TESTER_DATA *pData = data;
-		gblThreadRunning = true;
 		CURL *curl;
 		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 		char api_buffer[APIBUFFLEN+1];
@@ -1117,35 +1161,45 @@ void *WeatherUpdater(void *data)
 			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);
 			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);
 			do{
-				if( gblTempTestMode ){
-					ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
-				}
-				else{
-					if( update_weather( curl, &xmlStr, &weatherData ) ) {
-						if( weatherData.bSuccess ) {
-							gblCurrentTemp = weatherData.currentTemp;
-							ci_debug_printf(2,"\nCurrent Temp: %d\n", gblCurrentTemp);
+				if( UpdateWeather( curl, &xmlStr, &weatherData ) ) {
+					if( weatherData.bSuccess ) {
+						int CurrentTemp = weatherData.currentTemp;
+						ci_debug_printf(2,"\nCurrent Temp: %d\n", CurrentTemp);
+						errno = 0;
+						// rewind the stream pointer to the start of temporary file
+						if(-1 == lseek(pData->m_FileDesc,0,SEEK_SET))
+						{
+							ci_debug_printf(0,"\nERROR lseek failed on weather file with error [%s]\n",strerror(errno));
 						}
-						else{
-							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
+						else{// Write some data to the temporary file
+							if(-1 == write(pData->m_FileDesc, &CurrentTemp, sizeof(int)) )
+							{
+								ci_debug_printf(0,"\n write of CurrentTemp failed with error [%s]\n",strerror(errno));
+							}
+							else{
+								ci_debug_printf(4,"\n CurrentTemp written to temporary file\n");
+							}
 						}
-						if( weatherData.city ) {
-							ci_debug_printf(2,"City: %s\n", weatherData.city);
-						}
-						else{
-							ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
-						}
-						//if( bShowAll ){
-						//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
-						//}
 					}
 					else{
-						ci_debug_printf(0,"\nERROR Updating Weather.\n");
-						break;
+						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
 					}
-					ci_debug_printf(3, "*** Weather Updated ***\n");
-					init_string(&xmlStr);
+					if( weatherData.city ) {
+						ci_debug_printf(2,"City: %s\n", weatherData.city);
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
+					}
+					//if( bShowAll ){
+					//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
+					//}
 				}
+				else{
+					ci_debug_printf(0,"\nERROR Updating Weather.\n");
+					break;
+				}
+				ci_debug_printf(3, "*** Weather Updated ***\n");
+				init_string(&xmlStr);
 				sleep( seconds );
 			} while( true );
 			curl_easy_cleanup(curl); 
@@ -1158,8 +1212,50 @@ void *WeatherUpdater(void *data)
 	// that is unfreed but still reachable at process exit
 	//pthread_exit(NULL);
 	ci_debug_printf(1, "\n*** WeatherUpdater exiting...\n");
-	gblThreadRunning = false;
 	return(NULL);
+}
+
+bool LoadActiveRules( char *pDatabaseName ){
+	bool bRetVal = false;
+
+	gblUsingTempRule = false;
+	if( gblpTesterData ){ // previously loaded a DB?
+		if( gblThreadRunning ){
+			pthread_cancel(gblWeatherThread);
+			pthread_join(gblWeatherThread, NULL);
+			ci_debug_printf(1, "\n*** previous weather thread cancelled ***\n");
+			gblThreadRunning = false;
+		}
+	}
+	ci_debug_printf(1, "    Re-Loading Business Rules from '%s'\n", pDatabaseName);
+	gblpTesterData = GetTesterData( pDatabaseName ); //  set gblUsingTempRule
+	if( gblpTesterData )
+	{
+		gblRTTemps = false;
+		bRetVal = true;
+		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
+		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
+		//if( CI_DEBUG_LEVEL >= 1 ){
+		//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
+		//}
+		if( gblUsingTempRule != (gblpTesterData->m_AppId != NULL) ){
+			if( gblUsingTempRule ){
+				ci_debug_printf(0, "\n *** WARNING: TEMPERATURE RULE(s) ARE DEFINED, BUT NO REAL-TIME WEATHER UPDATE APPLICATION ID WAS PROVIDED. ***\n");
+				gblTempTestMode = true;
+				gblCurrentTemp = 50;
+			}
+			else{
+				ci_debug_printf(0, "\n *** WARNING: NO TEMPERATURE RULE(s) ARE DEFINED, REAL-TIME WEATHER UPDATES WILL BE DISABLED. ***\n");
+			}
+		}
+		else if( gblUsingTempRule ){ // also, m_AppId must not be NULL
+			gblRTTemps = true;
+		}
+	}
+	else{
+		ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
+	}
+	return bRetVal;
 }
 
 /*
@@ -1184,7 +1280,10 @@ void *WeatherUpdater(void *data)
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01e ***\n");
+	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01f ***\n");
+	pid_t pid = getpid();
+	// NOTE:  this routine appears to be called by a different process than the others...
+	ci_debug_printf(3, "msp_init_service pid: %d.\n",pid);
 	
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1209,48 +1308,6 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 	return CI_OK;
 }
 
-bool LoadActiveRules( char *pDatabaseName ){
-	bool bRetVal = false;
-
-	if( gblpTesterData ){ // previously loaded a DB?
-		if( gblThreadRunning ){
-			pthread_cancel(gblWeatherThread);
-			pthread_join(gblWeatherThread, NULL);
-			ci_debug_printf(1, "\n*** previous weather thread cancelled ***\n");
-			gblThreadRunning = false;
-		}
-	}
-	ci_debug_printf(1, "    Re-Loading Business Rules from '%s'\n", pDatabaseName);
-	gblpTesterData = GetTesterData( pDatabaseName );
-	if( gblpTesterData )
-	{
-		bRetVal = true;
-		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
-		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
-		//if( CI_DEBUG_LEVEL >= 1 ){
-		//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
-		//}
-#ifdef FAKE_TEMPS
-		srand(currtime);
-		//gblCurrentTemp = (rand() % (90 - 32 + 1)) + 32;
-		gblCurrentTemp = 45;
-		gblHourOfDay = tm_struct->tm_hour;
-		gblCurrentDay = tm_struct->tm_mday;
-		WriteLog( 1, gblLogFile, "    Current (fake) Temperature is %d\n", gblCurrentTemp);
-#else
-		if( gblpTesterData->m_AppId ) //  if AppId is set, the DB assures the zipcode is too
-		{
-			// Create weather update thread, must be called after GetTesterData
-			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
-		}
-#endif
-	}
-	else{
-		ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
-	}
-	return bRetVal;
-}
-
 /*
  * This function can be used to initialize the service. Unlike msp_init_service
  * when this function is called the c-icap has been initialized and it knows of
@@ -1262,26 +1319,54 @@ bool LoadActiveRules( char *pDatabaseName ){
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	const char *LogPath="/var/log/srv_msp.log";
-
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 
-	gblLogFile = fopen(LogPath, "a");
+	BccUsage();
+	pid_t pid = getpid();
+	ci_debug_printf(3, "msp_post_init_service pid: %d.\n",pid);
+
+	gblLogFile = fopen(LOGF_NAME, "a");
 	if( gblLogFile == NULL )
 	{
-		ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LogPath);
+		ci_debug_printf(0, "    Log File (%s) Could not be opened.\n", LOGF_NAME);
 		exit( -2 );
 	}
-	
-	if( !LoadActiveRules( DATABASE_NAME ) ){
+	gblThreadRunning = false;
+	// setup a temporary file for holding weather data
+	strncpy(gblNameBuff, TMPF_NAME, TMPF_NAMELEN);
+	errno = 0;
+	// Create the temporary file, this function will replace the 'X's
+	gblFileDesc = mkstemp(gblNameBuff);
+	// Call unlink so that whenever the file is closed or the program exits
+	// the temporary file is deleted
+	unlink(gblNameBuff);
+	if( gblFileDesc < 1 )
+	{
+		ci_debug_printf(0, "\n Creation of temp file failed with error [%s]\n",strerror(errno));
+		exit( -2 );
+	}
+	else
+	{
+		ci_debug_printf(3, "\n Temporary file [%s] created\n", gblNameBuff);
+	}
+	errno = 0;
+
+	if( !LoadActiveRules( DATABASE_NAME ) ){ //  also sets gblpTesterData
 		ci_debug_printf(0, "\n    Error loading Business Rules\n");
 		//exit( -2 );
+	}
+	else{
+		if( gblRTTemps ) //  if AppId is set, the DB assures the zipcode is too
+		{
+			gblpTesterData->m_FileDesc = gblFileDesc;
+			// Create weather update thread, must be called after GetTesterData
+			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
+			gblThreadRunning = true;
+		}
 	}
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
-
-	BccUsage();
 
 	return CI_OK;
 }
@@ -1293,11 +1378,12 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 void msp_close_service()
 {
 	ci_debug_printf(5, "\n*** msp_close_service::\n");
-	
-	pthread_cancel(gblWeatherThread);
-	pthread_join(gblWeatherThread, NULL);
-	ci_debug_printf(1, "\n*** weather thread joined ***\n");
-	gblThreadRunning = false;
+	if( gblThreadRunning ){
+		pthread_cancel(gblWeatherThread);
+		pthread_join(gblWeatherThread, NULL);
+		ci_debug_printf(1, "\n*** weather thread joined ***\n");
+		gblThreadRunning = false;
+	}
 	if( gblLogFile){
 		if( gblMainThread) // huh, this doesn't work, still see 4 of the below msgs:
 			WriteLog(0, gblLogFile, "The MSP Service is Shutting Down...");
@@ -1677,13 +1763,35 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	ci_debug_printf(5, "\n*** msp_end_of_data_handler:: ***\n");
 
+	if( gblUsingTempRule )
+	{
+		if( gblTempTestMode ){
+			ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
+		}
+		else{
+			if(-1 == lseek(gblFileDesc,0,SEEK_SET))
+			{
+				ci_debug_printf(0,"\nERROR Failed to seek temperature file, error [%s]\n",strerror(errno));
+			}
+			else{
+				if( -1 == read(gblFileDesc, &gblCurrentTemp, sizeof(int)) )
+				//if( -1 == fscanf(gblFileDesc, "%d", &gblCurrentTemp) )
+				{
+					ci_debug_printf(0,"\n read of CurrentTemp failed with error [%s]\n",strerror(errno));
+				}
+				else{
+					ci_debug_printf(4,"\n CurrentTemp read from temporary file: %d\n",gblCurrentTemp);
+				}
+			}
+		}
+	}
 	/*if( mspd->abort){
 		// We had already start sending data....
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
-
+	pid_t pid = getpid();
+	ci_debug_printf(2,"handle_request_preview:: Current Temp for pid: %d: %d\n",pid, gblCurrentTemp);
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
@@ -1699,7 +1807,13 @@ int msp_end_of_data_handler(ci_request_t * req)
 				if( !LoadActiveRules( DATABASE_NAME ) ){
 					ci_debug_printf(0, "    Business Rules Could not be Re-loaded\n");
 				}
-					break;
+				else if( gblRTTemps ){
+					gblpTesterData->m_FileDesc = gblFileDesc;
+					// Create weather update thread, must be called after GetTesterData
+					pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
+					gblThreadRunning = true;
+				}
+				break;
 			case BCC_SHOW_ACT: // 3
 				ci_debug_printf(3, "Show Active User Command Received.\n");
 				ci_debug_printf(1, "   The Active Tester is '%s'\n", gblpTesterData->m_Tester);
@@ -1715,7 +1829,8 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblHourOfDay);
 				break;
 			case BCC_SET_CURRENT_TEMP:
-				ci_debug_printf(3, "Change Current Temperature Command Received.\n");
+				pid = getpid();
+				ci_debug_printf(3, "Change Current Temperature Command Received by pid: %d.\n",pid);
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
 						gblTempTestMode = true;
@@ -1817,7 +1932,6 @@ int msp_end_of_data_handler(ci_request_t * req)
 		msRet = handle_request_preview(pRuleData, &ViolationMessage[0]);
 		if(msRet == MSP_BIZ_VIO)
 		{
-			
 			if( pRuleData->m_Email ){
 				char *from, *subject, *message;
 				from = "m_users@gmail.com";
@@ -1825,9 +1939,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 				message = &ViolationMessage[0];
 				ci_debug_printf(3,"Sending Email Notification to: %s\n", pRuleData->m_Email);
 				sendmail( pRuleData->m_Email, from, subject, message );
-			}			
-			
-			
+			}
 			if (!ci_req_sent_data(req)){
 				ci_membuf_t *err_page = generate_error_page(req);
 				body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
@@ -1988,9 +2100,7 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 	sprintf(pVioBuff, "### TESTING pVioBuff '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
 		"   Only %ld requests per day are allowed.",
 		pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
-	ci_debug_printf(2,pVioBuff);
-
-	ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n", gblCurrentTemp);
+	ci_debug_printf(2,"%s", pVioBuff);
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
