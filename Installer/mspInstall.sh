@@ -1,6 +1,10 @@
 #!/bin/sh
-set -e
+set  -e
 
+# How do I fix “$'\r': command not found” errors running Bash scripts in WSL?
+#		sudo apt-get install dos2unix
+#		dos2unix mspInstall
+#
 # dash(Debian Almquist shell) is a POSIX-compliant implementation of /bin/sh
 # this script works under bash but not dash
 # The problem is the unexpected operator. That is referring to the = which is non-POSIX. 
@@ -84,7 +88,7 @@ fi
 
 # required packages  libssl1.0-dev ? for MSS
 printf "\nThe Following required packages will now be installed:"
-printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git, libcurl4-openssl & libssl-dev"
+printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git, libcurl4-openssl, libcurl4-gnutls-dev, libssl-dev & sendmail"
 printf "\n\nPress just the [Enter] key to continue with this Installation, or"
 printf "\n  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:\n"
 read DO_INSTALL
@@ -105,12 +109,22 @@ else
 					if sudo apt-get install uuid-dev; then
 						if sudo apt-get install git; then
 							if sudo apt-get install libcurl4-openssl-dev; then
-                                if sudo apt-get install libssl-dev; then
-                                    printf "\n\n*** Successfully Installed required packages"
-                                else
-                                    printf "\nFailed to Install libssl-dev, can not continue"
-                                    false
-                                fi
+								if sudo apt-get install libcurl4-gnutls-dev; then
+									if sudo apt-get install libssl-dev; then
+										if sudo apt-get install sendmail; then
+											printf "\n\n*** Successfully Installed required packages"
+										else
+											printf "\nFailed to Install sendmail, can not continue"
+											false
+										fi
+									else
+										printf "\nFailed to Install libssl-dev, can not continue"
+										false
+									fi
+								else
+									printf "\nFailed to Install gnutls, can not continue"
+									false
+								fi
 							else
 								printf "\nFailed to Install libcurl4, can not continue"
 								false
@@ -260,6 +274,7 @@ fi
 #fi
 
 #SQUID:
+# import  mspCA.der into browser/mspeaker
 printf "\n\nSquid will now be installed to $NEW_DIR/Packages"
 printf "\n     (this typically takes 20 to 30 minutes to complete)"
 printf "\nPress [Enter] to install, 'S' to skip this step, or 'N' to terminate completely:\n"
@@ -287,14 +302,13 @@ else
                         if sudo cp install/squid/mspCA.pem /usr/local/squid/ssl_cert; then
                             sudo chown nobody:nogroup /usr/local/squid/ssl_cert/mspCA.pem
                             sudo chmod 700 /usr/local/squid/ssl_cert
-                            # import  mspCA.der into browser/mspeaker
                             if sudo /usr/local/squid/libexec/security_file_certgen -c -s /var/lib/ssl_db -M 4MB; then
                                 sudo chown nobody:nogroup -R /var/lib/ssl_db
                                 printf "\nSquid Installed Successfully."
                             else
                                 printf "\nFailed to copy ssl certificate to ssl_cert directory."
                                 false
-                            fi                    
+                            fi
                         else
                             printf "\nFailed to copy ssl certificate to ssl_cert directory."
                             false
@@ -450,3 +464,7 @@ return 0
 # cd /usr/local/bin
 # sudo ln -s /home/carl/mspInstall/msspeak /home/msspeak
 # sudo ln -s $NEW_DIR /home/msspeak
+#
+# run autoconf to turn configure.ac into a configure script
+# run automake to turn a Makefile.am into a Makefile.in
+#
