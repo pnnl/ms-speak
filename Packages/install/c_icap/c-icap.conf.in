@@ -1,8 +1,8 @@
 #
 # This file contains the default settings for c-icap
 #
-#
-
+# The c-icap.conf file is produced from c-icap.conf.in after running the configure script.
+#    but mspInstall over-writes the generated c-icap.conf with the msp one.
 
 # TAG: PidFile
 # Format: PidFile pid_file
@@ -55,15 +55,17 @@ KeepAliveTimeout 600
 #	generates a number of threads, which serve the requests.
 # Default:
 #	StartServers 3
-StartServers 3
-
+StartServers 1
+#
+# CHM: limit to a single server, so can use global variables in msp module
+#
 # TAG: MaxServers
 # Format: MaxServers number
 # Description:
 #	The maximum allowed number of server processes.
 # Default:
 #	MaxServers 10
-MaxServers 10
+MaxServers 1
 
 # TAG: MinSpareThreads
 # Format: MinSpareThreads number
@@ -321,7 +323,7 @@ ServicesDir @PKGLIBDIR@
 # Default:
 #	No value
 # Example:
-TemplateDir /usr/local/share/c_icap/templates
+TemplateDir /usr/local/share/c_icap/templates/
 
 # TAG: TemplateDefaultLanguage
 # Format: TemplateDefaultLanguage lang
