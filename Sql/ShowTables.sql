@@ -1,6 +1,6 @@
 -- Show Tables of BizRules DB
--- 	sqlite3 BizRules.db < ShowTables.sql  
-
+--  sqlite3 BizRules.db < ShowTables.sql  
+--  sqlite3 /mnt/c/Users/d3m907/.msspeak-ids/BizRules.db < ShowTables.sql
 .headers ON
 .mode column
 

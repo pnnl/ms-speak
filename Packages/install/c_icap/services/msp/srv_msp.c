@@ -285,9 +285,9 @@
 #include <sqlite3.h> 
 #include <curl/curl.h>
 #include <pthread.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <errno.h>
+//#include <sys/types.h> for tmp files
+//#include <errno.h>
 
 #include "common.h"
 #include "c-icap.h"
@@ -345,11 +345,11 @@
 		" INNER JOIN testers ON testers.id = rules.tester"\
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 #define LOGF_NAME "/var/log/srv_msp.log"
-#define TMPF_NAME "/tmp/myTmpFile-XXXXXX"
-#define TMPF_NAMELEN 21
+//#define TMPF_NAME "/tmp/myTmpFile-XXXXXX"
+//#define TMPF_NAMELEN 21
 
 // buffer to hold the temporary file name
-char gblNameBuff[32]; // not sure why length is 32 and not 21
+//char gblNameBuff[32]; // not sure why length is 32 and not 21
 
 // types
 typedef enum bc_cmd{
@@ -400,7 +400,7 @@ typedef struct _tester {
 	char  m_Tester[MAX_DB_NAMELEN+1];
 	char  m_AppId[MAX_DB_NAMELEN+1];
 	char  m_Zipcode[MAX_DB_ZIPLEN+1];
-	int   m_FileDesc;
+	//int   m_FileDesc;
 } TESTER_DATA;
 
 typedef struct _bizrule {
@@ -489,17 +489,16 @@ char str[STRBUFF_LEN];
 //	#       ThreadsPerChild     10
 //
 
-pthread_t gblWeatherThread;
-bool	  gblThreadRunning = false;
-
+pthread_t    gblWeatherThread;
 TESTER_DATA  gblTesterStruct={};
 TESTER_DATA *gblpTesterData=NULL;
 BIZ_RULE	*gblpBizRules=NULL;
 FILE *gblLogFile = NULL;
+bool gblThreadRunning = false;
 bool gblTempTestMode = false;
 bool gblHourTestMode = false;
 bool gblUsingTempRule = false;
-bool gblRTTemps = false;
+bool gblNeedLoadActiveRules = true;
 int gblNumBizRules=0;
 int gblRowCnt=0;
 int gblCurrentDay;
@@ -507,7 +506,7 @@ int gblHourOfDay;
 int gblMainThread = 0;
 int gblNumBizRecs;
 int gblCurrentTemp = 0;
-int gblFileDesc = -1;
+//int gblFileDesc = -1;
 
 /*
  * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
@@ -800,8 +799,15 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 
 	size_t size = gblNumBizRules * sizeof(BIZ_RULE);
 	gblpBizRules = (BIZ_RULE *)calloc(1,size);
-	//pRetData = (TESTER_DATA *)calloc(1,sizeof(TESTER_DATA)); 
-	gblRowCnt = 0;
+	// assure all string buffs will be null-termed
+	for( int i=0; i<gblNumBizRules; i++ ){
+		gblpBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
+		gblpBizRules[i].m_numRPH = WILDCARD;
+		gblpBizRules[i].m_minTemp = WILDCARD;
+		gblpBizRules[i].m_maxTemp = WILDCARD;
+		gblpBizRules[i].m_minHour = WILDCARD;
+		gblpBizRules[i].m_maxHour = WILDCARD;
+	}
 
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
@@ -810,6 +816,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
 		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 		 SQL_FROM_QUERY;
+	gblRowCnt = 0;
 	rc = sqlite3_exec(db, sql, callback, (void*)gblpBizRules, &zErrMsg);
 	if( rc != SQLITE_OK ){
 		ci_debug_printf(0, "SQL error getting Active Rules: %s\n", zErrMsg);
@@ -830,15 +837,6 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	else{
 		if( gblTesterStruct.m_Tester ){ // should have been set in 'callback'
 			pRetData = &gblTesterStruct;
-			// assure all string buffs will be null-termed
-			for( int i=0; i<gblNumBizRules; i++ ){
-				gblpBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-				gblpBizRules[i].m_numRPH = WILDCARD;
-				gblpBizRules[i].m_minTemp = WILDCARD;
-				gblpBizRules[i].m_maxTemp = WILDCARD;
-				gblpBizRules[i].m_minHour = WILDCARD;
-				gblpBizRules[i].m_maxHour = WILDCARD;
-			}
 			/*ci_debug_printf(3,"Tester: %s, AppId: %s, Zip: %s\n", pRetData->m_Tester, pRetData->m_AppId, pRetData-> m_Zipcode);
 			BIZ_RULE *pBizRecs = gblpBizRules;
 			for( int i=0; i<gblNumBizRules; i++ ){
@@ -1161,45 +1159,54 @@ void *WeatherUpdater(void *data)
 			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);
 			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);
 			do{
-				if( UpdateWeather( curl, &xmlStr, &weatherData ) ) {
-					if( weatherData.bSuccess ) {
-						int CurrentTemp = weatherData.currentTemp;
-						ci_debug_printf(2,"\nCurrent Temp: %d\n", CurrentTemp);
-						errno = 0;
-						// rewind the stream pointer to the start of temporary file
-						if(-1 == lseek(pData->m_FileDesc,0,SEEK_SET))
-						{
-							ci_debug_printf(0,"\nERROR lseek failed on weather file with error [%s]\n",strerror(errno));
-						}
-						else{// Write some data to the temporary file
-							if(-1 == write(pData->m_FileDesc, &CurrentTemp, sizeof(int)) )
-							{
-								ci_debug_printf(0,"\n write of CurrentTemp failed with error [%s]\n",strerror(errno));
-							}
-							else{
-								ci_debug_printf(4,"\n CurrentTemp written to temporary file\n");
-							}
-						}
-					}
-					else{
-						ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
-					}
-					if( weatherData.city ) {
-						ci_debug_printf(2,"City: %s\n", weatherData.city);
-					}
-					else{
-						ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
-					}
-					//if( bShowAll ){
-					//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
-					//}
+				if( gblTempTestMode ){
+					ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
 				}
 				else{
-					ci_debug_printf(0,"\nERROR Updating Weather.\n");
-					break;
+#ifdef _SHOW_PIDS_
+					pid_t pid = getpid();
+					ci_debug_printf(3, "\n*** WeatherUpdater pid: %d.\n",pid);
+#endif
+					if( UpdateWeather( curl, &xmlStr, &weatherData ) ) {
+						if( weatherData.bSuccess ) {
+							gblCurrentTemp = weatherData.currentTemp;
+							ci_debug_printf(2,"\nCurrent Temperature: %d\n", gblCurrentTemp);
+							/*errno = 0;
+							// rewind the stream pointer to the start of temporary file
+							if(-1 == lseek(pData->m_FileDesc,0,SEEK_SET))
+							{
+								ci_debug_printf(0,"\nERROR lseek failed on weather file with error [%s]\n",strerror(errno));
+							}
+							else{// Write some data to the temporary file
+								if(-1 == write(pData->m_FileDesc, &CurrentTemp, sizeof(int)) )
+								{
+									ci_debug_printf(0,"\n write of CurrentTemp failed with error [%s]\n",strerror(errno));
+								}
+								else{
+									ci_debug_printf(4,"\n CurrentTemp written to temporary file\n");
+								}
+							}*/
+						}
+						else{
+							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
+						}
+						if( weatherData.city ) {
+							ci_debug_printf(2,"City: %s\n", weatherData.city);
+						}
+						else{
+							ci_debug_printf(0,"\nERROR Updating Weather, No City.\n");
+						}
+						//if( bShowAll ){
+						//	ci_debug_printf(0,"\n%s\n\n",xmlStr.ptr);
+						//}
+					}
+					else{
+						ci_debug_printf(0,"\nERROR Updating Weather.\n");
+						break;
+					}
+					ci_debug_printf(3, "*** Weather Updated ***\n");
+					init_string(&xmlStr);
 				}
-				ci_debug_printf(3, "*** Weather Updated ***\n");
-				init_string(&xmlStr);
 				sleep( seconds );
 			} while( true );
 			curl_easy_cleanup(curl); 
@@ -1212,6 +1219,7 @@ void *WeatherUpdater(void *data)
 	// that is unfreed but still reachable at process exit
 	//pthread_exit(NULL);
 	ci_debug_printf(1, "\n*** WeatherUpdater exiting...\n");
+	gblThreadRunning = false;
 	return(NULL);
 }
 
@@ -1227,11 +1235,10 @@ bool LoadActiveRules( char *pDatabaseName ){
 			gblThreadRunning = false;
 		}
 	}
-	ci_debug_printf(1, "    Re-Loading Business Rules from '%s'\n", pDatabaseName);
-	gblpTesterData = GetTesterData( pDatabaseName ); //  set gblUsingTempRule
+	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", pDatabaseName);
+	gblpTesterData = GetTesterData( pDatabaseName ); //  sets gblUsingTempRule
 	if( gblpTesterData )
 	{
-		gblRTTemps = false;
 		bRetVal = true;
 		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
 		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
@@ -1249,12 +1256,15 @@ bool LoadActiveRules( char *pDatabaseName ){
 			}
 		}
 		else if( gblUsingTempRule ){ // also, m_AppId must not be NULL
-			gblRTTemps = true;
+			// Create weather update thread, must be called after GetTesterData
+			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
+			gblThreadRunning = true;
 		}
 	}
 	else{
 		ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
 	}
+	gblNeedLoadActiveRules = false; // indicates we at least tried to load them.
 	return bRetVal;
 }
 
@@ -1281,10 +1291,11 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
 	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01f ***\n");
+#ifdef _SHOW_PIDS_
 	pid_t pid = getpid();
 	// NOTE:  this routine appears to be called by a different process than the others...
-	ci_debug_printf(3, "msp_init_service pid: %d.\n",pid);
-	
+	ci_debug_printf(3, "msp_init_service (Parent)pid: %d.\n",pid);
+#endif
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
 
@@ -1316,14 +1327,31 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 	 param srv_xdata   - Pointer to the ci_service_xadata_t object of this service
 	 param server_conf - Pointer to the struct holds the main c-icap server configuration
 	 return CI_OK on success, CI_ERROR on any error. 
+
+	 the 'c-icap' process (i.e., 'aserver.c::main()') first calls
+		msp_init_service then msp_post_init_service and then forks at least one child process (up to 
+		CI_CONF.START_SERVERS) to handle http(s) requests.  Each child process is initialized
+		with the same pc(program counter), same CPU registers, same open files which were in use by
+		the parent process when it called fork(). Therefore whatever datastructs and files we want to share
+		between all the child processes, needed to be created before the parent calls fork(), i.e, they
+		need to be created in either msp_init_service or msp_post_init_service.
+	
+	 *** NOTE:  in order to be able to properly control the msp module using http commands (../icap?cmd=xxx),
+			I needed to limit the number of child processes created to just 1, otherwise these commands would
+			only affect whichever process happened to service the request.  Also, Threads are not inherited from a child process on a linux system using fork(), so the WeatherThread created in msp_post_init_service only
+			exists in the parent process, not in any of the child processes.  Therefore, it should actually only
+			be created in the child process.
+
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
 	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
 
 	BccUsage();
+#ifdef _SHOW_PIDS_
 	pid_t pid = getpid();
-	ci_debug_printf(3, "msp_post_init_service pid: %d.\n",pid);
+	ci_debug_printf(3, "msp_post_init_service (Parent)pid: %d.\n",pid);
+#endif
 
 	gblLogFile = fopen(LOGF_NAME, "a");
 	if( gblLogFile == NULL )
@@ -1332,7 +1360,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		exit( -2 );
 	}
 	gblThreadRunning = false;
-	// setup a temporary file for holding weather data
+	/* setup a temporary file for holding weather data
 	strncpy(gblNameBuff, TMPF_NAME, TMPF_NAMELEN);
 	errno = 0;
 	// Create the temporary file, this function will replace the 'X's
@@ -1350,20 +1378,13 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 		ci_debug_printf(3, "\n Temporary file [%s] created\n", gblNameBuff);
 	}
 	errno = 0;
-
-	if( !LoadActiveRules( DATABASE_NAME ) ){ //  also sets gblpTesterData
+	*/
+	
+	/* the main, 'parent' process does not need to have the DB, just its child processes
+	if( !LoadActiveRules( DATABASE_NAME ) ){ //  sets gblpTesterData
 		ci_debug_printf(0, "\n    Error loading Business Rules\n");
 		//exit( -2 );
-	}
-	else{
-		if( gblRTTemps ) //  if AppId is set, the DB assures the zipcode is too
-		{
-			gblpTesterData->m_FileDesc = gblFileDesc;
-			// Create weather update thread, must be called after GetTesterData
-			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
-			gblThreadRunning = true;
-		}
-	}
+	}*/
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
@@ -1403,7 +1424,16 @@ void msp_close_service()
 */
 void *msp_init_request_data(ci_request_t * req) // first call
 {
-	ci_debug_printf(5, "\n*** msp_init_request_data:: ***\n");
+	ci_debug_printf(3, "\n*** msp_init_request_data:: ***\n");
+
+	if( gblNeedLoadActiveRules ){ // doing this here, loads them for each child process, but more 
+	// importantly, the weatherthread will be created in the child process context, allowing it to
+	// share the global variable 'gblCurrentTemp'.
+		if( !LoadActiveRules( DATABASE_NAME ) ){ //  sets gblpTesterData
+			ci_debug_printf(0, "\n    Error loading Business Rules\n");
+			//exit( -2 );
+		}
+	}
 	struct srv_msp_data *mspd = ci_object_pool_alloc(MSP_DATA_POOL);
 	memset(&mspd->body, 0, sizeof(struct body_data));
 	memset(&mspd->msginfo, 0, sizeof(struct srv_msp_msg_info));
@@ -1762,14 +1792,16 @@ int msp_end_of_data_handler(ci_request_t * req)
 	struct srv_msp_data *mspd = ci_service_data(req);
 
 	ci_debug_printf(5, "\n*** msp_end_of_data_handler:: ***\n");
-
+#ifdef _SHOW_PIDS_
+	pid_t pid = getpid();
+#endif
 	if( gblUsingTempRule )
 	{
 		if( gblTempTestMode ){
 			ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
 		}
 		else{
-			if(-1 == lseek(gblFileDesc,0,SEEK_SET))
+			/*if(-1 == lseek(gblFileDesc,0,SEEK_SET))
 			{
 				ci_debug_printf(0,"\nERROR Failed to seek temperature file, error [%s]\n",strerror(errno));
 			}
@@ -1782,16 +1814,25 @@ int msp_end_of_data_handler(ci_request_t * req)
 				else{
 					ci_debug_printf(4,"\n CurrentTemp read from temporary file: %d\n",gblCurrentTemp);
 				}
-			}
+			}*/
+#ifdef _SHOW_PIDS_
+			ci_debug_printf(2,"handle_request_preview:: Current Temp for (Child)pid: %d: %d\n",pid, gblCurrentTemp);
+#else
+			ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n",gblCurrentTemp);
+#endif
 		}
+	}
+	else{
+		ci_debug_printf(3,"\nNo Temperature Rules Defined for the Active Tester.\n");
 	}
 	/*if( mspd->abort){
 		// We had already start sending data....
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
-	pid_t pid = getpid();
-	ci_debug_printf(2,"handle_request_preview:: Current Temp for pid: %d: %d\n",pid, gblCurrentTemp);
+#ifdef _SHOW_PIDS_
+	ci_debug_printf(2,"handle_request_preview:: Child)pid: %d: \n",pid);
+#endif
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
@@ -1806,12 +1847,6 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(1, "Reload DB Command Received.\n");
 				if( !LoadActiveRules( DATABASE_NAME ) ){
 					ci_debug_printf(0, "    Business Rules Could not be Re-loaded\n");
-				}
-				else if( gblRTTemps ){
-					gblpTesterData->m_FileDesc = gblFileDesc;
-					// Create weather update thread, must be called after GetTesterData
-					pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
-					gblThreadRunning = true;
 				}
 				break;
 			case BCC_SHOW_ACT: // 3
@@ -1829,8 +1864,6 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblHourOfDay);
 				break;
 			case BCC_SET_CURRENT_TEMP:
-				pid = getpid();
-				ci_debug_printf(3, "Change Current Temperature Command Received by pid: %d.\n",pid);
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
 						gblTempTestMode = true;
