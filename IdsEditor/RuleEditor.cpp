@@ -53,6 +53,8 @@
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
 //		02.12.2021 CHM - Populate from Sqlite DB.
+//		05.07.2021 CHM - Minimize groupbox height if not checked, if <SHIFT> held,
+//							toggle groupbox height.
 //-------------------------------------------------------------------------------
 //
 // Summary: RuleEditor.cpp
@@ -92,6 +94,14 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.TempFrame->setVisible(false);
 	ui.TimeFrame->setVisible(false);
 	ui.EmailFrame->setVisible(false);
+	m_reqsGBHeight = ui.MaxRequestsGroup->maximumHeight();
+	m_tempGBHeight = ui.TempGroup->maximumHeight();
+	m_timeGBHeight = ui.TimeGroup->maximumHeight();
+	m_emailGBHeight = ui.EmailGroup->maximumHeight();
+
+	ui.FunctionCombo->setMinimumContentsLength(1);
+	ui.EndPointCombo->setMinimumContentsLength(1);
+	ui.MethodCombo->setMinimumContentsLength(1);
 
 	InitFunctions();
 	UpdateUi(true);
@@ -239,7 +249,6 @@ void RuleEditor::UpdateUi( bool init )
 	{
 		ui.MethodCombo->setCurrentIndex(idx);
 	}
-
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	connect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
@@ -290,6 +299,31 @@ void RuleEditor::UpdateUi( bool init )
 			ui.EmailFrame->setVisible(true);
 			ui.Email->setText(rule->KeyValue.value(RULE_KEY_EMAIL));
 		}
+	}
+
+	if( ui.MaxRequestsGroup->isChecked() ){
+		ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
+	}
+	else{
+		ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
+	}
+	if( ui.TempGroup->isChecked() ){
+		ui.TempGroup->setMaximumHeight(m_tempGBHeight);
+	}
+	else{
+		ui.TempGroup->setMaximumHeight(ui.TempGroup->fontMetrics().height());
+	}
+	if( ui.TimeGroup->isChecked() ){
+		ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
+	}
+	else{
+		ui.TimeGroup->setMaximumHeight(ui.TimeGroup->fontMetrics().height());
+	}
+	if( ui.EmailGroup->isChecked() ){
+		ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
+	}
+	else{
+		ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 	}
 }
 
@@ -451,21 +485,35 @@ void RuleEditor::OnMinTimeChanged(int value)
 //
 void RuleEditor::OnMaxRequestsToggled(bool checked)
 {
-	ui.MaxRequestsFrame->setVisible(checked);
-	if (checked)
-	{
-		Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
-		rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
-		if( ui.MaxReqPHSpin->value() > 0 ){
-			rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
+	// if click with shift, just toggle the groupbox height
+	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
+		disconnect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
+		ui.MaxRequestsGroup->setChecked(!checked);
+		if( ui.MaxRequestsGroup->maximumHeight() == m_reqsGBHeight ){
+			ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
 		}
-		m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
+		else{
+			ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
+		}
+		connect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
 	}
-	else
-	{
-		delete m_ruleObject.Rules.take(RULE_TYPE_MAX_VALUE);
+	else{
+		ui.MaxRequestsFrame->setVisible(checked);
+		if (checked)
+		{
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
+			rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
+			if( ui.MaxReqPHSpin->value() > 0 ){
+				rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
+			}
+			m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
+		}
+		else
+		{
+			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_VALUE);
+		}
+		UpdateUi();
 	}
-	UpdateUi();
 }
 
 //-------------------------------------------------------------------------------
@@ -473,19 +521,32 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 //
 void RuleEditor::OnTempToggled(bool checked)
 {
-	ui.TempFrame->setVisible(checked);
-	if (checked)
-	{
-		Rule* rule = RemObject::CreateRule(RULE_TYPE_TEMP_RANGE);
-		rule->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(ui.MaxTempSpin->value()));
-		rule->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(ui.MinTempSpin->value()));
-		m_ruleObject.Rules.insert(RULE_TYPE_TEMP_RANGE, rule);
+	// if click with shift, just toggle the groupbox height
+	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
+		disconnect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));		ui.TempGroup->setChecked(!checked);
+		if( ui.TempGroup->maximumHeight() == m_tempGBHeight ){
+			ui.TempGroup->setMaximumHeight(ui.TempGroup->fontMetrics().height());
+		}
+		else{
+			ui.TempGroup->setMaximumHeight(m_reqsGBHeight);
+		}
+		connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	}
-	else
-	{
-		delete m_ruleObject.Rules.take(RULE_TYPE_TEMP_RANGE);
+	else{
+		ui.TempFrame->setVisible(checked);
+		if (checked)
+		{
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_TEMP_RANGE);
+			rule->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(ui.MaxTempSpin->value()));
+			rule->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(ui.MinTempSpin->value()));
+			m_ruleObject.Rules.insert(RULE_TYPE_TEMP_RANGE, rule);
+		}
+		else
+		{
+			delete m_ruleObject.Rules.take(RULE_TYPE_TEMP_RANGE);
+		}
+		UpdateUi();
 	}
-	UpdateUi();
 }
 
 //-------------------------------------------------------------------------------
@@ -493,39 +554,66 @@ void RuleEditor::OnTempToggled(bool checked)
 //
 void RuleEditor::OnTimeToggled(bool checked)
 {
-	ui.TimeFrame->setVisible(checked);
-	if (checked)
-	{
-		Rule* rule = RemObject::CreateRule(RULE_TYPE_TIME_RANGE);
-		rule->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(ui.MaxTimeSpin->value()));
-		rule->KeyValue.insert(RULE_KEY_MINTIME, QString::number(ui.MinTimeSpin->value()));
-		m_ruleObject.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
+	// if click with shift, just toggle the groupbox height
+	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
+		disconnect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
+		ui.TimeGroup->setChecked(!checked);
+		if( ui.TimeGroup->maximumHeight() == m_timeGBHeight ){
+			ui.TimeGroup->setMaximumHeight(ui.TimeGroup->fontMetrics().height());
+		}
+		else{
+			ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
+		}
+		connect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
 	}
-	else
-	{
-		delete m_ruleObject.Rules.take(RULE_TYPE_TIME_RANGE);
+	else{
+		ui.TimeFrame->setVisible(checked);
+		if (checked)
+		{
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_TIME_RANGE);
+			rule->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(ui.MaxTimeSpin->value()));
+			rule->KeyValue.insert(RULE_KEY_MINTIME, QString::number(ui.MinTimeSpin->value()));
+			m_ruleObject.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
+		}
+		else
+		{
+			delete m_ruleObject.Rules.take(RULE_TYPE_TIME_RANGE);
+		}
+		UpdateUi();
 	}
-	UpdateUi();
 }
-
 
 //-------------------------------------------------------------------------------
 // OnEmailToggled
 //
 void RuleEditor::OnEmailToggled(bool checked)
 {
-	ui.EmailFrame->setVisible(checked);
-	if (checked)
-	{
-		Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
-		rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
-		m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
+	// if click with shift, just toggle the groupbox height
+	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
+		disconnect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
+		ui.EmailGroup->setChecked(!checked);
+		if( ui.EmailGroup->maximumHeight() == m_emailGBHeight ){
+			ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
+		}
+		else{
+			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
+		}
+		connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
 	}
-	else
-	{
-		delete m_ruleObject.Rules.take(RULE_TYPE_EMAIL);
+	else{
+		ui.EmailFrame->setVisible(checked);
+		if (checked)
+		{
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
+			rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
+			m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
+		}
+		else
+		{
+			delete m_ruleObject.Rules.take(RULE_TYPE_EMAIL);
+		}
+		UpdateUi();
 	}
-	UpdateUi();
 }
 
 //-------------------------------------------------------------------------------

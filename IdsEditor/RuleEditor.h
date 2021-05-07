@@ -87,6 +87,10 @@ private:
 	bool	 m_modded;
 	bool	 m_tmpmodded;
 	bool	 m_saved;
+	int		 m_reqsGBHeight;
+	int		 m_tempGBHeight;
+	int		 m_timeGBHeight;
+	int		 m_emailGBHeight;
 
 public:
 	RuleEditor(const RemObject& ruleObj, IdsEditor* parent = Q_NULLPTR);
