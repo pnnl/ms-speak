@@ -64,7 +64,12 @@
 		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://172.18.77.1:3128/icap?cmd=7&arg=11
 							http://192.168.1.3:3128/icap?cmd=help
 							http://127.0.0.1:3128/icap?cmd=1
-							
+		05/07/2021 - CHM: ensure use of just a single process so browser commands will work
+						and weather thread global access works.
+		In order for the browser commands and the weather thread updates to work properly,
+		I had to limit the number of child processes that the main icap process forks: I
+		set 'StartServers' and 'MaxServers' in c-icap.conf to 1.
+ 
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -286,7 +291,7 @@
 #include <curl/curl.h>
 #include <pthread.h>
 #include <unistd.h>
-//#include <sys/types.h> for tmp files
+//#include <sys/types.h> // for tmp files
 //#include <errno.h>
 
 #include "common.h"
@@ -308,7 +313,7 @@
 #define CI_MAXMETHODLEN 256
 #define CI_MAXENDPOINTLEN 256
 #define CI_MAXNSLEN 256
-#define CI_MAXXACTIDLEN 256
+#define CI_MAACTIDLEN 256
 #define MSP_NO_STATUS   0
 #define MSP_OK          1
 #define MSP_BIZ_VIO		2 // business rule violation
@@ -345,7 +350,7 @@
 		" INNER JOIN testers ON testers.id = rules.tester"\
 		" WHERE( rules.Tester =(SELECT Tester FROM ActiveTester));"
 #define LOGF_NAME "/var/log/srv_msp.log"
-//#define TMPF_NAME "/tmp/myTmpFile-XXXXXX"
+//#define TMPF_NAME "/tmp/myTmpFile-"
 //#define TMPF_NAMELEN 21
 
 // buffer to hold the temporary file name
@@ -388,7 +393,7 @@ typedef enum bc_cmd{
 	<lastupdate value="2021-02-19T17:45:04"/>
 	</current>
 */
-typedef struct _wd {
+typedef struct _wd{
 	int currentTemp;
 	bool bSuccess;
 	char city[APIBUFFLEN+1];
@@ -396,14 +401,14 @@ typedef struct _wd {
 
 // strncpy() Warning: If there is no null byte among the first n bytes of src, 
 //		the string placed in dest will not be null-terminated.
-typedef struct _tester {
+typedef struct _tester{
 	char  m_Tester[MAX_DB_NAMELEN+1];
 	char  m_AppId[MAX_DB_NAMELEN+1];
 	char  m_Zipcode[MAX_DB_ZIPLEN+1];
 	//int   m_FileDesc;
 } TESTER_DATA;
 
-typedef struct _bizrule {
+typedef struct _bizrule{
 	signed long m_numReq;
 	signed long m_numRPH;
 	signed long m_minTemp;
@@ -424,11 +429,11 @@ typedef struct _bizrule {
 /*
  * The srv_msp_data structure will store the data required to service an ICAP request.
  */
-struct srv_msp_msg_info {
+struct srv_msp_msg_info{
 	char xmlnspace[CI_MAXNSLEN + 1];
 	char method[CI_MAXMETHODLEN + 1];
 	char endpoint[CI_MAXENDPOINTLEN + 1];
-	char xactid[CI_MAXXACTIDLEN + 1];
+	char xactid[CI_MAACTIDLEN + 1];
 	char appname[CI_MAXAPPNAMELEN + 1];
 	char company[CI_MAXCOMPANYLEN + 1];
 	//char msgid[CI_MAXMSGIDLEN + 1];
@@ -436,7 +441,7 @@ struct srv_msp_msg_info {
 	bool bIsV3;
 };
 
-struct srv_msp_data {
+struct srv_msp_data{
 	struct body_data body;
 	struct srv_msp_msg_info msginfo;
 	int64_t maxBodyData;
@@ -450,7 +455,7 @@ struct srv_msp_data {
 	int  CommandArg;
 };
 
-struct string {
+struct string{
     char *ptr;
     size_t len;
 };
@@ -458,20 +463,8 @@ struct string {
 char ViolationMessage[300];
 char str[STRBUFF_LEN];
 
-// globals, not sure what this means, since this file does not have a main in it.
-// file /usr/local/bin/c-icap
-//		 ELF 64-bit LSB shared object
-//	"A shared object file can be a library, but also an executable."
-//	if  GCC is configured to build -pie binaries by default. These binaries really are shared libraries 
-//	(of type ET_DYN), except they run just like a normal executable would.
 //
-// .so files are dynamic libraries, .a files are static libraries, 
-// .la files are text files used by the GNU "libtools" package to describe the files that make 
-// 		up the corresponding library. 
-// .lo is generally a "library object" that contains PIC code whether manually compiled with gcc -fPIC or using libtool
-//		srv_msp_la-srv_msp.lo
-//
-// THIS IS LIKELY WHY USE OF 'globals' DOESN'T SEEM TO WORK:
+// THIS IS LIKELY WHY USE OF 'globals' DOESN'T SEEM TO WORK: (i-cap.conf)
 // # TAG: StartServers
 //	# Format: StartServers number
 //	# Description:
@@ -489,6 +482,7 @@ char str[STRBUFF_LEN];
 //	#       ThreadsPerChild     10
 //
 
+pid_t gblMainProc = 0;
 pthread_t    gblWeatherThread;
 TESTER_DATA  gblTesterStruct={};
 TESTER_DATA *gblpTesterData=NULL;
@@ -503,7 +497,6 @@ int gblNumBizRules=0;
 int gblRowCnt=0;
 int gblCurrentDay;
 int gblHourOfDay;
-int gblMainThread = 0;
 int gblNumBizRecs;
 int gblCurrentTemp = 0;
 //int gblFileDesc = -1;
@@ -579,6 +572,9 @@ UC_CNT_REQUESTS = ci_stat_entry_register("Requests processed", STAT_INT64_T,  "S
  *			times until all the body data is sent to the client
  * 
  * 		debug as:  sudo c-icap -N -D -d 1
+ *  echo -n "reconfigure" > /var/run/c-icap.ctl
+		The above command will cause c-icap to reload configuration, re-initialize services and 
+			modules and re-open log files
  */
 
 void init_string(struct string *);
@@ -590,7 +586,7 @@ int fmt_srv_msp_appname(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_company(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_method(ci_request_t *, char *, int, const char *);
 int fmt_srv_msp_transactionid(ci_request_t *, char *, int, const char *);
-struct ci_fmt_entry MspFmtTable [] = {
+struct ci_fmt_entry MspFmtTable [] ={
 	{ "%MSNS", "Namespace", fmt_srv_msp_namespace },
 	{ "%MSGID", "MessageID", fmt_srv_msp_msgid },
 	{ "%MSTIME", "TimeStamp", fmt_srv_msp_timestamp},
@@ -598,7 +594,7 @@ struct ci_fmt_entry MspFmtTable [] = {
 	{ "%MSCMPY", "Company", fmt_srv_msp_company},
 	{ "%MSMTHD", "Method", fmt_srv_msp_method },
 	{ "%MSTXID", "XActID", fmt_srv_msp_transactionid },
-    { NULL, NULL, NULL}
+   { NULL, NULL, NULL}
 };
 
 // curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
@@ -613,7 +609,7 @@ int msp_preview_handler(char *, int, ci_request_t *);
 int msp_end_of_data_handler(ci_request_t *);
 int msp_io(char *, int *, char *, int *, int, ci_request_t *);
 
-CI_DECLARE_MOD_DATA ci_service_module_t service = {
+CI_DECLARE_MOD_DATA ci_service_module_t service ={
 	"msp",                         // mod_name: The service name
 	"MultiSpeak Parser Service",   // mod_short_descr: Service short description
 	ICAP_REQMOD | ICAP_RESPMOD,    // mod_type: service implements only and request modification
@@ -659,7 +655,7 @@ typedef int (*sqlite3_callback)(
 	* SQLITE_ABORT without invoking the callback again and without running
 	*  any subsequent SQL statements.
 */
-static int callback(void *data, int colcount, char **values, char **columns){
+static int callback(void *data, int colcount, char **values, char **columns ){
 	int i;
 	if( !data ){
 		ci_debug_printf(0, "callback Sanity Failure: %s\n", "null data ptr");
@@ -672,7 +668,7 @@ static int callback(void *data, int colcount, char **values, char **columns){
 		BIZ_RULE *pBzd = &pBizRecs[gblRowCnt++];
 		pBzd->m_NumValidRequests = 0;
 		pBzd->m_NumTotalRequests = 0;
-		for(i = 0; i<colcount; i++){
+		for(i = 0; i<colcount; i++ ){
 			if( !values[i] ){
 				continue;
 			}
@@ -747,13 +743,13 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	char *sql;
 	/* Open database */
 
-	ci_debug_printf(2, "Opening database: %s\n", pdbFile);
+	ci_debug_printf(4, "Opening database: %s\n", pdbFile);
 
 	rc = sqlite3_open_v2(pdbFile, &db, SQLITE_OPEN_READONLY, NULL);  
 	if( rc ){
 		ci_debug_printf(0, "Can't open database: %s\n", sqlite3_errmsg(db));
 		return(pRetData);
-	} else {
+	} else{
 		;//ci_debug_printf(0, "Opened database successfully\n");
 	}
 
@@ -761,14 +757,14 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 
 	sqlite3_stmt *stmt;
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
-	if (rc != SQLITE_OK){
+	if( rc != SQLITE_OK ){
 		ci_debug_printf(0, "PREPARE failed: %s\n", sqlite3_errmsg(db));
 		ci_debug_printf(0, "QUERY: %s\n", sql);
 		sqlite3_close(db);
 		return(pRetData);
 	}
 	bool bOnce = false;
-	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW ){
 		if( !bOnce ){
 			gblNumBizRules = sqlite3_column_int(stmt, 0); // sqlite3_column_text
 			//ci_debug_printf(0,"gblNumBizRules = %d\n", gblNumBizRules);
@@ -781,7 +777,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 			return(pRetData);
 		}
 	}
-	if (rc != SQLITE_DONE){
+	if( rc != SQLITE_DONE ){
 		ci_debug_printf(0, "SELECT failed: %s\n", sqlite3_errmsg(db));
 		sqlite3_finalize(stmt);	
 		sqlite3_close(db);
@@ -824,11 +820,11 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 		free( gblpBizRules );
 		sqlite3_close(db);
 		return(pRetData);
-	} else {
+	} else{
 		;//ci_debug_printf(0, "Operation done successfully\n");
 	}
 	sqlite3_close(db);
-	ci_debug_printf(2, "Closed Database: %s\n", pdbFile);
+	ci_debug_printf(4, "Closed Database: %s\n", pdbFile);
 
 	if( gblRowCnt > gblNumBizRules ){
 		ci_debug_printf(0, "SANITY FAILURE: %s\n", "excess rows for query");
@@ -873,10 +869,10 @@ void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgL
 /*
  * init_string - initializer for weather update string struct
  */
-void init_string(struct string *s){
+void init_string(struct string *s ){
     s->len = 0;
     s->ptr = malloc(s->len+1);
-    if( s->ptr == NULL){
+    if( s->ptr == NULL ){
       ci_debug_printf(0, "in init_string(), malloc() failed\n");
       exit(EXIT_FAILURE);
     }
@@ -890,7 +886,7 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
 {
     size_t new_len = s->len + size*nmemb;
     s->ptr = realloc(s->ptr, new_len+1);
-    if( s->ptr == NULL){
+    if( s->ptr == NULL ){
       ci_debug_printf(0, "realloc() failed\n");
       exit(EXIT_FAILURE);
     }
@@ -910,9 +906,9 @@ xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
 	xmlNodePtr child = NULL;
     xmlNodePtr nxt = cur->xmlChildrenNode;
     while (nxt != NULL)
-    {
-        if ((!xmlStrcmp(nxt->name, subchild)))
-        {
+   {
+        if( (!xmlStrcmp(nxt->name, subchild)))
+       {
 			child = nxt;
 			break;
         }
@@ -933,19 +929,19 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 	pWd->city[0]=0; // APIBUFFLEN+1];
 	
 	res = curl_easy_perform(pCurl);
-	if(res != CURLE_OK) {
+	if( res != CURLE_OK ){
 		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 		return false;
-	} else {
+	} else{
 		xmlNodePtr cur;
 		xmlDocPtr xmlDoc;
 		xmlDoc = xmlParseMemory(pXmlStr->ptr, pXmlStr->len);
-		if (xmlDoc == NULL) {
+		if( xmlDoc == NULL ){
 			printf("XML Document not parsed successfully.\n");
 			return false;
 		}
 		cur = xmlDocGetRootElement(xmlDoc);
-		if (cur == NULL) {
+		if( cur == NULL ){
 			printf("Failed to get XML ROOT\n");
 			xmlFreeDoc(xmlDoc);
 			return false;
@@ -965,7 +961,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 			//printf("Current Name: '%s'\n", cur->name);
 			if( (!xmlStrcmp(cur->name, (const xmlChar *)"temperature")) )
 			{
-				if(cur->xmlChildrenNode == NULL){
+				if( cur->xmlChildrenNode == NULL ){
 					key = xmlGetProp(cur, (const xmlChar *)"value");
 					pWd->currentTemp = (int) strtol((const char *)key, (char **)NULL, 10);
 					pWd->bSuccess = true;
@@ -1006,7 +1002,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 				child = parseNode( cur, key);
 				if( child ){
 					key = xmlGetProp(child, (const xmlChar *)"rise");
-					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+					if( strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
 						printf("\nstrptime failed\n");					
 					else{
 						local = timegm(&result);
@@ -1016,7 +1012,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 					}
 					xmlFree(key);
 					key = xmlGetProp(child, (const xmlChar *)"set");
-					if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+					if( strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
 						printf("\nstrptime failed\n");					
 					else{
 						local = timegm(&result);
@@ -1045,7 +1041,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"lastupdate")) ){
 				// 2021-02-20T18:44:07
 				key = xmlGetProp(cur, (const xmlChar *)"value");
-				if (strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
+				if( strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
 					printf("\nstrptime failed\n");					
 				else{
 					//time_t local = timelocal(&result);
@@ -1145,7 +1141,7 @@ void *WeatherUpdater(void *data)
 		unsigned seconds = WEATHER_UPDATE_INTERVAL * 2;
 		curl = curl_easy_init();
 		ci_debug_printf(1, "\n*** Weather Updater started ***\n");
-		if(curl)
+		if( curl)
 		{
 			WEATHER_DATA weatherData;
 			struct string xmlStr;
@@ -1167,18 +1163,18 @@ void *WeatherUpdater(void *data)
 					pid_t pid = getpid();
 					ci_debug_printf(3, "\n*** WeatherUpdater pid: %d.\n",pid);
 #endif
-					if( UpdateWeather( curl, &xmlStr, &weatherData ) ) {
-						if( weatherData.bSuccess ) {
+					if( UpdateWeather( curl, &xmlStr, &weatherData ) ){
+						if( weatherData.bSuccess ){
 							gblCurrentTemp = weatherData.currentTemp;
 							ci_debug_printf(2,"\nCurrent Temperature: %d\n", gblCurrentTemp);
 							/*errno = 0;
 							// rewind the stream pointer to the start of temporary file
-							if(-1 == lseek(pData->m_FileDesc,0,SEEK_SET))
+							if( -1 == lseek(pData->m_FileDesc,0,SEEK_SET))
 							{
 								ci_debug_printf(0,"\nERROR lseek failed on weather file with error [%s]\n",strerror(errno));
 							}
 							else{// Write some data to the temporary file
-								if(-1 == write(pData->m_FileDesc, &CurrentTemp, sizeof(int)) )
+								if( -1 == write(pData->m_FileDesc, &CurrentTemp, sizeof(int)) )
 								{
 									ci_debug_printf(0,"\n write of CurrentTemp failed with error [%s]\n",strerror(errno));
 								}
@@ -1190,7 +1186,7 @@ void *WeatherUpdater(void *data)
 						else{
 							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
 						}
-						if( weatherData.city ) {
+						if( weatherData.city ){
 							ci_debug_printf(2,"City: %s\n", weatherData.city);
 						}
 						else{
@@ -1231,11 +1227,11 @@ bool LoadActiveRules( char *pDatabaseName ){
 		if( gblThreadRunning ){
 			pthread_cancel(gblWeatherThread);
 			pthread_join(gblWeatherThread, NULL);
-			ci_debug_printf(1, "\n*** previous weather thread cancelled ***\n");
+			ci_debug_printf(3, "\n*** previous weather thread cancelled ***\n");
 			gblThreadRunning = false;
 		}
 	}
-	ci_debug_printf(1, "    Loading Business Rules from '%s'\n", pDatabaseName);
+	ci_debug_printf(3, "    Loading Business Rules from '%s'\n", pDatabaseName);
 	gblpTesterData = GetTesterData( pDatabaseName ); //  sets gblUsingTempRule
 	if( gblpTesterData )
 	{
@@ -1290,11 +1286,11 @@ bool LoadActiveRules( char *pDatabaseName ){
 int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(0, "\n*** msp_init_service::Initializing msp module v3.01f ***\n");
+	//sleep(1);
+	ci_debug_printf(0, "\n*** Initializing msp module v3.1 ***\n");
+	 gblMainProc = getpid();
 #ifdef _SHOW_PIDS_
-	pid_t pid = getpid();
-	// NOTE:  this routine appears to be called by a different process than the others...
-	ci_debug_printf(3, "msp_init_service (Parent)pid: %d.\n",pid);
+	ci_debug_printf(3, "msp_init_service pid: %d.\n", gblMainProc);
 #endif
 	// Tell to the icap clients that we can support up to 2K size of preview data
 	ci_service_set_preview(srv_xdata, 2048);
@@ -1336,7 +1332,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 		between all the child processes, needed to be created before the parent calls fork(), i.e, they
 		need to be created in either msp_init_service or msp_post_init_service.
 	
-	 *** NOTE:  in order to be able to properly control the msp module using http commands (../icap?cmd=xxx),
+	 *** NOTE:  in order to be able to properly control the msp module using http commands (../icap?cmd=x),
 			I needed to limit the number of child processes created to just 1, otherwise these commands would
 			only affect whichever process happened to service the request.  Also, Threads are not inherited from a child process on a linux system using fork(), so the WeatherThread created in msp_post_init_service only
 			exists in the parent process, not in any of the child processes.  Therefore, it should actually only
@@ -1345,9 +1341,11 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
  */
 int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf *server_conf)
 {
-	ci_debug_printf(3, "\n*** msp_post_init_service::\n");
+	ci_debug_printf(4, "\n*** msp_post_init_service:: ***\n");
+	// NOTE:  this routine is called by the parent process, the others by child process(es)...
 
 	BccUsage();
+
 #ifdef _SHOW_PIDS_
 	pid_t pid = getpid();
 	ci_debug_printf(3, "msp_post_init_service (Parent)pid: %d.\n",pid);
@@ -1388,30 +1386,9 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
+	ci_debug_printf(3, "\n*** Waiting for Initial Request... ***\n");
 
 	return CI_OK;
-}
-
-/*
-* This function will be called when the service shutdown
-* can be used to release service allocated resources
-*/
-void msp_close_service()
-{
-	ci_debug_printf(5, "\n*** msp_close_service::\n");
-	if( gblThreadRunning ){
-		pthread_cancel(gblWeatherThread);
-		pthread_join(gblWeatherThread, NULL);
-		ci_debug_printf(1, "\n*** weather thread joined ***\n");
-		gblThreadRunning = false;
-	}
-	if( gblLogFile){
-		if( gblMainThread) // huh, this doesn't work, still see 4 of the below msgs:
-			WriteLog(0, gblLogFile, "The MSP Service is Shutting Down...");
-		fclose(gblLogFile);
-	}
-	ci_object_pool_unregister(MSP_DATA_POOL); // per url_check
-	free( gblpBizRules );
 }
 
 /*
@@ -1424,7 +1401,7 @@ void msp_close_service()
 */
 void *msp_init_request_data(ci_request_t * req) // first call
 {
-	ci_debug_printf(3, "\n*** msp_init_request_data:: ***\n");
+	ci_debug_printf(4, "\n*** msp_init_request_data:: ***\n");
 
 	if( gblNeedLoadActiveRules ){ // doing this here, loads them for each child process, but more 
 	// importantly, the weatherthread will be created in the child process context, allowing it to
@@ -1453,7 +1430,7 @@ void msp_release_request_data(void *data)
 	ci_debug_printf(5, "\n*** msp_release_request_data:: ***\n");
 	/*The data points to the echo_req_data struct we allocated in function echo_init_service */
 	struct srv_msp_data *mspd = data;
-	if( mspd->body.type){
+	if( mspd->body.type ){
 		body_data_destroy(&mspd->body);
 	}
 	ci_object_pool_free(mspd);    /*Return object to pool..... */
@@ -1503,15 +1480,15 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
-	gblMainThread = 1; // TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
+	// TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
 	//return CI_MOD_CONTINUE;
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
-	if (!ci_req_hasbody(req)){
+	if( !ci_req_hasbody(req) ){
 		ci_debug_printf(4, "msp_preview_handler::no body data.\n");
 		pHeader = ci_http_request_headers(req);
-		if (!pHeader){
+		if( !pHeader ){
 			ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
 			unlock_data(req);// this appears to prevent the browser cache having to be cleared each time
 			return CI_ERROR; 
@@ -1541,7 +1518,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		//ci_debug_printf(4, "needle_pos: %s, needle_length: %d.\n", needle_pos, needle_length);
 		int cmd;
 		const char *cmdstr = needle_pos + needle_length;
-		if (!strncasecmp(cmdstr, "help", 4)){
+		if( !strncasecmp(cmdstr, "help", 4) ){
 			cmd = BCC_HELP;
 		}
 		else{
@@ -1606,19 +1583,19 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 	// Extract the HTTP header from the request/response
 	const int REQ_TYPE = ci_req_type(req);
-	if( REQ_TYPE == ICAP_REQMOD){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
+	if( REQ_TYPE == ICAP_REQMOD ){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		mspd->isReqmod = 1;
 		pHeader = ci_http_request_headers(req);
 	}
-	else {
+	else{
 		pHeader = ci_http_response_headers(req);
 	}
-	if (!pHeader){
+	if( !pHeader ){
 		ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
 		return CI_ERROR; 
 	}
 
-	if( REQ_TYPE == ICAP_REQMOD){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
+	if( REQ_TYPE == ICAP_REQMOD ){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		/*
 		what Multispeaker sends is:
 		POST / HTTP/1.1
@@ -1633,7 +1610,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		Also, i DON'T think it is a requirement that the response contain a SoapAction....
 
 		const char *soap_action;
-		if (!(soap_action = ci_headers_value(pHeader, "SOAPAction"))) // uses strncasecmp, ignores case....
+		if( !(soap_action = ci_headers_value(pHeader, "SOAPAction"))) // uses strncasecmp, ignores case....
 		{
 			ci_debug_printf(0, "ERROR Getting Soap Action.\n");
 			return CI_ERROR; // must not be a Multispeak Request
@@ -1641,8 +1618,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		*/
 		;
 	}
-	else {
-		if( showHeader){
+	else{
+		if( showHeader ){
 			char buf[1000];
 			size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 			ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
@@ -1673,12 +1650,12 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd->expectedData = content_len;
 
 	/*If we do not have content len, for simplicity do not proccess it*/
-	if( content_len <= 0){
+	if( content_len <= 0 ){
 		ci_debug_printf(0, "msp_preview_handler::no Content-Length, will not process\n");
 		return CI_ERROR;
 	}
 
-	if( content_len > mspd->maxBodyData){
+	if( content_len > mspd->maxBodyData ){
 		ci_debug_printf(0, "msp_preview_handler::content-length=%"PRINTF_OFF_T" > %ld will not process\n", (CAST_OFF_T)content_len, mspd->maxBodyData);
 		return CI_ERROR;
 	}
@@ -1690,7 +1667,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	  data of the encapsulated HTTP object is included in preview data.
 	  Use the ci_req_hasalldata macro to identify these cases.
 	*/
-	if( preview_data_len){
+	if( preview_data_len ){
 		ci_debug_printf(0, "msp_preview_handler::preview_data_len\n");
 		
 		body_data_write(&mspd->body, preview_data, preview_data_len, ci_req_hasalldata(req));
@@ -1700,6 +1677,29 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	return CI_MOD_CONTINUE;
 }
 
+/*
+* This function will be called when the service shutdown
+* can be used to release service allocated resources
+*/
+void msp_close_service()
+{
+	ci_debug_printf(5, "\n*** msp_close_service::\n");
+	if( gblThreadRunning ){
+		pthread_cancel(gblWeatherThread);
+		pthread_join(gblWeatherThread, NULL);
+		ci_debug_printf(1, "\n*** weather thread joined ***\n");
+		gblThreadRunning = false;
+	}
+	if( gblLogFile ){
+		if( getpid() == gblMainProc ){
+			WriteLog(0, gblLogFile, "The MSP Service Process is Shutting Down...");
+		}
+		fclose(gblLogFile);
+	}
+	ci_object_pool_unregister(MSP_DATA_POOL); // per url_check
+	free(gblpBizRules);
+}
+
 // https://support.google.com/accounts/answer/6010255
 // https://myaccount.google.com/lesssecureapps
 int sendmail(const char *to, const char *from, 
@@ -1707,7 +1707,7 @@ int sendmail(const char *to, const char *from,
 {
     int retval = -1;
     FILE *mailpipe = popen("/usr/lib/sendmail -t", "w");
-    if (mailpipe != NULL) {
+    if( mailpipe != NULL ){
         fprintf(mailpipe, "To: %s\n", to);
         fprintf(mailpipe, "From: %s\n", from);
         fprintf(mailpipe, "Subject: %s\n\n", subject);
@@ -1716,7 +1716,7 @@ int sendmail(const char *to, const char *from,
         pclose(mailpipe);
         retval = 0;
      }
-     else {
+     else{
          perror("Failed to invoke sendmail");
      }
      return retval;
@@ -1725,7 +1725,7 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=XX\n  i.e.,\n      http://172.18.77.1:3128/icap?cmd=4";
+	char *pCmd = "http://proxyIP:port/icap?cmd=\n  i.e.,\n      http://172.18.77.1:3128/icap?cmd=4";
 	ci_debug_printf(1, "\nUser Commands Available Thru: '%s'\n",pCmd);
 	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
@@ -1747,12 +1747,12 @@ void BccUsage(void)
 				break; 
 			case BCC_SET_CURRENT_TEMP:
 				ci_debug_printf(1, "%d - Set Current Temperature(F)(enter test mode).\n", cmd);
-				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=XX')\n");
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=')\n");
 				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_SET_CURRENT_HOUR:
 				ci_debug_printf(1, "%d - Set Current Hour of the Day(enter test mode).\n", cmd);
-				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=XX')\n");
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=')\n");
 				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_HELP:
@@ -1795,44 +1795,15 @@ int msp_end_of_data_handler(ci_request_t * req)
 #ifdef _SHOW_PIDS_
 	pid_t pid = getpid();
 #endif
-	if( gblUsingTempRule )
-	{
-		if( gblTempTestMode ){
-			ci_debug_printf(1,"\nSimulating Temperature of %d While in Test Mode.\n",gblCurrentTemp);
-		}
-		else{
-			/*if(-1 == lseek(gblFileDesc,0,SEEK_SET))
-			{
-				ci_debug_printf(0,"\nERROR Failed to seek temperature file, error [%s]\n",strerror(errno));
-			}
-			else{
-				if( -1 == read(gblFileDesc, &gblCurrentTemp, sizeof(int)) )
-				//if( -1 == fscanf(gblFileDesc, "%d", &gblCurrentTemp) )
-				{
-					ci_debug_printf(0,"\n read of CurrentTemp failed with error [%s]\n",strerror(errno));
-				}
-				else{
-					ci_debug_printf(4,"\n CurrentTemp read from temporary file: %d\n",gblCurrentTemp);
-				}
-			}*/
-#ifdef _SHOW_PIDS_
-			ci_debug_printf(2,"handle_request_preview:: Current Temp for (Child)pid: %d: %d\n",pid, gblCurrentTemp);
-#else
-			ci_debug_printf(2,"handle_request_preview:: Current Temp: %d\n",gblCurrentTemp);
-#endif
-		}
-	}
-	else{
-		ci_debug_printf(3,"\nNo Temperature Rules Defined for the Active Tester.\n");
-	}
-	/*if( mspd->abort){
+	/*if( mspd->abort ){
 		// We had already start sending data....
 		mspd->eof = 1;
 		return CI_MOD_DONE;
 	}*/
 #ifdef _SHOW_PIDS_
-	ci_debug_printf(2,"handle_request_preview:: Child)pid: %d: \n",pid);
+	ci_debug_printf(2,"handle_request_preview:: Child pid: %d: \n",pid);
 #endif
+
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
@@ -1857,7 +1828,18 @@ int msp_end_of_data_handler(ci_request_t * req)
 				break;
 			case BCC_CURRENT_TEMP:
 				ci_debug_printf(3, "Show Current Temperature Command Received.\n");
-				ci_debug_printf(1, "   The Current Temperature is '%d(F)'\n", gblCurrentTemp);
+				if( gblTempTestMode ){
+					ci_debug_printf(1, "   Simulating Temperature of %d While in Test Mode.\n", gblCurrentTemp);
+				}
+				else {
+					if (!gblUsingTempRule) {
+						ci_debug_printf(2, "   No Temperature Rules Are Defined, therefore, no weather updates.\n");
+					}
+					else {
+						ci_debug_printf(2, "   The Current Temperature is %d(F)\n", gblCurrentTemp);
+					}
+				}
+
 				break;
 			case BCC_CURRENT_HOUR:
 				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
@@ -1929,10 +1911,38 @@ int msp_end_of_data_handler(ci_request_t * req)
 		unlock_data(req);
 		return CI_ERROR;
 	}
+
+	if( gblUsingTempRule)
+	{
+		if( gblTempTestMode ){
+			ci_debug_printf(1, "\nSimulating Temperature of %d While in Test Mode.\n", gblCurrentTemp);
+		}
+		else{
+			/*if( -1 == lseek(gblFileDesc,0,SEEK_SET))
+			{
+			ci_debug_printf(0,"\nERROR Failed to seek temperature file, error [%s]\n",strerror(errno));
+			}
+			else{
+			if( -1 == read(gblFileDesc, &gblCurrentTemp, sizeof(int)) )
+			//if( -1 == fscanf(gblFileDesc, "%d", &gblCurrentTemp) )
+			{
+			ci_debug_printf(0,"\n read of CurrentTemp failed with error [%s]\n",strerror(errno));
+			}
+			else{
+			ci_debug_printf(4,"\n CurrentTemp read from temporary file: %d\n",gblCurrentTemp);
+			}
+			}*/
+			ci_debug_printf(2, "The Current Temperature is %d(F)\n", gblCurrentTemp);
+		}
+	}
+	else{
+		ci_debug_printf(2, "\nNo Temperature Rules Defined for the Active Tester.\n");
+	}
+
 	if( mspd->isReqmod ){
 		ci_debug_printf(5, "All REQUEST data received, going to process!\n");
 		// do sanity check, isReqmod is probably not even needed as can use ci_req_type
-		if( REQ_TYPE != ICAP_REQMOD){
+		if( REQ_TYPE != ICAP_REQMOD ){
 			ci_debug_printf(0, "*** SANITY CHECK FAILURE: REQ_TYPE != ICAP_REQMOD!\n");
 			unlock_data(req);
 			return CI_ERROR;
@@ -1948,9 +1958,9 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	int ErrRet;
 	BIZ_RULE *pRuleData = GetBusinessRecord(mspd, &ErrRet);
-	if (!pRuleData)
+	if( !pRuleData)
 	{
-		if( ErrRet != MSP_OK){
+		if( ErrRet != MSP_OK ){
 			WriteLog(0, gblLogFile, "Error Looking up Request Business Record.");
 			unlock_data(req);
 			return CI_ERROR;
@@ -1963,7 +1973,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	if( REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
 	{
 		msRet = handle_request_preview(pRuleData, &ViolationMessage[0]);
-		if(msRet == MSP_BIZ_VIO)
+		if( msRet == MSP_BIZ_VIO)
 		{
 			if( pRuleData->m_Email ){
 				char *from, *subject, *message;
@@ -1973,7 +1983,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(3,"Sending Email Notification to: %s\n", pRuleData->m_Email);
 				sendmail( pRuleData->m_Email, from, subject, message );
 			}
-			if (!ci_req_sent_data(req)){
+			if( !ci_req_sent_data(req) ){
 				ci_membuf_t *err_page = generate_error_page(req);
 				body_data_init(&mspd->body, ERROR_PAGE, 0, err_page);
 			}
@@ -1982,13 +1992,13 @@ int msp_end_of_data_handler(ci_request_t * req)
 			}
 			icRet = CI_MOD_DONE;
 		}
-		else if( msRet == MSP_ERROR){
+		else if( msRet == MSP_ERROR ){
 			icRet = CI_ERROR;
 		}
-		else if( msRet == MSP_OK){
+		else if( msRet == MSP_OK ){
 			icRet = CI_MOD_ALLOW204;
 		}
-		else {
+		else{
 			ci_debug_printf(0, "***BUG: Unexpected return from: %s: %d\n", "handle_request_preview", msRet);
 			icRet = CI_ERROR;
 		}
@@ -1997,13 +2007,13 @@ int msp_end_of_data_handler(ci_request_t * req)
 	{
 		ci_debug_printf(5, "*** handling_response_preview ...\n");
 		msRet = handle_response_preview(pRuleData);
-		if( msRet == MSP_ERROR){
+		if( msRet == MSP_ERROR ){
 			icRet = CI_ERROR;
 		}
-		else if( msRet == MSP_OK){
+		else if( msRet == MSP_OK ){
 			icRet = CI_MOD_ALLOW204;
 		}
-		else {
+		else{
 			ci_debug_printf(0, "***BUG: Unexpected return from: %s: %d\n", "handle_response_preview", msRet);
 			icRet = CI_ERROR;
 		}
@@ -2063,14 +2073,14 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 		return CI_OK;
 	}
 	//write the data read from icap_client(i.e., Squid) to the mspd->body
-	if( rlen && rbuf){
+	if( rlen && rbuf ){
 		if( mspd->body.store.ring == NULL &&
-		    (mspd->body.size + *rlen) > mspd->maxBodyData){
+		    (mspd->body.size + *rlen) > mspd->maxBodyData ){
 			ci_debug_printf(0, "msp_io::content-length: %" PRIu64 " bigger than maxBodyData: %" PRId64 "\n",
 			                (mspd->body.size + *rlen), mspd->maxBodyData);
 			ci_debug_printf(0, "TODO: call srv_cf_body_to_ring\n");
 
-			//if (!srv_cf_body_to_ring(&mspd->body))
+			//if( !srv_cf_body_to_ring(&mspd->body))
 			    return CI_ERROR;
 			//ci_debug_printf(5, "Srv_Content_Filtering Stop buffering data, reverted to ring mode, and sent early response\n");
 			/*We will not process body data. More data size than expected.*/
@@ -2079,17 +2089,17 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 		}
 
 		*rlen = body_data_write(&mspd->body, rbuf, *rlen, iseof);
-		if (*rlen == CI_ERROR){
+		if( *rlen == CI_ERROR ){
 			ret = CI_ERROR;
 			ci_debug_printf(5, "    rlen && rbuf::CI_ERROR\n");
 		}
-		else {
+		else{
 			;// msp_dumphex(rbuf, *rlen);
 		}
 	}
 	/*
-	else if( iseof){
-	//if( iseof){
+	else if( iseof ){
+	//if( iseof ){
 		ci_debug_printf(0, "    iseof\n");
 		//msp_dumphex(wbuf, *wlen);
 		body_data_write(&mspd->body, NULL, 0, iseof); // should return ret = CI_OK
@@ -2103,14 +2113,14 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 
 	// read some data from the srv_content_filtering_data->body and put them to the
 	// write buffer to be send to the ICAP client
-	if( /*mspd->body.type &&*/ wbuf && wlen){
+	if( /*mspd->body.type &&*/ wbuf && wlen ){
 		ci_debug_printf(5, "    mspd->body.type && wbuf && wlen\n");
 		*wlen = body_data_read(&mspd->body, wbuf, *wlen);
-		if (*wlen == CI_ERROR){
+		if( *wlen == CI_ERROR ){
 			ci_debug_printf(5, "    *wlen == CI_ERROR\n");
 			ret = CI_ERROR;
 		}
-		else {
+		else{
 			;// msp_dumphex(wbuf, *wlen);
 		}
 	}
@@ -2143,7 +2153,7 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 	}
 	else{
 		gblHourOfDay = tm_struct->tm_hour;
-		if( gblCurrentDay != tm_struct->tm_mday){
+		if( gblCurrentDay != tm_struct->tm_mday ){
 			gblCurrentDay = tm_struct->tm_mday;
 			pRuleData->m_NumValidRequests = 0;
 			pRuleData->m_NumTotalRequests = 0;
@@ -2197,7 +2207,7 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 		WriteLog(1, gblLogFile, "Current Temperature is %ld\n", gblCurrentTemp);
 		return MSP_BIZ_VIO;
 	}
-	else {
+	else{
 		// TODO: don't increment this count until we see a response come back from the endpoint
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
 		//pRuleData->m_NumValidRequests++;
@@ -2281,25 +2291,25 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		return NULL;
 	}
 
-	if( showData){
-		if (!mspd->isReqmod){
+	if( showData ){
+		if( !mspd->isReqmod ){
 			msp_dumphex(buf, mspd->expectedData);
 		}
 	}
 	xmlDoc = xmlParseMemory(buf, mspd->expectedData);
-	if( xmlDoc == NULL){
+	if( xmlDoc == NULL ){
 		ci_debug_printf(0, "XML Document not parsed successfully.\n");
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
 	root = xmlDocGetRootElement(xmlDoc);
-	if( root == NULL){
+	if( root == NULL ){
 		ci_debug_printf(0, "Failed to get XML ROOT\n");
 		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
-	if( xmlStrcmp(root->name, (const xmlChar *)"Envelope")){
+	if( xmlStrcmp(root->name, (const xmlChar *)"Envelope") ){
 		ci_debug_printf(0, "\ndocument of the wrong type, root node != 'Envelope'\n");
 		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
@@ -2314,24 +2324,24 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	{
 		pMethod = pMsgInfo->method;
 		// seems that most (not PingURL) V3 msgs don't include an endpoint
-		if (!strncasecmp(pMsgInfo->endpoint, "Version", 7)) { // Version_3.0
-			//if (!strcmp(pMsgInfo->endpoint, "3")) {
+		if( !strncasecmp(pMsgInfo->endpoint, "Version", 7) ){ // Version_3.0
+			//if( !strcmp(pMsgInfo->endpoint, "3") ){
 				pEndpoint = V3_NULL_ENDPOINT;
 				pMsgInfo->bIsV3 = true;
 			//}
 		}
-		else {
+		else{
 			pEndpoint = pMsgInfo->endpoint;
 		}
 		ci_debug_printf(4, "Namespace is: '%s'\n", pMsgInfo->xmlnspace);
 		ci_debug_printf(4, "Method is: '%s'\n", pMethod);
 		ci_debug_printf(4, "Endpoint is: '%s'\n", pEndpoint);
-		if (*pMsgInfo->xactid != 0x00)
+		if( *pMsgInfo->xactid != 0x00)
 			// MessageID should be unique, not reused by a Request, if we want to 
 			// correlate a response to a request, use transactionID
 			ci_debug_printf(4, "TransactionID is: '%s'\n", pMsgInfo->xactid);
 	}
-	else {
+	else{
 		ci_debug_printf(0, "ERROR getting Method info\n");
 		xmlFreeDoc(xmlDoc);
 		*pErrRet = MSP_ERROR;
@@ -2362,7 +2372,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	}
 	if( i == gblNumBizRecs )
 	{
-		if( mspd->isReqmod){
+		if( mspd->isReqmod ){
 			ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Request.\n", pMethod, pEndpoint );
 		}
 		//else{
@@ -2371,8 +2381,8 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		*pErrRet = MSP_OK;
 		pRuleData = NULL;
 	}
-	else {
-		if( mspd->isReqmod){
+	else{
+		if( mspd->isReqmod ){
 			// while we have the xml parsed into memory, squirrel some info that might be needed 
 			// for returning a business rule violation error page
 			if( !get_caller_info(root, pMsgInfo) ) // squirrel away some info needed for returning a business rule violation error page
@@ -2381,12 +2391,12 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 				*pErrRet = MSP_ERROR;
 				pRuleData = NULL;
 			}
-			else {
+			else{
 				*pErrRet = MSP_OK;
 				pRuleData = pRuleData;
 			}
 		}
-		else {
+		else{
 			*pErrRet = MSP_OK;
 			pRuleData = pRuleData;
 		}
@@ -2418,10 +2428,10 @@ static ci_membuf_t *generate_error_page(ci_request_t *req)
 	ci_membuf_t *err_page;
 	ci_http_response_create(req, 1, 1); /*Build the response headers */
 	/*
-	if( ci_http_response_headers(req)){
+	if( ci_http_response_headers(req) ){
 		ci_http_response_reset_headers(req);
 	}
-	else {
+	else{
 		ci_http_request_remove_header(req, "Content-Encoding");
 		ci_http_request_remove_header(req, "Content-Length");
 		//ci_http_response_create(ci_request_t * req, int has_reshdr, int has_body)
@@ -2436,7 +2446,7 @@ static ci_membuf_t *generate_error_page(ci_request_t *req)
 	err_page = ci_txt_template_build_content(req, "msp", "MSP_RESPONSE", MspFmtTable);
 
 	lang = ci_membuf_attr_get(err_page, "lang");
-	if( lang){
+	if( lang ){
 		snprintf(buf, sizeof(buf), "Content-Language: %s", lang);
 		buf[sizeof(buf) - 1] = '\0';
 		ci_http_response_add_header(req, buf);
@@ -2456,7 +2466,7 @@ int fmt_srv_msp_namespace(ci_request_t *req, char *buf, int len, const char *par
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_namespace ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if( uc){
+	if( uc ){
 		return snprintf(buf, len, "%s", uc->msginfo.xmlnspace);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -2506,7 +2516,7 @@ int fmt_srv_msp_appname(ci_request_t *req, char *buf, int len, const char *param
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_appname ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if( uc){
+	if( uc ){
 		return snprintf(buf, len, "%s", uc->msginfo.appname);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -2519,7 +2529,7 @@ int fmt_srv_msp_company(ci_request_t *req, char *buf, int len, const char *param
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_company ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if( uc){
+	if( uc ){
 		return snprintf(buf, len, "%s", uc->msginfo.company);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -2532,7 +2542,7 @@ int fmt_srv_msp_method(ci_request_t *req, char *buf, int len, const char *param)
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_method ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if( uc){
+	if( uc ){
 		return snprintf(buf, len, "%s", uc->msginfo.method);
 	}
 	return snprintf(buf, len, "%s", "ERR");
@@ -2545,8 +2555,8 @@ int fmt_srv_msp_transactionid(ci_request_t *req, char *buf, int len, const char 
 {
 	ci_debug_printf(5, "*** fmt_srv_msp_transactionid ***\n");
 	struct srv_msp_data *uc = ci_service_data(req);
-	if( uc){
-		if (*uc->msginfo.xactid != 0x00){
+	if( uc ){
+		if( *uc->msginfo.xactid != 0x00 ){
 			return snprintf(buf, len, "<tns:transactionID>%s</tns:transactionID>", uc->msginfo.xactid);
 		}
 		return 0;
@@ -2627,14 +2637,14 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 		xmlNodePtr chld_node = pReturnedNode->xmlChildrenNode;
 		while (chld_node != NULL)
 		{
-			if( chld_node->type == XML_ELEMENT_NODE){
+			if( chld_node->type == XML_ELEMENT_NODE ){
 				break;
 			}
 			chld_node = chld_node->next;
 		}
 		if( chld_node ){
 			strncpy(pMsgInfo->method, (char *)chld_node->name, CI_MAXMETHODLEN);
-			if( chld_node->ns){
+			if( chld_node->ns ){
 				const xmlChar *pNsRef = chld_node->ns->href;
 				strncpy(pMsgInfo->xmlnspace, (char *)pNsRef, CI_MAXNSLEN);
 				char *p = strrchr((char *)pNsRef, '/');
@@ -2643,24 +2653,24 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 				}
 			}
 			xmlNodePtr body_chld = NULL;
-			for (body_chld = chld_node->children; body_chld; body_chld = body_chld->next){
-				if( body_chld->type == XML_ELEMENT_NODE){
-					if ((!xmlStrcasecmp(body_chld->name, (const xmlChar *)"transactionID"))){
-						strncpy(pMsgInfo->xactid, (char *)xmlNodeGetContent(body_chld), CI_MAXXACTIDLEN);
+			for (body_chld = chld_node->children; body_chld; body_chld = body_chld->next ){
+				if( body_chld->type == XML_ELEMENT_NODE ){
+					if( (!xmlStrcasecmp(body_chld->name, (const xmlChar *)"transactionID")) ){
+						strncpy(pMsgInfo->xactid, (char *)xmlNodeGetContent(body_chld), CI_MAACTIDLEN);
 						break;
 					}
 				}
 			}
 		}
-		else {
+		else{
 			ci_debug_printf(0,"Failed to get child node element for '%s'\n", "Body");
 		}
 	}
-	else {
+	else{
 		ci_debug_printf(0,"Failed to get child node '%s' for '%s'\n", "Body", "root");
 	}
 
-	if (*pMsgInfo->xmlnspace != 0x00 && *pMsgInfo->method != 0x00 && *pMsgInfo->endpoint != 0x00)
+	if( *pMsgInfo->xmlnspace != 0x00 && *pMsgInfo->method != 0x00 && *pMsgInfo->endpoint != 0x00)
 		return true;
 	else
 		return false;
@@ -2677,43 +2687,43 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 	int num_gotten = 0;
 	bool bFound = false;
 
-	for (cur_node = root; cur_node; cur_node = cur_node->next){
+	for (cur_node = root; cur_node; cur_node = cur_node->next ){
 		if( bFound)
 			return false;
 		if( cur_node->type == XML_ELEMENT_NODE)
 		{
-			if ((!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")))
+			if( (!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")))
 			{
-				for (chld_node = cur_node->children; chld_node; chld_node = chld_node->next){
-					if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"AppName")))
+				for (chld_node = cur_node->children; chld_node; chld_node = chld_node->next ){
+					if( (!xmlStrcasecmp(chld_node->name, (const xmlChar *)"AppName")))
 					{
 						strncpy(pMsgInfo->appname, (char *)xmlNodeGetContent(chld_node), CI_MAXAPPNAMELEN);
 						num_gotten++;
 					}
-					else if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"Company")))
+					else if( (!xmlStrcasecmp(chld_node->name, (const xmlChar *)"Company")))
 					{
 						strncpy(pMsgInfo->company, (char *)xmlNodeGetContent(chld_node), CI_MAXCOMPANYLEN);
 						num_gotten++;
 					}
-					if( num_gotten == num_needed){
+					if( num_gotten == num_needed ){
 						bFound = true;
 						break;
 					}
 				}
 				nxt_node = NULL;
 			}
-			else {
+			else{
 				nxt_node = cur_node->children;
 			}
 		}//  for 
-		else {
+		else{
 			nxt_node = cur_node->children;
 		}
-		if (!bFound)
+		if( !bFound)
 			get_caller_info(nxt_node, pMsgInfo);
 	}// for
 
-	if (*pMsgInfo->appname != 0x00 && *pMsgInfo->company != 0x00)
+	if( *pMsgInfo->appname != 0x00 && *pMsgInfo->company != 0x00)
 		return true;
 	else
 		return false;
@@ -2761,12 +2771,12 @@ xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem)
 	{
 		if( n->type == XML_ELEMENT_NODE)
 		{
-			if ((!xmlStrcasecmp(n->name, elem)))
+			if( (!xmlStrcasecmp(n->name, elem)))
 			{
 				//printf("Found element '%s'\n", elem);
 				return n;
 			}
-			else {
+			else{
 				//printf("Not Found element '%s' @ '%s'\n", elem, n->name);
 				pRet = getChildNode(n->next, elem);
 				if( pRet)
@@ -2808,7 +2818,7 @@ void WriteLog(int loglevel, FILE *pFile, const char *format, ...)
 			ci_debug_printf(loglevel, "%s\n", &str[len + 1]);
 		}
 	}
-	else {
+	else{
 		vsprintf(str, format, args);
 		ci_debug_printf(loglevel, "%s\n", str);
 	}
