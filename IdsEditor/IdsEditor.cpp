@@ -644,7 +644,7 @@ bool IdsEditor::ReadDbFile(const QString& fileName, QString& errStr)
 		fn =  query.value(0).toString();
 		ep =  query.value(1).toString();
 		me =  query.value(2).toString();
-		qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
+		//qDebug() << "Function: " << fn << ", Endpoint: " << ep << ", Method: " << me;
 		if( !m_functions[fn].contains(ep) )
 			m_functions[fn].append(ep);
 		if( !m_methods[ep].contains(me) )

@@ -300,7 +300,7 @@ void RuleEditor::UpdateUi( bool init )
 			ui.Email->setText(rule->KeyValue.value(RULE_KEY_EMAIL));
 		}
 	}
-
+	/*
 	if( ui.MaxRequestsGroup->isChecked() ){
 		ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
 	}
@@ -325,6 +325,7 @@ void RuleEditor::UpdateUi( bool init )
 	else{
 		ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 	}
+	*/
 }
 
 //-------------------------------------------------------------------------------
@@ -501,6 +502,7 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 		ui.MaxRequestsFrame->setVisible(checked);
 		if (checked)
 		{
+			ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
 			rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
 			if( ui.MaxReqPHSpin->value() > 0 ){
@@ -511,6 +513,7 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 		else
 		{
 			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_VALUE);
+			ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
@@ -536,6 +539,7 @@ void RuleEditor::OnTempToggled(bool checked)
 		ui.TempFrame->setVisible(checked);
 		if (checked)
 		{
+			ui.TempGroup->setMaximumHeight(m_tempGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_TEMP_RANGE);
 			rule->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(ui.MaxTempSpin->value()));
 			rule->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(ui.MinTempSpin->value()));
@@ -544,6 +548,7 @@ void RuleEditor::OnTempToggled(bool checked)
 		else
 		{
 			delete m_ruleObject.Rules.take(RULE_TYPE_TEMP_RANGE);
+			ui.TempGroup->setMaximumHeight(ui.TempGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
@@ -570,6 +575,7 @@ void RuleEditor::OnTimeToggled(bool checked)
 		ui.TimeFrame->setVisible(checked);
 		if (checked)
 		{
+			ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_TIME_RANGE);
 			rule->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(ui.MaxTimeSpin->value()));
 			rule->KeyValue.insert(RULE_KEY_MINTIME, QString::number(ui.MinTimeSpin->value()));
@@ -578,6 +584,7 @@ void RuleEditor::OnTimeToggled(bool checked)
 		else
 		{
 			delete m_ruleObject.Rules.take(RULE_TYPE_TIME_RANGE);
+			ui.TimeGroup->setMaximumHeight(ui.TimeGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
@@ -604,6 +611,7 @@ void RuleEditor::OnEmailToggled(bool checked)
 		ui.EmailFrame->setVisible(checked);
 		if (checked)
 		{
+			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
 			rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
 			m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
@@ -611,6 +619,7 @@ void RuleEditor::OnEmailToggled(bool checked)
 		else
 		{
 			delete m_ruleObject.Rules.take(RULE_TYPE_EMAIL);
+			ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
