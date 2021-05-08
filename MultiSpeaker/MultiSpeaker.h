@@ -52,6 +52,9 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		2021 - Carl Miller- for Phase3
+//					use SSL_SELF_CERT_CN for ssl cert CN.
+//					Added Restart().
 //-------------------------------------------------------------------------------
 //
 // Summary: MultiSpeaker.h
@@ -176,7 +179,7 @@ private slots:
 	void OnWsdlTest();
 	void OnBrowseRoot();
 	void showProxy();
-
+	void Restart();
 };
 
 #endif // MULTISPEAKER_H

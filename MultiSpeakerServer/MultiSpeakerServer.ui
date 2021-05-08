@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MultiSpeakerServer</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="MultiSpeakerServer.qrc">
+    <normaloff>:/MultiSpeakerServer/Resources/MultiSpeakerServer.ico</normaloff>:/MultiSpeakerServer/Resources/MultiSpeakerServer.ico</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
@@ -439,6 +443,8 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="MultiSpeakerServer.qrc"/>
+ </resources>
  <connections/>
 </ui>

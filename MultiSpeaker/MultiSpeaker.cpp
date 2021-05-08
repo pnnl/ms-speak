@@ -55,6 +55,7 @@
 //		2019 - Added Squid.
 //		2021 - Carl Miller- for Phase3
 //					use SSL_SELF_CERT_CN for ssl cert CN.
+//					Added Restart().
 //-------------------------------------------------------------------------------
 //
 // Summary: MultiSpeaker.cpp
@@ -723,7 +724,8 @@ bool MultiSpeaker::OnSquidOut()
 				"To Effect these Proxy Configuration Changes, You Must Restart this Application.",
 				QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
 		{
-			QTimer::singleShot(0, this, SLOT(close()));
+			//QTimer::singleShot(0, this, SLOT(close()));
+			QTimer::singleShot(0, this, SLOT(Restart()));
 			return true;
 		}
 
@@ -731,6 +733,18 @@ bool MultiSpeaker::OnSquidOut()
 	}
 	return false;
 }
+
+//------------------------------------------------------------------------------
+// Restart
+void MultiSpeaker::Restart()
+{
+#include <QApplication>
+#include <QProcess>
+	qApp->quit();
+	QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
+	//close();
+}
+
 //------------------------------------------------------------------------------
 // OnHttpOut
 bool MultiSpeaker::OnHttpOut()

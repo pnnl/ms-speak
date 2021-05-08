@@ -198,7 +198,10 @@ copy "$(QtDir)\plugins\platforms\*.dll" "$(TargetDir)platforms
 copy "$(ProjectDir)\Resources\MultiSpeaker.ico" "$(TargetDir)
 
 copy "C:\OpenSSL-Win64\bin\libeay32.dll" "$(TargetDir)"
-copy "C:\OpenSSL-Win64\bin\ssleay32.dll" "$(TargetDir)"</Command>
+copy "C:\OpenSSL-Win64\bin\ssleay32.dll" "$(TargetDir)"
+copy "$(QtDir)\bin\libcrypto-1_1-x64.dll" "$(TargetDir)"
+copy "$(QtDir)\bin\libssl-1_1-x64.dll" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

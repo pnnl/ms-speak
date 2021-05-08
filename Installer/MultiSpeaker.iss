@@ -8,8 +8,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F58A5A61-D60E-4B83-AD6D-5D7E99B500B5}}
 AppName=MultiSpeaker
-AppVersion=21.04.20
-;AppVerName=MultiSpeaker 21.04.20
+AppVersion=21.05.07
+;AppVerName=MultiSpeaker 21.05.07
 AppPublisher=Pacific Northwest National Laboratory
 AppPublisherURL=http://www.pnnl.gov
 AppSupportURL=http://www.pnnl.gov
@@ -23,12 +23,12 @@ AppUpdatesURL=http://www.pnnl.gov
 ArchitecturesInstallIn64BitMode=x64
 DefaultDirName={pf}\PNNL\MultiSpeaker
 DefaultGroupName=PNNL\MultiSpeaker
-OutputBaseFilename=MultiSpeaker-21.04.20-win10-setup
+OutputBaseFilename=MultiSpeaker-21.05.07-win10-setup
 Compression=lzma
 SolidCompression=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
-VersionInfoVersion=21.04.20
+VersionInfoVersion=21.05.07
 VersionInfoCompany=Pacific Northwest National Laboratory
 
 [Languages]
@@ -57,12 +57,17 @@ Source: "..\x64\Release\libcrypto-1_1-x64.dll"; DestDir: "{app}"; check: Is64Bit
 Source: "..\x64\Release\libssl-1_1-x64.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\ssleay32.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\libeay32.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\d3dcompiler_47.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\libEGL.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\libGLESv2.dll"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\imageformats\*.*"; DestDir: "{app}\imageformats"; check: Is64BitInstallMode
 Source: "..\x64\Release\platforms\*.*"; DestDir: "{app}\platforms"; check: Is64BitInstallMode;
 Source: "..\x64\Release\sqldrivers\*.*"; DestDir: "{app}\sqldrivers"; check: Is64BitInstallMode;
 Source: "..\x64\Release\IdsEditor.ico"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\MultiSpeaker.ico"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\MultiSpeakerServer.ico"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\mss.crt"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\mss.key"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\WSDLs\EndPoints\*"; DestDir: "{app}\EndPoints"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 Source: "..\WSDLs\xsd\*"; DestDir: "{app}\xsd"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 ; MyFile.txt is an empty text file

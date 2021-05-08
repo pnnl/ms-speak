@@ -103,6 +103,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Networkd.lib;Qt5Widgetsd.lib;Qt5Xmld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(ProjectDir)\Resources\MultiSpeakerServer.ico" "$(TargetDir)"
+copy "$(ProjectDir)\Resources\mss.crt" "$(TargetDir)"
+copy "$(ProjectDir)\Resources\mss.key" "$(TargetDir)"
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -136,7 +142,10 @@
       <AdditionalDependencies>qtmain.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Network.lib;Qt5Widgets.lib;Qt5Xml.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(ProjectDir)\Resources\MultiSpeakerServer.ico" "$(TargetDir)</Command>
+      <Command>copy "$(ProjectDir)\Resources\MultiSpeakerServer.ico" "$(TargetDir)"
+copy "$(ProjectDir)\Resources\mss.crt" "$(TargetDir)"
+copy "$(ProjectDir)\Resources\mss.key" "$(TargetDir)"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

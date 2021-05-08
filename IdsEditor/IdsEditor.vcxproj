@@ -111,7 +111,7 @@
       <Command>copy "$(QtDir)\bin\Qt5Sqld.dll" "$(TargetDir)"
 md "$(TargetDir)sqldrivers"
 copy "$(QtDir)\plugins\sqldrivers\qsqlited.dll" "$(TargetDir)sqldrivers"
-copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)
+copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)"
 </Command>
     </PostBuildEvent>
     <QtMoc>
@@ -162,7 +162,8 @@ copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)
       <Command>copy "$(QtDir)\bin\Qt5Sql.dll" "$(TargetDir)"
 md "$(TargetDir)sqldrivers"
 copy "$(QtDir)\plugins\sqldrivers\qsqlite.dll" "$(TargetDir)sqldrivers"
-copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)
+copy "$(ProjectDir)\Resources\IdsEditor.ico" "$(TargetDir)"
+
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
