@@ -130,19 +130,19 @@ const QString GETMETHODS = QStringLiteral("GetMethods");
 const QString PINGURL = QStringLiteral("PingURL");
 
 //  Metering and Service Management Methods
-//     Connect/Disconnect Endpoint
+//     Connect/Disconnect Endpoint -verified
 const QString GET_CD_SUPPORTED_METERS = QStringLiteral("GetCDSupportedMeters");
 const QString INITIATE_CONNECT_DISCONNECT = QStringLiteral("InitiateConnectDisconnect");
 const QString IS_CD_SUPPORTED = QStringLiteral("IsCDSupported");
 const QString SET_CD_DEVICES_DISABLED = QStringLiteral("SetCDDevicesDisabled");
 const QString SET_CD_DEVICES_ENABLED = QStringLiteral("SetCDDevicesEnabled");
-//     Meter reading Endpoint
+//     Meter Reading Endpoint -verified
 const QString GET_LATEST_METER_READINGS = QStringLiteral("GetLatestMeterReadings");
 const QString GET_METER_READINGS_BY_BILLINGCYCLE = QStringLiteral("GetMeterReadingsByBillingCycle");
 const QString GET_END_DEVICE_EVENTS_BY_METERIDS = QStringLiteral("GetEndDeviceEventsByMeterIDs");
 
 //  Customer Billing and PAN Management Methods
-//     Customer Billing Endpoint
+//     Customer Billing Endpoint -verified
 const QString CHANGE_CUSTOMER_DATA = QStringLiteral("ChangeCustomerData");
 const QString CHANGE_METER_DATA = QStringLiteral("ChangeMeterData");
 const QString CHANGE_STREET_LIGHT_DATA = QStringLiteral("ChangeStreetLightData");
