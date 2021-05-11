@@ -61,7 +61,7 @@
 		04/05/2021 - CHM: support Phase3 enhancements.
 		04/15/2021 - CHM: handle version 3 MS headers with no endpoint.
 							see V3_NULL_ENDPOINT.
-		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://172.18.77.1:3128/icap?cmd=7&arg=11
+		04/25/2021 - CHM: add back channel commands:  i.e., browse to http://192.168.1.14:3128/icap?cmd=7&arg=11
 							http://192.168.1.3:3128/icap?cmd=help
 							http://127.0.0.1:3128/icap?cmd=1
 		05/07/2021 - CHM: ensure use of just a single process so browser commands will work
@@ -69,7 +69,9 @@
 		In order for the browser commands and the weather thread updates to work properly,
 		I had to limit the number of child processes that the main icap process forks: I
 		set 'StartServers' and 'MaxServers' in c-icap.conf to 1.
- 
+		05/10/2021 - CHM: Support version 3 messages:
+							v3 msg hdr does not contain the Endpoint
+							v3 msg hdr does not contain caller information
 -------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -495,15 +497,14 @@ bool gblUsingTempRule = false;
 bool gblNeedLoadActiveRules = true;
 int gblNumBizRules=0;
 int gblRowCnt=0;
-int gblCurrentDay;
-int gblHourOfDay;
-int gblNumBizRecs;
+int gblCurrentDay=-1;
+int gblHourOfDay=-1;
 int gblCurrentTemp = 0;
 //int gblFileDesc = -1;
-
-/*
- * I THINK this version expects(only supports?) version 5 MSSPEAK messages...
- */
+// Declaration of thread condition variable 
+pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
+// declaring mutex 
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 
@@ -599,6 +600,18 @@ struct ci_fmt_entry MspFmtTable [] ={
 
 // curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
 
+/* Sequence of calls:
+msp_init_service()
+msp_post_init_service()
+------ iterate
+	msp_release_request_data()
+	msp_init_request_data()
+	msp_preview_handler()
+	msp_io()
+	msp_end_of_data_handler()
+---------------
+void msp_close_service();
+*/
 // module prototypes
 void msp_close_service();
 void *msp_init_request_data(ci_request_t *);
@@ -635,8 +648,8 @@ void WriteLog(int, FILE *, const char *, ...);
 void msp_dumphex(char *, int);
 bool LoadActiveRules( char * );
 static ci_membuf_t *generate_error_page(ci_request_t *);
-static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
-static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo);
+static bool get_method_info(xmlNodePtr, struct srv_msp_msg_info *);
+static bool get_caller_info(xmlNodePtr, struct srv_msp_msg_info *);
 xmlNodePtr getChildNode(xmlNodePtr currnode, const xmlChar *elem);
 BIZ_RULE *GetBusinessRecord(struct srv_msp_data *, int *);
 
@@ -1138,7 +1151,9 @@ void *WeatherUpdater(void *data)
 		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 		char api_buffer[APIBUFFLEN+1];
 		//unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
-		unsigned seconds = WEATHER_UPDATE_INTERVAL * 2;
+		unsigned seconds = WEATHER_UPDATE_INTERVAL * 18;
+		bool init = true;
+
 		curl = curl_easy_init();
 		ci_debug_printf(1, "\n*** Weather Updater started ***\n");
 		if( curl)
@@ -1202,7 +1217,15 @@ void *WeatherUpdater(void *data)
 					}
 					ci_debug_printf(3, "*** Weather Updated ***\n");
 					init_string(&xmlStr);
+				} // not gblTempTestMode
+				if (init) {
+					pthread_mutex_lock(&lock); // acquire lock 
+					gblThreadRunning = true;
+					pthread_cond_signal(&cond1);
+					pthread_mutex_unlock(&lock);// release lock
+					init = false;
 				}
+
 				sleep( seconds );
 			} while( true );
 			curl_easy_cleanup(curl); 
@@ -1252,9 +1275,21 @@ bool LoadActiveRules( char *pDatabaseName ){
 			}
 		}
 		else if( gblUsingTempRule ){ // also, m_AppId must not be NULL
+			ci_debug_printf(4, "\n *** WAITING FOR WEATHER UPDATE APPLICATION TO START ***\n");
 			// Create weather update thread, must be called after GetTesterData
 			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
-			gblThreadRunning = true;
+			//wait for WeatherUpdater to start
+			/* pthread_cond_wait should be called with mutex locked by the
+			* calling thread or undefined behaviour may result. Also, use the
+			* shared boolean predicate 'gblNewSVMsg' since spurious wakeups
+			* from the pthread_cond_wait() function may occur.
+			*/
+			pthread_mutex_lock(&lock);
+			while (!gblThreadRunning) {
+				pthread_cond_wait(&cond1, &lock);
+			}
+			pthread_mutex_unlock(&lock);
+			ci_debug_printf(4, "\n *** WEATHER UPDATE APPLICATION STARTED ***\n");
 		}
 	}
 	else{
@@ -1418,6 +1453,9 @@ void *msp_init_request_data(ci_request_t * req) // first call
 	mspd->maxBodyData = 0;
 	mspd->expectedData = 0;
 	mspd->eof = 0;
+	mspd->bHasCommand = false;
+	mspd->bHasArg = false;
+	mspd->Command = BCC_NO_CMD;	
 	return mspd;      /*Get from a pool of pre-allocated structs better...... */
 }
 
@@ -1427,7 +1465,7 @@ void *msp_init_request_data(ci_request_t * req) // first call
 */
 void msp_release_request_data(void *data)
 {
-	ci_debug_printf(5, "\n*** msp_release_request_data:: ***\n");
+	ci_debug_printf(4, "\n*** msp_release_request_data:: ***\n");
 	/*The data points to the echo_req_data struct we allocated in function echo_init_service */
 	struct srv_msp_data *mspd = data;
 	if( mspd->body.type ){
@@ -1469,7 +1507,7 @@ void msp_release_request_data(void *data)
 	 206 (Partial Content) responses is an ICAP extension that allows the
 	ICAP agents to optionally combine adapted and original HTTP message
 	content.
-	 back channel commands:  browse to http://172.18.77.1:3128/icap?2
+	 back channel commands:  browse to http://192.168.1.14:3128/icap?2
  */
 int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t * req)
 {
@@ -1494,7 +1532,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			return CI_ERROR; 
 		}
 		//ci_debug_printf(0, "msp_preview_handler: NO BODY:\n");
-		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://172.18.77.1:3128/icap?cmd=2 [&arg=]
+		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://192.168.1.14:3128/icap?cmd=2 [&arg=]
 		if( !referer ){
 			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
 			unlock_data(req);
@@ -1532,7 +1570,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		mspd->Command = cmd;
 		if( (cmd == BCC_SET_CURRENT_TEMP) || (cmd == BCC_SET_CURRENT_HOUR) ){
 			// check to see if an arg also passed in
-			//	http://172.18.77.1:3128/icap?cmd=2&arg=22 
+			//	http://192.168.1.14:3128/icap?cmd=2&arg=22 
 			// &arg=22 
 			needle = "&arg=";
 			needle_length = strlen(needle);
@@ -1566,7 +1604,9 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
 	mspd->isReqmod = 0;
-
+	mspd->bHasCommand = false;
+	mspd->bHasArg = false;
+	mspd->Command = BCC_NO_CMD;
 	/*
 		from the wake forest pcap data (MS v3) this is what the Post Header contains:
 			POST /omsservices/services/OA_ServerSoap HTTP/1.0
@@ -1725,7 +1765,7 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=\n  i.e.,\n      http://172.18.77.1:3128/icap?cmd=4";
+	char *pCmd = "http://proxyIP:port/icap?cmd=\n  i.e.,\n      http://192.168.1.14:3128/icap?cmd=4";
 	ci_debug_printf(1, "\nUser Commands Available Thru: '%s'\n",pCmd);
 	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
@@ -1760,7 +1800,7 @@ void BccUsage(void)
 				ci_debug_printf(1, "     (also via 'icap?cmd=help')\n");
 				break;
 			default:
-				ci_debug_printf(1, "Unsupported User Command '%d' in Usage.\n", cmd);
+				ci_debug_printf(1, "User Command '%d' Not Supported.\n", cmd);
 				BccUsage();
 				break;
 		}
@@ -1791,7 +1831,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	const int REQ_TYPE = ci_req_type(req);
 	struct srv_msp_data *mspd = ci_service_data(req);
 
-	ci_debug_printf(5, "\n*** msp_end_of_data_handler:: ***\n");
+	ci_debug_printf(4, "\n*** msp_end_of_data_handler:: ***\n");
 #ifdef _SHOW_PIDS_
 	pid_t pid = getpid();
 #endif
@@ -2062,7 +2102,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
             ci_request_t * req)
 {
-	ci_debug_printf(5, "\n*** msp_io:: ***\n");
+	ci_debug_printf(4, "\n*** msp_io:: ***\n");
 	int ret = CI_OK;
 	struct srv_msp_data *mspd = ci_service_data(req);
 
@@ -2347,33 +2387,39 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		*pErrRet = MSP_ERROR;
 		return NULL;
 	}
-
-	ci_debug_printf(4, "Current XML Method is: '%s@%s'\n", pMethod, pEndpoint);
-
+	if (pMsgInfo->bIsV3) {
+		ci_debug_printf(4, "Current XML Method is: '%s %s'\n", pMethod, "(No Endpoints in V3 Headers)");
+	}
+	else {
+		ci_debug_printf(4, "Current XML Method and Endpoint: '%s, %s'\n", pMethod, pEndpoint);
+	}
 	// TODO, find pRuleData from IP Addresses (src/dest) ??
 	//		we may not need to do that, if each separate connection is handled by a separate
 	//		c-icap thread, with it's own copy of BIZ_RULE....
 
 	BIZ_RULE *pRuleData = gblpBizRules;
-	for(i = 0; i < gblNumBizRecs; i++)
+	for(i = 0; i < gblNumBizRules; i++)
 	{
+		// check endpoint, if v3, it is not available
 		if( pMsgInfo->bIsV3 || !strcmp( pRuleData->m_EndPoint, pEndpoint) )
 		{
+			// found the endpoint (or if v3, don't care), so check method now
 			if( !strcmp( pRuleData->m_Method, pMethod) ){
-				ci_debug_printf(4, "Found Business Record for %s@%s:\n", pMethod, pEndpoint );
+				ci_debug_printf(4, "Found Business Record for %s / %s\n", pMethod, pEndpoint );
 				break;
 			}
 			else{
-				ci_debug_printf(4, "Checking Business Record for %s@%s:\n",
-				                pRuleData->m_Method,  pRuleData->m_Method);
+				ci_debug_printf(4, "Checking Business Record for %s / %s\n",
+					pRuleData->m_Method, pRuleData->m_EndPoint);
+				ci_debug_printf(4, "( %s / %s )\n", pMethod, pEndpoint);
 			}
 		}
 		pRuleData++;
 	}
-	if( i == gblNumBizRecs )
+	if( i == gblNumBizRules )
 	{
 		if( mspd->isReqmod ){
-			ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Request.\n", pMethod, pEndpoint );
+			ci_debug_printf(1, "\nNo Business Rules Defined for %s / %s, Allowing Request.\n", pMethod, pEndpoint );
 		}
 		//else{
 		//	ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Response.\n", pMethod, pEndpoint );
@@ -2387,7 +2433,118 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 			// for returning a business rule violation error page
 			if( !get_caller_info(root, pMsgInfo) ) // squirrel away some info needed for returning a business rule violation error page
 			{
+				/*
+				THE VERSION 5 WSDLS REFERENCE XSD FILES, BUT THE VERSION 3 ONES DON'T
+				SO V3 DON'T USE THE MultiSpeakWebServicesRequestMsgHeader, INSTEAD THE HAVE
+				THIS EMBEDDED IN THE REQUEST:
+				<s:complexType name="MultiSpeakMsgHeader">
+				<s:attribute name="Version" type="s:string"/>
+				<s:attribute name="UserID" type="s:string"/>
+				<s:attribute name="Pwd" type="s:string"/>
+				<s:attribute name="AppName" type="s:string"/>
+				<s:attribute name="AppVersion" type="s:string"/>
+				<s:attribute name="Company" type="s:string"/>
+				<s:attribute default="feet" name="CSUnits" type="tns:MessageHeaderCSUnits"/>
+				<s:attribute name="CoordinateSystem" type="s:string"/>
+				<s:attribute name="Datum" type="s:string"/>
+				<s:attribute name="SessionID" type="s:string"/>
+				<s:attribute name="PreviousSessionID" type="s:string"/>
+				<s:attribute name="ObjectsRemaining" type="s:integer"/>
+				<s:attribute name="LastSent" type="s:string"/>
+				<s:attribute name="RegistrationID" type="s:string"/>
+				<s:attribute name="AuditID" type="s:string"/>
+				<s:attribute name="MessageID" type="s:string"/>
+				<s:attribute name="TimeStamp" type="s:dateTime"/>
+				<s:attribute name="BuildString" type="s:string"/>
+				<s:anyAttribute/>
+				</s:complexType>
+
+				INSTEAD OF THIS:
+				<xsd:complexType name="MultiSpeakRequestMsgHeader">
+				<xsd:sequence>
+				<xsd:element name="MultiSpeakVersion" type="com:MultiSpeakVersion"/>
+				<xsd:element name="Caller" type="com:Caller"/>
+				<xsd:element name="CodedNames" type="com:CodedNames" minOccurs="0"/>
+				<xsd:element name="CoordinateSystemInformation" type="com:CoordinateSystemInformation" minOccurs="0"/>
+				<xsd:element name="DataSetState" type="com:DataSetState" minOccurs="0"/>
+				<xsd:element name="DoNotReply" type="com:registrationIDs" minOccurs="0">
+				</xsd:element>
+				</xsd:sequence>
+				<xsd:attribute name="DefaultRegisteredName" type="prim:alphaNumericRestrictedString">
+				</xsd:attribute>
+				<xsd:attribute name="DefaultSystemName" type="prim:alphaNumericRestrictedString">
+				</xsd:attribute>
+				<xsd:attribute name="DefaultUtility" type="xsd:string">
+				</xsd:attribute>
+				<xsd:attribute name="DefaultCurrencyCode" type="enum:currencyCode" use="optional">
+				</xsd:attribute>
+				<xsd:attribute name="RegistrationID" type="prim:MultiSpeakGUID">
+				</xsd:attribute>
+				<xsd:attribute name="MessageID" type="xsd:string" use="required">
+				</xsd:attribute>
+				<xsd:attribute name="TimeStamp" type="xsd:dateTime" use="required">
+				</xsd:attribute>
+				<xsd:attribute name="MessageCreatedTimeStamp" type="xsd:dateTime">
+				</xsd:attribute>
+				<xsd:attribute name="Context" type="com:MessageContext">
+				</xsd:attribute>
+				<xsd:anyAttribute namespace="##any" processContents="lax"/>
+				</xsd:complexType>
+				
+				AND in \mspCommonTypes.xsd
+				<xs:complexType name="Caller">
+				<xs:sequence>
+				<xs:element name="AppName" type="xs:string">
+				</xs:element>
+				<xs:element name="AppVersion" type="xs:string" minOccurs="0">
+				</xs:element>
+				<xs:element name="Company" type="xs:string">
+				</xs:element>
+				<xs:element name="AuditID" type="xs:string" minOccurs="0">
+				</xs:element>
+				<xs:element name="AuditPassword" type="xs:string" minOccurs="0">
+				</xs:element>
+				<xs:element name="SystemID" type="xs:string" minOccurs="0">
+				</xs:element>
+				<xs:element name="Password" type="xs:string" minOccurs="0">
+				</xs:element>
+				</xs:sequence>
+				</xs:complexType>
+				*/
 				ci_debug_printf(0, "*** ERROR getting caller information ...\n");
+			TODO: Handle this successfully, it is not required that the user
+					provide an appname of company, esp. for v3
+				/*char buf[1000];
+				size_t len = ci_headers_pack_to_buffer(root, buf, 1000);
+				msp_dumphex(buf, len);
+				msp_dumphex(pMsgInfo, 200);*/
+				/*
+				* Dump the document to a buffer and print it
+				* for demonstration purposes.
+				* /
+				xmlChar *xmlbuff;
+				int buffersize;
+				xmlDocDumpFormatMemory(xmlDoc, &xmlbuff, &buffersize, 1);
+				printf("xmlDocDumpFormatMemory::%s", (char *)xmlbuff);
+				// Free associated memory.
+				xmlFree(xmlbuff);
+
+				/ *xmlChar *s;
+				int size;
+				char * xmlString;
+				xmlDocDumpMemory((xmlDocPtr)xmlDoc, &s, &size);
+				xmlString = (char *)s;
+				printf("%s", xmlString);
+				xmlFree(s);* /
+
+				// allocate a buffer to dump into
+				xmlBufferPtr buf = xmlBufferCreate();
+				// dump the node
+				xmlNodeDump(buf, xmlDoc, root, 0, 0 );
+				msp_dumphex((char *)buf, 1000);
+				xmlFree(buf);
+				*/
+
 				*pErrRet = MSP_ERROR;
 				pRuleData = NULL;
 			}
@@ -2678,48 +2835,102 @@ static bool get_method_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
 
 //
 //////////////
-static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo)
+static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 {
 	xmlNodePtr cur_node = NULL;
 	xmlNodePtr nxt_node = NULL;
 	xmlNodePtr chld_node = NULL;
+	xmlAttr *cur_attr = NULL;
+	xmlChar *attr = NULL;
+
 	int num_needed = 2;
 	int num_gotten = 0;
 	bool bFound = false;
+	bool bFoundAttr = false;
 
 	for (cur_node = root; cur_node; cur_node = cur_node->next ){
 		if( bFound)
 			return false;
 		if( cur_node->type == XML_ELEMENT_NODE)
 		{
-			if( (!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")))
+			ci_debug_printf(4, "*** %s \n", cur_node->name);
+			/* if Version3:
+				*** Envelope
+				*** Header
+				*** MultiSpeakMsgHeader
+				*** Body
+				*** PingURL
+			if Version5:
+				*** Envelope
+				*** Header
+				*** MultiSpeakRequestMsgHeader
+				*** MultiSpeakVersion
+				*** MajorVersion
+				*** MinorVersion
+				*** Build
+				*** Caller
+				*** Body
+				*** PingURL
+			*/
+			if( (!xmlStrcasecmp(cur_node->name, (const xmlChar *)"MultiSpeakMsgHeader")) ||
+				(!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")) )
 			{
-				for (chld_node = cur_node->children; chld_node; chld_node = chld_node->next ){
-					if( (!xmlStrcasecmp(chld_node->name, (const xmlChar *)"AppName")))
-					{
-						strncpy(pMsgInfo->appname, (char *)xmlNodeGetContent(chld_node), CI_MAXAPPNAMELEN);
-						num_gotten++;
+				if (pMsgInfo->bIsV3) { // MultiSpeakMsgHeader
+					//ci_debug_printf(4, "*** VERSION 3 cur_node->name: %s Found \n", cur_node->name);
+					chld_node = cur_node;
+				}
+				else {
+					chld_node = cur_node->children;
+				}
+
+				for (; chld_node; ) {
+					//ci_debug_printf(4, "*** chld_node->name: %s Found \n", chld_node->name);
+					if (pMsgInfo->bIsV3) {
+						// get attributes
+						//cur_attr = xmlGetProp(chld_node, (const xmlChar *)"AppName");
+						//if (cur_attr) {
+						for (cur_attr = chld_node->properties; cur_attr; cur_attr = cur_attr->next) {
+							bFoundAttr = true;
+							ci_debug_printf(4, "  -> with attribute : %s\n", cur_attr->name);
+							attr = xmlNodeGetContent((const xmlNode *)cur_attr);
+							ci_debug_printf(4, "     -> with Value: %s\n", attr);
+						}
+						if( !bFoundAttr )
+							ci_debug_printf(4, "no attributes found\n");
+						num_gotten = num_needed;
+						bFound = true;
+						chld_node = NULL;
 					}
-					else if( (!xmlStrcasecmp(chld_node->name, (const xmlChar *)"Company")))
-					{
-						strncpy(pMsgInfo->company, (char *)xmlNodeGetContent(chld_node), CI_MAXCOMPANYLEN);
-						num_gotten++;
-					}
-					if( num_gotten == num_needed ){
+					else {
+						if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"AppName")))
+						{
+							strncpy(pMsgInfo->appname, (char *)xmlNodeGetContent(chld_node), CI_MAXAPPNAMELEN);
+							ci_debug_printf(4, "*** AppName Found: %s \n", pMsgInfo->appname);
+							num_gotten++;
+						}
+						else if ((!xmlStrcasecmp(chld_node->name, (const xmlChar *)"Company")))
+						{
+							strncpy(pMsgInfo->company, (char *)xmlNodeGetContent(chld_node), CI_MAXCOMPANYLEN);
+							ci_debug_printf(4, "*** Company Found: %s \n", pMsgInfo->company);
+							num_gotten++;
+						}
+						chld_node = chld_node->next;
+					} // v5
+					if (num_gotten == num_needed) {
 						bFound = true;
 						break;
 					}
-				}
+				} // for
 				nxt_node = NULL;
 			}
 			else{
 				nxt_node = cur_node->children;
 			}
-		}//  for 
+		}//  if XML_ELEMENT_NODE 
 		else{
 			nxt_node = cur_node->children;
 		}
-		if( !bFound)
+		if( !bFound )
 			get_caller_info(nxt_node, pMsgInfo);
 	}// for
 
