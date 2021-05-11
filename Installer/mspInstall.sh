@@ -394,11 +394,11 @@ else
 			if make; then
 				if sudo make install; then
 					cd ../
-					sudo mkdir -p /usr/local/share/c_icap
-					sudo mkdir -p /usr/local/share/c_icap/templates
-					if sudo mkdir -p /usr/local/share/c_icap/templates/msp; then
-						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en; then
-							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en; then
+					#sudo mkdir -p /usr/local/share/c_icap
+					#sudo mkdir -p /usr/local/share/c_icap/templates
+					#if sudo mkdir -p /usr/local/share/c_icap/templates/msp; then
+						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en-US; then
+							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en-US; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
 								sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
 								sudo cp install/BizRules.db $NEW_DIR
@@ -416,8 +416,8 @@ else
 						else
 							retval=$?
 						fi
-					else
-						retval=$?
+					#else
+					#	retval=$?
 					fi
 				else
 					retval=$?
