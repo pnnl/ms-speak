@@ -640,8 +640,8 @@ CI_DECLARE_MOD_DATA ci_service_module_t service ={
 };
 
 // general prototypes
-int handle_request_preview(BIZ_RULE *, char *);
-int handle_response_preview(BIZ_RULE *);
+int handle_request_preview(BIZ_RULE *, char *, bool);
+int handle_response_preview(BIZ_RULE *, bool);
 void BccUsage(void);
 void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
 void WriteLog(int, FILE *, const char *, ...);
@@ -811,7 +811,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	// assure all string buffs will be null-termed
 	for( int i=0; i<gblNumBizRules; i++ ){
 		gblpBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-		gblpBizRules[i].m_numRPH = WILDCARD;
+		gblpBizRules[i].m_numRPH = 0;
 		gblpBizRules[i].m_minTemp = WILDCARD;
 		gblpBizRules[i].m_maxTemp = WILDCARD;
 		gblpBizRules[i].m_minHour = WILDCARD;
@@ -2012,7 +2012,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	if( REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
 	{
-		msRet = handle_request_preview(pRuleData, &ViolationMessage[0]);
+		msRet = handle_request_preview(pRuleData, &ViolationMessage[0], mspd->msginfo.bIsV3);
 		if( msRet == MSP_BIZ_VIO)
 		{
 			if( pRuleData->m_Email ){
@@ -2046,7 +2046,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	else if( REQ_TYPE == ICAP_RESPMOD)
 	{
 		ci_debug_printf(5, "*** handling_response_preview ...\n");
-		msRet = handle_response_preview(pRuleData);
+		msRet = handle_response_preview(pRuleData, mspd->msginfo.bIsV3);
 		if( msRet == MSP_ERROR ){
 			icRet = CI_ERROR;
 		}
@@ -2176,18 +2176,26 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 * handle_request_preview - is only called if GetBusinessRecord() finds a match for the
 * 							method and endpoint in the packet.
 */
-int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
+int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 {
-
+	char *pEpMsg;
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
-	sprintf(pVioBuff, "### TESTING pVioBuff '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
-		"   Only %ld requests per day are allowed.",
-		pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
-	ci_debug_printf(2,"%s", pVioBuff);
+
+	if( bIsV3 ){
+		pEpMsg =  "(first found V3)";
+	}
+	else{
+		pEpMsg =  pRuleData->m_EndPoint;
+	}
+
+	//sprintf(pVioBuff, "### TESTING pVioBuff '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
+	//	"   Only %ld requests per day are allowed.",
+	//	pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numReq);
+	//ci_debug_printf(2,"%s", pVioBuff);
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
-	
+
 	if( gblHourTestMode ){
 		ci_debug_printf(1,"\nSimulating Hour of %d While in Test Mode.\n",gblHourTestMode);
 	}
@@ -2204,14 +2212,14 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 	if( (pRuleData->m_numReq != WILDCARD) && (pRuleData->m_NumValidRequests >= pRuleData->m_numReq) ){
 		sprintf(pVioBuff, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
 		    "   Only %ld requests per day are allowed.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numReq);
 		WriteLog(1, gblLogFile, pVioBuff);
 		//WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
 		//    "   Only %ld requests per day are allowed.",
-		//    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numReq);
+		//    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numReq);
 		return MSP_BIZ_VIO;
 	}
-	else if( pRuleData->m_numRPH != WILDCARD ){
+	else if( pRuleData->m_numRPH > 0 ){
 		if( pRuleData->m_NumValidRequestsPH == 0 ){
 			time(&pRuleData->m_StartTime);
 		}
@@ -2228,22 +2236,23 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 		if( pRuleData->m_NumValidRequestsPH >= pRuleData->m_numRPH ){
 			WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
 		    "   Only %ld requests per hour are allowed.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_numRPH);
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numRPH);
 			return MSP_BIZ_VIO;
 		}
 	}
+
 	// TODO: handle WILDCARDs for temp and time too
 	if( (pRuleData->m_maxHour != WILDCARD) && ((gblHourOfDay>pRuleData->m_maxHour) || (gblHourOfDay<pRuleData->m_minHour)) ){
 		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Time Violation:\n"
 		    "   These type of requests are only allowed between the hours of %ld and %ld.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_minHour, pRuleData->m_maxHour);
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour);
 		WriteLog(1, gblLogFile, "Current gblHourOfDay is %ld\n", gblHourOfDay);
 		return MSP_BIZ_VIO;
 	}
 	else if( (pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp>pRuleData->m_maxTemp) || (gblCurrentTemp<pRuleData->m_minTemp)) ){
 		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Temperature Violation:\n"
 		    "   These type of requests are only allowed when the temperature is between %ld and %ld degrees.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint, pRuleData->m_minTemp, pRuleData->m_maxTemp);
+		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp);
 		WriteLog(1, gblLogFile, "Current Temperature is %ld\n", gblCurrentTemp);
 		return MSP_BIZ_VIO;
 	}
@@ -2252,8 +2261,8 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 		//		that way, if endpoint is unreachable, we don't count these as successful requests.
 		//pRuleData->m_NumValidRequests++;
 		WriteLog(1, gblLogFile, "*** ACCEPTing %ld of %ld daily '%s' requests(%ld attempts) from '%s' Endpoint ***",
-		pRuleData->m_NumValidRequests+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_NumTotalRequests, pRuleData->m_EndPoint);
-		if( pRuleData->m_numRPH != WILDCARD ){
+		pRuleData->m_NumValidRequests+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg);
+		if( pRuleData->m_numRPH > 0 ){
 			WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
 		    pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
 		}
@@ -2264,9 +2273,16 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff)
 /*
 * handle_response_preview
 */
-int handle_response_preview(BIZ_RULE *pRuleData)
+int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
 {
+	char *pEpMsg;
 	ci_debug_printf(5, "    --->handle_response_preview::\n");
+	if( bIsV3 ){
+		pEpMsg =  "(first found V3)";
+	}
+	else{
+		pEpMsg =  pRuleData->m_EndPoint;
+	}
 	/* TODO: get ip address and lookup the right BIZ_RULE per IP....
 	 * ultimately, we'd want to index the src/dest ips to find the BIZ_RULE
 	 * then check if the method is part of that connection's BIZ_RULE...
@@ -2275,11 +2291,11 @@ int handle_response_preview(BIZ_RULE *pRuleData)
 	
 	pRuleData->m_NumValidRequests++;
 	WriteLog(1, gblLogFile, "*** Response ACCEPTED '%s' request %ld of %ld from '%s' Endpoint ***",
-		pRuleData->m_Method, pRuleData->m_NumValidRequests, pRuleData->m_numReq, pRuleData->m_EndPoint);
-	if( pRuleData->m_numRPH != WILDCARD ){
+		pRuleData->m_Method, pRuleData->m_NumValidRequests, pRuleData->m_numReq, pEpMsg);
+	if( pRuleData->m_numRPH > 0 ){
 		pRuleData->m_NumValidRequestsPH++;
 		WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
-		pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
+		pRuleData->m_NumValidRequestsPH, pRuleData->m_numRPH);
 	}
 	return MSP_OK; // always pass the response on to client;
 }
@@ -2511,9 +2527,6 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 				</xs:sequence>
 				</xs:complexType>
 				*/
-				ci_debug_printf(0, "*** ERROR getting caller information ...\n");
-			TODO: Handle this successfully, it is not required that the user
-					provide an appname of company, esp. for v3
 				/*char buf[1000];
 				size_t len = ci_headers_pack_to_buffer(root, buf, 1000);
 				msp_dumphex(buf, len);
@@ -2544,9 +2557,13 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 				msp_dumphex((char *)buf, 1000);
 				xmlFree(buf);
 				*/
-
-				*pErrRet = MSP_ERROR;
-				pRuleData = NULL;
+				//ci_debug_printf(0, "*** ERROR getting caller information ...\n");
+				//*pErrRet = MSP_ERROR;
+				//pRuleData = NULL;
+				// do not consider missing calling info a big deal
+				ci_debug_printf(4, "*** Caller Information is Absent.\n");
+				*pErrRet = MSP_OK;
+				pRuleData = pRuleData;
 			}
 			else{
 				*pErrRet = MSP_OK;
@@ -2853,30 +2870,30 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 			return false;
 		if( cur_node->type == XML_ELEMENT_NODE)
 		{
-			ci_debug_printf(4, "*** %s \n", cur_node->name);
+			ci_debug_printf(3, "*** %s \n", cur_node->name);
 			/* if Version3:
 				*** Envelope
 				*** Header
-				*** MultiSpeakMsgHeader
+				*** MultiSpeakMsgHeader		<===============
 				*** Body
 				*** PingURL
 			if Version5:
 				*** Envelope
 				*** Header
-				*** MultiSpeakRequestMsgHeader
+				*** MultiSpeakRequestMsgHeader \ MultiSpeakResponseMsgHeader
 				*** MultiSpeakVersion
 				*** MajorVersion
 				*** MinorVersion
 				*** Build
-				*** Caller
+				*** Caller					<===============
 				*** Body
 				*** PingURL
 			*/
 			if( (!xmlStrcasecmp(cur_node->name, (const xmlChar *)"MultiSpeakMsgHeader")) ||
 				(!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")) )
 			{
+				//ci_debug_printf(3, "*** cur_node->name: %s Found \n", cur_node->name);
 				if (pMsgInfo->bIsV3) { // MultiSpeakMsgHeader
-					//ci_debug_printf(4, "*** VERSION 3 cur_node->name: %s Found \n", cur_node->name);
 					chld_node = cur_node;
 				}
 				else {
@@ -2886,18 +2903,29 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 				for (; chld_node; ) {
 					//ci_debug_printf(4, "*** chld_node->name: %s Found \n", chld_node->name);
 					if (pMsgInfo->bIsV3) {
-						// get attributes
-						//cur_attr = xmlGetProp(chld_node, (const xmlChar *)"AppName");
-						//if (cur_attr) {
 						for (cur_attr = chld_node->properties; cur_attr; cur_attr = cur_attr->next) {
 							bFoundAttr = true;
-							ci_debug_printf(4, "  -> with attribute : %s\n", cur_attr->name);
-							attr = xmlNodeGetContent((const xmlNode *)cur_attr);
-							ci_debug_printf(4, "     -> with Value: %s\n", attr);
-						}
+							if ((!xmlStrcasecmp(cur_attr->name, (const xmlChar *)"AppName")))
+							{
+								strncpy(pMsgInfo->appname, (char *)xmlNodeGetContent((const xmlNode *)cur_attr), CI_MAXAPPNAMELEN);
+								ci_debug_printf(4, "*** AppName Found: %s \n", pMsgInfo->appname);
+								num_gotten++;
+							}
+							else if ((!xmlStrcasecmp(cur_attr->name, (const xmlChar *)"Company")))
+							{
+								strncpy(pMsgInfo->company, (char *)xmlNodeGetContent((const xmlNode *)cur_attr), CI_MAXCOMPANYLEN);
+								ci_debug_printf(4, "*** Company Found: %s \n", pMsgInfo->company);
+								num_gotten++;
+							}
+							else
+							{
+								ci_debug_printf(4, "  -> Found attribute : %s\n", cur_attr->name);
+								attr = xmlNodeGetContent((const xmlNode *)cur_attr);
+								ci_debug_printf(4, "     -> with Value: %s\n", attr);
+							}
+						} // for cur_attr
 						if( !bFoundAttr )
-							ci_debug_printf(4, "no attributes found\n");
-						num_gotten = num_needed;
+							ci_debug_printf(4, "No Attributes Found\n");
 						bFound = true;
 						chld_node = NULL;
 					}
@@ -2915,12 +2943,12 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 							num_gotten++;
 						}
 						chld_node = chld_node->next;
+						if (num_gotten == num_needed) {
+							bFound = true;
+							break;
+						}
 					} // v5
-					if (num_gotten == num_needed) {
-						bFound = true;
-						break;
-					}
-				} // for
+				} // for chld_node
 				nxt_node = NULL;
 			}
 			else{
@@ -2930,14 +2958,20 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 		else{
 			nxt_node = cur_node->children;
 		}
+		//if( !pMsgInfo->bIsV3 && !bFound )
 		if( !bFound )
 			get_caller_info(nxt_node, pMsgInfo);
 	}// for
 
 	if( *pMsgInfo->appname != 0x00 && *pMsgInfo->company != 0x00)
 		return true;
-	else
+	else{
+		if( *pMsgInfo->appname == 0x00 )
+			strncpy(pMsgInfo->appname, "N/A", CI_MAXAPPNAMELEN);
+		if( *pMsgInfo->company == 0x00 )
+			strncpy(pMsgInfo->company, "N/A", CI_MAXCOMPANYLEN);
 		return false;
+	}
 }
 
 void msp_dumphex(  char *data, int len )
