@@ -417,9 +417,8 @@ typedef struct _bizrule{
 	signed long m_maxTemp;
 	signed long m_minHour;
 	signed long m_maxHour;
-	signed long m_NumTotalRequests;
-	signed long m_NumValidRequests;
-	signed long m_NumValidRequestsPH;
+	signed long m_NumRequests;
+	signed long m_NumRequestsPH;
 	char  m_Function[MAX_DB_NAMELEN+1];
 	char  m_EndPoint[MAX_DB_NAMELEN+1];
 	char  m_Method[MAX_DB_NAMELEN+1];
@@ -679,8 +678,8 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 		TESTER_DATA	*pTester=&gblTesterStruct;
 		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
 		BIZ_RULE *pBzd = &pBizRecs[gblRowCnt++];
-		pBzd->m_NumValidRequests = 0;
-		pBzd->m_NumTotalRequests = 0;
+		pBzd->m_NumRequests = 0;
+		pBzd->m_NumRequestsPH = 0;
 		for(i = 0; i<colcount; i++ ){
 			if( !values[i] ){
 				continue;
@@ -693,6 +692,9 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_NUMRPH) ){
 				pBzd->m_numRPH = atoll(values[i]);
+				if( pBzd->m_numRPH == 0 ){ // special case in editor, 0 means not in use
+					pBzd->m_numRPH = WILDCARD;
+				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_MINTEMP) ){
 				pBzd->m_minTemp = atoll(values[i]);
@@ -811,7 +813,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	// assure all string buffs will be null-termed
 	for( int i=0; i<gblNumBizRules; i++ ){
 		gblpBizRules[i].m_numReq = WILDCARD; // preset for any missing fields in DB
-		gblpBizRules[i].m_numRPH = 0;
+		gblpBizRules[i].m_numRPH = WILDCARD;
 		gblpBizRules[i].m_minTemp = WILDCARD;
 		gblpBizRules[i].m_maxTemp = WILDCARD;
 		gblpBizRules[i].m_minHour = WILDCARD;
@@ -2179,6 +2181,8 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 {
 	char *pEpMsg;
+	char *pRequestStr;
+
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
 
 	if( bIsV3 ){
@@ -2187,11 +2191,6 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 	else{
 		pEpMsg =  pRuleData->m_EndPoint;
 	}
-
-	//sprintf(pVioBuff, "### TESTING pVioBuff '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
-	//	"   Only %ld requests per day are allowed.",
-	//	pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numReq);
-	//ci_debug_printf(2,"%s", pVioBuff);
 
 	time_t currtime = time(NULL);
 	struct tm *tm_struct = localtime(&currtime);
@@ -2203,24 +2202,29 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 		gblHourOfDay = tm_struct->tm_hour;
 		if( gblCurrentDay != tm_struct->tm_mday ){
 			gblCurrentDay = tm_struct->tm_mday;
-			pRuleData->m_NumValidRequests = 0;
-			pRuleData->m_NumTotalRequests = 0;
+			pRuleData->m_NumRequests = 0;
+			//pRuleData->m_NumRequestsPH = 0; allow hour to cross days
 		}
 	}
 
-	pRuleData->m_NumTotalRequests++; // TODO: only increment this TOTAL if get a response from the endpoint? - i don't think we want to wait, do it now
-	if( (pRuleData->m_numReq != WILDCARD) && (pRuleData->m_NumValidRequests >= pRuleData->m_numReq) ){
-		sprintf(pVioBuff, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
-		    "   Only %ld requests per day are allowed.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numReq);
+	// TODO: don't increment this count until we see a response come back from the endpoint
+	//		that way, if endpoint is unreachable, we don't count these as successful requests.
+	//BUT:  if we want to limit the # of ATTEMPTS, i.e., during a DDOS, then we should
+	//		increment it now....
+	pRuleData->m_NumRequests++;
+	if( (pRuleData->m_numReq != WILDCARD) && (pRuleData->m_NumRequests > pRuleData->m_numReq) ){
+		if( pRuleData->m_numReq == 1 )
+			pRequestStr = "request";
+		else
+			pRequestStr = "requests";
+		sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+		    "   Only %ld %s per day are allowed.",
+		    pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg, pRuleData->m_numReq, pRequestStr);
 		WriteLog(1, gblLogFile, pVioBuff);
-		//WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
-		//    "   Only %ld requests per day are allowed.",
-		//    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numReq);
 		return MSP_BIZ_VIO;
 	}
-	else if( pRuleData->m_numRPH > 0 ){
-		if( pRuleData->m_NumValidRequestsPH == 0 ){
+	else if( pRuleData->m_numRPH != WILDCARD ){ // special case, if not WILDCARD, will be > 0
+		if( pRuleData->m_NumRequestsPH == 0 ){
 			time(&pRuleData->m_StartTime);
 		}
 		else{
@@ -2228,43 +2232,45 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 			time(&now);
 			double ElapsedTime = difftime(now, pRuleData->m_StartTime);// seconds
 			if( ElapsedTime >= 3600 ){
-				pRuleData->m_NumValidRequestsPH = 0;
+				pRuleData->m_NumRequestsPH = 0;
 				time(&pRuleData->m_StartTime);
 			}
-		}		
-		
-		if( pRuleData->m_NumValidRequestsPH >= pRuleData->m_numRPH ){
-			WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Frequency Violation:\n"
-		    "   Only %ld requests per hour are allowed.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_numRPH);
+		}
+		pRuleData->m_NumRequestsPH++;
+		if( pRuleData->m_NumRequestsPH > pRuleData->m_numRPH ){
+			if( pRuleData->m_numReq == 1 )
+				pRequestStr = "request";
+			else
+				pRequestStr = "requests";
+			sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+			"   Only %ld %s per hour are allowed.",
+				pRuleData->m_Method, pRuleData->m_NumRequestsPH, pEpMsg, pRuleData->m_numRPH, pRequestStr);
+			WriteLog(1, gblLogFile, pVioBuff);
 			return MSP_BIZ_VIO;
 		}
 	}
 
-	// TODO: handle WILDCARDs for temp and time too
 	if( (pRuleData->m_maxHour != WILDCARD) && ((gblHourOfDay>pRuleData->m_maxHour) || (gblHourOfDay<pRuleData->m_minHour)) ){
-		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Time Violation:\n"
-		    "   These type of requests are only allowed between the hours of %ld and %ld.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour);
-		WriteLog(1, gblLogFile, "Current gblHourOfDay is %ld\n", gblHourOfDay);
+		sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
+		    "   These type of requests are only allowed between the hours of %ld and %ld.\n",
+			"   Current Hour Of Day is %ld\n"
+		    pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour, gblHourOfDay);
+		WriteLog(1, gblLogFile, pVioBuff);
 		return MSP_BIZ_VIO;
 	}
-	else if( (pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp>pRuleData->m_maxTemp) || (gblCurrentTemp<pRuleData->m_minTemp)) ){
-		WriteLog(1, gblLogFile, "### REJECTing '%s' request #%ld from %s Endpoint on Temperature Violation:\n"
+	else if( (pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp >p RuleData->m_maxTemp) || (gblCurrentTemp  <pRuleData->m_minTemp)) ){
+		sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Temperature Violation:\n"
 		    "   These type of requests are only allowed when the temperature is between %ld and %ld degrees.",
-		    pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp);
-		WriteLog(1, gblLogFile, "Current Temperature is %ld\n", gblCurrentTemp);
+			"   Current Temperature is %ld\n"
+		    pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,gblCurrentTemp);
+		WriteLog(1, gblLogFile, pVioBuff);
 		return MSP_BIZ_VIO;
 	}
 	else{
-		// TODO: don't increment this count until we see a response come back from the endpoint
-		//		that way, if endpoint is unreachable, we don't count these as successful requests.
-		//pRuleData->m_NumValidRequests++;
-		WriteLog(1, gblLogFile, "*** ACCEPTing %ld of %ld daily '%s' requests(%ld attempts) from '%s' Endpoint ***",
-		pRuleData->m_NumValidRequests+1, pRuleData->m_numReq, pRuleData->m_Method, pRuleData->m_NumTotalRequests, pEpMsg);
-		if( pRuleData->m_numRPH > 0 ){
-			WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
-		    pRuleData->m_NumValidRequestsPH+1, pRuleData->m_numRPH);
+		WriteLog(1, gblLogFile, "'%s' request %ld of %ld daily requests for the '%s' Endpoint was Accepted.", pRuleData->m_Method, pRuleData->m_NumRequests, pRuleData->m_numReq, pEpMsg);
+		if( pRuleData->m_numRPH != WILDCARD ){
+			WriteLog(1, gblLogFile,    "\n( %ld of %ld this hour )\n",
+		    pRuleData->m_NumRequestsPH, pRuleData->m_numRPH);
 		}
 		return MSP_OK;
 	}
@@ -2289,13 +2295,13 @@ int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
 	 */
 	//WriteLog(4, gblLogFile, "got ICAP_RESPMOD, ignoring...");
 	
-	pRuleData->m_NumValidRequests++;
+	//pRuleData->m_NumRequests++;
 	WriteLog(1, gblLogFile, "*** Response ACCEPTED '%s' request %ld of %ld from '%s' Endpoint ***",
-		pRuleData->m_Method, pRuleData->m_NumValidRequests, pRuleData->m_numReq, pEpMsg);
-	if( pRuleData->m_numRPH > 0 ){
-		pRuleData->m_NumValidRequestsPH++;
+		pRuleData->m_Method, pRuleData->m_NumRequests, pRuleData->m_numReq, pEpMsg);
+	if( pRuleData->m_numRPH != WILDCARD ){
+		//pRuleData->m_NumRequestsPH++;
 		WriteLog(1, gblLogFile, "*** ( %ld of %ld this hour ) ***",
-		pRuleData->m_NumValidRequestsPH, pRuleData->m_numRPH);
+		pRuleData->m_NumRequestsPH, pRuleData->m_numRPH);
 	}
 	return MSP_OK; // always pass the response on to client;
 }
@@ -2870,7 +2876,7 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 			return false;
 		if( cur_node->type == XML_ELEMENT_NODE)
 		{
-			ci_debug_printf(3, "*** %s \n", cur_node->name);
+			ci_debug_printf(4, "*** %s \n", cur_node->name);
 			/* if Version3:
 				*** Envelope
 				*** Header
@@ -2892,7 +2898,7 @@ static bool get_caller_info(xmlNodePtr root, struct srv_msp_msg_info *pMsgInfo )
 			if( (!xmlStrcasecmp(cur_node->name, (const xmlChar *)"MultiSpeakMsgHeader")) ||
 				(!xmlStrcasecmp(cur_node->name, (const xmlChar *)"Caller")) )
 			{
-				//ci_debug_printf(3, "*** cur_node->name: %s Found \n", cur_node->name);
+				//ci_debug_printf(4, "*** cur_node->name: %s Found \n", cur_node->name);
 				if (pMsgInfo->bIsV3) { // MultiSpeakMsgHeader
 					chld_node = cur_node;
 				}
