@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- edited with XMLSpy v2015 sp2 (x64) (http://www.altova.com) by Gary A McNaughton (private) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.multispeak.org/V5.0/primitives" targetNamespace="http://www.multispeak.org/V5.0/primitives" version="5.0.7">
+	<xs:annotation>
+		<xs:documentation>MultiSpeak mspPrimitives Schema. Version 5.0.7 Release (Version = "V5.0.7 Release") Release dated: 2/20/2015.  Cooperative Energy Services (CES) reserves exclusive discretion to determine the content and definition of MultiSpeak®,a federally registered trademark of NRECA. Copyright © 2000-2015 CES. 
+
+
+Disclaimer: Modifications of this document have been made, and will be made, on the basis of consensus among the participants of the MultiSpeak Initiative. Cornice Engineering, Inc. (Cornice) hereby prepared this document to reflect the input provided by the participants as of the date listed above. This work is being completed under contract to the National Rural Electric Cooperative Association (NRECA) Neither Cornice nor NRECA (i) makes any representation or warranty, express or implied, as to the suitability of this information for any purpose whatsoever, or (ii) assumes any responsibility for damages or other liability whatsoever.</xs:documentation>
+	</xs:annotation>
+	<xs:simpleType name="alphaNumericRestrictedString">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Za-z0-9]*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="delimiter">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="domainName">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="doubleType">
+		<xs:restriction base="xs:double"/>
+	</xs:simpleType>
+	<xs:simpleType name="expirationTime">
+		<xs:annotation>
+			<xs:documentation>A point in time after which a request expires.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="mspDateTime"/>
+	</xs:simpleType>
+	<xs:simpleType name="floatType">
+		<xs:restriction base="xs:float"/>
+	</xs:simpleType>
+	<xs:simpleType name="integerType">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<xs:simpleType name="mspDateTime">
+		<xs:annotation>
+			<xs:documentation>ISO 8601 date time.  All dateTime fields will be formatted with UTC offsets.  The use of "Z" is acceptable to denote UTC or "Zulu" time.all dates will be formatted as:
+
+2005-06-15T11:30:22.56-07:00  
+
+where the date is in YYYY-MM-DD format and the time is in military time, beginning after the date-time separator “T”, in hh:mm:ss.ss format, followed by the time zone offset.  The use of fractional seconds is optional and any level of decimal precision in seconds is supported.  The time zone offset is shown as hh:mm offset from GMT, with either a positive offset (east of the prime meridian) or negative offset (west of the prime meridian).  </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:dateTime"/>
+	</xs:simpleType>
+	<xs:simpleType name="MultiSpeakGUID">
+		<xs:annotation>
+			<xs:documentation>This is intended to be a universally unique identifier (UUID) for an instance of an object.  It is intended that this identifier is compliant with the IETF RFC 4122 ("A Universally Unique IDentifier URN Namespace") definition of a UUID. Furthermore, the pattern used to restrict the xs:string should support any of the RFC 4122 UUID variants, including the Microsoft Globally Unique Identifier (GUID) variant of the UUID, without being restricted to supporting ONLY the Microsoft GUID definition.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="objectsRemaining">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="-1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="percent">
+		<xs:restriction base="xs:float"/>
+	</xs:simpleType>
+	<xs:simpleType name="stringType">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:simpleType name="trueBoolean">
+		<xs:restriction base="xs:boolean">
+			<xs:pattern value="(true|1)"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="valueFloat">
+		<xs:restriction base="xs:float"/>
+	</xs:simpleType>
+</xs:schema>

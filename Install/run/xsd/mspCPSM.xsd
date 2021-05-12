@@ -1,0 +1,1682 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- edited with XMLSpy v2015 sp2 (x64) (http://www.altova.com) by Gary A McNaughton (private) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.multispeak.org/V5.0/cpsm" xmlns:cpsm="http://www.multispeak.org/V5.0/cpsm" xmlns:cim="cimBase2" xmlns:gml="http://www.multispeak.org/V5.0/gml" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" targetNamespace="http://www.multispeak.org/V5.0/cpsm" elementFormDefault="qualified" version="5.0.7">
+	<xs:annotation>
+		<xs:documentation>MultiSpeak mspCPSM Schema. Version 5.0.7 Release (Version = "V5.0.7 Release") Release dated: 2/20/2015.  Cooperative Energy Services (CES) reserves exclusive discretion to determine the content and definition of MultiSpeak®,a federally registered trademark of NRECA. Copyright © 2000-2015 CES. 
+
+
+Disclaimer: Modifications of this document have been made, and will be made, on the basis of consensus among the participants of the MultiSpeak Initiative. Cornice Engineering, Inc. (Cornice) hereby prepared this document to reflect the input provided by the participants as of the date listed above. This work is being completed under contract to the National Rural Electric Cooperative Association (NRECA) Neither Cornice nor NRECA (i) makes any representation or warranty, express or implied, as to the suitability of this information for any purpose whatsoever, or (ii) assumes any responsibility for damages or other liability whatsoever.</xs:documentation>
+	</xs:annotation>
+	<xs:import namespace="http://www.multispeak.org/V5.0/gml" schemaLocation="mspGeometry.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/enumerations" schemaLocation="mspEnumerations.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/primitives" schemaLocation="mspPrimitives.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/commonTypes" schemaLocation="mspCommonTypes.xsd"/>
+	<xs:complexType name="Accumulator">
+		<xs:annotation>
+			<xs:documentation>Accumulator represents a accumulated (counted) Measurement, e.g. an energy value.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="maxValue" type="xs:positiveInteger" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Normal value range maximum for any of the MeasurementValue.values. Used for scaling, e.g. in bar graphs or of telemetered raw values.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="accumulatorValues" type="AccumulatorValues" minOccurs="0"/>
+					<xs:element name="units" type="enum:uom" minOccurs="0"/>
+					<xs:element name="unitID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The named unit used for this measurement.  The unit is defined in the cimUnits.nameFields.name for the cimUnit associated with this measurement.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="quality" type="enum:qualityDescriptionKind" minOccurs="0"/>
+					<xs:element name="timeSpan" type="com:timePeriod" minOccurs="0"/>
+					<xs:element name="phase" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This element defines the phase measurement associations. This element is not present if not provided or if this element doesn't apply.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="harmonic" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This element defines if the quantity represents the entire signal un-filtered or is a harmonic component. This element is not present if the quantity represent the entire signal or if this element doesn't apply. Value 0 represent unspecified harmonic components, value 1 represent the first harmonic (fundamental), value 2 represent the second harmonic, ...</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="quadrant" type="enum:accountability" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Defines in which quadrant(s)  of the two-dimensional cartesian co-ordinate system the tagged quantity lies. This element is not present if not provided or does not apply.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="measurementTypeID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Pointer to an entry in a measurementType catalog. Specifies the type of Measurement, e.g. IndoorTemperature, OutDoorTemperature, BusVoltage, GeneratorVoltage, LineFlow etc. The cimMeasurementType.nameFields.name shall be unique among all specified types and describe the type. The cimMeasurementType.nameFields.aliasName is meant to be used for localization.  For the CPSM profile, the only acceptable values for cimMeasurementType.nameFields.name are: ThreePhasePower,ThreePhaseActivePower, ThreePhaseReactivePower, LineCurrent, LineToLineVoltage, Angle, TapPosition, or SwitchPosition.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="terminalID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the Terminal at which this measurement was taken.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="powerSystemResourceID" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the Power System Resource whith which this measurement is associated.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="AccumulatorValue">
+		<xs:annotation>
+			<xs:documentation>AccumulatorValue represents a accumulated (counted) MeasurementValue.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="MeasurementValue">
+				<xs:sequence>
+					<xs:element name="value" type="xs:positiveInteger" minOccurs="0"/>
+					<xs:element name="measurementValueSourceID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to an optional MeasurementValueSource that is carried in a catalog of MeasurementSourceValueSource objects.  This element is not used in MultiSpeak data, but is provided for compliance with CIM.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="AccumulatorValues">
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="AccumulatorValue" type="AccumulatorValue"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ActivePowerChangeRate">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="UnitSymbol" use="optional"/>
+				<xs:attribute name="multiplier" type="UnitMultiplier" use="optional"/>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="ActivePowerLimit">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="value" type="com:activePower" minOccurs="0"/>
+					<xs:element name="type" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Used to specify high/low and limit levels.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="operationalLimitSetID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="AnalogValue">
+		<xs:complexContent>
+			<xs:extension base="MeasurementValue">
+				<xs:sequence>
+					<xs:element name="value" type="xs:positiveInteger" minOccurs="0"/>
+					<xs:element name="measurementValueSourceID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ApparentPowerLimit">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="value" type="com:apparentPower" minOccurs="0"/>
+					<xs:element name="type" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Used to specify high/low and limit levels.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="operationalLimitSetID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="BaseVoltage">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="nominalVoltage" type="com:voltage" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The nominal voltage of this named BaseVoltage</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="BasicIntervalSchedule">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="startTime" type="xs:dateTime" minOccurs="0"/>
+					<xs:element name="value1Unit" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation> For the CPSM profile, the acceptable values for value1Unit are: MW, MVAr, and kV.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="value2Unit" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>For the CPSM profile, the acceptable values for value2Unit are: MW, MVAr, </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Bay">
+		<xs:annotation>
+			<xs:documentation>Bay is an optional element that can be used to group devices in a substation.  Each bay has a string identifier (objectID) that is unique over the domain of all substation bays. </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="EquipmentContainer">
+				<xs:sequence>
+					<xs:element name="breakerConfiguration" type="BreakerConfiguration" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Configuration of the breakers in this substation bay.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="busbarConfiguration" type="BusbarConfiguration" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Configuration of the bus in this substation bay.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="voltageLevelID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to one of the voltageLevels defined in the voltageLevel </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="BreakerConfiguration">
+		<xs:annotation>
+			<xs:documentation>Switching arrangement for Bay.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="singleBreaker"/>
+			<xs:enumeration value="breakerAndAHalf"/>
+			<xs:enumeration value="doubleBreaker"/>
+			<xs:enumeration value="noBreaker"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="BusbarConfiguration">
+		<xs:annotation>
+			<xs:documentation>Busbar layout for Bay.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="singleBus"/>
+			<xs:enumeration value="doubleBus"/>
+			<xs:enumeration value="mainWithTransfer"/>
+			<xs:enumeration value="ringBus"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="BusbarSection">
+		<xs:annotation>
+			<xs:documentation>A conductor, or group of conductors, with negligible impedance, that serve to connect other conducting equipment within a single substation. Voltage measurements are typically obtained from VoltageTransformers that are connected to busbar sections. A bus bar section may have many physical terminals but for analysis is modelled with exactly one logical terminal. The typeName attribute indicates the type of bus bar section, e.g.: Main, Transfer.  A busbarSection may be included as part of an equipmentContainer in a bay or substation.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="Connector">
+				<xs:sequence>
+					<xs:element name="busbarType" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The type of busbar.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="equipmentContainerID" type="com:objectRef" minOccurs="0"/>
+					<xs:element name="bayID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ConductingEquipment" abstract="true">
+		<xs:annotation>
+			<xs:documentation>This object implements the CIM ConductingEquipment object in MultiSpeak.  The parts of the power system that are designed to carry current or that are conductively connected therewith. ConductingEquipment is contained within an EquipmentContainer that may be a Substation, or a VoltageLevel or a Bay within a Substation.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="GMLLocation" type="gml:PointType" minOccurs="0"/>
+					<xs:element name="GMLLine" type="gml:LineStringType" minOccurs="0"/>
+					<xs:element name="phaseCode" type="enum:phaseCode" minOccurs="0"/>
+					<xs:element name="normallyInService" type="xs:boolean" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ConformLoadGroup">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="conformLoadSchedule" type="ConformLoadSchedule" minOccurs="0"/>
+					<xs:element name="subLoadAreaID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ConformLoadSchedule">
+		<xs:complexContent>
+			<xs:extension base="SeasonDayTypeSchedule"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ConnectivityNode">
+		<xs:annotation>
+			<xs:documentation>This is a node in a power system model at which there is a zero impedance connection between conducting equipment.  By convention in the CPSM profile, a connectivity node must be associated with exactly one voltageLevel.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="measurementIDs" type="MeasurementIDs" minOccurs="0"/>
+					<xs:element name="voltageLevelID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to one of the voltageLevel entries in the voltageLevel catalog.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="subControlAreaID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to one of the subControlAreas entries in the subControlArea catalog.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="nominalVoltageID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to one of the nominalVoltagel entries in the baseVoltage </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="substationRef" type="com:substationRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the objectIdentifier for the substation with which this connectivityNode is associated.  This element is provided as a means to associate nodes with substations, as is required by the CPSM.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Connector">
+		<xs:annotation>
+			<xs:documentation>A conductor, or group of conductors, with negligible impedance, that serve to connect other conducting equipment within a single substation and are modelled with a single logical terminal.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ControlArea">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="netInterchnge" type="com:activePower" minOccurs="0"/>
+					<xs:element name="tieFlow" type="TieFlow" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A flow specification in terms of location and direction for a control area.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="type" type="ControlAreaType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The type of control area defintion used to determine if this is used for automatic generation control, for planning interchange control, or other purposes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="EnergyAreaID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ControlAreaGeneratingUnit">
+		<xs:annotation>
+			<xs:documentation>A control area generating unit. This class is needed so that alternate control area definitions may include the same generating unit.   Note only one instance within a control area should reference a specific generating unit.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="generatingUnitID" type="com:objectID" minOccurs="0"/>
+					<xs:element name="controlAreaID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="ControlAreaType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="AGC"/>
+			<xs:enumeration value="Forecast"/>
+			<xs:enumeration value="Interchange"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CoolantType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Other"/>
+			<xs:enumeration value="air"/>
+			<xs:enumeration value="hydrogenGas"/>
+			<xs:enumeration value="water"/>
+			<xs:enumeration value="Unknown"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Counter">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="xs:string" use="optional" fixed="Count">
+					<xs:annotation>
+						<xs:documentation>Units must be equal to "Count".</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="CPSM">
+		<xs:sequence>
+			<xs:element name="extensions" type="com:extensions" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="documentType" type="enum:documentType" use="optional"/>
+		<xs:attribute name="connectivityModel" type="enum:connectivityModelKind" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="CurrentLimit">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="value" type="com:current" minOccurs="0"/>
+					<xs:element name="type" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Used to specify high/low and limit levels.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="operationalLimitSetID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Curve">
+		<xs:annotation>
+			<xs:documentation>Relationship between an independent variable (X-axis) and one or two dependent variables (Y1-axis and Y2-axis). Curves can also serve as schedules.  For the purposes of the CPSM profile, the only acceptable types of curves are GrossToNetMWCurve or MVArCapabilityCurve.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="curveStyle" type="CurveStyle" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The style or shape of the curve.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="dataPoints" type="DataPoints" minOccurs="0"/>
+					<xs:element name="xUnit" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>For the CPSM profile, the acceptable values for xUnit are: MW, MVAr, and kV.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="y1Unit" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Y1-axis units of measure.  For the CPSM profile, the acceptable values for y1Unit are: MW, MVAr, and kV.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="y2Unit" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The Y2-axis units of measure.   For the CPSM profile, the acceptable values for y2Unit are: MW, MVAr, and kV.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="CurveData">
+		<xs:annotation>
+			<xs:documentation>The curveData class is used to represent points for various curves.  The curves defined in the CPSM profile are "GrossToNetActivePowerCurve" and "ReactiveCapabilityCurve".</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="xValue" type="xValue" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The data value of the X-axis variable,  depending on the X-axis units</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="y1Value" type="y1Value" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The data value of the  first Y-axis variable, depending on the Y-axis units</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="y2Value" type="y2Value" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The data value of the second Y-axis variable (if present), depending on the Y-axis units</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any" processContents="lax"/>
+	</xs:complexType>
+	<xs:simpleType name="CurveStyle">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="constantYValue"/>
+			<xs:enumeration value="straightLineYValues"/>
+			<xs:enumeration value="rampYValues"/>
+			<xs:enumeration value="formula"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Damping">
+		<xs:annotation>
+			<xs:documentation>Per-unit megawatt variation with per-unit frequency referenced on the system MVA base. Typical values in range 1.0 - 2.0</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="value" type="xs:float" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="units" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>"PU_MW/PU_Frequency"</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="DataPoints">
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="curveData" type="CurveData"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DayType">
+		<xs:annotation>
+			<xs:documentation>Group of similar days, e.g., Mon/Tue/Wed, Thu/Fri, Sat/Sun, Holiday1, Holiday2</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Discrete">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="maxValue" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Normal value range maximum for any of the MeasurementValue.values. Used for scaling, e.g. in bar graphs or of telemetered raw values.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="minValue" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Normal value range minimum for any of the MeasurementValue.values. Used for scaling, e.g. in bar graphs or of telemetered raw values</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="normalValue" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Normal measurement value, e.g., used for percentage calculations.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="discreteValue" type="DiscreteValue" minOccurs="0"/>
+					<xs:element name="units" type="enum:uom" minOccurs="0"/>
+					<xs:element name="unitID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The named unit used for this measurement.  The unit is defined in the cimUnits.nameFields.name for the cimUnit associated with this measurement.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="quality" type="enum:qualityDescriptionKind" minOccurs="0"/>
+					<xs:element name="phase" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This element defines the phase measurement associations. This element is not present if not provided or if this element doesn't apply.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="unitPrefix" type="enum:unitPrefixKind" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The tyoe of reading taken.  See enumeration list.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="harmonic" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This element defines if the quantity represents the entire signal un-filtered or is a harmonic component. This element is not present if the quantity represent the entire signal or if this element doesn't apply. Value 0 represent unspecified harmonic components, value 1 represent the first harmonic (fundamental), value 2 represent the second harmonic, ...</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="quadrant" type="enum:accountability" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Defines in which quadrant(s)  of the two-dimensional cartesian co-ordinate system the tagged quantity lies. This element is not present if not provided or does not apply.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="measurementTypeID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Defines in which quadrant(s)  of the two-dimensional cartesian co-ordinate system the tagged quantity lies. This element is not present if not provided or does not apply.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="terminalID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the Terminal at which this measurement was taken.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="powerSystemResourceID" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the Power System Resourcewhith whicht this measurement is associated.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DiscreteValue">
+		<xs:annotation>
+			<xs:documentation>DiscreteValue represents a discrete MeasurementValue.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="MeasurementValue">
+				<xs:sequence>
+					<xs:element name="value" type="xs:integer" minOccurs="0"/>
+					<xs:element name="measurementValueSourceID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to an optional MeasurementValueSource that is carried in a catalog of MeasurementSourceValueSource objects.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="EquipmentContainer" abstract="true">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="contentsList" type="com:contentsItems" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="EquivalentBranch">
+		<xs:complexContent>
+			<xs:extension base="EquivalentEquipment">
+				<xs:sequence>
+					<xs:element name="r" type="com:resistance" minOccurs="0"/>
+					<xs:element name="x" type="com:reactance" minOccurs="0"/>
+					<xs:element name="equivalentNetworkID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the Equivalent Network that contains this Equivalent Branch.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="EquivalentEquipment" abstract="true">
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="EquivalentNetwork">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="EquivalentShunt">
+		<xs:complexContent>
+			<xs:extension base="EquivalentEquipment">
+				<xs:sequence>
+					<xs:element name="g" type="com:conductance" minOccurs="0"/>
+					<xs:element name="b" type="com:susceptance" minOccurs="0"/>
+					<xs:element name="equivalentNetworkID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the Equivalent Network that contains this EquivalentShunt.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="FrequencyBiasFactor">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>"MW/0.1 Hz"</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="GeneratingUnit">
+		<xs:annotation>
+			<xs:documentation>A single or set of synchronous machines for converting mechanical power into alternating-current power. For example, individual machines within a set may be defined for scheduling purposes while a single control signal is derived for the set. In this case there would be a GeneratingUnit for each member of the set and an additional GeneratingUnit corresponding to the set. Generating Unit should only be used in the CPSM when the more specific HydroGeneratingUnit or ThermalGeneratingUnit do not apply.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment">
+				<xs:sequence>
+					<xs:element name="equipmentContainerID" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to an equimentContainer catalog entry.  This element is required in the CPSM profile.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="grossToNetActivePowerCurve" type="GrossToNetActivePowerCurve" minOccurs="0"/>
+					<xs:element name="reactiveCapabilityCurve" type="ReactiveCapabilityCurve" minOccurs="0"/>
+					<xs:element name="efficiency" type="PU" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The efficiency of the unit in converting mechanical energy, from the prime mover, into electrical energy.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="initialP" type="com:activePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Default Initial active power  which is used to store a powerflow result for the initial active power for this unit in this network configuration</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="longPF" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Generating unit economic participation factor</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="maxOperatingP" type="com:activePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the maximum operating active power limit the dispatcher can enter for this unit</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="minOperatingP" type="com:activePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the maximum operating active power limit the dispatcher can enter for this unit</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="normalPF" type="xs:float" minOccurs="0"/>
+					<xs:element name="generatorControlSource" type="GeneratorControlSource" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The source of controls for a generating unit, i.e., Unavailable, Off-AGC, On-AGC, Plant Control</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ratedGrossMaxP" type="com:activePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The unit's gross rated maximum capacity (Book Value).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ratedGrossMinP" type="com:activePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The gross rated minimum generation level which the unit can safely operate at while delivering power to the transmission grid</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ratedNetMaxP" type="com:activePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The net rated maximum capacity determined by subtracting the auxiliary power used to operate the internal plant machinery from the rated gross maximum capacity</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="shortPF" type="xs:float" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="GeneratorControlSource">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Unavailable"/>
+			<xs:enumeration value="offAGC"/>
+			<xs:enumeration value="onAGC"/>
+			<xs:enumeration value="PlantControl"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="GeneratorOperatingMode">
+		<xs:annotation>
+			<xs:documentation>Operating mode for secondary generator control, e.g.: Unavailable, Manual, Fixed, Load Frequency Control, AGC, EDC, RPN, MRN, or REG</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Off"/>
+			<xs:enumeration value="Manual"/>
+			<xs:enumeration value="Fixed"/>
+			<xs:enumeration value="LFC"/>
+			<xs:enumeration value="AGC"/>
+			<xs:enumeration value="EDC"/>
+			<xs:enumeration value="MRN"/>
+			<xs:enumeration value="REG"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="GeographicalRegion">
+		<xs:annotation>
+			<xs:documentation>A geographical region of a power system network model.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="GrossToNetActivePowerCurve">
+		<xs:annotation>
+			<xs:documentation>Relationship between the generating unit's gross MW output on the X-axis (measured at the terminals of the machine(s)) and the generating unit's net MW output on the Y-axis (based on utility-defined measurements at the power station). Station service loads, when modeled, should be treated as non-conforming bus loads. There may be more than one curve, depending on the auxiliary equipment that is in service.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="Curve"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="HydroGeneratingUnit">
+		<xs:annotation>
+			<xs:documentation>A generating unit whose prime mover is a hydraulic turbine (e.g., Francis, Pelton, Kaplan)</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="GeneratingUnit"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="IdentifiedObject" abstract="true">
+		<xs:annotation>
+			<xs:documentation>This object is used to carry object identification information for CIM-style objects.  If CIM compatibility is not necessary, these fields are not required.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="mRID" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A Model Authority issues mRIDs. Given that each Model Authority has a unique id and this id is part of the mRID, then the mRID is globally unique.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The description is a free human readable text describing or naming the object. It may be non unique and may not correlate to a naming hierarchy.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Names" type="Names" minOccurs="0"/>
+		</xs:sequence>
+		<xs:anyAttribute processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="IEC61968CIMVersion">
+		<xs:annotation>
+			<xs:documentation>This is the iEC 61968 version number assigned to this UML model file.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="version" type="xs:string" minOccurs="0"/>
+			<xs:element name="date" type="xs:dateTime" minOccurs="0"/>
+		</xs:sequence>
+		<xs:anyAttribute processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="IEC61970CIMVersion">
+		<xs:annotation>
+			<xs:documentation>This is the IEC 61970 CIM version number assigned to this UML model file. cim61970_v002 was created from cim10_v000_WG13cimIssues_61968_Rev6_22Feb2005 that is the merged wg13 and wg14 models. The content has a number of wg13 issue resolutions.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="version" type="xs:string" minOccurs="0"/>
+			<xs:element name="date" type="xs:dateTime" minOccurs="0"/>
+		</xs:sequence>
+		<xs:anyAttribute processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="Inertia">
+		<xs:annotation>
+			<xs:documentation>Megawatt-seconds per megavolt-ampere rating of the unit referenced on the system MVA base. Typical values in range 3.0 - 5.0</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>"PU_MW-Second"</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="IrregularIntervalSchedule">
+		<xs:complexContent>
+			<xs:extension base="BasicIntervalSchedule">
+				<xs:sequence>
+					<xs:element name="irregularTimePoints" type="IrregularTimePoints" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>irregularTimePoints</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="IrregularTimePoint">
+		<xs:sequence>
+			<xs:element name="time" type="com:seconds" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The time is relative the basicTimeSchedule.startTime.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="value1" type="xs:float" minOccurs="0"/>
+			<xs:element name="value2" type="xs:float" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="IrregularTimePoints">
+		<xs:sequence>
+			<xs:element name="irregularTimePoint" type="IrregularTimePoint" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Limits">
+		<xs:sequence minOccurs="0">
+			<xs:element name="limitID" type="com:objectID" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>ActivePower,Limit, ApparentPowerLimits, VoltageLimits, and/or CurrentLimits associated with this piece of equipment.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Line">
+		<xs:annotation>
+			<xs:documentation>A component part of a system extending between adjacent substations or from a substation to an adjacent interconnection point.  Theuse of the cimLine is not required in the CPSM profile, but it is used, it will only be used as a container for ACLineSegments.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="EquipmentContainer">
+				<xs:sequence>
+					<xs:element name="regionID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the subGeographicalRegion that contains this cimLine.  This pointer should be the mRID of the subGeographicalRegion in question.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="LoadArea">
+		<xs:annotation>
+			<xs:documentation>Group of loads (i.e., energy consumers).  This is the highest level of consolidation of load modeling in CPSM.  SubLoadAreas are grouped intoLoadAreas and one or more LoadGroups are contained in SubLoadArea.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="PowerSystemResource"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="LoadCurve">
+		<xs:annotation>
+			<xs:documentation>A curve relating  power versus time. showing the values of a specific load for each unit of the period covered. The  curve can be based on "absolute" time or on "normalized' time. An instance of this curve could represent the absolute area load forecast. An other instance could represent a normalized daily load curve for a particular day type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="RegularIntervalSchedule">
+				<xs:sequence>
+					<xs:element name="season" type="Season" minOccurs="0"/>
+					<xs:element name="subLoadAreaID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Pointer to the SubLoadArea that contains the load that has this LoadCurve.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="MeasurementIDs">
+		<xs:sequence>
+			<xs:element name="MeasurementID" type="com:objectID" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This is a pointer to a Measurement entry contained in a separate Measurement catalog.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MeasurementType">
+		<xs:annotation>
+			<xs:documentation>Specifies the type of Measurement, e.g. IndoorTemperature, OutDoorTemperature, BusVoltage, GeneratorVoltage, LineFlow etc. The cimMeasurementType.nameFields.name shall be unique among all specified types and describe the type. The cimMeasurementType.nameFields.aliasName is meant to be used for localization.  For the CPSM profile, the only acceptable values for cimMeasurementType.nameFields.name are: ThreePhasePower,ThreePhaseActivePower, ThreePhaseReactivePower, LineCurrent, LineToLineVoltage, Angle, TapPosition, or SwitchPosition.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="MeasurementValue">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="timeStamp" type="xs:dateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The time when the value was last updated</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="sensorAccuracy" type="prim:percent" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The limit, expressed as a percentage of the sensor maximum, that errors will not exceed when the sensor is used under  reference conditions.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="MeasurementValueSource">
+		<xs:annotation>
+			<xs:documentation>MeasurementValueSource describes the alternative sources updating a MeasurementValue. User conventions for how to use the MeasurementValueSource attributes are described in the introduction to IEC 61970-301.  For the purposes of the CPSM profile, the only acceptable values for cimMeasurementValueSource.namingFields.name are: ICCP or SCADA.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="mspCIMObject" abstract="true">
+		<xs:sequence>
+			<xs:element name="extensions" type="com:extensions" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The extensions container is one way that MultiSpeak objects can be extended using XSD elements.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="comments" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This element may be used to annotate this data instance.  It also serves to separate extensions made with the extensions class from those made using the extensionsList class.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="extensionsList" type="com:extensionsList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is an optional, self-describing means to extend any MultiSpeak object.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="errorObjects" type="com:errorObjects" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The array of errorObjects is included as part of the mspCIMObject so that errors can be associated with data instances in batch messages.  Errors associated with data instances sent in web service messages SHALL NOT use the errorObject structure, rather SHALL use the errorObjects element of the result object in the reply message header.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="primaryIdentifier" type="com:singleIdentifier">
+				<xs:annotation>
+					<xs:documentation>Primary human-readable identifier for this instance of the object. For instance if this object is an instance of an electricMeter, this should be the meterName; if this is a customerAccount, this should be the accountNumber.  If this identifier is not applicable to a specific data instance than fill this field with "NA".</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="secondaryIdentifier" type="com:singleIdentifier" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Additional human-readable identifier for this instance of the object.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="IdentifiedObject" type="IdentifiedObject" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="objectGUID" type="prim:MultiSpeakGUID" use="required">
+			<xs:annotation>
+				<xs:documentation>This is the key field for this object type.  The use of objectGUID is always required.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="utility" type="xs:string" use="optional">
+			<xs:annotation>
+				<xs:documentation>String that is used to identify the utility that is associated with this item.  It may be a text string or a pointer to an organization.  If it is a text string, it is suggested that the string be the Internet domain name for the owner in valid XS:anyURI format.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:anyAttribute namespace="##any" processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="Name">
+		<xs:sequence>
+			<xs:element name="nameString" type="xs:string" minOccurs="0"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="NameType" type="NameType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="Names">
+		<xs:sequence minOccurs="0">
+			<xs:element name="Name" type="Name" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NameType">
+		<xs:sequence>
+			<xs:element name="nameString" type="xs:string" minOccurs="0"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="NameTypeAuthority" type="NameTypeAuthority" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NameTypeAuthority">
+		<xs:sequence>
+			<xs:element name="nameString" type="xs:string" minOccurs="0"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NodeFields">
+		<xs:sequence>
+			<xs:element name="connectivityNodeID" type="com:nodeIdentifier" minOccurs="0"/>
+			<xs:element name="MeasurementIDs" type="MeasurementIDs" minOccurs="0"/>
+			<xs:element name="substationID" type="com:objectID" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The objectID or mRID of the substation attached to this connectivityNode.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="NonConformLoadGroup">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="nonConformLoadSchedule" type="NonConformLoadSchedule" minOccurs="0"/>
+					<xs:element name="subLoadAreaID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="NonConformLoadSchedule">
+		<xs:annotation>
+			<xs:documentation>A MW (Y1-axis) and MVAr (Y2-axis) schedule (curves) versus time (X-axis) for non-conforming loads, e.g., large industrial load or power station service (where modeled)</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="SeasonDayTypeSchedule"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="OperationalLimitSet">
+		<xs:annotation>
+			<xs:documentation>A set of limits associated with equipmnet.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="limits" type="Limits" minOccurs="0"/>
+					<xs:element name="equipmentID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="PowerFactor">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>"Ratio"</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="PowerSystemResource" abstract="true">
+		<xs:annotation>
+			<xs:documentation>A power system resource can be an item of equipment such as a Switch, an EquipmentContainer containing many individual items of equipment such as a Substation, or an organisational entity such as Company or SubControlArea.  This provides for the nesting of collections of PowerSystemResources within other PowerSystemResources. For example, a Switch could be a member of a Substation and a Substation could be a member of a division of a Company.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="PU">
+		<xs:annotation>
+			<xs:documentation>Per Unit - a positive or negative value referred to a defined base. Values typically range from -10 to +10.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:float"/>
+	</xs:simpleType>
+	<xs:complexType name="ReactiveCapabilityCurve">
+		<xs:annotation>
+			<xs:documentation>Reactive power rating envelope versus the synchronous machine's active power, in both the generating and motoring modes. For each MW value there is a corresponding high and low MVAr limit  value. Typically there will be a separate curve for each coolant condition, such as hydrogen pressure.  The Y1 axis values represent reactive minimum and the Y2 axis values represent reactive maximum.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="Curve"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="RegularIntervalSchedule">
+		<xs:annotation>
+			<xs:documentation>The schedule has timePoints where the time between them is constant.  The schedules defined in the CPSM profile are: AreaLoadCurve, NonConformLoadSchedule, and RegulationSchedule.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="BasicIntervalSchedule">
+				<xs:sequence>
+					<xs:element name="timeStep" type="com:seconds" minOccurs="0"/>
+					<xs:element name="endTime" type="xs:dateTime" minOccurs="0"/>
+					<xs:element name="regularTimePoints" type="RegularTimePoints" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="RegularTimePoint">
+		<xs:annotation>
+			<xs:documentation>TimePoints for a schedule where the time between the points is constant.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="sequenceNumber" type="xs:integer" minOccurs="0"/>
+			<xs:element name="value1" type="xs:float" minOccurs="0"/>
+			<xs:element name="value2" type="xs:float" minOccurs="0"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any" processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="RegularTimePoints">
+		<xs:sequence>
+			<xs:element name="regularTimePoint" type="RegularTimePoint" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RegulatingCondEq" abstract="true">
+		<xs:annotation>
+			<xs:documentation>RegulatingCondEq is a type of ConductingEquipment that can regulate Measurements and have a RegulationSchedule.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment">
+				<xs:sequence>
+					<xs:element name="equipmentContainerID" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to an EquimentContainer catalog entry.  This element is required in the CPSM profile.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="regulatingControlID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to a RegulatingControl catalog entry.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="RegulatingControl">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="regulationSchedule" type="RegulationSchedule" minOccurs="0"/>
+					<xs:element name="terminalID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="RegulationSchedule">
+		<xs:annotation>
+			<xs:documentation>A pre-established pattern over time for a controlled variable, e.g., busbar voltage.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="RegularIntervalSchedule">
+				<xs:sequence>
+					<xs:element name="lineDropCompensation" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Flag to indicate that line drop compensation is to be applied</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="lineDropR" type="com:resistance" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Line drop resistance.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="lineDropX" type="com:reactance" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Line drop reactance.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Season">
+		<xs:annotation>
+			<xs:documentation>A specified time period of the year, e.g., Spring, Summer, Fall, Winter</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="name" type="SeasonName" minOccurs="0"/>
+			<xs:element name="startDate" type="xs:dateTime" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Date season starts</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="endDate" type="xs:dateTime" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Date season ends</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:anyAttribute processContents="lax"/>
+	</xs:complexType>
+	<xs:complexType name="SeasonDayTypeSchedule">
+		<xs:complexContent>
+			<xs:extension base="RegularIntervalSchedule">
+				<xs:sequence>
+					<xs:element name="dayType" type="DayType" minOccurs="0"/>
+					<xs:element name="seasonType" type="Season" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="SeasonName">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="winter"/>
+			<xs:enumeration value="spring"/>
+			<xs:enumeration value="summer"/>
+			<xs:enumeration value="fall"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="Slope">
+		<xs:annotation>
+			<xs:documentation>The characteristics slope of an SVC defines how the reactive power output changes in proportion to the difference between the regulated bus voltage and the voltage setpoint.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="slopeUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>kV/MVAr</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="slopeUnits">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="kV/MVAr"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="StaticVarCompensator">
+		<xs:complexContent>
+			<xs:extension base="RegulatingCondEq">
+				<xs:sequence>
+					<xs:element name="capacitiveRating" type="com:reactivePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Maximum available capacitive reactive power.  This value must be positve.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="inductiveRating" type="com:reactivePower" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Maximum available inductive reactive power.  This value must be negative.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="sVCControlMode" type="sVCControlMode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>SVC control mode: MVAr, Voltage, or Off. Note that MVAr is not acceptable in the CPSM profile.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="slope" type="Slope" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The characteristics slope of an SVC defines how the reactive power output changes in proportion to the difference between the regulated bus voltage and the voltage setpoint.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="voltageSetPoint" type="com:voltage" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The reactive power output of the SVC is proportional to the difference between the voltage at the regulated bus and the voltage setpoint.  When the regulated bus voltage is equal to the voltage setpoint, the reactive power output is zero.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="StringMeasurement">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="stringMeasurementValue" type="StringMeasurementValue" minOccurs="0"/>
+					<xs:element name="measurementTypeID" type="com:objectID" minOccurs="0"/>
+					<xs:element name="measurementValueSourceID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="StringMeasurementValue">
+		<xs:annotation>
+			<xs:documentation>cimStringMeasurementValue represents a measurement value of type string.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="MeasurementValue">
+				<xs:sequence>
+					<xs:element name="value" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="SubGeographicalRegion">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="geographicalRegionID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="SubLoadArea">
+		<xs:annotation>
+			<xs:documentation>This is the second level of consolidation of loads in a load model.  One or moe LoadGroups are contained in a SubLoadArea and one or more SubLoadAreas are contained in a LoadArea.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="loadAreaID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="sVCControlMode">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ReactivePower"/>
+			<xs:enumeration value="Voltage"/>
+			<xs:enumeration value="Off"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="SynchronousMachineOperatingMode">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="generator"/>
+			<xs:enumeration value="condenser"/>
+			<xs:enumeration value="motor"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="SynchronousMachineType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="generator"/>
+			<xs:enumeration value="condenser"/>
+			<xs:enumeration value="generator_or_condenser"/>
+			<xs:enumeration value="motor"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="TapChanger">
+		<xs:annotation>
+			<xs:documentation>Mechanism for changing transformer winding tap positions.  It is associated with a winding of a powerTransformer.  The attributes highStep, lowStep, neutralStep, and stepVoltageIncrement are all required for the CPSM profile, regardless of control mode.  If voltage control is possible, the attributes neutralkV and stepVoltageIncrement are also required. If ophase angle control is possible, the attribute stePhaseShiftIncrement is required.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment">
+				<xs:sequence>
+					<xs:element name="regulatingControl" type="RegulatingControl" minOccurs="0"/>
+					<xs:element name="voltageBandwidth" type="com:voltage" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Regulator voltage bandwidth, expressed in volts, on the PT secondary base.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="numberOfSteps" type="xs:integer" minOccurs="0"/>
+					<xs:element name="PTRatio" type="xs:double" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Ratio of the potential transformer in this unit.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="CTRating" type="com:current" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Rating of the current transformer, expressed in amperes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ampacity" type="com:current" minOccurs="0"/>
+					<xs:element name="initialDelay" type="com:seconds" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>For an LTC, the delay for initial tap changer operation (first step change)</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="subsequentDelay" type="com:seconds" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>For an LTC, the delay for subsequent tap changer operation (second and later step changes)</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="nativeAttributes" type="TapChangerNativeAttributes" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A TapChanger may be fixed or it may regulate voltage, phase angle, or both.  The tculControlMode attribute defines the control capabilities of the TapChanger and is always required.  If the TapChangerKind is voltageCOntrol, phaseControl or voltageAndPhaseControl, then the attributes"highStep", "lowStep", "NeutralStep" and "normalStep" are all required.  If voltageControl is possible, the attributes "NeutralU" and stepVoltageIncrement" are also required.  If phaseControl is possible then the attribute "stepPhaseShiftIncrement" is required.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="terminalID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If terminals are used in the CPSM profile, this identifier associates the tap changes with a winding terminal.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="TapChangerKind">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="fixed"/>
+			<xs:enumeration value="voltageControl"/>
+			<xs:enumeration value="phaseControl"/>
+			<xs:enumeration value="voltageAndPhaseControl"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="TapChangerNativeAttributes">
+		<xs:sequence>
+			<xs:element name="highStep" type="TapStep" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Highest possible tap step position, advance from neutral</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="lowStep" type="TapStep" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Lowest possible tap step position, retard from neutral</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="neutralV" type="com:voltage" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Voltage at which the winding operates at the neutral tap setting.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="neutralStep" type="TapStep" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The neutral tap step position for this winding.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="normalStep" type="TapStep" minOccurs="0"/>
+			<xs:element name="stepPhaseShiftIncrement" type="com:angle" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Phase shift, in degrees, per step position. A positive value indicates a positive phase shift from the winding where the tap is located to the other winding (for a two-winding transformer).  This value is rarely used in distribution modeling.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="stepVoltageIncrement" type="prim:percent" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Tap step increment, in per cent of nominal voltage, per step position.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="type" type="TapChangerKind" minOccurs="0"/>
+			<xs:element name="tculControlMode" type="TransformerControlMode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>For an LTC, the tap changer control mode, e.g.: off, local, volt,active, reactive.  A tapChanger can regulate voltage, phaseangle, or both.  This element defines the attributes of the tapChanger and is always required for the CPSM profile.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TapChangers">
+		<xs:sequence>
+			<xs:element name="TapChanger" type="TapChanger" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="TapStep">
+		<xs:annotation>
+			<xs:documentation>Number of the tap step, integer.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	<xs:complexType name="Terminal">
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment">
+				<xs:sequence>
+					<xs:element name="MeasurementIDs" type="MeasurementIDs" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Terminals">
+		<xs:sequence>
+			<xs:element name="terminalID" type="com:objectID" maxOccurs="2"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ThermalGeneratingUnit">
+		<xs:annotation>
+			<xs:documentation>A generating unit whose prime mover could be a steam turbine, combustion turbine, or diesel engine.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="GeneratingUnit"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="TieFlow">
+		<xs:annotation>
+			<xs:documentation>A flow specification in terms of location and direction for a control area.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="positiveFlowIn" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The flow is positive into the terminal.  A flow is positive if it is an import into the control area.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="terminalID" type="com:objectID" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>A terminal may participate in zero, one, or two control areas as a tie flow.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="TransformerControlMode">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="off"/>
+			<xs:enumeration value="local"/>
+			<xs:enumeration value="volt"/>
+			<xs:enumeration value="active"/>
+			<xs:enumeration value="reactive"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TransformerType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="fix"/>
+			<xs:enumeration value="voltageControl"/>
+			<xs:enumeration value="phaseControl"/>
+			<xs:enumeration value="voltageAndPhaseControl"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="TransformerWinding">
+		<xs:annotation>
+			<xs:documentation>A winding is associated with each defined terminal of a transformer (or phase shifter)</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="ConductingEquipment">
+				<xs:sequence>
+					<xs:element name="windingNativeAttributes" type="WindingNativeAttributes" minOccurs="0"/>
+					<xs:element name="terminals" type="Terminals" minOccurs="0"/>
+					<xs:element name="tapChangers" type="TapChangers" minOccurs="0"/>
+					<xs:element name="baseVoltageID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Unit">
+		<xs:annotation>
+			<xs:documentation>Quantity being measured. The Unit.nameFields.name shall be unique among all specified quantities and describe the quantity. The Unit.nameFieldsaliasName is meant to be used for localization.  For the purposes of the CPSM profile, the only acceptable values of Unit.nameFields.name are: MW, Degrees, MVA, Count, Amperes, PerCent, Ratio, MVAr, kV, TapPosition, or SwitchPosition.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="UnitMultiplier">
+		<xs:annotation>
+			<xs:documentation>The unit multipliers defined for the CIM</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="p"/>
+			<xs:enumeration value="n"/>
+			<xs:enumeration value="micro"/>
+			<xs:enumeration value="m"/>
+			<xs:enumeration value="c"/>
+			<xs:enumeration value="d"/>
+			<xs:enumeration value="k"/>
+			<xs:enumeration value="M"/>
+			<xs:enumeration value="G"/>
+			<xs:enumeration value="T"/>
+			<xs:enumeration value="none"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="UnitSymbol">
+		<xs:annotation>
+			<xs:documentation>The units defined for usage in the CIM</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="VA"/>
+			<xs:enumeration value="W"/>
+			<xs:enumeration value="VAr"/>
+			<xs:enumeration value="VAh"/>
+			<xs:enumeration value="Wh"/>
+			<xs:enumeration value="VArh"/>
+			<xs:enumeration value="V"/>
+			<xs:enumeration value="ohm"/>
+			<xs:enumeration value="A"/>
+			<xs:enumeration value="F"/>
+			<xs:enumeration value="H"/>
+			<xs:enumeration value="C"/>
+			<xs:enumeration value="s"/>
+			<xs:enumeration value="min"/>
+			<xs:enumeration value="h"/>
+			<xs:enumeration value="deg"/>
+			<xs:enumeration value="rad"/>
+			<xs:enumeration value="J"/>
+			<xs:enumeration value="N"/>
+			<xs:enumeration value="S"/>
+			<xs:enumeration value="none"/>
+			<xs:enumeration value="Hz"/>
+			<xs:enumeration value="kg"/>
+			<xs:enumeration value="Pa"/>
+			<xs:enumeration value="m"/>
+			<xs:enumeration value="m2"/>
+			<xs:enumeration value="m3"/>
+			<xs:enumeration value="V/VAr"/>
+			<xs:enumeration value="W/Hz"/>
+			<xs:enumeration value="J/s"/>
+			<xs:enumeration value="s-1"/>
+			<xs:enumeration value="kg/J"/>
+			<xs:enumeration value="W/s"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="VoltageLevel">
+		<xs:annotation>
+			<xs:documentation>In CIM, a voltageLevel is a collection of equipment at one common system voltage forming a switchgear. The equipment typically consist of breakers, busbars, instrumentation, control, regulationand protection devices as well as assemblies of all these.  VoltageLevels are commonly referred to by the "name" string field, not the nominal voltage in float form.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="EquipmentContainer">
+				<xs:sequence>
+					<xs:element name="highVoltageLimit" type="com:voltage" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The bus bar's high voltage limit in kV.  This element is not required for the CPSM profile.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="lowVoltageLimit" type="com:voltage" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The bus bar's low voltage limit in kV.  This element is not required for the CPSM profile.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="baseVoltageID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to one of the baseVoltage entries in the baseVoltage catalog.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="VoltageLimit">
+		<xs:complexContent>
+			<xs:extension base="mspCIMObject">
+				<xs:sequence>
+					<xs:element name="value" type="com:voltage" minOccurs="0"/>
+					<xs:element name="type" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Used to specify high/low and limit levels.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="operationalLimitSetID" type="com:objectID" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="VoltagePerReactivePower">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="multiplier" type="voltagePerReactivePowerMultiplier" use="optional">
+					<xs:annotation>
+						<xs:documentation>k/M</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="units" type="voltagePerReactivePowerUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>V/VAr</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="voltagePerReactivePowerMultiplier">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="k/M"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="voltagePerReactivePowerUnits">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="V/VAr"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="WindingNativeAttributes">
+		<xs:sequence>
+			<xs:element name="ratedV" type="com:voltage" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The rated voltage (phase-to-phase) of the winding, usually the same as the neutral voltage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ratedS" type="com:apparentPower" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The normal apparent power rating for the winding</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="windingType" type="WindingType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The type of winding, i.e., Primary, Secondary, Tertiary, Quaternary, Other, Unknown.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="b" type="com:susceptance" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Magnetizing branch susceptance (B mag).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="r" type="com:resistance" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Positive sequence series resistance of the winding.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="x" type="com:reactance" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Positive sequence series reactance of the winding.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="WindingType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Primary"/>
+			<xs:enumeration value="Secondary"/>
+			<xs:enumeration value="Tertiary"/>
+			<xs:enumeration value="Quaternary"/>
+			<xs:enumeration value="Other"/>
+			<xs:enumeration value="Unknown"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="xValue">
+		<xs:annotation>
+			<xs:documentation>The data value of the X-axis variable, depending on the X-axis units</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="xUnits" type="xs:string" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="y1Value">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="y1Units" type="xs:string" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="y2Value">
+		<xs:annotation>
+			<xs:documentation>The data value of the second Y-axis variable (if present), depending on the Y-axis units</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="y2Units" type="xs:string" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

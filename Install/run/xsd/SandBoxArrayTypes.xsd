@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2015 sp2 (x64) (http://www.altova.com) by Gary A McNaughton (private) -->
+<!-- edited with XMLSpy v2013 (x64) (http://www.altova.com) by David Cottrell (private) -->
+<!--
+These are sandbox array types from the SB_* WSDLs.  
+-->
+<s:schema xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns="http://www.multispeak.org/V5.0/sandboxArrays" xmlns:sandbox="http://www.multispeak.org/V5.0/sandbox" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" targetNamespace="http://www.multispeak.org/V5.0/sandboxArrays" elementFormDefault="qualified" attributeFormDefault="unqualified" version="5.0.7">
+	<!-- -->
+	<!--MultiSpeak SandBox Array Types Schema V5.0.7 Release (Version = "V5.0.7 Release") Dated: 2/20/2015.   Cooperative Energy Services (CES) reserves exclusive      -->
+	<!--discretion to determine the content and definition of MultiSpeak®,a federally registered trademark of NRECA. Copyright © 2000-2015 CES.  -->
+	<!-- -->
+	<!--Disclaimer: Modifications of this document have been made, and will be made, on the -->
+	<!--basis of consensus among the participants of the MultiSpeak Initiative. Cornice -->
+	<!--Engineering, Inc. (Cornice) hereby prepared this document to reflect the input provided by the -->
+	<!--participants as of the date listed above.  This work is being completed under contract to -->
+	<!--the National Rural Electric Cooperative Association (NRECA).-->
+	<!--Neither Cornice nor NRECA (i) makes any representation or warranty, express -->
+	<!--or implied, as to the suitability of this information for any purpose whatsoever, or (ii) assumes-->
+	<!--any responsibility for damages or other liability whatsoever. -->
+	<!-- -->
+	<s:import namespace="http://www.multispeak.org/V5.0" schemaLocation="MultiSpeak.xsd"/>
+	<s:import namespace="http://www.multispeak.org/V5.0/commonTypes" schemaLocation="mspCommonTypes.xsd"/>
+	<s:import namespace="http://www.multispeak.org/V5.0/enumerations" schemaLocation="mspEnumerations.xsd"/>
+	<s:import namespace="http://www.multispeak.org/V5.0/primitives" schemaLocation="mspPrimitives.xsd"/>
+	<s:import namespace="http://www.multispeak.org/V5.0/sandbox" schemaLocation="SandBox.xsd"/>
+	<!--
+	-->
+	<s:complexType name="ArrayOfCircuitElement">
+		<s:sequence>
+			<s:element name="circuitElement" type="sandbox:circuitElement" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfConfigurationGroup">
+		<s:sequence>
+			<s:element name="configurationGroup" type="msp:configurationGroup" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfCustomerCall">
+		<s:sequence>
+			<s:element name="customerCall" type="sandbox:customerCall" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfCustomerCallStatus">
+		<s:sequence>
+			<s:element name="customerCallStatus" type="sandbox:customerCallStatus" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDER">
+		<s:sequence>
+			<s:element name="DER" type="sandbox:DER" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERGroup">
+		<s:sequence>
+			<s:element name="DERGroup" type="sandbox:DERGroup" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERGroupDispatchRequest">
+		<s:sequence>
+			<s:element name="DERGroupDispatchRequest" type="sandbox:DERGroupDispatchRequest" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERGroupForecast">
+		<s:sequence>
+			<s:element name="DERGroupForecast" type="sandbox:DERGroupForecast" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERGroupID">
+		<s:sequence>
+			<s:element name="DERGroupID" type="sandbox:DERGroupID" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERGroupName">
+		<s:sequence>
+			<s:element name="DERGroupName" type="sandbox:DERGroupName" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERGroupStatus">
+		<s:sequence>
+			<s:element name="DERGroupStatus" type="sandbox:DERGroupStatus" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfDERID">
+		<s:sequence>
+			<s:element name="DERID" type="sandbox:DERID" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfEndDeviceShipment">
+		<s:sequence>
+			<s:element name="endDeviceShipment" type="sandbox:endDeviceShipment" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfIncrementalConnectivityModelsReferable">
+		<s:sequence>
+			<s:element name="incrementalConnectivityModelsReferable" type="sandbox:incrementalConnectivityModelsReferable" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfLTDeviceRef">
+		<s:sequence>
+			<s:element name="LTDeviceRef" type="msp:locationTrackingDeviceRef" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfMaterialRequisition">
+		<s:sequence>
+			<s:element name="materialRequisition" type="sandbox:materialRequisition" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfMaterialRequisitionCancellation">
+		<s:sequence>
+			<s:element name="materialRequisitionCancellation" type="sandbox:materialRequisitionCancellation" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfMaterialRequisitionResult">
+		<s:sequence>
+			<s:element name="materialRequisitionResult" type="sandbox:materialRequisitionResult" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfMeterConnectivity">
+		<s:sequence>
+			<s:element name="meterConnectivity" type="sandbox:meterConnectivity" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfOutageDurationEvent">
+		<s:sequence>
+			<s:element name="outageDurationEvent" type="sandbox:outageDurationEvent" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfOutageLocation">
+		<s:sequence>
+			<s:element name="outageLocation" type="sandbox:outageLocation" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfOutageRef">
+		<s:sequence>
+			<s:element name="outageRef" type="msp:outageRef" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfRequestedCapability">
+		<s:sequence>
+			<s:element name="requestedCapability" type="sandbox:requestedCapability" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+	<s:complexType name="ArrayOfTestedElectricMeter">
+		<s:sequence>
+			<s:element name="testedElectricMeter" type="sandbox:testedElectricMeter" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+		</s:sequence>
+	</s:complexType>
+</s:schema>

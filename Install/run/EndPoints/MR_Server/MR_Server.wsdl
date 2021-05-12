@@ -1,0 +1,1875 @@
+<wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/MR_Server" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns9="http://www.w3.org/2005/08/addressing" targetNamespace="http://www.multispeak.org/V5.0/wsdl/MR_Server">
+	<wsdl:types>
+		<s:schema>
+			<s:import namespace="http://www.multispeak.org/V5.0/ws/request" schemaLocation="../../xsd/MultiSpeakWebServicesRequestMsgHeader.xsd"/>
+			<s:import namespace="http://www.multispeak.org/V5.0/ws/response" schemaLocation="../../xsd/MultiSpeakWebServicesResponseMsgHeader.xsd"/>
+		</s:schema>
+		<s:schema elementFormDefault="qualified" targetNamespace="http://www.multispeak.org/V5.0/wsdl/MR_Server">
+			<s:include schemaLocation="MR_Server.xsd"/>
+		</s:schema>
+	</wsdl:types>
+	<wsdl:message name="MultiSpeakResponseMsgHeader">
+		<wsdl:part name="MultiSpeakResponseMsgHeader" element="response:MultiSpeakResponseMsgHeader"/>
+	</wsdl:message>
+	<wsdl:message name="MultiSpeakRequestMsgHeader">
+		<wsdl:part name="MultiSpeakRequestMsgHeader" element="request:MultiSpeakRequestMsgHeader"/>
+	</wsdl:message>
+	<wsdl:message name="CancelDemandResetSoapIn">
+		<wsdl:part name="parameters" element="tns:CancelDemandReset"/>
+	</wsdl:message>
+	<wsdl:message name="CancelDemandResetSoapOut">
+		<wsdl:part name="parameters" element="tns:CancelDemandResetResponse"/>
+	</wsdl:message>
+	<wsdl:message name="CancelEndDeviceEventMonitoringSoapIn">
+		<wsdl:part name="parameters" element="tns:CancelEndDeviceEventMonitoring"/>
+	</wsdl:message>
+	<wsdl:message name="CancelEndDeviceEventMonitoringSoapOut">
+		<wsdl:part name="parameters" element="tns:CancelEndDeviceEventMonitoringResponse"/>
+	</wsdl:message>
+	<wsdl:message name="CancelPlannedOutageSoapIn">
+		<wsdl:part name="parameters" element="tns:CancelPlannedOutage"/>
+	</wsdl:message>
+	<wsdl:message name="CancelPlannedOutageSoapOut">
+		<wsdl:part name="parameters" element="tns:CancelPlannedOutageResponse"/>
+	</wsdl:message>
+	<wsdl:message name="CancelThresholdMonitoringSoapIn">
+		<wsdl:part name="parameters" element="tns:CancelThresholdMonitoring"/>
+	</wsdl:message>
+	<wsdl:message name="CancelThresholdMonitoringSoapOut">
+		<wsdl:part name="parameters" element="tns:CancelThresholdMonitoringResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ChangeSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:ChangeSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="ChangeSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:ChangeSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ChangeServiceDisplaysSoapIn">
+		<wsdl:part name="parameters" element="tns:ChangeServiceDisplays"/>
+	</wsdl:message>
+	<wsdl:message name="ChangeServiceDisplaysSoapOut">
+		<wsdl:part name="parameters" element="tns:ChangeServiceDisplaysResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ChangeThresholdMonitoringSoapIn">
+		<wsdl:part name="parameters" element="tns:ChangeThresholdMonitoring"/>
+	</wsdl:message>
+	<wsdl:message name="ChangeThresholdMonitoringSoapOut">
+		<wsdl:part name="parameters" element="tns:ChangeThresholdMonitoringResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ClearDisconnectedStatusSoapIn">
+		<wsdl:part name="parameters" element="tns:ClearDisconnectedStatus"/>
+	</wsdl:message>
+	<wsdl:message name="ClearDisconnectedStatusSoapOut">
+		<wsdl:part name="parameters" element="tns:ClearDisconnectedStatusResponse"/>
+	</wsdl:message>
+	<wsdl:message name="CreateMeterGroupsSoapIn">
+		<wsdl:part name="parameters" element="tns:CreateMeterGroups"/>
+	</wsdl:message>
+	<wsdl:message name="CreateMeterGroupsSoapOut">
+		<wsdl:part name="parameters" element="tns:CreateMeterGroupsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="CreateReadingSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:CreateReadingSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="CreateReadingSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:CreateReadingSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="CreateSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:CreateSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="CreateSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:CreateSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="DeleteMeterGroupsSoapIn">
+		<wsdl:part name="parameters" element="tns:DeleteMeterGroups"/>
+	</wsdl:message>
+	<wsdl:message name="DeleteMeterGroupsSoapOut">
+		<wsdl:part name="parameters" element="tns:DeleteMeterGroupsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="DeleteReadingSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:DeleteReadingSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="DeleteReadingSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:DeleteReadingSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="DeleteSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:DeleteSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="DeleteSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:DeleteSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="DisableReadingSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:DisableReadingSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="DisableReadingSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:DisableReadingSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="EnableReadingSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:EnableReadingSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="EnableReadingSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:EnableReadingSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetAllDomainsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAllDomains"/>
+	</wsdl:message>
+	<wsdl:message name="GetAllDomainsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAllDomainsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetAMRMeterCollectionChangesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAMRMeterCollectionChanges"/>
+	</wsdl:message>
+	<wsdl:message name="GetAMRMeterCollectionChangesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAMRMeterCollectionChangesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetAMRSupportedMetersSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAMRSupportedMeters"/>
+	</wsdl:message>
+	<wsdl:message name="GetAMRSupportedMetersSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAMRSupportedMetersResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetAttachmentsByObjectRefsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetAttachmentsByObjectRefs"/>
+	</wsdl:message>
+	<wsdl:message name="GetAttachmentsByObjectRefsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetAttachmentsByObjectRefsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetConfigurationGroupMembersSoapIn">
+		<wsdl:part name="parameters" element="tns:GetConfigurationGroupMembers"/>
+	</wsdl:message>
+	<wsdl:message name="GetConfigurationGroupMembersSoapOut">
+		<wsdl:part name="parameters" element="tns:GetConfigurationGroupMembersResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetConfigurationGroupNamesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetConfigurationGroupNames"/>
+	</wsdl:message>
+	<wsdl:message name="GetConfigurationGroupNamesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetConfigurationGroupNamesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetConfigurationGroupNamesByMeterIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetConfigurationGroupNamesByMeterIDs"/>
+	</wsdl:message>
+	<wsdl:message name="GetConfigurationGroupNamesByMeterIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetConfigurationGroupNamesByMeterIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainNamesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetDomainNames"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainNamesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetDomainNamesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainsByDomainNamesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetDomainsByDomainNames"/>
+	</wsdl:message>
+	<wsdl:message name="GetDomainsByDomainNamesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetDomainsByDomainNamesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByDateRangeSoapIn">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByDateRange"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByDateRangeSoapOut">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByDateRangeResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByDateRangeAndEventTypesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByDateRangeAndEventTypes"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByDateRangeAndEventTypesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByDateRangeAndEventTypesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByMeterIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByMeterIDs"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByMeterIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByMeterIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByMeterIDsAndEventTypesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByMeterIDsAndEventTypes"/>
+	</wsdl:message>
+	<wsdl:message name="GetEndDeviceEventsByMeterIDsAndEventTypesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetEndDeviceEventsByMeterIDsAndEventTypesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetFormattedBlockTemplatesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetFormattedBlockTemplates"/>
+	</wsdl:message>
+	<wsdl:message name="GetFormattedBlockTemplatesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetFormattedBlockTemplatesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadings"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterGroupsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterGroups"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterGroupsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterGroupsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterGroupsIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterGroupsIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterGroupsIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterGroupsIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDs"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodes"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsFormattedBlockSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsFormattedBlock"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsFormattedBlockSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsFormattedBlockResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByMeterIDsIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByMeterIDsIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByReadingTypeCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByReadingTypeCodes"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByReadingTypeCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByReadingTypeCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByReadingTypeCodesIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByReadingTypeCodesIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetLatestMeterReadingsByReadingTypeCodesIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetLatestMeterReadingsByReadingTypeCodesIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByBillingCycleSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByBillingCycle"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByBillingCycleSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByBillingCycleResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByBillingCycleIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByBillingCycleIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByBillingCycleIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByBillingCycleIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDate"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateAndReadingTypeCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateAndReadingTypeCodes"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateAndReadingTypeCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateAndReadingTypeCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateAndReadingTypeCodesIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateAndReadingTypeCodesIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateAndReadingTypeCodesIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateAndReadingTypeCodesIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateFormattedBlockSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateFormattedBlock"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateFormattedBlockSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateFormattedBlockResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByDateIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByDateIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDs"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsAndFieldNamesIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsAndFieldNamesIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsAndFieldNamesIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsAndFieldNamesIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsAndReadingTypeCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsAndReadingTypeCodes"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsAndReadingTypeCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsAndReadingTypeCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsFormattedBlockSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsFormattedBlock"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsFormattedBlockSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsFormattedBlockResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsIntervalDataSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsIntervalData"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByMeterIDsIntervalDataSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByMeterIDsIntervalDataResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByUOMAndDateSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByUOMAndDate"/>
+	</wsdl:message>
+	<wsdl:message name="GetMeterReadingsByUOMAndDateSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMeterReadingsByUOMAndDateResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetMethodsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetMethods"/>
+	</wsdl:message>
+	<wsdl:message name="GetMethodsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetMethodsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetObjectRefsByNounAndPrimaryIdentifiersSoapIn">
+		<wsdl:part name="parameters" element="tns:GetObjectRefsByNounAndPrimaryIdentifiers"/>
+	</wsdl:message>
+	<wsdl:message name="GetObjectRefsByNounAndPrimaryIdentifiersSoapOut">
+		<wsdl:part name="parameters" element="tns:GetObjectRefsByNounAndPrimaryIdentifiersResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetReadingSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetReadingSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="GetReadingSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetReadingSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetReadingSchedulesByIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetReadingSchedulesByIDs"/>
+	</wsdl:message>
+	<wsdl:message name="GetReadingSchedulesByIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetReadingSchedulesByIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetSchedulesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetSchedules"/>
+	</wsdl:message>
+	<wsdl:message name="GetSchedulesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetSchedulesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetSchedulesByIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:GetSchedulesByIDs"/>
+	</wsdl:message>
+	<wsdl:message name="GetSchedulesByIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:GetSchedulesByIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedEndDeviceEventTypesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetSupportedEndDeviceEventTypes"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedEndDeviceEventTypesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetSupportedEndDeviceEventTypesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedFieldNamesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetSupportedFieldNames"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedFieldNamesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetSupportedFieldNamesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedReadingQualityCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetSupportedReadingQualityCodes"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedReadingQualityCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetSupportedReadingQualityCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedReadingTypeCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:GetSupportedReadingTypeCodes"/>
+	</wsdl:message>
+	<wsdl:message name="GetSupportedReadingTypeCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:GetSupportedReadingTypeCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateDemandResetSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateDemandReset"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateDemandResetSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateDemandResetResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateEndDeviceEventMonitoringSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateEndDeviceEventMonitoring"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateEndDeviceEventMonitoringSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateEndDeviceEventMonitoringResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateEndDeviceEventsResetSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateEndDeviceEventsReset"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateEndDeviceEventsResetSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateEndDeviceEventsResetResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateGroupMeterReadingSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateGroupMeterReading"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateGroupMeterReadingSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateGroupMeterReadingResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateHistoricalMeterReadingsByMeterIDAndDateSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateHistoricalMeterReadingsByMeterIDAndDate"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateHistoricalMeterReadingsByMeterIDAndDateSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateHistoricalMeterReadingsByMeterIDAndDateResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterExchangesSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateMeterExchanges"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterExchangesSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateMeterExchangesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterInstallationsSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateMeterInstallations"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterInstallationsSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateMeterInstallationsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterReadingsByMeterIDsSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateMeterReadingsByMeterIDs"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterReadingsByMeterIDsSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateMeterReadingsByMeterIDsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterReadingsByReadingTypeCodesSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateMeterReadingsByReadingTypeCodes"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterReadingsByReadingTypeCodesSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateMeterReadingsByReadingTypeCodesResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterUninstallationsSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateMeterUninstallations"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateMeterUninstallationsSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateMeterUninstallationsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiatePlannedOutageSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiatePlannedOutage"/>
+	</wsdl:message>
+	<wsdl:message name="InitiatePlannedOutageSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiatePlannedOutageResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateThresholdMonitoringSoapIn">
+		<wsdl:part name="parameters" element="tns:InitiateThresholdMonitoring"/>
+	</wsdl:message>
+	<wsdl:message name="InitiateThresholdMonitoringSoapOut">
+		<wsdl:part name="parameters" element="tns:InitiateThresholdMonitoringResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InsertMeterInConfigurationGroupSoapIn">
+		<wsdl:part name="parameters" element="tns:InsertMeterInConfigurationGroup"/>
+	</wsdl:message>
+	<wsdl:message name="InsertMeterInConfigurationGroupSoapOut">
+		<wsdl:part name="parameters" element="tns:InsertMeterInConfigurationGroupResponse"/>
+	</wsdl:message>
+	<wsdl:message name="InsertMeterInMeterGroupSoapIn">
+		<wsdl:part name="parameters" element="tns:InsertMeterInMeterGroup"/>
+	</wsdl:message>
+	<wsdl:message name="InsertMeterInMeterGroupSoapOut">
+		<wsdl:part name="parameters" element="tns:InsertMeterInMeterGroupResponse"/>
+	</wsdl:message>
+	<wsdl:message name="IsAMRMeterSoapIn">
+		<wsdl:part name="parameters" element="tns:IsAMRMeter"/>
+	</wsdl:message>
+	<wsdl:message name="IsAMRMeterSoapOut">
+		<wsdl:part name="parameters" element="tns:IsAMRMeterResponse"/>
+	</wsdl:message>
+	<wsdl:message name="LinkAttachmentsToObjectsSoapIn">
+		<wsdl:part name="parameters" element="tns:LinkAttachmentsToObjects"/>
+	</wsdl:message>
+	<wsdl:message name="LinkAttachmentsToObjectsSoapOut">
+		<wsdl:part name="parameters" element="tns:LinkAttachmentsToObjectsResponse"/>
+	</wsdl:message>
+	<wsdl:message name="PingURLSoapIn">
+		<wsdl:part name="parameters" element="tns:PingURL"/>
+	</wsdl:message>
+	<wsdl:message name="PingURLSoapOut">
+		<wsdl:part name="parameters" element="tns:PingURLResponse"/>
+	</wsdl:message>
+	<wsdl:message name="RemoveMetersFromMeterGroupSoapIn">
+		<wsdl:part name="parameters" element="tns:RemoveMetersFromMeterGroup"/>
+	</wsdl:message>
+	<wsdl:message name="RemoveMetersFromMeterGroupSoapOut">
+		<wsdl:part name="parameters" element="tns:RemoveMetersFromMeterGroupResponse"/>
+	</wsdl:message>
+	<wsdl:message name="ScheduleGroupMeterReadingSoapIn">
+		<wsdl:part name="parameters" element="tns:ScheduleGroupMeterReading"/>
+	</wsdl:message>
+	<wsdl:message name="ScheduleGroupMeterReadingSoapOut">
+		<wsdl:part name="parameters" element="tns:ScheduleGroupMeterReadingResponse"/>
+	</wsdl:message>
+	<wsdl:message name="SetDisconnectedStatusSoapIn">
+		<wsdl:part name="parameters" element="tns:SetDisconnectedStatus"/>
+	</wsdl:message>
+	<wsdl:message name="SetDisconnectedStatusSoapOut">
+		<wsdl:part name="parameters" element="tns:SetDisconnectedStatusResponse"/>
+	</wsdl:message>
+	<wsdl:message name="UnlinkAttachmentsFromObjectsSoapIn">
+		<wsdl:part name="parameters" element="tns:UnlinkAttachmentsFromObjects"/>
+	</wsdl:message>
+	<wsdl:message name="UnlinkAttachmentsFromObjectsSoapOut">
+		<wsdl:part name="parameters" element="tns:UnlinkAttachmentsFromObjectsResponse"/>
+	</wsdl:message>
+	<wsdl:portType name="MR_ServerSoap">
+		<wsdl:operation name="CancelDemandReset">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests that responder cancel one or more previously scheduled demand reset actions.  The asynchronous return is the DemandResetCancelledNotification, which is linked to this method call using the transactionID.  Publisher shall return such messages to the URL specified in the responseURL calling parameter of this method.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:CancelDemandResetSoapIn"/>
+			<wsdl:output message="tns:CancelDemandResetSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="CancelEndDeviceEventMonitoring">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests receiver to cancel event monitoring on a previously sent eventMonitoringItem - a group of meters and a specific set of meter events. The eventMonitoringItem to be cancelled shall be identified by its objectID.</wsdl:documentation>
+			<wsdl:input message="tns:CancelEndDeviceEventMonitoringSoapIn"/>
+			<wsdl:output message="tns:CancelEndDeviceEventMonitoringSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="CancelPlannedOutage">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Notify receiver of cancellation of planned outage given a list of meterIDs.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:CancelPlannedOutageSoapIn"/>
+			<wsdl:output message="tns:CancelPlannedOutageSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="CancelThresholdMonitoring">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester cancels a threshold monitoring request that had previously been initiated using an InitiateThresholdMonitoring call on one or more meters. The Requester sends the objectID of the thresholdMonitoringItem that is to be cancelled.</wsdl:documentation>
+			<wsdl:input message="tns:CancelThresholdMonitoringSoapIn"/>
+			<wsdl:output message="tns:CancelThresholdMonitoringSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="ChangeSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests receiver to modify the characteristics of previously issued schedule(s).</wsdl:documentation>
+			<wsdl:input message="tns:ChangeSchedulesSoapIn"/>
+			<wsdl:output message="tns:ChangeSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="ChangeServiceDisplays">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests that receiver update the premises display associated with a specific service and serviceLocation. At a minimum, the premisesDisplayID must be populated on the serviceLocation and service.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:ChangeServiceDisplaysSoapIn"/>
+			<wsdl:output message="tns:ChangeServiceDisplaysSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="ChangeThresholdMonitoring">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester changes a threshold monitoring request that had previously been initiated using a InitiateThresholdMonitoring call on one or more meters. For the purposes of changing a previously established threshold monitoring item (this method), the thresholdMonitoringItem SHALL match a previously set threshold monitoring item and SHALL contain all of the following elements: meterID, value, readingTypeCode and operator.  For instance, to change the monitoring threshold of energy on the specified meter so that a ThresholdMonitoringNotification is sent when the accumulated energy exceeds 0 rather than the previously established 100 kWh, then the value = 0, readingTypeCode might be = 0.0.0.1.1.1.12.0.0.0.0.0.0.0.0.3.72.0 (Bulk Quanity Forward, SecondaryMetered - Energy (kWh) ), and operator=GT.</wsdl:documentation>
+			<wsdl:input message="tns:ChangeThresholdMonitoringSoapIn"/>
+			<wsdl:output message="tns:ChangeThresholdMonitoringSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="ClearDisconnectedStatus">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver of meters that should be removed from disconnected status (i.e. made active).  Sender had previously notified receiver, by the use of a SetDisconnectedStatus message, of meters that are associated with customer services that had been disconnected at the service. Disconnection at the service is perfromed by physically disconnecting the service by means such as by lifting the transformer jumpers or by booting the meter.  This status is not to be used with meters that have been disconnected by the use of a remote connect disconnect (RCD) switch. While in disconnected status mode, the collection of meter readings is not expected and the AMI system SHALL NOT report detected outage conditions. The meters shall stay in the disconnected status mode until such time as the receiver receives a ClearDisconnectedStatus message from the Sender, at which time the receiver SHALL begin to take normal meter readings and SHALL report detected outages.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:ClearDisconnectedStatusSoapIn"/>
+			<wsdl:output message="tns:ClearDisconnectedStatusSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="CreateMeterGroups">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that new groups of meters have been created to address as a meter group.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:CreateMeterGroupsSoapIn"/>
+			<wsdl:output message="tns:CreateMeterGroupsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="CreateReadingSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that new readingSchedules have been created on the server.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:CreateReadingSchedulesSoapIn"/>
+			<wsdl:output message="tns:CreateReadingSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="CreateSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that new schedules have been created on the server.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:CreateSchedulesSoapIn"/>
+			<wsdl:output message="tns:CreateSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="DeleteMeterGroups">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that Sender has deleted previously defined groups of meters to address as a meter group.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:DeleteMeterGroupsSoapIn"/>
+			<wsdl:output message="tns:DeleteMeterGroupsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="DeleteReadingSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that previously established readingSchedules have been deleted, specified by sending the readingScheduleIDs.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:DeleteReadingSchedulesSoapIn"/>
+			<wsdl:output message="tns:DeleteReadingSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="DeleteSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that previously established readingSchedules have been deleted, specified by sending the scheduleIDs.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:DeleteSchedulesSoapIn"/>
+			<wsdl:output message="tns:DeleteSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="DisableReadingSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester disables previously established readingSchedules on the server, specified by sending an array of readingScheduleIDs. This action instructs the server to stop taking readings based on this readingSchedule.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:DisableReadingSchedulesSoapIn"/>
+			<wsdl:output message="tns:DisableReadingSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="EnableReadingSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester enables previously established readingSchedules on the server, specified by sending an array of readingScheduleIDs. This action instructs the server to begin taking readings based on this readingSchedule.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:EnableReadingSchedulesSoapIn"/>
+			<wsdl:output message="tns:EnableReadingSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetAllDomains">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all domains supported by a server.</wsdl:documentation>
+			<wsdl:input message="tns:GetAllDomainsSoapIn"/>
+			<wsdl:output message="tns:GetAllDomainsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetAMRMeterCollectionChanges">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all meters that support AMR and that have been modified since the time of a previousDataSetID, which is specified in the message header.  Meters that have been created since the previous data set was sent SHALL be included in the created container for the meters of the appropriate type (for instance createdElectricMeters for electricMeters). Meters that have been changed since the previous data set SHALL be included in the changed container (for instance changedElectricMeters) and objectDeletions SHALL be included in the deleted container for meters that have been deleted by the system of record (for instance the deletedElectricMeters). The requester may choose whether or not to actually delete meter records in its system, based on its own business rules. The element MultiSpeakRequestMsgHeader.DataSetState.RequestDataSetState.PreviousDataSetID SHALL be populated with an appropriate data set identifier.</wsdl:documentation>
+			<wsdl:input message="tns:GetAMRMeterCollectionChangesSoapIn"/>
+			<wsdl:output message="tns:GetAMRMeterCollectionChangesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetAMRSupportedMeters">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all meters that have AMR.</wsdl:documentation>
+			<wsdl:input message="tns:GetAMRSupportedMetersSoapIn"/>
+			<wsdl:output message="tns:GetAMRSupportedMetersSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetAttachmentsByObjectRefs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests an array of attachments associated with specific objects, given their objectRefs.</wsdl:documentation>
+			<wsdl:input message="tns:GetAttachmentsByObjectRefsSoapIn"/>
+			<wsdl:output message="tns:GetAttachmentsByObjectRefsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetConfigurationGroupMembers">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests from the server the members of a specific meter cofiguration group, identified by the groupName parameter. This method is used, along with the GetConfigurationGroupNames method to enable the Requester to get information about which meters are included in a specific meter configuration group. The server returns a configurationGroup object in response to this method call.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetConfigurationGroupMembersSoapIn"/>
+			<wsdl:output message="tns:GetConfigurationGroupMembersSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetConfigurationGroupNames">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests from the server a list of names of meter configuration groups. The server returns an array of strings including the names of the supported configurationGroups; the name is specified in the configurationGroup.groupName element. The Requester can then request the members of a specific group using the GetConfigurationGroupMembers method.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetConfigurationGroupNamesSoapIn"/>
+			<wsdl:output message="tns:GetConfigurationGroupNamesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetConfigurationGroupNamesByMeterIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests from the server a list of names of meter configuration groups that include specific meters. The server returns an array of strings including the names of the supported configurationGroups. The Requester can then request the members of a specific group using the GetConfigurationGroupMembers method.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetConfigurationGroupNamesByMeterIDsSoapIn"/>
+			<wsdl:output message="tns:GetConfigurationGroupNamesByMeterIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainNames">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The client requests from the server a list of names of domains supported by the server. This method is used, along with the GetDomainsByDomainName method to enable systems to exchange information about application-specific or installation-specific lists of information, such as the lists of counties for this installation or the list of serviceStatusCodes used by the server.  The value referred to as being the domainName is the domain.primaryIdentifier element. It is recommended that domain names be returned in the form of the name of a named object (noun) in the MultiSpeak schema dotted with the field name of interest. For instance, if the system of record is returning workFlowStatus identifiers that would be used on designs, it is suggested that the domain name be called design.workflowStatus, using the same spelling and capitalization used in the MultiSpeak schema.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetDomainNamesSoapIn"/>
+			<wsdl:output message="tns:GetDomainNamesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainsByDomainNames">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The client requests from the server the members of specific domains of information, identified by the domainName parameter, which are supported by the server. This method is used, along with the GetDomainNames method to enable systems to exchange information about application-specific or installation-specific lists of information, such as the lists of counties for this installation or the list of serviceStatusCodes used by the server.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetDomainsByDomainNamesSoapIn"/>
+			<wsdl:output message="tns:GetDomainsByDomainNamesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByDateRange">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all end device events recorded during a specific date/time range.</wsdl:documentation>
+			<wsdl:input message="tns:GetEndDeviceEventsByDateRangeSoapIn"/>
+			<wsdl:output message="tns:GetEndDeviceEventsByDateRangeSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByDateRangeAndEventTypes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all end device events of specified end device event types that were recorded during a specific date/time range.</wsdl:documentation>
+			<wsdl:input message="tns:GetEndDeviceEventsByDateRangeAndEventTypesSoapIn"/>
+			<wsdl:output message="tns:GetEndDeviceEventsByDateRangeAndEventTypesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByMeterIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all end device events for meters specified by their meterIDs.</wsdl:documentation>
+			<wsdl:input message="tns:GetEndDeviceEventsByMeterIDsSoapIn"/>
+			<wsdl:output message="tns:GetEndDeviceEventsByMeterIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByMeterIDsAndEventTypes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns all end device events of specified end device types for meters specified by their meterIDs.</wsdl:documentation>
+			<wsdl:input message="tns:GetEndDeviceEventsByMeterIDsAndEventTypesSoapIn"/>
+			<wsdl:output message="tns:GetEndDeviceEventsByMeterIDsAndEventTypesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetFormattedBlockTemplates">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the templates for formattedBlocks that the server supports.</wsdl:documentation>
+			<wsdl:input message="tns:GetFormattedBlockTemplatesSoapIn"/>
+			<wsdl:output message="tns:GetFormattedBlockTemplatesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadings">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent meter reading data for all AMR capable meters.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterGroups">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent meter reading data for all meters in the specified meterGroups, requested by meter group identifier. Meter readings are returned in the form of a formattedBlock. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the  FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.  The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter.  If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterGroupsSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterGroupsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterGroupsIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent meter reading data for all meters in the specified meterGroups, requested by meter group identifier. Meter readings are returned in the form of an intervalData block. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterGroupsIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterGroupsIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent meter reading data for specified meterIDs.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterIDsSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent reading data for specific meterIDs and reading types. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter.  If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent reading data for specified meterIDs and an array of reading types. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsFormattedBlock">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the latest readings for a list of meters for a specific date range and reading type desired. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterIDsFormattedBlockSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterIDsFormattedBlockSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the latest readings for a list of meters for a specific date range and reading types desired. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByMeterIDsIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByMeterIDsIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByReadingTypeCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent reading data for a given reading type. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByReadingTypeCodesSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByReadingTypeCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByReadingTypeCodesIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests the most recent reading data for given reading types. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.</wsdl:documentation>
+			<wsdl:input message="tns:GetLatestMeterReadingsByReadingTypeCodesIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetLatestMeterReadingsByReadingTypeCodesIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByBillingCycle">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all required reading data for a given billingCycle and date range in the form of an array of formattedBlocks. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format. The calling parameters include: (i) billingCycle - the CB billing cycle for which readings are to be returned, (ii)billing date - the end date of the billing cycle, (iii) kWhLookBack - the number of days before the billing date for which the CB will accept valid kWh readings (if zero then the reading is only acceptable on the billing date), (iv) kWLookBack- the number of days before the billing date for which the CB will accept valid kW readings (if zero then the reading is only acceptable on the billing date), (v) kWLookForward - the number of days to accept demand readings beyond the billing date to be used in this billing period (if zero then must use demand occurring only through the billing date) and (vi) lastReceived.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByBillingCycleSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByBillingCycleSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByBillingCycleIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all required reading data for a given billingCycle and date range in the form of an array of intervalData blocks. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specifiedin the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The calling parameters include: (i) billingCycle - the CB billing cycle for which readings are to be returned, (ii)billing date - the end date of the billing cycle, (iii) kWhLookBack - the number of days before the billing date for which the CB will accept valid kWh readings (if zero then the reading is only acceptable on the billing date), (iv) kWLookBack- the number of days before the billing date for which the CB will accept valid kW readings (if zero then the reading is only acceptable on the billing date), (v) kWLookForward - the number of days to accept demand readings beyond the billing date to be used in this billing period (if zero then must use demand occurring only through the billing date) and (vi) lastReceived.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByBillingCycleIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByBillingCycleIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDate">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests reading data for all meters given a date range.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByDateSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByDateSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateAndReadingTypeCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests readings for all meters given the date range and reading type desired. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter.  If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByDateAndReadingTypeCodesSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByDateAndReadingTypeCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateAndReadingTypeCodesIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests readings for all meters given the date range and reading types desired. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByDateAndReadingTypeCodesIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByDateAndReadingTypeCodesIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateFormattedBlock">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests reading data for all billing cycles given a billing date. Reading(s) are returned in the form of an array of formattedBlocks. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format. The calling parameters include: (i) billing date - the end date of the billing cycle, (ii) kWhLookBack - the number of days before the billing date for which the CB will accept valid kWh readings (if zero then the reading is only acceptable on the billing date), (iii) kWLookBack- the number of days before the billing date for which the CB will accept valid kW readings (if zero then the reading is only acceptable on the billing date), (iv) kWLookForward - the number of days to accept demand readings beyond the billing date to be used in this billing period (if zero then must use demand occurring only through the billing date) and (v) lastReceived.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByDateFormattedBlockSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByDateFormattedBlockSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests reading data for all billing cycles given a billing date. Reading(s) are returned in the form of an array of intervalData blocks. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The calling parameters include: (i) billing date - the end date of the billing cycle, (ii) kWhLookBack - the number of days before the billing date for which the CB will accept valid kWh readings (if zero then the reading is only acceptable on the billing date), (iii) kWLookBack- the number of days before the billing date for which the CB will accept valid kW readings (if zero then the reading is only acceptable on the billing date), (iv) kWLookForward - the number of days to accept demand readings beyond the billing date to be used in this billing period (if zero then must use demand occurring only through the billing date) and (v) lastReceived.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByDateIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByDateIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests meter reading data for an array of MeterIDs and date range.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByMeterIDsSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByMeterIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsAndFieldNamesIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests readings for a list of meters, identified by meterIDs, for a specific date range and reading types desired. Reading types may be specified using the fieldName parameter. Valid values for fieldName are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByMeterIDsAndFieldNamesIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByMeterIDsAndFieldNamesIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsAndReadingTypeCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests readings for an array of meters for a specific date range and reading type desired. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByMeterIDsAndReadingTypeCodesSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByMeterIDsAndReadingTypeCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsFormattedBlock">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests reading data for a given meter and billing date.  Reading(s)are returned in the form of an array of formattedBlocks. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The requestor may specify a preferred format for the returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format. The calling parameters include: (i) meterID - the meter identifier for which readings are to be returned, (ii)billing date - the end date of the billing cycle, (iii) kWhLookBack - the number of days before the billing date for which the CB will accept valid kWh readings (if zero then the reading is only acceptable on the billing date), (iv) kWLookBack- the number of days before the billing date for which the CB will accept valid kW readings (if zero then the reading is only acceptable on the billing date), (v) kWLookForward - the number of days to accept demand readings beyond the billing date to be used in this billing period (if zero then must use demand occurring only through the billing date) and (vi) lastReceived.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByMeterIDsFormattedBlockSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByMeterIDsFormattedBlockSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsIntervalData">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests reading data for a given meter and billing date. Reading(s)are returned in the form of an array of intervalData blocks. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative. The calling parameters include: (i) meterID - the meter identifier for which readings are to be returned, (ii)billing date - the end date of the billing cycle, (iii) kWhLookBack - the number of days before the billing date for which the CB will accept valid kWh readings (if zero then the reading is only acceptable on the billing date), (iv) kWLookBack- the number of days before the billing date for which the CB will accept valid kW readings (if zero then the reading is only acceptable on the billing date), (v) kWLookForward - the number of days to accept demand readings beyond the billing date to be used in this billing period (if zero then must use demand occurring only through the billing date) and (vi) lastReceived.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByMeterIDsIntervalDataSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByMeterIDsIntervalDataSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByUOMAndDate">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests reading data for all meters given unit of measure(UOM) and date range.</wsdl:documentation>
+			<wsdl:input message="tns:GetMeterReadingsByUOMAndDateSoapIn"/>
+			<wsdl:output message="tns:GetMeterReadingsByUOMAndDateSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetMethods">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests a list of methods supported by Responder.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetMethodsSoapIn"/>
+			<wsdl:output message="tns:GetMethodsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetObjectRefsByNounAndPrimaryIdentifiers">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests that the server return an array of objectRefs for data instances, specified by primaryIdentifiers, of a specifc noun type for which the server is the system of record.  It is anticipated that in some cases this method might return a large number of records.</wsdl:documentation>
+			<wsdl:input message="tns:GetObjectRefsByNounAndPrimaryIdentifiersSoapIn"/>
+			<wsdl:output message="tns:GetObjectRefsByNounAndPrimaryIdentifiersSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetReadingSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all readingSchedules that have been established on the server.</wsdl:documentation>
+			<wsdl:input message="tns:GetReadingSchedulesSoapIn"/>
+			<wsdl:output message="tns:GetReadingSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetReadingSchedulesByIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests readingSchedules that previously have been established on the server, selected by the scheduleID.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetReadingSchedulesByIDsSoapIn"/>
+			<wsdl:output message="tns:GetReadingSchedulesByIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetSchedules">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all schedules that have been established on the server.</wsdl:documentation>
+			<wsdl:input message="tns:GetSchedulesSoapIn"/>
+			<wsdl:output message="tns:GetSchedulesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetSchedulesByIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests specified schedules that previously have been established on the server, selected by scheduleIDs.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetSchedulesByIDsSoapIn"/>
+			<wsdl:output message="tns:GetSchedulesByIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedEndDeviceEventTypes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Subscriber requests a listing of the end device event types supported by the server. End device events should be consistent with the EndDeviceEvents identified in IEC 61968-9, second edition. At a minimum, it is REQUIRED that the returned endDeviceEventType SHALL include the concatenated numeric event code and the endDeviceEventType.codeString so that the Subscriber can link the numeric end device event type with its string representation.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetSupportedEndDeviceEventTypesSoapIn"/>
+			<wsdl:output message="tns:GetSupportedEndDeviceEventTypesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedFieldNames">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all fieldNames supported by the AMI system. Valid values for fieldNames are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetSupportedFieldNamesSoapIn"/>
+			<wsdl:output message="tns:GetSupportedFieldNamesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedReadingQualityCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Returns the list of readingQualityCodes that are supported by the server.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetSupportedReadingQualityCodesSoapIn"/>
+			<wsdl:output message="tns:GetSupportedReadingQualityCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedReadingTypeCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requests all reading types supported by the AMI system. Reading types may be specified using the readingTypeCode parameter. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.Responder returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:GetSupportedReadingTypeCodesSoapIn"/>
+			<wsdl:output message="tns:GetSupportedReadingTypeCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateDemandReset">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester initiates a demand reset on one or more meters specified by meter identifer.  The MR server confirms the action has been taken by publishing a DemandResetsNotification to the Requester sent to the URL specified in the responseURL and referencing the transactionID sent in this method call.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateDemandResetSoapIn"/>
+			<wsdl:output message="tns:InitiateDemandResetSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateEndDeviceEventMonitoring">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests receiver to begin monitoring a list of meters for specific end device events. End device event notifications are subsequently published to the requester using EndDeviceEventsNotification method calls that are sent to the URL specified in the responseURL parameter and referencing the transactionID provided in this method call.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateEndDeviceEventMonitoringSoapIn"/>
+			<wsdl:output message="tns:InitiateEndDeviceEventMonitoringSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateEndDeviceEventsReset">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests that receiver reset the recorded end device events of a specififc type.  Upon completion of this request, the receiver returns information on the success or failure of the action to the Requester using the EndDeviceEventsResetNotification.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateEndDeviceEventsResetSoapIn"/>
+			<wsdl:output message="tns:InitiateEndDeviceEventsResetSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateGroupMeterReading">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests that receiver initiate an on-demand meter reading on a group of meters, referred to by meter group name.  Meter readings are subsequently published to the sender using either the IntervalDataNotification or the FormattedBlockNotification methods, sent to the URL specified in the responseURL parameter and referencing the transactionID sent in this method call.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateGroupMeterReadingSoapIn"/>
+			<wsdl:output message="tns:InitiateGroupMeterReadingSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateHistoricalMeterReadingsByMeterIDAndDate">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">The Requester requests that the receiver attempt again to collect meter readings for specific meters and a specific date. The receiver shall return the requested readings, if it is possible to obtain them, using any of the publish type methods available (i.e., MeterReadingsNotification, FormattedBlockNotification or IntervalDataNotification).</wsdl:documentation>
+			<wsdl:input message="tns:InitiateHistoricalMeterReadingsByMeterIDAndDateSoapIn"/>
+			<wsdl:output message="tns:InitiateHistoricalMeterReadingsByMeterIDAndDateSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterExchanges">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that meter(s) have been exchanged. The recevier subsequently may return information to the sender about the status of its handling of the meterExchanges by sending a MeterExchangedNotification to the URL specified in the responseURL parameter. The linked MeterExchangedNotification SHALL carry the same transactionID as the one that the subscriber received in this Initiate method. The payload includes a meterExchanges object that can carry arrays of all possible types of meters (electricMeter, gas,Meter, waterMeter, propaneMeter and otherMeter), thus this one method can be used to handle different meter types.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateMeterExchangesSoapIn"/>
+			<wsdl:output message="tns:InitiateMeterExchangesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterInstallations">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that meters have been deployed (installed) and are ready for the AMI system to make the initial meter reading.  The service location in the payload SHALL include the customerID and account number as well as the necessary electric service, gas service, water service, etc so that the meters can be linked to the service location. The service shall also include the meterID for the appropriate service type.  The result of this method is returned asynchronously in a MeterInstalledNotification.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateMeterInstallationsSoapIn"/>
+			<wsdl:output message="tns:InitiateMeterInstallationsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterReadingsByMeterIDs">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests new meter readings from receiver, on meters selected by meterIDs.  The meter reading is returned to the sender in the form of a meterReading, an intervalData block, or a formattedBlock, sent to the URL specified in the responseURL and referencing the transactionID provided in this method.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateMeterReadingsByMeterIDsSoapIn"/>
+			<wsdl:output message="tns:InitiateMeterReadingsByMeterIDsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterReadingsByReadingTypeCodes">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester requests that receiver schedule a meter reading on a group of meters, to obtain specific types of meter data, specified by readingTypeCodes. Valid values for readingTypeCode are those that are specified in the most current version of the FormattedBlock Implementation Guidelines document, as issued by the MultiSpeak Initiative.  Meter readings are subsequently published to the requestor using one of the following asynchronous response types: (i) FormattedBlockNotification, (ii) IntervalDataNotification, or (iii) MeterReadingsNotification methods and sent to the URL specified in the responseURL parameter and referencing the transactionID sent on this method call. The requestor may specify a preferred format for a returned formattedBlock using the formattedBlockTemplateID parameter. If the publisher supports this template, the data should be returned in that format; if not the publisher should still return the data, but in its preferred formattedBlockTemplate format. Error handling may be of six types for this method: 1)The publisher cannot read any of the reading types requested Expected response: The publisher should return an errorObject in the synchronous response to the Initiate message (a synchronous error response). 2) The publisher can read only some of the values being requested Expected Response: The publisher should send what it can, without flagging an error condition. 3) The meter for which data is being requested does not exist in the publishers system Expected Response: A synchronous error (see definition in point 1 above) should be returned. 4) The publisher is too busy to respond or too much information is being requested - Expected Response: A synchronous error (see definition in point 1 above) should be returned. 5) The request is delayed beyond the specified expiration time Expected Response: The publisher closes the request and does not make an error response. 6) The publisher tried and failed to successfully make the readings Expected Response: The publisher should send an asynchronous return message (a SystemStateNotification) with appropriate errorObjects set in the reply element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateMeterReadingsByReadingTypeCodesSoapIn"/>
+			<wsdl:output message="tns:InitiateMeterReadingsByReadingTypeCodesSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterUninstallations">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that meters have been removed (uninstalled) and returned to inventory for potential reuse. The result of this method is returned asynchronously in a MetersUninstalledNotification.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateMeterUninstallationsSoapIn"/>
+			<wsdl:output message="tns:InitiateMeterUninstallationsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiatePlannedOutage">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that meters that will be affected by a planned outage.  Calling parameters include a list of meterIDs of the affected meters and start and end dates of the outage.</wsdl:documentation>
+			<wsdl:input message="tns:InitiatePlannedOutageSoapIn"/>
+			<wsdl:output message="tns:InitiatePlannedOutageSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateThresholdMonitoring">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender initiates threshold monitoring on one or more meters by issuing an ArrayOfThresholdMonitoringItem object to the receiver.  When the established thresholds are attained, the MR function returns information about this action using the ThresholdEventNotification to the URL specified in the responseURL calling parameter and references the transactionID specified to link the transaction to this Initiate request.  For the purposes of initiating threshold monitoring (this method), the thresholdMonitoringItem SHALL contain all of the following elements: meterID, value, readingTypeCode and operator.  For instance, to establish monitoring of energy on the specified meter so that a ThresholdMonitoringNotification is sent when the accumulated energy exceeds 100 kWh, then the value = 100, readingTypeCode might be = 0.0.0.1.1.1.12.0.0.0.0.0.0.0.0.3.72.0 (Bulk Quanity Forward, SecondaryMetered - Energy (kWh) ), and operator=GT.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:InitiateThresholdMonitoringSoapIn"/>
+			<wsdl:output message="tns:InitiateThresholdMonitoringSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InsertMeterInConfigurationGroup">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests receiver to add meter(s) to an existing configuration group.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:InsertMeterInConfigurationGroupSoapIn"/>
+			<wsdl:output message="tns:InsertMeterInConfigurationGroupSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="InsertMeterInMeterGroup">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests that receiver add meter(s) to an existing group of meters to address as a meter group.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:InsertMeterInMeterGroupSoapIn"/>
+			<wsdl:output message="tns:InsertMeterInMeterGroupSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="IsAMRMeter">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Return true if given meterID has AMR capabilities and such capabilities are currently enabled. Otherwise return false.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:IsAMRMeterSoapIn"/>
+			<wsdl:output message="tns:IsAMRMeterSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="LinkAttachmentsToObjects">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests that receiver link the provided attachments to objects specified by their objectRefs.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:LinkAttachmentsToObjectsSoapIn"/>
+			<wsdl:output message="tns:LinkAttachmentsToObjectsSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="PingURL">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Requester pings URL of Responder to determine its readiness to respond.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:PingURLSoapIn"/>
+			<wsdl:output message="tns:PingURLSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="RemoveMetersFromMeterGroup">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that Sender has removed meter(s) from an existing group of meters to address as a meter group.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:RemoveMetersFromMeterGroupSoapIn"/>
+			<wsdl:output message="tns:RemoveMetersFromMeterGroupSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="ScheduleGroupMeterReading">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender requests that receiver schedule meter readings for a group of meters as near as possible to the specified time.  Receiver returns meter readings when they have been collected using either the IntervalDataNotification or the FormattedBlockNotification methods sent to the URL specified in the responseURL parameter and referencing the transactionID sent in this method call.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:ScheduleGroupMeterReadingSoapIn"/>
+			<wsdl:output message="tns:ScheduleGroupMeterReadingSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="SetDisconnectedStatus">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver of meters that are associated with customer services that have been (or soon will be) disconnected at the service, for instance by lifting the transformer jumpers or booting the meter.  As a result, the Sender (typically the customer billing endpoint of a customer information system) wishes the receiver (typically the MR endpoint of an MDM or AMI system) to enter into its disconnected status mode for the specified meters.  While in this mode, the collection of meter readings is not expected and the AMI system SHALL NOT report detected outage conditions. The meters shall stay in the disconnected status mode until such time as the receiver receives a ClearDisconnectedStatus message from the Sender.</wsdl:documentation>
+			<wsdl:input message="tns:SetDisconnectedStatusSoapIn"/>
+			<wsdl:output message="tns:SetDisconnectedStatusSoapOut"/>
+		</wsdl:operation>
+		<wsdl:operation name="UnlinkAttachmentsFromObjects">
+			<wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Sender notifies receiver that attachments, specified by attachmentID, which is the objectID of the attachment to be unlinked from the referenced object. It is up to the receiver of this method to determine, according to its business rules, whether the attachment should be deleted or retained after it is unlinked.Receiver returns information about failed transactions using the result element of the response message header.</wsdl:documentation>
+			<wsdl:input message="tns:UnlinkAttachmentsFromObjectsSoapIn"/>
+			<wsdl:output message="tns:UnlinkAttachmentsFromObjectsSoapOut"/>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="MR_ServerSoap" type="tns:MR_ServerSoap">
+		<soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="CancelDemandReset">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CancelDemandReset" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="CancelEndDeviceEventMonitoring">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CancelEndDeviceEventMonitoring" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="CancelPlannedOutage">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CancelPlannedOutage" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="CancelThresholdMonitoring">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CancelThresholdMonitoring" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="ChangeSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/ChangeSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="ChangeServiceDisplays">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/ChangeServiceDisplays" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="ChangeThresholdMonitoring">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/ChangeThresholdMonitoring" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="ClearDisconnectedStatus">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/ClearDisconnectedStatus" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="CreateMeterGroups">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CreateMeterGroups" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="CreateReadingSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CreateReadingSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="CreateSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/CreateSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="DeleteMeterGroups">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/DeleteMeterGroups" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="DeleteReadingSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/DeleteReadingSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="DeleteSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/DeleteSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="DisableReadingSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/DisableReadingSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="EnableReadingSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/EnableReadingSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetAllDomains">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAllDomains" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetAMRMeterCollectionChanges">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAMRMeterCollectionChanges" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetAMRSupportedMeters">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAMRSupportedMeters" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetAttachmentsByObjectRefs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetAttachmentsByObjectRefs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetConfigurationGroupMembers">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetConfigurationGroupMembers" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetConfigurationGroupNames">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetConfigurationGroupNames" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetConfigurationGroupNamesByMeterIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetConfigurationGroupNamesByMeterIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainNames">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetDomainNames" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetDomainsByDomainNames">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetDomainsByDomainNames" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByDateRange">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetEndDeviceEventsByDateRange" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByDateRangeAndEventTypes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetEndDeviceEventsByDateRangeAndEventTypes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByMeterIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetEndDeviceEventsByMeterIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetEndDeviceEventsByMeterIDsAndEventTypes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetEndDeviceEventsByMeterIDsAndEventTypes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetFormattedBlockTemplates">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetFormattedBlockTemplates" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadings">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadings" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterGroups">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterGroups" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterGroupsIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterGroupsIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterIDsAndReadingTypeCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterIDsAndReadingTypeCodesIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsFormattedBlock">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterIDsFormattedBlock" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByMeterIDsIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByMeterIDsIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByReadingTypeCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByReadingTypeCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetLatestMeterReadingsByReadingTypeCodesIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetLatestMeterReadingsByReadingTypeCodesIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByBillingCycle">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByBillingCycle" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByBillingCycleIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByBillingCycleIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDate">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByDate" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateAndReadingTypeCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByDateAndReadingTypeCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateAndReadingTypeCodesIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByDateAndReadingTypeCodesIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateFormattedBlock">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByDateFormattedBlock" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByDateIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByDateIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByMeterIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsAndFieldNamesIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByMeterIDsAndFieldNamesIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsAndReadingTypeCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByMeterIDsAndReadingTypeCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsFormattedBlock">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByMeterIDsFormattedBlock" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByMeterIDsIntervalData">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByMeterIDsIntervalData" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMeterReadingsByUOMAndDate">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMeterReadingsByUOMAndDate" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetMethods">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetMethods" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetObjectRefsByNounAndPrimaryIdentifiers">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetObjectRefsByNounAndPrimaryIdentifiers" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetReadingSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetReadingSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetReadingSchedulesByIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetReadingSchedulesByIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetSchedules">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetSchedules" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetSchedulesByIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetSchedulesByIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedEndDeviceEventTypes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetSupportedEndDeviceEventTypes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedFieldNames">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetSupportedFieldNames" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedReadingQualityCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetSupportedReadingQualityCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="GetSupportedReadingTypeCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/GetSupportedReadingTypeCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateDemandReset">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateDemandReset" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateEndDeviceEventMonitoring">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateEndDeviceEventMonitoring" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateEndDeviceEventsReset">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateEndDeviceEventsReset" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateGroupMeterReading">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateGroupMeterReading" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateHistoricalMeterReadingsByMeterIDAndDate">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateHistoricalMeterReadingsByMeterIDAndDate" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterExchanges">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateMeterExchanges" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterInstallations">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateMeterInstallations" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterReadingsByMeterIDs">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateMeterReadingsByMeterIDs" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterReadingsByReadingTypeCodes">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateMeterReadingsByReadingTypeCodes" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateMeterUninstallations">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateMeterUninstallations" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiatePlannedOutage">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiatePlannedOutage" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InitiateThresholdMonitoring">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InitiateThresholdMonitoring" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InsertMeterInConfigurationGroup">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InsertMeterInConfigurationGroup" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="InsertMeterInMeterGroup">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/InsertMeterInMeterGroup" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="IsAMRMeter">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/IsAMRMeter" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="LinkAttachmentsToObjects">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/LinkAttachmentsToObjects" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="PingURL">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/PingURL" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="RemoveMetersFromMeterGroup">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/RemoveMetersFromMeterGroup" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="ScheduleGroupMeterReading">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/ScheduleGroupMeterReading" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="SetDisconnectedStatus">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/SetDisconnectedStatus" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+		<wsdl:operation name="UnlinkAttachmentsFromObjects">
+			<soap:operation soapAction="http://www.multispeak.org/Version_5.0_Release/UnlinkAttachmentsFromObjects" style="document"/>
+			<wsdl:input>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakRequestMsgHeader" part="MultiSpeakRequestMsgHeader" use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+				<soap:header message="tns:MultiSpeakResponseMsgHeader" part="MultiSpeakResponseMsgHeader" use="literal"/>
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="MR_Server">
+		<wsdl:port name="MR_ServerSoap" binding="tns:MR_ServerSoap">
+			<soap:address location="http://www.msp5.0.example.org"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

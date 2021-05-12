@@ -1,0 +1,2121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- edited with XMLSpy v2015 sp2 (x64) (http://www.altova.com) by Gary A McNaughton (private) -->
+<xs:schema xmlns="http://www.multispeak.org/V5.0/sandbox" xmlns:sandbox="http://www.multispeak.org/V5.0/sandbox" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:gml="http://www.multispeak.org/V5.0/gml" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:prim="http://www.multispeak.org/V5.0/primitives" targetNamespace="http://www.multispeak.org/V5.0/sandbox" version="5.0.7">
+	<xs:annotation>
+		<xs:documentation>MultiSpeak SandBox Schema. Version 5.0.7 Release (Version = "V5.0.7 Release") Release dated: 2/20/2015. Cooperative Energy Services (CES) reserves exclusive discretion to determine the content and definition of MultiSpeak®,a federally registered trademark of NRECA. Copyright © 2000-2015 CES. 
+
+The SandBox schema contains objects that are under development and are NOT part of the normative schema.  Implementers should be on notice that these objects may NEVER be included as part of the normative schema.  Also it should be clear that if included at some point in the future, the object may be modified from the form shown here, including breaking modifications of these objects. Implementers use these objects entirely at their own risk.
+
+Disclaimer: Modifications of this document have been made, and will be made, on the basis of consensus among the participants of the MultiSpeak Initiative. Cornice Engineering, Inc. (Cornice) hereby prepared this document to reflect the input provided by the participants as of the date listed above. This work is being completed under contract to the National Rural Electric Cooperative Association (NRECA) Neither Cornice nor NRECA (i) makes any representation or warranty, express or implied, as to the suitability of this information for any purpose whatsoever, or (ii) assumes any responsibility for damages or other liability whatsoever.</xs:documentation>
+	</xs:annotation>
+	<xs:import namespace="http://www.multispeak.org/V5.0/enumerations" schemaLocation="mspEnumerations.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/commonTypes" schemaLocation="mspCommonTypes.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0/primitives" schemaLocation="mspPrimitives.xsd"/>
+	<xs:import namespace="http://www.multispeak.org/V5.0" schemaLocation="MultiSpeak.xsd"/>
+	<xs:complexType name="apparentPowerRating">
+		<xs:sequence>
+			<xs:element name="apparentPower" type="com:apparentPower"/>
+			<xs:element name="description" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Description of rating type, such as DeliveredToGrid, ReceivedFromGrid, etc.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="apparentPowerRatings">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="apparentPowerRating" type="apparentPowerRating" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfString">
+		<xs:sequence minOccurs="0">
+			<xs:element name="theString" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="asFound">
+		<xs:complexContent>
+			<xs:extension base="meterConditions"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="asLeft">
+		<xs:annotation>
+			<xs:documentation>Conditions as meter left after test.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="meterConditions"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="blinkAlarm">
+		<xs:complexContent>
+			<xs:extension base="mspAlarm">
+				<xs:sequence>
+					<xs:element name="countedValue" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Accumulated value being reported.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ceilingValue" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the value beyond which the accumulator will roll over or latch at maximum.  </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="latchesAtMaximum" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is true for an accumulator that does not rollover upon reaching ceiling value.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="bufferedCircuitElement">
+		<xs:sequence>
+			<xs:element name="circuitElement" type="circuitElement"/>
+			<xs:element name="distance" type="com:length" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="bufferedCircuitElements">
+		<xs:annotation>
+			<xs:documentation>This optional container shall be used if it is desired to return a collection of circuit elements objects rather than the features to which these circuit elements point.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="bufferedCircuitElement" type="bufferedCircuitElement" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="circuitElement">
+		<xs:annotation>
+			<xs:documentation>This element is used to exchange information about a trace of the electrical connectivity tree.  It contains topology information, but does not include the engineering or asset information.  The name of the circuit element SHALL be carried in the circuitElement.primaryIdentifier.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="parentName" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The name of the circuit element that feeds this element electrically.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="elementType" type="enum:electricTopologyElementType" minOccurs="0"/>
+					<xs:element name="substationRef" type="com:substationRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier of substation that this feeder is in.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="feederRef" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for substation feeder that includes this circuit element. The feederName SHALL be carried in the feederRef.primaryIdentifier and the feeder code (or feeder number), if used, SHALL be carried in the feederRef.secondaryIdentifier.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="phaseCode" type="enum:phaseCode" minOccurs="0"/>
+					<xs:element name="circuitElementStatus" type="circuitElementStatus" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="circuitElementAndDistance">
+		<xs:sequence>
+			<xs:element name="distance" type="com:lengthUnitValue" minOccurs="0"/>
+			<xs:element name="circuitElement" type="circuitElement" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="circuitElementCollectionChanges">
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="changedCircuitElements" type="circuitElements" minOccurs="0"/>
+					<xs:element name="createdCircuitElements" type="circuitElements" minOccurs="0"/>
+					<xs:element name="deletedCircuitElements" type="msp:objectDeletions" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="circuitElements">
+		<xs:sequence>
+			<xs:element name="circuitElement" type="circuitElement" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="circuitElementStatus">
+		<xs:annotation>
+			<xs:documentation>The outage status for this circuitElement.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="outageRefs" type="msp:outageRefs" minOccurs="0"/>
+					<xs:element name="outagedPhase" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The phase(s) that are experiencing outage conditions.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="circuitElementState" type="enum:presumedElementStateType"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="confidenceLevelType">
+		<xs:annotation>
+			<xs:documentation>Be able to union two choices:  a positive, real value OR "-1" for not applicable.</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="sandbox:restrictedFloat sandbox:stringToken"/>
+	</xs:simpleType>
+	<xs:complexType name="connectivitySetCollectionChanges">
+		<xs:annotation>
+			<xs:documentation>Connectivity is a container object that may be used to group all instances of data objects that are contained in a network model.  It may carry modeled devices that could be included in an electric connectivity model, or a gas or water connectivity model. ConnectivitySetCollectionChanges is a container that has a createdConnectivitySet for new base and incremental models and deletedConnectivitySet carries objectDeletions for those connectivity models which have been deleted. </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="createdConnectivitySets" type="connectivitySets" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>New connectivity models that have been generated by the system of record.  New base models SHALL BE included in the baseConnectivityModel container and new incrementalConnectivityModels SHALL BE included in the incrementalConnectivityModels container. Note that currently incremental connectivity models are sandboxed and SHOULD NOT be used in connectivitySets.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="deletedConnectivitySets" type="msp:objectDeletions" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Base connectivity models or incremental connectivity models that are to be deleted. Note that currently incremental connectivity models are sandboxed and SHOULD NOT be referred to here.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="connectivitySets">
+		<xs:annotation>
+			<xs:documentation>A connectivitySet is a container for connectivity model information.  Note that currently incremental connectivity models are sandboxed and SHOULD NOT be used in connectivitySets.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="baseConnectivityModels" type="msp:connectivity" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Base connectivity models.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="incrementalConnectivityModels" type="incrementalConnectivityModels" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Incremental models (sets of changes to existing base models).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CreateDERGroups">
+		<xs:sequence>
+			<xs:element name="DERGroups" type="DERGroups"/>
+			<xs:element name="responseURL" type="xs:anyURI"/>
+			<xs:element name="transactionID" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="CreateDERGroupsResponse"/>
+	<xs:complexType name="customerCall">
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="customerID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for a unique instance of a customer.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="eventTime" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Date and time call received.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="description" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Date and time call received.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="problemCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Problem Code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="callType" type="enum:callType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Type of call.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="takenBy" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Agent taking call.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="callPriority" type="enum:priorityType" minOccurs="0"/>
+					<xs:element name="voiceRecordings" type="msp:voiceRecordings" minOccurs="0"/>
+					<xs:element name="location" type="msp:incidentLocation" minOccurs="0"/>
+					<xs:element name="resolvedLevel" type="enum:resolvedLevel" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates if this call was resolved to a specific meter or address.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="customerCallStatus">
+		<xs:annotation>
+			<xs:documentation>This class indicates the level to which a customer's outage call has been resolved.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="customerCallID" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>This is the objectID of the customerCall data instance of interest.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="resolvedLevel" type="enum:resolvedLevel"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="damageAssessment">
+		<xs:annotation>
+			<xs:documentation>This is a field damage assessment report.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="estimated" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Estimated time to repair in hours</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="eventID" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Event ID if part of an event or outage</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="jobNumber" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The jobNumber associated with this assessment.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="expiresOn" type="prim:mspDateTime" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="damageAssessmentLocation">
+		<xs:complexContent>
+			<xs:extension base="msp:mspPointObject">
+				<xs:sequence>
+					<xs:element name="address" type="com:address" minOccurs="0"/>
+					<xs:element name="locationOffset" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>
+Allows the collector to specify that the location is a offset of the collected location. Examples. 5 spans north, 2 houses east, or 1 tap north.
+              </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="damageAssessments" type="damageAssessments" minOccurs="0"/>
+					<xs:element name="attachments" type="msp:attachments" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="damageAssessments">
+		<xs:sequence>
+			<xs:element name="damageAssessment" type="damageAssessment" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DeleteDERGroups">
+		<xs:sequence>
+			<xs:element name="responseURL" type="xs:anyURI"/>
+			<xs:element name="transactionID" type="xs:string"/>
+			<xs:element name="DERGroupIDs" type="DERGroupIDs"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DeleteDERGroupsResponse"/>
+	<xs:complexType name="DER">
+		<xs:annotation>
+			<xs:documentation>A distributed energy resource.  The name of the DER SHALL be carried in the DER.primaryIdentifier.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspPointObject">
+				<xs:sequence>
+					<xs:element name="DERType" type="DERType">
+						<xs:annotation>
+							<xs:documentation>The type of DER this plant represents.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="contactInfo" type="msp:contactInfo" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Contact information for this DER.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="serviceAgreements" type="msp:serviceAgreements" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Interconnection and or rate agreement between this DER and others such as the interconnecting utility. </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="organizationAssociations" type="msp:organizationAssociations" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Associations between this DER and organizations.  One such association is the owner of the DER.  Others might be operators, maintainers, etc.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="realPowerRatings" type="realPowerRatings" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Real power ratings for this DER.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="reactivePowerRatings" type="reactivePowerRatings" minOccurs="0"/>
+					<xs:element name="apparentPowerRatings" type="apparentPowerRatings" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>ApparentPowerRatings for DER.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="storagePowerRating" type="com:realEnergy" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The usable energy storage capability of the DER.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="notificationTime" type="com:duration" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The notification time required before DER can start operation.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="DERRealPowerRampRate" type="realPowerRampRate" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The real power ramp rate for the DER.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="generatingUnits" type="generatingUnits" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroup">
+		<xs:annotation>
+			<xs:documentation>A grouping of Distributed Energy Resource (DER) facilities.  The DERGroupName SHALL be carried in the DERGroup.primaryIdentifier.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="DERIDs" type="DERIDs" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroupCapabilities">
+		<xs:annotation>
+			<xs:documentation>Various capabilities that might be returned for this DERGroup.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="realPower" type="com:realPower" minOccurs="0"/>
+					<xs:element name="reactivePower" type="com:reactivePower" minOccurs="0"/>
+					<xs:element name="apparentPower" type="com:apparentPower" minOccurs="0"/>
+					<xs:element name="otherCapabilities" type="otherCapabilities" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroupDispatchRequest">
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="DERGroupID" type="com:objectID"/>
+					<xs:element name="dispatchTargets" type="dispatchTargets"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroupForecast">
+		<xs:complexContent>
+			<xs:extension base="msp:mspEvent">
+				<xs:sequence>
+					<xs:element name="forecastDate" type="prim:mspDateTime">
+						<xs:annotation>
+							<xs:documentation>The date for which this forecast is effective. </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="forecastInterval" type="com:duration">
+						<xs:annotation>
+							<xs:documentation>This is the repeating timeblock, e.g. minutes, hours, days, etc. Example: Give me the forecast at 15 min intervals</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="DERGroup" type="DERGroup"/>
+					<xs:element name="DERGroupPrediction" type="DERGroupPrediction"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroupForecasts">
+		<xs:sequence>
+			<xs:element name="DERGroupForecast" type="DERGroupForecast" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DERGroupID">
+		<xs:complexContent>
+			<xs:extension base="com:objectID"/>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroupIDs">
+		<xs:sequence>
+			<xs:element name="DERGroupID" type="DERGroupID" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="DERGroupName">
+		<xs:annotation>
+			<xs:documentation>This is the human-readable identifier for a DERGroup.  This value SHALL be carried in the DERGroup.primaryIdentifier.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+	<xs:complexType name="DERGroupPrediction">
+		<xs:sequence>
+			<xs:element name="sequence" type="xs:integer">
+				<xs:annotation>
+					<xs:documentation>Which instance of the forecast is this: 1st, 2nd,...nth.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="confidence" type="prim:percent">
+				<xs:annotation>
+					<xs:documentation>The confidence of the capability of this interval. The expectation is that as the intervals procede over time, the confidence will be less. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DERGroupCapabilities" type="DERGroupCapabilities"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DERGroups">
+		<xs:sequence>
+			<xs:element name="DERGroup" type="DERGroup" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DERGroupStatus">
+		<xs:annotation>
+			<xs:documentation>The current status of a DERGroup.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspEvent">
+				<xs:sequence>
+					<xs:element name="DERGroup" type="DERGroup"/>
+					<xs:element name="DERGroupCapabilities" type="DERGroupCapabilities" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="DERGroupStatuses">
+		<xs:sequence>
+			<xs:element name="DERGroupStatus" type="DERGroupStatus" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="DERID">
+		<xs:annotation>
+			<xs:documentation>This is the identifier for this distributed energy resource.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:MultiSpeakGUID">
+				<xs:attribute name="DERName" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>DER name.  This is a utility-assigned, human readable identifier. This identifier SHALL be used in the primaryIdentifier field for any DER.  </xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="owner" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>An identifier for the owner of this DER.  It may be a text string or a pointer to an organization.  If it is a text string, it is suggested that the string be the Internet domain name for the owner in valid XS:anyURI format.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="registeredName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the registeredName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="systemName" type="prim:alphaNumericRestrictedString" use="optional">
+					<xs:annotation>
+						<xs:documentation>This is the systemName part of the fully-qualified object name of the format GlobalDomain.RegisteredName.SystemName.Noun.objectID.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:anyAttribute namespace="##any" processContents="lax"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="DERIDs">
+		<xs:annotation>
+			<xs:documentation>Pointers to the distributed energy resources contained in this group.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="DERID" type="DERID" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="DERKind">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Unknown"/>
+			<xs:enumeration value="BatteryStorage"/>
+			<xs:enumeration value="Biogas"/>
+			<xs:enumeration value="Biomass"/>
+			<xs:enumeration value="Cogeneration"/>
+			<xs:enumeration value="CombinationDER"/>
+			<xs:enumeration value="CompressedAir"/>
+			<xs:enumeration value="Flywheel"/>
+			<xs:enumeration value="FuelCell"/>
+			<xs:enumeration value="Hydro"/>
+			<xs:enumeration value="Photovoltaic"/>
+			<xs:enumeration value="Thermal"/>
+			<xs:enumeration value="Wind"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="DERType">
+		<xs:annotation>
+			<xs:documentation>Type of DER that this data instance represents.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="DERKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="dispatchTargets">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="realPowerDispatchTarget" type="com:realPower"/>
+					<xs:element name="reactivePowerTarget" type="com:reactivePower"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="electricIncrementalConnectivityModel">
+		<xs:complexContent>
+			<xs:extension base="msp:mspConnectivityModel">
+				<xs:sequence>
+					<xs:element name="modelRef" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>A reference to the electric connectivity model (either base or incremental) that this model modification extends and/or modifies.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="connectivityModelKind" type="enum:connectivityModelKind">
+						<xs:annotation>
+							<xs:documentation>The connectivity model kind attribute is used to describe the way that power system model data included in this message are connected.  The options for connectivityModelKind are: "Nodal", which means that the power system elements are connected to nodes or "Sectional", which means that the power system elements are treated as line sections.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelModifications" type="msp:electricConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Modifications to components currently in the referenced base model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelAdditions" type="msp:electricConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Components to be added to the referenced base model for this modified model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelDeletions" type="msp:electricConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Components that are in the referenced base model that are to be deleted in this modified model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="electricIncrementalConnectivityModels">
+		<xs:sequence>
+			<xs:element name="electricIncrementalConnectivityModel" type="electricIncrementalConnectivityModel" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="electricMeterTest">
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="meterID" type="com:meterID">
+						<xs:annotation>
+							<xs:documentation>A pointer to the meter that was tested.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="testDate" type="prim:mspDateTime">
+						<xs:annotation>
+							<xs:documentation>Date test performed.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="asFound" type="asFound" minOccurs="0"/>
+					<xs:element name="asLeft" type="asLeft" minOccurs="0"/>
+					<xs:element name="reason" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Resaon for test.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="testersInitials" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The initials of the person performing the test.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="testCompany" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Company performing test.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="revolutions" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Revolutions per minute.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="comments" type="xs:string" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="electricMeterTests">
+		<xs:sequence>
+			<xs:element name="electricMeterTest" type="electricMeterTest" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="employeeTimeRecord">
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="employeeID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Unique identifier for an employee.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="employeeName" type="xs:string" minOccurs="0"/>
+					<xs:element name="hoursWorked" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Total hours worked by the employee during this time period.(Exactly 1 per employee)|.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="employeeTimeRecordList">
+		<xs:sequence>
+			<xs:element name="employeeTimeRecord" type="employeeTimeRecord" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A list of all employee time records.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="endDeviceShipment">
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="utility" type="xs:string" minOccurs="0"/>
+					<xs:element name="manufacturer" type="xs:string" minOccurs="0"/>
+					<xs:element name="poReferenceNumber" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Purchase order number.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="shippingTicketNumber" type="xs:string" minOccurs="0"/>
+					<xs:element name="recipient" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Party to whom the shipment is sent.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="shippedDate" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Date this shipment was sent.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="shippedToAddress" type="com:address" minOccurs="0"/>
+					<xs:element name="receivedDate" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Date this shipment was received.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="receivedGasMeters" type="msp:receivedGasMeters" minOccurs="0"/>
+					<xs:element name="receivedElectricMeters" type="msp:receivedElectricMeters" minOccurs="0"/>
+					<xs:element name="receivedLoadManagementDevices" type="msp:receivedLoadManagementDevices" minOccurs="0"/>
+					<xs:element name="receivedCDDevices" type="msp:receivedCDDevices" minOccurs="0"/>
+					<xs:element name="receivedWaterMeters" type="msp:receivedWaterMeters" minOccurs="0"/>
+					<xs:element name="receivedModules" type="msp:receivedModules" minOccurs="0"/>
+					<xs:element name="receivedPremisesDisplays" type="msp:receivedPremisesDisplays" minOccurs="0"/>
+					<xs:element name="receivedPropaneMeters" type="msp:receivedPropaneMeters" minOccurs="0"/>
+					<xs:element name="transponderIDRange" type="msp:transponderIDRange" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Range of idnetifiers for communications modules (transponders).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="gasIncrementalConnectivityModel">
+		<xs:complexContent>
+			<xs:extension base="msp:mspConnectivityModel">
+				<xs:sequence>
+					<xs:element name="modelRef" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>A reference to the base gas connectivity model that this model modification extends and/or modifies.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelModifications" type="msp:gasConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Modifications to components currently in the referenced base model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelAdditions" type="msp:gasConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Components to be added to the referenced base model for this modified model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelDeletions" type="msp:gasConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Components that are in the referenced base model that are to be deleted in this modified model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="gasIncrementalConnectivityModels">
+		<xs:sequence>
+			<xs:element name="gasIncrementalConnectivityModel" type="gasIncrementalConnectivityModel" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="generatingUnits">
+		<xs:annotation>
+			<xs:documentation>The generating units associated with this DER.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="generatingUnitRef" type="com:objectRef"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupForecasts">
+		<xs:annotation>
+			<xs:documentation>This is the message payload for the message that requests forecasts (or predicted values) of capabilities of DERGroups over time intervals in the future.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="forecastInterval" type="com:duration">
+				<xs:annotation>
+					<xs:documentation>This is the repeating timeblock, e.g. minutes, hours, days, etc. Example: Give me the forecast at 15 min intervals</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="forecastPeriod" type="com:timePeriod">
+				<xs:annotation>
+					<xs:documentation>This is the time period over which forecasts are being requested.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DERGroup" type="DERGroup" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>These are the DERGroups for which the forecast is being requested.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requestedCapabilities" type="requestedCapabilities">
+				<xs:annotation>
+					<xs:documentation>A lsit of the types of capability (real power, reactive power, apparent power, etc.) for which forecasts are being requested.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupForecastsResponse">
+		<xs:sequence>
+			<xs:element name="DERGroupForecasts" type="DERGroupForecasts" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupMembers">
+		<xs:sequence>
+			<xs:element name="DERGroupName" type="xs:string"/>
+			<xs:element name="lastReceived" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupMembersResponse">
+		<xs:sequence>
+			<xs:element name="DERGroups" type="DERGroups" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupNames"/>
+	<xs:complexType name="GetDERGroupNamesResponse">
+		<xs:sequence>
+			<xs:element name="ArrayOfString" type="ArrayOfString" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupStatuses">
+		<xs:annotation>
+			<xs:documentation>This is the message payload of the message that requests the current status of DERGroups.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="DERGroup" type="DERGroup" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>This is the DERGroup for which the current status is being requested.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERGroupStatusesResponse">
+		<xs:sequence>
+			<xs:element name="DERGroupStatuses" type="DERGroupStatuses"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERs"/>
+	<xs:complexType name="GetDERsByDERIDs">
+		<xs:sequence>
+			<xs:element name="DERID" type="DERID" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERsByDERIDsResponse">
+		<xs:sequence>
+			<xs:element name="DER" type="DER" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GetDERsResponse">
+		<xs:sequence>
+			<xs:element name="DER" type="DER" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="incrementalConnectivityModels">
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="electricIncrementalConnectivityModels" type="electricIncrementalConnectivityModels" minOccurs="0"/>
+					<xs:element name="gasIncrementalConnectivityModels" type="gasIncrementalConnectivityModels" minOccurs="0"/>
+					<xs:element name="waterIncrementalConnectivityModels" type="waterIncrementalConnectivityModels" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="incrementalConnectivityModelsReferable">
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="baseModelRef" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>A reference to the base connectivity model with which these incremental models are associated.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="electricIncrementalConnectivityModels" type="electricIncrementalConnectivityModels" minOccurs="0"/>
+					<xs:element name="gasIncrementalConnectivityModels" type="gasIncrementalConnectivityModels" minOccurs="0"/>
+					<xs:element name="waterIncrementalConnectivityModels" type="waterIncrementalConnectivityModels" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="InsertDERsInDERGroup">
+		<xs:sequence>
+			<xs:element name="DERGroupID" type="com:objectID"/>
+			<xs:element name="DERIDs" type="DERIDs"/>
+			<xs:element name="responseURL" type="xs:anyURI"/>
+			<xs:element name="transactionID" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="InsertDERsInDERGroupResponse"/>
+	<xs:complexType name="inspection">
+		<xs:complexContent>
+			<xs:extension base="msp:mspWork">
+				<xs:sequence>
+					<xs:element name="elementStatus" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The status of the inspected item.  For instance: Okay, Needs Attention, Needs Immediate Attention, Not Functional, or Okay as Left.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="elementCondition" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Quality factor, expressed in percent.  For instance 100 might been new, 0 might mean no life remaining.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="serviceOrderID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A pointer to the service order this inspection was done under.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="observationList" type="observationList" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="itemMaintained">
+		<xs:sequence>
+			<xs:element name="itemIdentifier" type="com:objectRef" minOccurs="0"/>
+			<xs:element name="maintenanceCode" type="xs:string" minOccurs="0"/>
+			<xs:element name="conditionBefore" type="xs:string" minOccurs="0"/>
+			<xs:element name="conditionAfter" type="xs:string" minOccurs="0"/>
+			<xs:element name="remarks" type="xs:string" minOccurs="0"/>
+			<xs:element name="measurements" type="msp:measurements" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="itemsMaintained">
+		<xs:sequence>
+			<xs:element name="itemMaintained" type="itemMaintained" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="jobWorked">
+		<xs:sequence>
+			<xs:element name="woNumber" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Work order number.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="jobNumber" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Job number.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="jobDescription" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Description of job.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="jobHours" type="xs:float" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Hours worked on a specific job.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="jobWorkedList">
+		<xs:sequence>
+			<xs:element name="jobWorked" type="jobWorked" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>A list of all jobs worked.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="loggedOutageDetectionEvent">
+		<xs:complexContent>
+			<xs:extension base="outageDetectionEvent">
+				<xs:sequence>
+					<xs:element name="outageDetectionRecordRef" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for the object this record belongs to. For instance an objectRef pointing to a customerCall record.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="takenBy" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Agent taking call.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="callType" type="enum:callType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Type of call.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="loggedOutageDetectionEvents">
+		<xs:sequence>
+			<xs:element name="loggedOutageDetectionEvent" type="loggedOutageDetectionEvent" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="maintenanceDataSet">
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="maintenanceDate" type="prim:mspDateTime" minOccurs="0"/>
+					<xs:element name="description" type="xs:string" minOccurs="0"/>
+					<xs:element name="itemsMaintained" type="itemsMaintained" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="materialRequisition">
+		<xs:annotation>
+			<xs:documentation>This item is a request to requisition material for a workOrder design.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="requisitionItems" type="requisitionItems"/>
+					<xs:element name="needByDate" type="prim:mspDateTime"/>
+					<xs:element name="workItemReference" type="com:objectRef">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the work item to which this material is to be committed.  The work item may be a workOrder, a design, a serviceOrder or any other item of work.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="designReference" type="com:nounUnspecifiedRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If the workItemReference is a workOrder, this is a reference to the specific design on that workOrder to which the material should be committed.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="materialRequisitionCancellation">
+		<xs:annotation>
+			<xs:documentation>This is the payload of the CancelMaterialRequisition method.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="requisitionID" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>The objectID of the material requisition that is to be canceled.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="workItemReference" type="com:objectRef">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the work item to which this material was to be committed.  The work item may be a workOrder, a design, a serviceOrder or any other item of work.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="designReference" type="com:nounUnspecifiedRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If the workItemReference is a workOrder, this is a reference to the specific design on that workOrder to which the material was to have been committed.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="materialRequisitionResult">
+		<xs:annotation>
+			<xs:documentation>This class carries the result of a request to requisition material for a workOrder design.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="requisitionID" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>This is a unique identifier for this requisition.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="requisitionResultItems" type="requisitionResultItems" minOccurs="0"/>
+					<xs:element name="workItemReference" type="com:objectRef">
+						<xs:annotation>
+							<xs:documentation>This is a pointer to the work item to which this material was to be committed.  The work item may be a workOrder, a design, a serviceOrder or any other item of work.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="designReference" type="com:nounUnspecifiedRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If the workItemReference is a workOrder, this is a reference to the specific design on that workOrder to which the material should have been committed.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="messageChoice">
+		<xs:choice>
+			<xs:element name="transactiveIncentiveSignal" type="transactiveIncentiveSignal"/>
+			<xs:element name="transactiveFeedbackSignal" type="transactiveFeedbackSignal"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="meterConditions">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="kWhReading" type="xs:integer" minOccurs="0"/>
+					<xs:element name="kWReading" type="xs:float" minOccurs="0"/>
+					<xs:element name="kVArReading" type="xs:float" minOccurs="0"/>
+					<xs:element name="powerFactorReading" type="xs:float" minOccurs="0"/>
+					<xs:element name="resultHigh" type="xs:float" minOccurs="0"/>
+					<xs:element name="resultLow" type="xs:float" minOccurs="0"/>
+					<xs:element name="resultLL" type="xs:float" minOccurs="0"/>
+					<xs:element name="kWResult" type="xs:float" minOccurs="0"/>
+					<xs:element name="kVArResult" type="xs:float" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="meterConnectivity">
+		<xs:annotation>
+			<xs:documentation>This class shows changes in the connectivity path for an electric meter that is due to a rephasing or back feed operation.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="outageRef" type="msp:outageRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A pointer to the outage that caused the rephasing or backfeed.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="eventTime" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Date/time at which the switching even occurred.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="serviceLocationID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the objectID of the service location affected by this change.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="servicePointID" type="com:servicePointID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The identifier for a customer service point.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="meterID" type="com:meterID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the company number for the meter affected by this change</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="oldSubstationRef" type="com:substationRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for the substation that the meter was on before switching event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="oldFeederRef" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for the feeder that the meter was on before switching event. The feederName SHALL be carried in the feederRef.primaryIdentifier and the feeder code (or feeder number), if used, SHALL be carried in the feederRef.secondaryIdentifier.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="oldPhase" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Phase the meter was on before switching event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="newSubstationRef" type="com:substationRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for the substation that the meter is fed from after the switching event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="newFeederRef" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Identifier for the feeder that the meter is fed from after the switching event.  The feederName SHALL be carried in the feederRef.primaryIdentifier and the feeder code (or feeder number), if used, SHALL be carried in the feederRef.secondaryIdentifier.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="newPhase" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Phase that the meter is fed from after the switching event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="meterTests">
+		<xs:complexContent>
+			<xs:extension base="msp:mspReferable">
+				<xs:sequence>
+					<xs:element name="electricMeterTests" type="electricMeterTests" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is an array of tests on electricMeters.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="mspAlarm" abstract="true">
+		<xs:complexContent>
+			<xs:extension base="msp:mspEvent">
+				<xs:sequence>
+					<xs:element name="sourceIdentifier" type="com:objectRef">
+						<xs:annotation>
+							<xs:documentation>Identifier for the source of the alarm.  For instance, this might be a meter, in which case the objectID should be the concatenated string used in the meterID (that includes the noun and the objectID), or it could be a SCADA point, in which case the noun should be SCADAPoint and objectID would be the SCADAPointID.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="endDeviceEventTypeOption" type="msp:endDeviceEventTypeOption" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="observation">
+		<xs:sequence>
+			<xs:element name="observationItemID" type="com:objectID" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is a pointer to the observationDefinition to which this observation refers.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="itemStatus" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The status of the inspected item.  For instance: Okay, Needs Attention, Needs Immediate Attention, Not Functional, or Okay as Left.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="itemCondition" type="xs:integer" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Quality factor, expressed in percent.  For instance 100 might been new, 0 might mean no life remaining.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="comment" type="xs:string" minOccurs="0"/>
+			<xs:element name="value" type="observedValue" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This value is not sent unless there is a measured value to report.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="observationDefinition">
+		<xs:annotation>
+			<xs:documentation>This is the definition of what procedures should be perfomed to accomplish a specific type of observation on an inspection. </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="domain" type="xs:QName" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the domain (MultiSpeak object type) to which this condition definition pertains.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="conditionItem" type="xs:string" minOccurs="0"/>
+					<xs:element name="itemStatus" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The status of the inspected item.  For instance: Okay, Needs Attention, Needs Immediate Attention, Not Functional, or Okay as Left.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="itemCondition" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Quality factor, expressed in percent.  For instance 100 might been new, 0 might mean no life remaining.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="comment" type="xs:string" minOccurs="0"/>
+					<xs:element name="value" type="observedValue" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="observationList">
+		<xs:sequence>
+			<xs:element name="observation" type="observation" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="observedValue">
+		<xs:annotation>
+			<xs:documentation>This value is not sent unless there is a measured value to report.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="units" type="enum:uomKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of measure for this measured value.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="otherUnits" type="xs:string" use="optional">
+					<xs:annotation>
+						<xs:documentation>If there are no applicable units in the units enumeration, then the value of "Other" SHALL be chosen for units and this value SHALL be populated with the appropriate units.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="otherCapabilities">
+		<xs:annotation>
+			<xs:documentation>These are other capabilities of the DERGroup.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="otherCapability" type="otherCapability" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="otherCapability">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="capabilityType" type="xs:string"/>
+					<xs:element name="capabilitySubType" type="xs:string" minOccurs="0"/>
+					<xs:element name="capabilityValue" type="xs:float" minOccurs="0"/>
+					<xs:element name="capabilityUnits" type="enum:uom" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="outageDetectionEvent">
+		<xs:annotation>
+			<xs:documentation>Deprecated.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspEvent">
+				<xs:sequence>
+					<xs:element name="phaseCode" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Phasing code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="outageEventType" type="outageEventType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Type of outage event(see enumerations).</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="outageDetectionDeviceRef" type="com:objectRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Unique identifier for this outage detection device.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="outageDetectionSource" type="outageDetectionSource" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Outage detection source. (See Enumeration list)</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="outageLocation" type="outageLocation" minOccurs="0"/>
+					<xs:element name="outageCustomer" type="msp:outageCustomer" minOccurs="0"/>
+					<xs:element name="voiceRecordings" type="msp:voiceRecordings" minOccurs="0"/>
+					<xs:element name="priority" type="enum:priorityType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Designation of importance level of this event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="problemCode" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Problem code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="resolvedLevel" type="enum:resolvedLevel" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates if this outage detection event was resolved to a specific meter</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="outageDetectionLog">
+		<xs:annotation>
+			<xs:documentation>Contains the outage detection events that have been processed by the Outage Management System for a specific service location and outage.  The objectID is the unique outageDetectionRecordID for all outage detection events at a given service location. DEPRECATED.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="phaseCode" type="enum:phaseCode" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Phasing code.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="outageLocation" type="outageLocation" minOccurs="0"/>
+					<xs:element name="outageCustomer" type="msp:outageCustomer" minOccurs="0"/>
+					<xs:element name="voiceRecordings" type="msp:voiceRecordings" minOccurs="0"/>
+					<xs:element name="loggedOutageDetectionEvents" type="loggedOutageDetectionEvents" minOccurs="0"/>
+					<xs:element name="priority" type="enum:priorityType" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Designation of importance level of this event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="resolvedLevel" type="enum:resolvedLevelKind" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Indicates if this call was resolved to a specific meter</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="timeTroubleBegan" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The approximate time the trouble began or was reported.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="timeOfInitialEvent" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The initial event time. This is the initial time the event was logged. </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="timeOfLastEvent" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Time last event was logged.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="eventsLogged" type="xs:long" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Number of events logged.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="outageDetectionLogs">
+		<xs:annotation>
+			<xs:documentation>DEPRECATED.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="outageDetectionLog" type="outageDetectionLog" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="outageDetectionSource">
+		<xs:simpleContent>
+			<xs:extension base="outageDetectionSourceKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="outageDetectionSourceKind">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="CustomerCall"/>
+			<xs:enumeration value="CustomerServiceRep"/>
+			<xs:enumeration value="HeadEndSystem"/>
+			<xs:enumeration value="Meter"/>
+			<xs:enumeration value="Other"/>
+			<xs:enumeration value="OtherCustomerInput"/>
+			<xs:enumeration value="PowerMonitor"/>
+			<xs:enumeration value="Unknown"/>
+			<xs:enumeration value="Witness"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="outageDurationEvent">
+		<xs:annotation>
+			<xs:documentation>This object tracks the actual interruption in service. </xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="outageRef" type="msp:outageRef">
+						<xs:annotation>
+							<xs:documentation>Identifier for outage incident.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="outageDescription" type="xs:string" minOccurs="0"/>
+					<xs:element name="meterID" type="com:meterID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the meter identifier of the meter associated with this outage.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="serviceLocationID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the ID of the serviceLocation with which this outage event is associated.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="servicePointID" type="com:servicePointID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the object identifier for the service point associated with this outage event.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="accountID" type="com:objectID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Customer account number.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="timeOfInterruption" type="prim:mspDateTime" minOccurs="0"/>
+					<xs:element name="timeRestored" type="prim:mspDateTime" minOccurs="0"/>
+					<xs:element name="interruptionDuration" type="xs:integer" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is the interruption durration in minutes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="customerResponsible" type="xs:boolean" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Set to true if the customer was responsible for the interruption in service.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="durationDisplay" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>This is an optional string representation of the interruption duration formated as X day X hour X min.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="outageEventKind">
+		<xs:annotation>
+			<xs:documentation>DEPRECATED.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Unknown"/>
+			<xs:enumeration value="Instantaneous"/>
+			<xs:enumeration value="Outage"/>
+			<xs:enumeration value="Restoration"/>
+			<xs:enumeration value="NoResponse"/>
+			<xs:enumeration value="Inferred"/>
+			<xs:enumeration value="PowerOn"/>
+			<xs:enumeration value="PowerOff"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="outageEventType">
+		<xs:annotation>
+			<xs:documentation>DEPRECATED.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="outageEventKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="outageLocation">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="serviceLocationRef" type="com:nounUnspecifiedRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Object identifier for serviceLocation.  At least one of the following location identifiers is required: (i)meterId, (ii) serviceLocationRef, (iii) telephoneNumber, or (iv)accountRef.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="meterID" type="com:meterID" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Meter identifier for meter at service location experiencing outage.
+At least one of the following location identifiers is required: (i)meterId, (ii) serviceLocationRef, (iii) telephoneNumber, or (iv)accountRef.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="accountRef" type="com:nounUnspecifiedRef" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Reference to the customer account for the serviceLocation experiencing outage.  At least one of the following location identifiers is required: (i)meterId, (ii) serviceLocationRef, (iii) telephoneNumber, or (iv)accountRef.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="telephoneNumber" type="com:telephoneNumber" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Telephone number for serviceLocation experiencing outage.
+At least one of the following location identifiers is required: (i)meterId, (ii) serviceLocationRef, (iii) telephoneNumber, or (iv)accountRef.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="serviceAddress" type="com:address" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="PAN">
+		<xs:annotation>
+			<xs:documentation>This is a premises area network (PAN).</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="PANDeviceRefs" type="msp:PANDeviceRefs" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The list of PAN devices that are associated with this PAN.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="PANInterfaceIDs" type="msp:PANInterfaceIDs" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The list of PAN interfaces that are associated with this PAN.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="PANLinkages" type="PANLinkages" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Associations between this PAN and other important classes.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="PANSecurityToken" type="msp:PANSecurityToken" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="PANLinkages">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="serviceLocationID" type="com:objectID" minOccurs="0"/>
+					<xs:element name="meterIDs" type="msp:meterIDs" minOccurs="0"/>
+					<xs:element name="servicePointIDs" type="com:servicePointIDs" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="reactivePowerRating">
+		<xs:sequence>
+			<xs:element name="reactivePower" type="com:reactivePower"/>
+			<xs:element name="description" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Description of rating type, such as DeliveredToGrid, ReceivedFromGrid, etc.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="reactivePowerRatings">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="reactivePowerRating" type="reactivePowerRating" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="realPowerRampRate">
+		<xs:simpleContent>
+			<xs:extension base="prim:floatType">
+				<xs:attribute name="realPowerUnits" type="enum:realPowerUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>Units of real power associated with the ramp rate.  For instance, if the ramp rate is 10 MW/hour, then the real power units are MW.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="timeUnits" type="enum:timeUnits" use="optional">
+					<xs:annotation>
+						<xs:documentation>The time units associated with the ramp rate.  For instance, if the ramp rate is 10 MW/Hour, then the time units are hours.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="realPowerRating">
+		<xs:sequence>
+			<xs:element name="realPower" type="com:realPower"/>
+			<xs:element name="description" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Description of rating type, such as DeliveredToGrid, ReceivedFromGrid, etc.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="realPowerRatings">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="realPowerRating" type="realPowerRating" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="remoteReconnectSetting">
+		<xs:annotation>
+			<xs:documentation>This is the setting in the CIS for the desired remote reconnection setting for this meter. The allowable values are: Connect, which means that the meter shall be reconnected remotely without requiring additional action when a connect/reconnect signal is received; Arm, which means that the the meter shall be armed for reconnection and the utility's process followed for reconnection with arming prior to connecting/reconnecting the meter; PowerLimitation, which means that the meter shall be reconnected but immediately placed into power limitation mode; CISAuthRequired, which means that when payment is received, Connect or Arm does not occur automatically. Authorization from the CIS application is required before the meter may be connected or armed; None, which means that no remote connection/reconnection should be completed on this meter even if the meter is so configured and enabled; Other, which means that there is some other setting that is not included in this list; or Unknown, which means that the remoteReconnectSetting is not known or not set by the CIS, in which case the AMI head-end system should follow its own business rules in determining whether or not to connect/reconnect a meter.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="remoteReconnectSettingKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="remoteReconnectSettingKind">
+		<xs:annotation>
+			<xs:documentation>This is the setting in the CIS for the desired remote reconnection setting for this meter. The allowable values are: Connect, which means that the meter shall be reconnected remotely without requiring additional action when a connect/reconnect signal is received; Arm, which means that the the meter shall be armed for reconnection and the utility's process followed for reconnection with arming prior to connecting/reconnecting the meter; PowerLimitation, which means that the meter shall be reconnected but immediately placed into power limitation mode; CISAuthRequired, which means that when payment is received, Connect or Arm does not occur automatically. Authorization from the CIS application is required before the meter may be connected or armed; None, which means that no remote connection/reconnection should be completed on this meter even if the meter is so configured and enabled; Other, which means that there is some other setting that is not included in this list; or Unknown, which means that the remoteReconnectSetting is not known or not set by the CIS, in which case the AMI head-end system should follow its own business rules in determining whether or not to connect/reconnect a meter.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Unknown"/>
+			<xs:enumeration value="Connect"/>
+			<xs:enumeration value="Arm"/>
+			<xs:enumeration value="PowerLimitation"/>
+			<xs:enumeration value="CISAuthRequired"/>
+			<xs:enumeration value="None"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="RemoveDERsFromDERGroup">
+		<xs:sequence>
+			<xs:element name="DERGroupID" type="com:objectID"/>
+			<xs:element name="DERIDs" type="DERIDs"/>
+			<xs:element name="responseURL" type="xs:anyURI"/>
+			<xs:element name="transactionID" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RemoveDERsFromDERGroupResponse"/>
+	<xs:complexType name="requestedCapabilities">
+		<xs:sequence>
+			<xs:element name="requestedCapability" type="requestedCapability" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="requestedCapability">
+		<xs:simpleContent>
+			<xs:extension base="requestedCapabilityType">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:simpleType name="requestedCapabilityType">
+		<xs:annotation>
+			<xs:documentation>This is the type of capability that A DER or DERGroup can provide.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ApparentPower"/>
+			<xs:enumeration value="ReactivePower"/>
+			<xs:enumeration value="RealPower"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="requisitionItem">
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="materialItemID" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>The unique pointer to the materialItem.  If provided, the materialID.primaryIdentifier field SHALL consist of the human-readable stockNumber for this materialItem.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="quantity" type="xs:float"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="requisitionItems">
+		<xs:sequence>
+			<xs:element name="requisitionItem" type="requisitionItem" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="requisitionResult">
+		<xs:simpleContent>
+			<xs:extension base="requisitionResultKind">
+				<xs:attribute name="otherKind" type="enum:otherKind" use="optional">
+					<xs:annotation>
+						<xs:documentation>If no acceptable hard enumeration value is available, the choice "Other" SHALL be used and the extended enumeration SHALL be included in this attribute.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="requisitionResultItem">
+		<xs:annotation>
+			<xs:documentation>This is the status of the request for a specific material item that was made as part of a material requisition.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="com:mspExtensible">
+				<xs:sequence>
+					<xs:element name="materialItemID" type="com:objectID">
+						<xs:annotation>
+							<xs:documentation>The unique pointer to the materialItem.  If provided, the materialID.primaryIdentifier field SHALL consist of the human-readable stockNumber for this materialItem.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="requisitionResult" type="requisitionResult"/>
+					<xs:element name="quantityOnHand" type="xs:float" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If the material item requsitionResult is less than "Full", then this optional parameter may be used to give information on how many items of this type could be filled out of current, uncommitted stock.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="ETA" type="prim:mspDateTime" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>If the material item requisition result is less than "Full" then this optional field may be used to provide information about when new stock of this type might be available.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="requisitionResultItems">
+		<xs:annotation>
+			<xs:documentation>This class contains information on the status of a material request. </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="requisitionResultItem" type="requisitionResultItem" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="requisitionResultKind">
+		<xs:annotation>
+			<xs:documentation>These are possible statuses for the requisition of a specific material item.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Full"/>
+			<xs:enumeration value="Partial"/>
+			<xs:enumeration value="None"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="restrictedFloat">
+		<xs:annotation>
+			<xs:documentation>Float restricted to be a positive, real number.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:float">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="storageLocation">
+		<xs:annotation>
+			<xs:documentation>This is a location at which assets or inventory are stored, for instance, a warehouse, pole yard or job site.</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="msp:mspPointObject">
+				<xs:sequence>
+					<xs:element name="storageLocationType" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>The type of storage location.  For instance this could be "Warehouse", "PoleYard", "JobSite", or "Other"</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="storageLocationDescription" type="xs:string" minOccurs="0"/>
+					<xs:element name="storageSubLocation" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>A sub location for this storageLocation. For instance for a warehouse, the subLocation might be called an "aisle".</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="storageDetailedLocation" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>For instance, in a warehouse, the storageDetailedLocation might be the "Bin".</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="addressItem" type="com:addressItem" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Address and metadata about the storageLocation.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="organizationAssociations" type="msp:organizationAssociations" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Associations with which this storageLocation is associated.  </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="locationInformation" type="msp:locationInformation" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="stringToken">
+		<xs:restriction base="sandbox:tokenEnumeration"/>
+	</xs:simpleType>
+	<xs:complexType name="TCInterval">
+		<xs:annotation>
+			<xs:documentation>This is the data for this transactive incentive</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="startDateTime" type="xs:dateTime" use="required">
+			<xs:annotation>
+				<xs:documentation>Interval date and start time in UTC format.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="value" type="xs:float" use="required">
+			<xs:annotation>
+				<xs:documentation>Energy cost future value estimate for this interval.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="confidenceLevel" type="confidenceLevelType" use="required">
+			<xs:annotation>
+				<xs:documentation>Confidence in the future value estimate for this interval.  If a calculation is used, the value must be a positive, real number with a large number indicating less confidence. If no confidence is calculated, the value is to be -1.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="TCIntervals">
+		<xs:sequence>
+			<xs:element name="TCInterval" type="TCInterval" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="TCSchemaVersion">
+		<xs:annotation>
+			<xs:documentation>Transactive signal schema version.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[1-9]+[0-9]*\.[0-9]+"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TCSourceID">
+		<xs:annotation>
+			<xs:documentation>The sender ID of this transactive signal. This is the ID of the transactive node OR the system location at which this signal was formulated. </xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TCTargetID">
+		<xs:annotation>
+			<xs:documentation>The receiver ID of this transactive signal. This is the ID of the transactive node OR the system location at which this signal was sent.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="testedElectricMeter">
+		<xs:complexContent>
+			<xs:extension base="msp:receivedElectricMeter">
+				<xs:sequence>
+					<xs:element name="electricMeterTests" type="electricMeterTests" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="TFSValueUnitType">
+		<xs:annotation>
+			<xs:documentation>A list of allowable power units.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="kW"/>
+			<xs:enumeration value="MW"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="timesheet">
+		<xs:complexContent>
+			<xs:extension base="msp:mspObject">
+				<xs:sequence>
+					<xs:element name="timePeriod" type="com:timePeriod" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Period of time the time sheet covers .  This is a complex  variable consisting of a  start date and stop date)| .</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="jobWorkedList" type="jobWorkedList" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>List of ejobs worked in this timesheet.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="employeeTimeRecordList" type="employeeTimeRecordList" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>List of employee time records in this timesheet.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="tokenEnumeration">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="-1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="totalIntervals">
+		<xs:annotation>
+			<xs:documentation>The total number of intervals (i.e., how many TCInterval blocks.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="transactiveFeedbackSignal">
+		<xs:annotation>
+			<xs:documentation>This is a transactive feedback signal (TFS) that is used in Transactive Control. It includes a value vector, representing the current and predicted net energy load at a specific point on the system, starting with the current time and increasing the interval size into the future.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="TCIntervals" type="TCIntervals"/>
+		</xs:sequence>
+		<xs:attribute name="TFSValueUnit" type="TFSValueUnitType" use="required">
+			<xs:annotation>
+				<xs:documentation>Unit of measure for the value element below.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="valueMin" type="xs:float" use="required">
+			<xs:annotation>
+				<xs:documentation>The minimum value that should be accepted and used for the value element below.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="valueMax" type="xs:float" use="required">
+			<xs:annotation>
+				<xs:documentation>The maximum value that should be accepted and used for the value element below.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="totalIntervals" type="totalIntervals" use="required">
+			<xs:annotation>
+				<xs:documentation>The total number of intervals (i.e. how many TCInterval blocks)</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="totalIntervalDuration" type="xs:duration" use="required">
+			<xs:annotation>
+				<xs:documentation>Format defined by ISO 8601.  Total duration in this incentive signal.  Form for duration is:  P-- time duration designator, Y-- number of years, M-- number of months, D-- number of days, H--number of hours, M-- number of minutes, S-- number of seconds. Example: P1Y2M3DT20H30M40S would be 1 year, 2 months, 3 days, 20 hours, 30 minutes and 40 seconds.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="transactiveIncentiveSignal">
+		<xs:annotation>
+			<xs:documentation>This is a transactive incentive signal (TIS) that is used in Transactive Control. It includes a value vector, representing the value of energy delivered to a specific location, starting with the current time and increasing the interval size into the future.  These values may be used by a transactive node to calculate the optimal response to the value/price signal.  Note, transactiveIncentiveSignal.currencyType and transactiveIncentiveSignal.energyUnits, together provides the equivalent information that is provided in the TISValueUnit in the transactive control schema.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="TCIntervals" type="TCIntervals"/>
+		</xs:sequence>
+		<xs:attribute name="currencyType" type="enum:currencyCode" use="required">
+			<xs:annotation>
+				<xs:documentation>This is the currency in which the value is expressed.  The currencyType along with the energyUnit attribute is used to express the TISValueUnit.  For instance, if the currencyType is "USD" and the energyUnit is "KWh", then the TISValueUnit would be "$/kW*h".  </xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="energyUnits" type="enum:realEnergyUnits" use="required">
+			<xs:annotation>
+				<xs:documentation>This is the units for energy that, along with the currentcy code are used to express the TISValueUnit.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="valueMin" type="xs:float" use="required">
+			<xs:annotation>
+				<xs:documentation>The minimum value that should be accepted and used for the value element below.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="valueMax" type="xs:float" use="required">
+			<xs:annotation>
+				<xs:documentation>The maximum value that should be accepted and used for the value element below.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="totalIntervals" type="totalIntervals" use="required">
+			<xs:annotation>
+				<xs:documentation>The total number of intervals (i.e. how many Interval blocks)</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="totalIntervalDuration" type="xs:duration" use="required">
+			<xs:annotation>
+				<xs:documentation>Format defined by ISO 8601.  Total duration in this incentive signal. Form for duration is:  P-- time duration designator, Y-- number of years, M-- number of months, D-- number of days, H--number of hours, M-- number of minutes, S-- number of seconds. Example: P1Y2M3DT20H30M40S would be 1 year, 2 months, 3 days, 20 hours, 30 minutes and 40 seconds.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="transactiveSignal">
+		<xs:annotation>
+			<xs:documentation>This is a signal that is designed to be sent as part of a communication between Transactive Control nodes.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="TCSchemaVersion" type="TCSchemaVersion">
+				<xs:annotation>
+					<xs:documentation>Transactive Control schema version.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="XMLCreationDateTime" type="xs:dateTime">
+				<xs:annotation>
+					<xs:documentation>The UTC date and time that this XML transactive signal instance was created.  </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TCSourceID" type="TCSourceID">
+				<xs:annotation>
+					<xs:documentation>The sender ID of this transactive signal. This is the ID of the transactive node OR the system location at which this signal was formulated. </xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TCTargetID" type="TCTargetID">
+				<xs:annotation>
+					<xs:documentation>The receiver ID of this transactive signal. This is the ID of the transactive node OR the system location at which this signal was sent.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="messageChoice" type="messageChoice"/>
+		</xs:sequence>
+		<xs:attribute name="transactiveSignalStatus" type="transactiveSignalModeType" use="required">
+			<xs:annotation>
+				<xs:documentation>Status of the transactive node.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:simpleType name="transactiveSignalModeType">
+		<xs:annotation>
+			<xs:documentation>Operating states of a transactive node.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Invalid"/>
+			<xs:enumeration value="Operational"/>
+			<xs:enumeration value="Testing"/>
+			<xs:enumeration value="Simulated"/>
+			<xs:enumeration value="Startup"/>
+			<xs:enumeration value="Other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="voltageAlarm">
+		<xs:complexContent>
+			<xs:extension base="mspAlarm">
+				<xs:sequence>
+					<xs:element name="voltageAlarmList" type="voltageAlarmList" minOccurs="0"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="voltageAlarmItem">
+		<xs:sequence>
+			<xs:element name="voltageValue" type="com:voltage" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This is the value of the voltage.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="unitPrefix" type="enum:unitPrefixType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The type of reading taken (Maximum, Mimimum..).  See enumeration list.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="quality" type="enum:qualityDescription" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Quality qualifiers.  (See enumeration list for Measurement for values).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="analogCondition" type="enum:analogConditionKind" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Range of analog value (Normal, L1, H1... See enumeration list).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="phaseCode" type="enum:phaseCode" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This element defines the phase measurement associations. This element is not present if not provided or if this element doesn't apply.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="voltageAlarmList">
+		<xs:sequence minOccurs="0">
+			<xs:element name="voltageAlarmItem" type="voltageAlarmItem" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="waterIncrementalConnectivityModel">
+		<xs:complexContent>
+			<xs:extension base="msp:mspConnectivityModel">
+				<xs:sequence>
+					<xs:element name="modelRef" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>A reference to the base water connectivity model that this model modification extends and/or modifies.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelModifications" type="msp:waterConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Modifications to components currently in the referenced base model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelAdditions" type="msp:waterConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Components to be added to the referenced base model for this modified model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="modelDeletions" type="msp:waterConnectivityModelComponents">
+						<xs:annotation>
+							<xs:documentation>Components that are in the referenced base model that are to be deleted in this modified model.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="waterIncrementalConnectivityModels">
+		<xs:sequence>
+			<xs:element name="waterIncrementalConnectivityModel" type="waterIncrementalConnectivityModel" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>
