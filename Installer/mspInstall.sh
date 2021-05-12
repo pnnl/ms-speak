@@ -401,7 +401,7 @@ else
 							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en-US; then
 								sudo cp install/c_icap/c-icap.conf /usr/local/etc
 								sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
-								sudo cp install/BizRules.db $NEW_DIR
+								#sudo cp install/BizRules.db $NEW_DIR
 								sudo mkdir -p /var/run/c-icap
 								if sudo ln -s $NEW_DIR /home/msspeak; then
 									#sudo cp install/qt.qpa.sh /etc/profile.d
@@ -443,9 +443,12 @@ else
 fi
 # export QT_QPA_PLATFORM=wayland  this only appiles to the current cmd window
 echo "export QT_QPA_PLATFORM=wayland" >> ~/.bashrc
+echo "alias cls='clear'"
 echo "alias RuleEdit='~/msspeak/Install/run/IdsEditor 2>/dev/null'" >> ~/.bashrc
-echo "alias sqid='sudo /usr/local/squid/sbin/squid -N -d'" >> ~/.bashrc
-echo "alias cap='sudo /usr/local/bin/c-icap -N -D -d'" >> ~/.bashrc
+echo "alias Mss='~/msspeak/Install/run/MultiSpeakerServer 2>/dev/null'" >> ~/.bashrc
+echo "alias Ms='~/msspeak/Install/run/MultiSpeaker 2>/dev/null'" >> ~/.bashrc
+echo "alias sqid='cls;sudo /usr/local/squid/sbin/squid -N -d'" >> ~/.bashrc
+echo "alias cap='cls;sudo /usr/local/bin/c-icap -N -D -d'" >> ~/.bashrc
 # sudo echo "msuser     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 # source is a command implemented in bash, but not in sh, so
 # Use dot command to make script bourne compatible
