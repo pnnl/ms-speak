@@ -693,9 +693,6 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_NUMRPH) ){
 				pBzd->m_maxRPH = atoll(values[i]);
-				if( pBzd->m_maxRPH == 0 ){ // special case in editor, 0 means not in use
-					pBzd->m_maxRPH = WILDCARD;
-				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_MINTEMP) ){
 				pBzd->m_minTemp = atoll(values[i]);
@@ -2248,7 +2245,8 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 	//			if -1:  don't enforce limit
 	//			if  0:	don't allow any
 	//			if both are -1, uncheck the group
-	//			if either is 0, make both 0 (0==don't allow any msgs)
+	//			if either is 0, make both 0 (0==don't allow any msgs), numRPH should never be 0:
+	//				instead, numReq would be(none per hour === none per day)
 	//	don't increment this count until we see a response come back from the endpoint
 	//		that way, if endpoint is unreachable, we don't count these as successful requests.
 	//BUT:  if we want to limit the # of ATTEMPTS, i.e., during a DDOS, then we should
