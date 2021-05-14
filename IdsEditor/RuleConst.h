@@ -106,8 +106,8 @@ const QString DB_COLUMN_ZIPCODE = QStringLiteral("Zipcode");
 const QString DB_COLUMN_TESTER = QStringLiteral("Tester");
 
 // Rule Types
-const QString RULE_TYPE_MAX_VALUE = QStringLiteral("MaxValue");
-//const QString RULE_TYPE_RPH_VALUE = QStringLiteral("RphValue");
+const QString RULE_TYPE_MAX_REQ = QStringLiteral("MaxValue");
+const QString RULE_TYPE_MAX_RPH = QStringLiteral("RphValue");
 const QString RULE_TYPE_TEMP_RANGE = QStringLiteral("TempRange");
 const QString RULE_TYPE_TIME_RANGE = QStringLiteral("TimeRange");
 const QString RULE_TYPE_EMAIL = QStringLiteral("Email");

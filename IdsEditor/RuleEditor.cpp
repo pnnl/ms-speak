@@ -95,6 +95,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.TimeFrame->setVisible(false);
 	ui.EmailFrame->setVisible(false);
 	m_reqsGBHeight = ui.MaxRequestsGroup->maximumHeight();
+	m_rphsGBHeight = ui.MaxRequestsPHGroup->maximumHeight();
 	m_tempGBHeight = ui.TempGroup->maximumHeight();
 	m_timeGBHeight = ui.TimeGroup->maximumHeight();
 	m_emailGBHeight = ui.EmailGroup->maximumHeight();
@@ -112,6 +113,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 
 	// Group Toggle connections before SetRule
 	connect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
+	connect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
 	connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	connect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
 	connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
@@ -257,16 +259,17 @@ void RuleEditor::UpdateUi( bool init )
 	// Check for rules
 	for (Rule* rule : m_ruleObject.Rules)
 	{
-		if (rule->Name == RULE_TYPE_MAX_VALUE)
+		if (rule->Name == RULE_TYPE_MAX_REQ)
 		{
 			ui.MaxRequestsGroup->setChecked(true);
 			ui.MaxRequestsFrame->setVisible(true);
 			ui.MaxRequestsSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMREQ).toInt());
-
-			QHash<QString, QString>::iterator i = rule->KeyValue.find(RULE_KEY_NUMRPH);
-			if (i != rule->KeyValue.end()) {
-				ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
-			}
+		}
+		else if (rule->Name == RULE_TYPE_MAX_RPH)
+		{
+			ui.MaxRequestsPHGroup->setChecked(true);
+			ui.MaxRequestsPHFrame->setVisible(true);
+			ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
 		}
 		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
 		{
@@ -302,7 +305,7 @@ void RuleEditor::UpdateUi( bool init )
 	}
 	/*
 	if( ui.MaxRequestsGroup->isChecked() ){
-		ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
+		ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);m_rphsGBHeight
 	}
 	else{
 		ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
@@ -392,11 +395,22 @@ void RuleEditor::OnEmailChanged(void)
 void RuleEditor::OnMaxRequestsChanged(int value)
 {
 	//qDebug() << "OnMaxRequestsChanged: " << value;
-	if( value < ui.MaxReqPHSpin->value() )
-	{
-		ui.MaxReqPHSpin->setValue(value);
+	if( ui.MaxRequestsPHGroup->isChecked() ){
+		if( value == 0 ){ // don't allow ANY requests
+			ui.MaxRequestsPHGroup->setChecked(false); // signals OnMaxRequestsPHToggled
+			ui.MaxRequestsPHGroup->setEnabled(false);
+		}
+		else if( value < ui.MaxReqPHSpin->value() )
+		{
+			ui.MaxReqPHSpin->setValue(value);
+		}
 	}
-	m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
+	else{
+		if( value > 0 ){
+			ui.MaxRequestsPHGroup->setEnabled(true);
+		}
+	}
+	m_ruleObject.Rules.value(RULE_TYPE_MAX_REQ)->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(value));
 	UpdateUi();
 }
 
@@ -406,18 +420,13 @@ void RuleEditor::OnMaxRequestsChanged(int value)
 void RuleEditor::OnMaxReqPHChanged(int value)
 {
 	//qDebug() << "OnMaxReqPHChanged: " << value;
-	if( value > ui.MaxRequestsSpin->value() )
-	{
-		ui.MaxRequestsSpin->setValue(value);
+	if( ui.MaxRequestsGroup->isChecked() ){
+		if( value > ui.MaxRequestsSpin->value() )
+		{
+			ui.MaxRequestsSpin->setValue(value);
+		}
 	}
-	if( value > 0 )
-	{
-		m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
-	}
-	else{
-		m_ruleObject.Rules.value(RULE_TYPE_MAX_VALUE)->KeyValue.remove(RULE_KEY_NUMRPH);
-		ui.MaxReqPHSpin->setValue(0);
-	}
+	m_ruleObject.Rules.value(RULE_TYPE_MAX_RPH)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
 	UpdateUi();
 }
 
@@ -503,17 +512,51 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 		if (checked)
 		{
 			ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
-			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_VALUE);
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_REQ);
 			rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
-			if( ui.MaxReqPHSpin->value() > 0 ){
-				rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
-			}
-			m_ruleObject.Rules.insert(RULE_TYPE_MAX_VALUE, rule);
+			m_ruleObject.Rules.insert(RULE_TYPE_MAX_REQ, rule);
 		}
 		else
 		{
-			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_VALUE);
+			//if( ui.MaxRequestsPHGroup->isChecked() ){
+			//	ui.MaxRequestsPHGroup->setChecked(false);
+			//}
+			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_REQ);
 			ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
+		}
+		UpdateUi();
+	}
+}
+//-------------------------------------------------------------------------------
+// OnMaxRequestsPHToggled
+//
+void RuleEditor::OnMaxRequestsPHToggled(bool checked)
+{
+	// if click with shift, just toggle the groupbox height
+	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
+		disconnect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
+		ui.MaxRequestsPHGroup->setChecked(!checked);
+		if( ui.MaxRequestsPHGroup->maximumHeight() == m_rphsGBHeight ){
+			ui.MaxRequestsPHGroup->setMaximumHeight(ui.MaxRequestsPHGroup->fontMetrics().height());
+		}
+		else{
+			ui.MaxRequestsPHGroup->setMaximumHeight(m_rphsGBHeight);
+		}
+		connect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
+	}
+	else{
+		ui.MaxRequestsPHFrame->setVisible(checked);
+		if (checked)
+		{
+			ui.MaxRequestsPHGroup->setMaximumHeight(m_rphsGBHeight);
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_RPH);
+			rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
+			m_ruleObject.Rules.insert(RULE_TYPE_MAX_RPH, rule);
+		}
+		else
+		{
+			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_RPH);
+			ui.MaxRequestsPHGroup->setMaximumHeight(ui.MaxRequestsPHGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
@@ -531,7 +574,7 @@ void RuleEditor::OnTempToggled(bool checked)
 			ui.TempGroup->setMaximumHeight(ui.TempGroup->fontMetrics().height());
 		}
 		else{
-			ui.TempGroup->setMaximumHeight(m_reqsGBHeight);
+			ui.TempGroup->setMaximumHeight(m_tempGBHeight);
 		}
 		connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	}

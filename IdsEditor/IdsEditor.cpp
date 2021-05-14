@@ -831,20 +831,18 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 			}
 		}
 		if( !numReq.isEmpty() ){
-			pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
-			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+			pRemObj->Rules.insert(RULE_TYPE_MAX_REQ, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_REQ, Q_NULLPTR))
 			{
-				rule->Name = RULE_TYPE_MAX_VALUE;
+				rule->Name = RULE_TYPE_MAX_REQ;
 				rule->KeyValue.insert(RULE_KEY_NUMREQ, numReq);
-				if( !numRPH.isEmpty() )
-					rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
 			}
 		}
-		else if( !numRPH.isEmpty() ){
-			pRemObj->Rules.insert(RULE_TYPE_MAX_VALUE, new Rule());
-			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_VALUE, Q_NULLPTR))
+		if( !numRPH.isEmpty() ){
+			pRemObj->Rules.insert(RULE_TYPE_MAX_RPH, new Rule());
+			if( Rule* rule = pRemObj->Rules.value(RULE_TYPE_MAX_RPH, Q_NULLPTR))
 			{
-				rule->Name = RULE_TYPE_MAX_VALUE;
+				rule->Name = RULE_TYPE_MAX_RPH;
 				rule->KeyValue.insert(RULE_KEY_NUMRPH, numRPH);
 			}
 		}

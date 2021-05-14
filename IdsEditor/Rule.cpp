@@ -107,10 +107,13 @@ Rule* RemObject::CreateRule(const QString& ruleName)
 {
 	Rule* rule = new Rule();
 	rule->Name = ruleName;
-	if (ruleName == RULE_TYPE_MAX_VALUE)
+	if (ruleName == RULE_TYPE_MAX_REQ)
 	{
 		rule->KeyValue.insert(RULE_KEY_NUMREQ, QStringLiteral("0"));
-		rule->KeyValue.insert(RULE_KEY_NUMRPH, QStringLiteral("0"));
+	}
+	else if (ruleName == RULE_TYPE_MAX_RPH)
+	{
+		rule->KeyValue.insert(RULE_KEY_NUMRPH, QStringLiteral("1"));
 	}
 	else if (ruleName == RULE_TYPE_TEMP_RANGE)
 	{
@@ -142,7 +145,7 @@ void RemObject::getData( RuleData& rd, QString tstr )
 	rd.m_Method   = m_Method;
 
 	for (Rule* rule : Rules){
-		if (rule->Name == RULE_TYPE_MAX_VALUE)
+		if (rule->Name == RULE_TYPE_MAX_REQ)
 		{
 			rd.m_numReq = rule->KeyValue[RULE_KEY_NUMREQ];
 			QHash<QString, QString>::iterator i = rule->KeyValue.find(RULE_KEY_NUMRPH);
