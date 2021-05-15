@@ -52,6 +52,7 @@
 //	History
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
+//		05.15.2021 CHM - Made numRPH mutually exclusive.
 //-------------------------------------------------------------------------------
 //
 // Summary: RuleEditor.h
@@ -87,8 +88,8 @@ private:
 	bool	 m_modded;
 	bool	 m_tmpmodded;
 	bool	 m_saved;
-	int		 m_reqsGBHeight;
-	int		 m_rphsGBHeight;
+	//int		 m_reqsGBHeight;
+	//int		 m_rphsGBHeight;
 	int		 m_tempGBHeight;
 	int		 m_timeGBHeight;
 	int		 m_emailGBHeight;

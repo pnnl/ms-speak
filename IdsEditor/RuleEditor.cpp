@@ -90,15 +90,22 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 
 	RestoreGeometry();
 
-	ui.MaxRequestsFrame->setVisible(false);
+	//ui.MaxRequestsFrame->setVisible(false);
+	//ui.MaxRequestsPHFrame->setVisible(false);
+	//ui.MaxRequestsFrame->setEnabled(true);
+	//ui.MaxRequestsPHFrame->setEnabled(true);
+	ui.EmailFrame->setVisible(false);
 	ui.TempFrame->setVisible(false);
 	ui.TimeFrame->setVisible(false);
-	ui.EmailFrame->setVisible(false);
-	m_reqsGBHeight = ui.MaxRequestsGroup->maximumHeight();
-	m_rphsGBHeight = ui.MaxRequestsPHGroup->maximumHeight();
+	//m_reqsGBHeight = ui.MaxRequestsGroup->maximumHeight();
+	//m_rphsGBHeight = ui.MaxRequestsPHGroup->maximumHeight();
+	m_emailGBHeight = ui.EmailGroup->maximumHeight();
 	m_tempGBHeight = ui.TempGroup->maximumHeight();
 	m_timeGBHeight = ui.TimeGroup->maximumHeight();
-	m_emailGBHeight = ui.EmailGroup->maximumHeight();
+
+	ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
+	ui.TempGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
+	ui.TimeGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 
 	ui.FunctionCombo->setMinimumContentsLength(1);
 	ui.EndPointCombo->setMinimumContentsLength(1);
@@ -114,9 +121,9 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	// Group Toggle connections before SetRule
 	connect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
 	connect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
+	connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
 	connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	connect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
-	connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
 
 	connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
@@ -262,19 +269,34 @@ void RuleEditor::UpdateUi( bool init )
 		if (rule->Name == RULE_TYPE_MAX_REQ)
 		{
 			ui.MaxRequestsGroup->setChecked(true);
-			ui.MaxRequestsFrame->setVisible(true);
+			//ui.MaxRequestsFrame->setVisible(true);
 			ui.MaxRequestsSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMREQ).toInt());
 		}
 		else if (rule->Name == RULE_TYPE_MAX_RPH)
 		{
 			ui.MaxRequestsPHGroup->setChecked(true);
-			ui.MaxRequestsPHFrame->setVisible(true);
+			//ui.MaxRequestsPHFrame->setVisible(true);
 			ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
+		}
+		else if (rule->Name == RULE_TYPE_EMAIL)
+		{
+			ui.EmailGroup->setChecked(true);
+			ui.EmailFrame->setVisible(true);
+			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
+			/* As far as I know, QtCreator makes functions italic that are either
+			*		Virtual methods (e.g. "virtual void foo();" ), or
+			*		methods that are derived from a base class and then overridden
+			*			in the child class (however, i'm not sure if it only happens
+			*			if they are derived "virtual", or if there are other corner cases where
+			*			overridden methods are not italic)
+			*/
+			ui.Email->setText(rule->KeyValue.value(RULE_KEY_EMAIL));
 		}
 		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
 		{
 			ui.TempGroup->setChecked(true);
 			ui.TempFrame->setVisible(true);
+			ui.TempGroup->setMaximumHeight(m_tempGBHeight);
 			ui.MaxTempSpin->setValue(rule->KeyValue.value(RULE_KEY_MAXTEMP).toInt());
 			ui.MaxTempSlider->setValue(rule->KeyValue.value(RULE_KEY_MAXTEMP).toInt());
 			ui.MinTempSpin->setValue(rule->KeyValue.value(RULE_KEY_MINTEMP).toInt());
@@ -284,23 +306,11 @@ void RuleEditor::UpdateUi( bool init )
 		{
 			ui.TimeGroup->setChecked(true);
 			ui.TimeFrame->setVisible(true);
+			ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
 			ui.MaxTimeSpin->setValue(rule->KeyValue.value(RULE_KEY_MAXTIME).toInt());
 			ui.MaxTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MAXTIME).toInt());
 			ui.MinTimeSpin->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
 			ui.MinTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
-		}
-		else if (rule->Name == RULE_TYPE_EMAIL)
-		{
-			ui.EmailGroup->setChecked(true);
-			/* As far as I know, QtCreator makes functions italic that are either
-			 *		Virtual methods (e.g. "virtual void foo();" ), or
-			 *		methods that are derived from a base class and then overridden
-			 *			in the child class (however, i'm not sure if it only happens
-			 *			if they are derived "virtual", or if there are other corner cases where
-			 *			overridden methods are not italic)
-			 */
-			ui.EmailFrame->setVisible(true);
-			ui.Email->setText(rule->KeyValue.value(RULE_KEY_EMAIL));
 		}
 	}
 	/*
@@ -391,7 +401,14 @@ void RuleEditor::OnEmailChanged(void)
 
 //-------------------------------------------------------------------------------
 // OnMaxRequestsChanged
-//
+/*
+TODO:
+	check req, make 0, uncheck
+	rph should be enabled
+
+	set rph higher than req by disable req
+	then enable req, should be set to rph
+	*/
 void RuleEditor::OnMaxRequestsChanged(int value)
 {
 	//qDebug() << "OnMaxRequestsChanged: " << value;
@@ -495,7 +512,7 @@ void RuleEditor::OnMinTimeChanged(int value)
 //
 void RuleEditor::OnMaxRequestsToggled(bool checked)
 {
-	// if click with shift, just toggle the groupbox height
+	/* if click with shift, just toggle the groupbox height
 	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
 		disconnect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
 		ui.MaxRequestsGroup->setChecked(!checked);
@@ -508,10 +525,10 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 		connect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
 	}
 	else{
-		ui.MaxRequestsFrame->setVisible(checked);
+		ui.MaxRequestsFrame->setVisible(checked);*/
 		if (checked)
 		{
-			ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
+			//ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_REQ);
 			rule->KeyValue.insert(RULE_KEY_NUMREQ, QString::number(ui.MaxRequestsSpin->value()));
 			m_ruleObject.Rules.insert(RULE_TYPE_MAX_REQ, rule);
@@ -522,17 +539,17 @@ void RuleEditor::OnMaxRequestsToggled(bool checked)
 			//	ui.MaxRequestsPHGroup->setChecked(false);
 			//}
 			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_REQ);
-			ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
+			//ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
 		}
 		UpdateUi();
-	}
+	//}
 }
 //-------------------------------------------------------------------------------
 // OnMaxRequestsPHToggled
 //
 void RuleEditor::OnMaxRequestsPHToggled(bool checked)
 {
-	// if click with shift, just toggle the groupbox height
+	/* if click with shift, just toggle the groupbox height
 	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
 		disconnect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
 		ui.MaxRequestsPHGroup->setChecked(!checked);
@@ -545,10 +562,10 @@ void RuleEditor::OnMaxRequestsPHToggled(bool checked)
 		connect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
 	}
 	else{
-		ui.MaxRequestsPHFrame->setVisible(checked);
+		ui.MaxRequestsPHFrame->setVisible(checked);*/
 		if (checked)
 		{
-			ui.MaxRequestsPHGroup->setMaximumHeight(m_rphsGBHeight);
+			//ui.MaxRequestsPHGroup->setMaximumHeight(m_rphsGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_RPH);
 			rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
 			m_ruleObject.Rules.insert(RULE_TYPE_MAX_RPH, rule);
@@ -556,7 +573,42 @@ void RuleEditor::OnMaxRequestsPHToggled(bool checked)
 		else
 		{
 			delete m_ruleObject.Rules.take(RULE_TYPE_MAX_RPH);
-			ui.MaxRequestsPHGroup->setMaximumHeight(ui.MaxRequestsPHGroup->fontMetrics().height());
+			//ui.MaxRequestsPHGroup->setMaximumHeight(ui.MaxRequestsPHGroup->fontMetrics().height());
+		}
+		UpdateUi();
+	//}
+}
+
+//-------------------------------------------------------------------------------
+// OnEmailToggled
+//
+void RuleEditor::OnEmailToggled(bool checked)
+{
+	// if click with shift, just toggle the groupbox height
+	if (QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+		disconnect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
+		ui.EmailGroup->setChecked(!checked);
+		if (ui.EmailGroup->maximumHeight() == m_emailGBHeight) {
+			ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
+		}
+		else {
+			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
+		}
+		connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
+	}
+	else {
+		ui.EmailFrame->setVisible(checked);
+		if (checked)
+		{
+			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
+			Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
+			rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
+			m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
+		}
+		else
+		{
+			delete m_ruleObject.Rules.take(RULE_TYPE_EMAIL);
+			ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
@@ -628,41 +680,6 @@ void RuleEditor::OnTimeToggled(bool checked)
 		{
 			delete m_ruleObject.Rules.take(RULE_TYPE_TIME_RANGE);
 			ui.TimeGroup->setMaximumHeight(ui.TimeGroup->fontMetrics().height());
-		}
-		UpdateUi();
-	}
-}
-
-//-------------------------------------------------------------------------------
-// OnEmailToggled
-//
-void RuleEditor::OnEmailToggled(bool checked)
-{
-	// if click with shift, just toggle the groupbox height
-	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
-		disconnect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
-		ui.EmailGroup->setChecked(!checked);
-		if( ui.EmailGroup->maximumHeight() == m_emailGBHeight ){
-			ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
-		}
-		else{
-			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
-		}
-		connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
-	}
-	else{
-		ui.EmailFrame->setVisible(checked);
-		if (checked)
-		{
-			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
-			Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
-			rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
-			m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
-		}
-		else
-		{
-			delete m_ruleObject.Rules.take(RULE_TYPE_EMAIL);
-			ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 		}
 		UpdateUi();
 	}
