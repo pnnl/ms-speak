@@ -148,10 +148,10 @@ void RemObject::getData( RuleData& rd, QString tstr )
 		if (rule->Name == RULE_TYPE_MAX_REQ)
 		{
 			rd.m_numReq = rule->KeyValue[RULE_KEY_NUMREQ];
-			QHash<QString, QString>::iterator i = rule->KeyValue.find(RULE_KEY_NUMRPH);
-			if (i != rule->KeyValue.end()) {
-				rd.m_numRPH = rule->KeyValue[RULE_KEY_NUMRPH];
-			}
+		}
+		else if (rule->Name == RULE_TYPE_MAX_RPH)
+		{
+			rd.m_numRPH = rule->KeyValue[RULE_KEY_NUMRPH];
 		}
 		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
 		{

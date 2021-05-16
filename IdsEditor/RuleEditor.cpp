@@ -114,8 +114,18 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.EndPointCombo->setMinimumContentsLength(1);
 	ui.MethodCombo->setMinimumContentsLength(1);
 
+	ui.MaxTempSlider->setMaximum(120);
+	ui.MaxTempSlider->setMinimum(1);
+	ui.MaxTempSpin->setMaximum(120);
+	ui.MaxTempSpin->setMinimum(1);
+
+	ui.MinTempSlider->setMaximum(119);
+	ui.MinTempSlider->setMinimum(0);
+	ui.MinTempSpin->setMaximum(119);
+	ui.MinTempSpin->setMinimum(0);
+
 	InitFunctions();
-	//UpdateUi(true);
+	UpdateUi(true);
 
 	/*QRegularExpression mailREX("\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[A-Z]{2,4}\\b");
 	QValidator *validator = new QRegularExpressionValidator(mailREX, this);
@@ -167,7 +177,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 
 	connect(ui.buttonBox, SIGNAL(clicked(QAbstractButton*)), this, SLOT(OnClickedBtn(QAbstractButton *)));
 
-	UpdateUi(true); // 5.15
+	//UpdateUi(true); // 5.15
 
 }
 
@@ -275,14 +285,14 @@ void RuleEditor::UpdateUi( bool init )
 		if (rule->Name == RULE_TYPE_MAX_REQ)
 		{
 			ui.MaxRequestsGroup->setChecked(true);
-			ui.MaxRequestsFrame->setEnabled(true); // ??
+			ui.MaxRequestsFrame->setEnabled(true);
 			//ui.MaxRequestsFrame->setVisible(true);
 			ui.MaxRequestsSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMREQ).toInt());
 		}
 		else if (rule->Name == RULE_TYPE_MAX_RPH)
 		{
 			ui.MaxRequestsPHGroup->setChecked(true);
-			ui.MaxRequestsPHFrame->setEnabled(true); // ??
+			ui.MaxRequestsPHFrame->setEnabled(true);
 			//ui.MaxRequestsPHFrame->setVisible(true);
 			ui.MaxReqPHSpin->setValue(rule->KeyValue.value(RULE_KEY_NUMRPH).toInt());
 		}
@@ -298,7 +308,8 @@ void RuleEditor::UpdateUi( bool init )
 			*			if they are derived "virtual", or if there are other corner cases where
 			*			overridden methods are not italic)
 			*/
-			ui.Email->setText(rule->KeyValue.value(RULE_KEY_EMAIL));
+			QString qs = rule->KeyValue.value(RULE_KEY_EMAIL);
+			ui.Email->setText(qs);
 		}
 		else if (rule->Name == RULE_TYPE_TEMP_RANGE)
 		{
@@ -555,8 +566,6 @@ void RuleEditor::OnMaxReqPHChanged(int value)
 			ui.MaxRequestsSpin->setValue(value);
 		}
 	}
-	// crashes here sometimes, when clicked but not checked
-	// should not be able to click if not checked
 	m_ruleObject.Rules.value(RULE_TYPE_MAX_RPH)->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(value));
 	UpdateUi();
 }
@@ -646,6 +655,7 @@ void RuleEditor::OnEmailToggled(bool checked)
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_EMAIL);
 			rule->KeyValue.insert(RULE_KEY_EMAIL, ui.Email->displayText());
 			m_ruleObject.Rules.insert(RULE_TYPE_EMAIL, rule);
+			ui.Email->setFocus();
 		}
 		else
 		{
@@ -735,11 +745,19 @@ void RuleEditor::accept()
 	if( m_tmpmodded )
 	{
 		//qDebug() << "accept()::m_modded";
+
+		if( ui.EmailGroup->isChecked() ){
+			QString qsEmailAddr = ui.Email->displayText();
+			if( qsEmailAddr.isEmpty() ){
+				QString qs = QStringLiteral("Warning, No e-mail Address Provided.");
+				QMessageBox::warning(this, QStringLiteral("IDS Rule Editor"),
+									 qs, QMessageBox::Ok, QMessageBox::Ok);
+				return;
+			}
+		}
 		QString objectKey = m_ruleObject.Rem();
 		if( false ){ // !m_bClosed
-			// m_ruleObject.Copy(Section());
 			if ( m_ruleObjects.contains(objectKey)){
-				//qDebug() << "accept() delete " << objectKey;
 				delete m_ruleObjects.take(objectKey);
 			}
 			m_ruleObjects.insert(objectKey, new RemObject( m_ruleObject));
@@ -749,9 +767,6 @@ void RuleEditor::accept()
 		m_parent->Modded(true);
 		m_parent->UpdateObjectModel(objectKey);
 	}
-	//else{
-	//	qDebug() << "accept():: NOT modded";
-	//}
 }
 
 //-------------------------------------------------------------------------------
