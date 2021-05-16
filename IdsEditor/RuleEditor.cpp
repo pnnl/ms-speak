@@ -118,11 +118,19 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.MaxTempSlider->setMinimum(1);
 	ui.MaxTempSpin->setMaximum(120);
 	ui.MaxTempSpin->setMinimum(1);
-
 	ui.MinTempSlider->setMaximum(119);
 	ui.MinTempSlider->setMinimum(0);
 	ui.MinTempSpin->setMaximum(119);
 	ui.MinTempSpin->setMinimum(0);
+
+	ui.MaxTimeSlider->setMaximum(24);
+	ui.MaxTimeSlider->setMinimum(1);
+	ui.MaxTimeSpin->setMaximum(24);
+	ui.MaxTimeSpin->setMinimum(1);
+	ui.MinTimeSlider->setMaximum(23);
+	ui.MinTimeSlider->setMinimum(0);
+	ui.MinTimeSpin->setMaximum(23);
+	ui.MinTimeSpin->setMinimum(0);
 
 	InitFunctions();
 	UpdateUi(true);
@@ -576,10 +584,10 @@ void RuleEditor::OnMaxReqPHChanged(int value)
 void RuleEditor::OnMaxTempChanged(int value)
 {
 	//qDebug() << "OnMaxTempChanged: " << value;
-	if (value < ui.MinTempSlider->value() || value < ui.MinTempSpin->value())
+	if (value <= ui.MinTempSlider->value() || value <= ui.MinTempSpin->value())
 	{
-		ui.MinTempSlider->setValue(value);
-		ui.MinTempSpin->setValue(value);
+		ui.MinTempSlider->setValue(value-1);
+		ui.MinTempSpin->setValue(value-1);
 	}
 	m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MAXTEMP, QString::number(value));
 	UpdateUi();
@@ -591,10 +599,10 @@ void RuleEditor::OnMaxTempChanged(int value)
 void RuleEditor::OnMinTempChanged(int value)
 {
 	//qDebug() << "OnMinTempChanged: " << value;
-	if (value > ui.MaxTempSlider->value() || value > ui.MaxTempSpin->value())
+	if (value >= ui.MaxTempSlider->value() || value >= ui.MaxTempSpin->value())
 	{
-		ui.MaxTempSlider->setValue(value);
-		ui.MaxTempSpin->setValue(value);
+		ui.MaxTempSlider->setValue(value+1);
+		ui.MaxTempSpin->setValue(value+1);
 	}
 	m_ruleObject.Rules.value(RULE_TYPE_TEMP_RANGE)->KeyValue.insert(RULE_KEY_MINTEMP, QString::number(value));
 	UpdateUi();
@@ -606,10 +614,10 @@ void RuleEditor::OnMinTempChanged(int value)
 void RuleEditor::OnMaxTimeChanged(int value)
 {
 	//qDebug() << "OnMaxTimeChanged: " << value;
-	if (value < ui.MinTimeSlider->value() || value < ui.MinTimeSpin->value())
+	if (value <= ui.MinTimeSlider->value() || value <= ui.MinTimeSpin->value())
 	{
-		ui.MinTimeSlider->setValue(value);
-		ui.MinTimeSpin->setValue(value);
+		ui.MinTimeSlider->setValue(value-1);
+		ui.MinTimeSpin->setValue(value-1);
 	}
 	m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(value));
 	UpdateUi();
@@ -621,10 +629,10 @@ void RuleEditor::OnMaxTimeChanged(int value)
 void RuleEditor::OnMinTimeChanged(int value)
 {
 	//qDebug() << "OnMinTimeChanged: " << value;
-	if (value > ui.MaxTimeSlider->value() || value > ui.MaxTimeSpin->value())
+	if (value >= ui.MaxTimeSlider->value() || value >= ui.MaxTimeSpin->value())
 	{
-		ui.MaxTimeSlider->setValue(value);
-		ui.MaxTimeSpin->setValue(value);
+		ui.MaxTimeSlider->setValue(value+1);
+		ui.MaxTimeSpin->setValue(value+1);
 	}
 	m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_MINTIME, QString::number(value));
 	UpdateUi();
