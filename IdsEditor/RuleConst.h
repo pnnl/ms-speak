@@ -66,7 +66,7 @@
 #include <QStringList>
 
 // Version
-const QString SOFTWARE_VERSION = QStringLiteral("21.05.07");
+const QString SOFTWARE_VERSION = QStringLiteral("21.05.15");
 const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Business Rule Editor</h3><h4>Copyright 2021</h4><h4>Pacific Northwest National Laboratory</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
 // Rule Keys
