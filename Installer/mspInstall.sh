@@ -437,6 +437,9 @@ else
 		cd $ORIG_DIR
 		return 0
 	else
+        #sudo ln -s libssl.so libssl.so.1.0.0
+        #sudo ln -s libcrypto.so libcrypto.so.1.0.0	
+        #sudo ln -s libQt5XmlPatterns.so.5.11.3 libQt5XmlPatterns.so.5 
 		printf "\nc-icap Installed Successfully."
 		sudo ldconfig
 	fi
