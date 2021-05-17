@@ -935,11 +935,10 @@ xmlNodePtr parseNode (xmlNodePtr cur, const xmlChar *subchild)
  */
 bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 {
-    CURLcode res;
-
+	CURLcode res;
 	pWd->currentTemp = -273;
 	pWd->bSuccess = false;
-	pWd->city[0]=0; // APIBUFFLEN+1];
+	pWd->city[0]=0;
 	
 	res = curl_easy_perform(pCurl);
 	if( res != CURLE_OK ){
@@ -950,7 +949,8 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 		xmlDocPtr xmlDoc;
 		xmlDoc = xmlParseMemory(pXmlStr->ptr, pXmlStr->len);
 		if( xmlDoc == NULL ){
-			printf("XML Document not parsed successfully.\n");
+			ci_debug_printf(0,("XML Document not parsed successfully.\n");
+			ci_debug_printf(0," Assure that you are using a valid AppID.\n");
 			return false;
 		}
 		cur = xmlDocGetRootElement(xmlDoc);
@@ -960,7 +960,6 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 			return false;
 		}
 		cur = cur->xmlChildrenNode;
-		//printf("\n\n");
 #ifdef _GET_ALL_WEATHER_PARAMS_
 		xmlNodePtr child;
 		xmlChar   *key2;
@@ -979,7 +978,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 					pWd->currentTemp = (int) strtol((const char *)key, (char **)NULL, 10);
 					pWd->bSuccess = true;
 					xmlFree(key);
-#ifdef _GET_ALL_WEATHER_PARAMS_					
+#ifdef _GET_ALL_WEATHER_PARAMS_
 					key = xmlGetProp(cur, (const xmlChar *)"min");
 					printf("Min Temp: %s\n", key);
 					xmlFree(key);
@@ -990,7 +989,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 					printf("Temp Units: %s\n", key);
 					xmlFree(key);
 #endif
-				}	
+				}
 			}
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"city")) ){
 				key = xmlGetProp(cur, (const xmlChar *)"name");
@@ -1026,7 +1025,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 					xmlFree(key);
 					key = xmlGetProp(child, (const xmlChar *)"set");
 					if( strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
-						printf("\nstrptime failed\n");					
+						printf("\nstrptime failed\n");
 					else{
 						local = timegm(&result);
 						info = localtime( &local );
@@ -1045,17 +1044,17 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 				key = xmlGetProp(cur, (const xmlChar *)"value");
 				printf("Feels like: %s\n", key);
 				xmlFree(key);
-			}				
+			}
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"humidity")) ){
 				key = xmlGetProp(cur, (const xmlChar *)"value");
 				printf("Humidity: %s%%\n", key);
 				xmlFree(key);
-			}				
+			}
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"lastupdate")) ){
 				// 2021-02-20T18:44:07
 				key = xmlGetProp(cur, (const xmlChar *)"value");
 				if( strptime( (const char *)key, "%Y-%m-%dT%H:%M:%S",&result) == NULL)
-					printf("\nstrptime failed\n");					
+					printf("\nstrptime failed\n");
 				else{
 					//time_t local = timelocal(&result);
 					local = timegm(&result);
@@ -1108,14 +1107,14 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 				}
 				else{
 					printf("ERROR: Failed to locate '%s'\n", key );
-				}					
-			}				
+				}
+			}
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"clouds")) ){
 				key = xmlGetProp(cur, (const xmlChar *)"name");
 				printf("%s\n", key);
 				xmlFree(key);
 			}
-			//.mode Possible values are 'no", name of weather phenomena as 'rain', 'snow'				
+			//.mode Possible values are 'no", name of weather phenomena as 'rain', 'snow'
 			else if( (!xmlStrcmp(cur->name, (const xmlChar *)"precipitation")) ){
 				key = xmlGetProp(cur, (const xmlChar *)"value");
 				if( key ){
@@ -1130,13 +1129,25 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 			}
 #endif // _GET_ALL_WEATHER_PARAMS_
 			cur = cur->next;
-		}			
+		}
 		xmlFreeDoc(xmlDoc);
 		free(pXmlStr->ptr);
 	}
-	return true;	
+	return true;
 }
-	
+
+void structuredErrorFunc(void *userData, xmlErrorPtr error) {
+	;
+	//printf("xmlStructuredErrorFunc\n");
+	//printf("%p\n",userData);
+	//printf("%p\n",error);
+}
+
+void genericErrorFunc(void *ctx, const char * msg, ...) {
+	;
+	//printf("xmlGenericErrorFunc\n");
+}
+
 /*
  * WeatherUpdater - thread body for weather handler
  * 		as the icap module is a library module, threads created by it apparently can not share the values
@@ -1166,7 +1177,8 @@ void *WeatherUpdater(void *data)
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, &xmlStr);
 			curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); // Verify the SSL certificate, 0 (zero) means it doesn't.
-
+			xmlSetGenericErrorFunc(NULL, genericErrorFunc);
+			xmlSetStructuredErrorFunc(NULL, structuredErrorFunc);
 			ci_debug_printf(1,"\n Getting Weather for area %s\n", pData->m_Zipcode);
 			ci_debug_printf(1,"      using AppID: %s\n", pData->m_AppId);
 			do{
@@ -1226,7 +1238,6 @@ void *WeatherUpdater(void *data)
 					pthread_mutex_unlock(&lock);// release lock
 					init = false;
 				}
-
 				sleep( seconds );
 			} while( true );
 			curl_easy_cleanup(curl); 
