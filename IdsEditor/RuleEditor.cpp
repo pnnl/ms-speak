@@ -55,6 +55,7 @@
 //		02.12.2021 CHM - Populate from Sqlite DB.
 //		05.07.2021 CHM - Minimize groupbox height if not checked, if <SHIFT> held,
 //							toggle groupbox height.
+//		05.17.2021 CHM - Support multiple rules for same endpoint.
 //-------------------------------------------------------------------------------
 //
 // Summary: RuleEditor.cpp
@@ -74,13 +75,14 @@
 //-------------------------------------------------------------------------------
 // RuleEditor
 //
-RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
+RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	: QDialog(parent),
 	  m_ruleObject(ruleObj),
 	  m_parent(parent),
 	  m_ruleObjects(parent->RemObjects()),
 	  m_functions(parent->Functions()),
 	  m_methods(parent->Methods()),
+	  m_bNew(bn),
 	  m_bClosed(false),
 	  m_modded(false),
 	  m_tmpmodded(false),
@@ -131,7 +133,13 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	ui.MinTimeSlider->setMinimum(0);
 	ui.MinTimeSpin->setMaximum(23);
 	ui.MinTimeSpin->setMinimum(0);
-
+	ui.RuleName->setMaxLength(80);
+	if( m_bNew ){
+		ui.RuleName->setFocus();
+	}
+	//else{
+	//	ui.RuleName->setEnabled(false);
+	//}
 	InitFunctions();
 	UpdateUi(true);
 
@@ -146,6 +154,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, IdsEditor* parent)
 	connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	connect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
 
+	connect(ui.RuleName, SIGNAL(editingFinished()), this, SLOT(OnNameChanged()));
 	connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
@@ -282,10 +291,11 @@ void RuleEditor::UpdateUi( bool init )
 	{
 		ui.MethodCombo->setCurrentIndex(idx);
 	}
+	ui.RuleName->setText(m_ruleObject.m_Name);
+
 	connect(ui.EndPointCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnEndPointComboChanged(int)));
 	connect(ui.FunctionCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnFunctionComboChanged(int)));
 	connect(ui.MethodCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(OnMethodComboChanged(int)));
-	//connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
 
 	// Check for rules
 	for (Rule* rule : m_ruleObject.Rules)
@@ -415,6 +425,14 @@ void RuleEditor::OnMethodComboChanged(int index)
 	UpdateUi();
 }
 
+//-------------------------------------------------------------------------------
+// OnNameChanged
+//
+void RuleEditor::OnNameChanged(void)
+{
+	m_ruleObject.m_Name = ui.RuleName->displayText();
+	UpdateUi();// true
+}
 //-------------------------------------------------------------------------------
 // OnEmailChanged
 //
@@ -750,10 +768,31 @@ void RuleEditor::OnTimeToggled(bool checked)
 //
 void RuleEditor::accept()
 {
+	// check that rule has a name
+	QString qName = ui.RuleName->displayText();
+	if( qName.isEmpty() ){
+		QString qs = QStringLiteral("Error, No Rule Name Provided.");
+		QMessageBox::critical(this, QStringLiteral("IDS Rule Editor"),
+							 qs, QMessageBox::Ok, QMessageBox::Ok);
+		return;
+	}
+
 	if( m_tmpmodded )
 	{
+		if( !ui.MaxRequestsGroup->isChecked() &&
+			!ui.MaxRequestsPHGroup->isChecked() &&
+			!ui.TempGroup->isChecked() &&
+			!ui.TimeGroup->isChecked() ){
+			QString qs = QStringLiteral("Error, No Rule Criteria Specified.\n");
+			if( !m_bNew ){
+				qs += QStringLiteral("If this is really what you want,\n");
+				qs += QStringLiteral("delete this rule instead.");
+			}
+			QMessageBox::critical(this, QStringLiteral("IDS Rule Editor"),
+								 qs, QMessageBox::Ok, QMessageBox::Ok);
+			return;
+		}
 		//qDebug() << "accept()::m_modded";
-
 		if( ui.EmailGroup->isChecked() ){
 			QString qsEmailAddr = ui.Email->displayText();
 			if( qsEmailAddr.isEmpty() ){
@@ -774,6 +813,16 @@ void RuleEditor::accept()
 		m_modded = true;
 		m_parent->Modded(true);
 		m_parent->UpdateObjectModel(objectKey);
+	}
+	else{
+		if( m_bNew && !ui.MaxRequestsGroup->isChecked() &&
+			!ui.MaxRequestsPHGroup->isChecked() &&
+			!ui.TempGroup->isChecked() &&
+			!ui.TimeGroup->isChecked() ){
+			QString qs = QStringLiteral("Error, No Rule Criteria Specified.\n");
+			QMessageBox::critical(this, QStringLiteral("IDS Rule Editor"),
+								 qs, QMessageBox::Ok, QMessageBox::Ok);
+		}
 	}
 }
 

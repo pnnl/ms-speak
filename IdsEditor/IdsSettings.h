@@ -53,6 +53,7 @@
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
 //		02.09.2021 CHM - Populate from Sqlite DB, added DB_FILE_NAME.
+//		05.17.2021 CHM - Moved SOFTWARE_VERSION here.
 //-------------------------------------------------------------------------------
 // Summary: IdsSettings.h
 //-------------------------------------------------------------------------------
@@ -62,6 +63,10 @@
 
 #include <QDir>
 #include <QString>
+
+// Version
+const QString SOFTWARE_VERSION = QStringLiteral("21.05.17");
+const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Business Rule Editor</h3><h4>Copyright 2021</h4><h4>Pacific Northwest National Laboratory</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
 const QString DB_CONNECTION_NAME = QStringLiteral("BizConn");
 #ifdef Q_OS_WIN

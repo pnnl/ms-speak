@@ -95,9 +95,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #else: unix:!android: target.path = /opt/$${TARGET}/bin
 #!isEmpty(target.path): INSTALLS += target
 
-INCLUDEPATH += \
-	. #\
-#	../Valid8or \
+INCLUDEPATH += .
 
 DEPENDPATH += .
 MOC_DIR += GeneratedFiles

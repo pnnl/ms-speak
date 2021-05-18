@@ -53,6 +53,8 @@
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
 //		02.09.2021 CHM - Populate from Sqlite DB.
+//		05.17.2021 CHM - Support multiple rules for same endpoint (added
+//							'Name' field to Rule table).
 //-------------------------------------------------------------------------------
 //
 // Summary: IdsEditor.cpp
@@ -428,6 +430,7 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	"   [Function] INTEGER NOT NULL,"
 	"	[Endpoint] INTEGER NOT NULL,"
 	"	[Method] INTEGER NOT NULL,"
+	"	[Name] NVARCHAR(50) NOT NULL,"
 	"	[maxTemp] INTEGER CHECK( (maxTemp = NULL) OR (maxTemp between 32 and 120) ),"
 	"	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),"
 	"	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),"
@@ -765,9 +768,10 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 		return true;
 	}
 	// == All Rules ==
+	// 	"SELECT testers.Name as who, functions.Name as Function, endpoints.name as EndPoint, methods.name as Method,"
 	strQuery = QStringLiteral(
-	"SELECT testers.Name as who, functions.Name as Function, endpoints.name as EndPoint, methods.name as Method,"
-	" rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
+	"SELECT testers.Name as who, functions.Name, endpoints.Name, methods.Name,"
+	" rules.Name, rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
 	" FROM rules"
 	" INNER JOIN functions ON functions.id = rules.function"
 	" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
@@ -791,26 +795,28 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 		QString Function =  query.value(1).toString();
 		QString EndPoint =  query.value(2).toString();
 		QString Method =  query.value(3).toString();
-		QString maxTemp =  query.value(4).toString();
-		QString minTemp =  query.value(5).toString();
-		QString maxHour =  query.value(6).toString();
-		QString minHour =  query.value(7).toString();
-		QString numReq =  query.value(8).toString();
-		QString numRPH =  query.value(9).toString();
-		QString email =  query.value(10).toString();
+		QString Name =  query.value(4).toString();
+		QString maxTemp =  query.value(5).toString();
+		QString minTemp =  query.value(6).toString();
+		QString maxHour =  query.value(7).toString();
+		QString minHour =  query.value(8).toString();
+		QString numReq =  query.value(9).toString();
+		QString numRPH =  query.value(10).toString();
+		QString email =  query.value(11).toString();
 		/*
 		qDebug() << Tester;
 		qDebug() << "   " << EndPoint << "::" << Method;
 		qDebug() << "   " << maxTemp << "  " << minTemp << maxHour << "  " << minHour;
 		qDebug() << "   " << numReq << "  " << numRPH << email;*/
 
-		QString remKey = QStringLiteral("%1::%2").arg(EndPoint, Method);
+		QString remKey = QStringLiteral("%1::%2::%3").arg(EndPoint, Method, Name);
 		REMOBJ_HASH& rRemObjs = m_RemObjs[Tester];
 		rRemObjs.insert(remKey, new RemObject());
 		RemObject *pRemObj = rRemObjs[remKey];
 		pRemObj->m_Function = Function;
 		pRemObj->m_EndPoint = EndPoint;
 		pRemObj->m_Method = Method;
+		pRemObj->m_Name = Name;
 
 		if( !maxTemp.isEmpty() ){
 			pRemObj->Rules.insert(RULE_TYPE_TEMP_RANGE, new Rule());
@@ -1168,17 +1174,21 @@ bool IdsEditor::OnFileSave()
 	// "(SELECT Id FROM Testers WHERE Name = ?);"
 
 	// == Add Tester Rule ==
-	QString strQueryQAddRule = QStringLiteral(
+	QString strQueryAddRule = QStringLiteral(
 		"WITH EpId AS (SELECT Id FROM EndPoints WHERE Name = :EpName) "
-		"INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
+		"INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, Name, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
 		"VALUES ((SELECT Id FROM Testers WHERE Name = :TstrName), "
 		"(SELECT Id FROM Functions WHERE Name =:FuncName), "
 		"(SELECT * from EpId), "
 		"(SELECT Id FROM Methods WHERE (Name = :MetName AND EndPoint=(SELECT * from EpId))), "
-		":mxTemp, :mnTemp, :mxHour, :mnHour, :nReq, :nRPH, :em);"
+		":Name, :mxTemp, :mnTemp, :mxHour, :mnHour, :nReq, :nRPH, :em);"
 	);
 
-	// == Remove Tester Rule ==
+	/* == Remove Tester Rule ==
+	 * can't maintain add/del/mod per rule since when deleted, the
+	 * rule is no longer in the hash, so won't have it to use when
+	 * needed here to delete from the DB.
+	 *
 	QString strQueryDelRule = QStringLiteral(
 		"DELETE FROM Rules WHERE id ="
 		" (SELECT rules.id"
@@ -1187,8 +1197,9 @@ bool IdsEditor::OnFileSave()
 		" INNER JOIN methods ON methods.id = rules.method"
 		" WHERE( Tester =(SELECT id FROM Testers WHERE Name = :TstrName) AND"
 		"  rules.endpoint =(SELECT id FROM endpoints WHERE Name = :EpName) AND"
-		"  rules.method IN (SELECT id FROM methods WHERE Name = :MetName)));"
-	);
+		"  rules.method IN (SELECT id FROM methods WHERE Name = :MetName)) AND"
+		"  rules.Name = :Name));"
+	);*/
 
 	// == Remove Tester Rules ==
 	QString strQueryDelRules = QStringLiteral(
@@ -1288,19 +1299,20 @@ bool IdsEditor::OnFileSave()
 					//  use QVariant(QVariant::String) if you are binding a string. for Qt5
 					//	use QVariant(QMetaType::QString) if you are binding a string. for Qt6
 					qDebug() << "---> Adding Rules for " << qsName;
-					if( query.prepare( strQueryQAddRule ) ){
+					if( query.prepare( strQueryAddRule ) ){
 						REMOBJ_HASH& rRemObjs = m_RemObjs[qsName];
 						for (RemObject* pRemObj : rRemObjs)
 						{
 							RuleData rd;
 							pRemObj->getData( rd, qsName );
-							QString Str = QString("       %1:%2").arg(rd.m_Endpoint).arg(rd.m_Method);
+							QString Str = QString("       %1:%2:%3").arg(rd.m_Endpoint).arg(rd.m_Method).arg(rd.m_Name);
 							qDebug() << Str;
 
 							query.bindValue(":TstrName", rd.m_Tester);
 							query.bindValue(":FuncName", rd.m_Function);
 							query.bindValue(":EpName", rd.m_Endpoint);
 							query.bindValue(":MetName", rd.m_Method);
+							query.bindValue(":Name", rd.m_Name);
 							if (rd.m_maxTemp.isEmpty()){
 								query.bindValue(":mxTemp", QVariant(QVariant::String));
 								query.bindValue(":mnTemp", QVariant(QVariant::String));
@@ -1340,7 +1352,7 @@ bool IdsEditor::OnFileSave()
 						}// for pRemObj
 					}
 					else{
-						errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryQAddRule).arg(query.lastError().text());
+						errStr = QStringLiteral("Error preparing querying '%1':\n%2").arg(strQueryAddRule).arg(query.lastError().text());
 						qDebug("%s", qPrintable(errStr));
 						QMessageBox::warning(this, QStringLiteral("IDS Editor"),
 											 errStr, QMessageBox::Ok, QMessageBox::Ok);
@@ -1658,18 +1670,21 @@ void IdsEditor::OnRuleDelete()
 void IdsEditor::OnRuleNew()
 {
 	RemObject remObj;
-	RuleEditor dlg(remObj, this);
+	RuleEditor dlg(remObj, true, this);
 	if(QDialog::Accepted == dlg.exec() )
 	{
-		REMOBJ_HASH& rRemObjs = RemObjects(); // m_RemObjs[m_currTester];
-		remObj.Copy(dlg.RemObj());
-		QString remKey = remObj.Rem();
-		if( rRemObjs.contains(remKey))
-			delete rRemObjs.take(remKey);
+		if( dlg.Modded() )
+		{
+			REMOBJ_HASH& rRemObjs = RemObjects(); // m_RemObjs[m_currTester];
+			remObj.Copy(dlg.RemObj());
+			QString remKey = remObj.Rem();
+			if( rRemObjs.contains(remKey))
+				delete rRemObjs.take(remKey);
 
-		rRemObjs.insert(remKey, new RemObject(remObj));
-		DirtyRules( true );
-		UpdateObjectModel( remKey );
+			rRemObjs.insert(remKey, new RemObject(remObj));
+			DirtyRules( true );
+			UpdateObjectModel( remKey );
+		}
 	}
 }
 
@@ -1700,7 +1715,7 @@ void IdsEditor::EditRule(const QModelIndex& index)
 			if( RemObject* remObj = rRemObjs.value(remKey, Q_NULLPTR))
 			{
 				// need to get the one selected
-				RuleEditor dlg(*remObj, this);
+				RuleEditor dlg(*remObj, false, this);
 				if( QDialog::Accepted == dlg.exec())
 				{
 					if( dlg.Modded() )

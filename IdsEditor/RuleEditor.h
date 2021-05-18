@@ -53,6 +53,7 @@
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
 //		05.15.2021 CHM - Made numRPH mutually exclusive.
+//		05.17.2021 CHM - Added OnNameChanged.
 //-------------------------------------------------------------------------------
 //
 // Summary: RuleEditor.h
@@ -84,6 +85,7 @@ private:
 	REMOBJ_HASH& m_ruleObjects;
 	DB_HASH& m_functions; // key is a function, value a list of endpoints
 	DB_HASH& m_methods;   // key is an endpoint, value a list of methods
+	bool	 m_bNew;
 	bool	 m_bClosed;
 	bool	 m_modded;
 	bool	 m_tmpmodded;
@@ -95,7 +97,7 @@ private:
 	int		 m_emailGBHeight;
 
 public:
-	RuleEditor(const RemObject& ruleObj, IdsEditor* parent = Q_NULLPTR);
+	RuleEditor(const RemObject& ruleObj, bool bnew, IdsEditor* parent = Q_NULLPTR);
 	~RuleEditor();
 
 	const RemObject& RemObj() const { return m_ruleObject; }
@@ -115,6 +117,7 @@ private:
 	void UpdateUi(bool b=false);
 
 private slots:
+	void OnNameChanged(void);
 	void OnEndPointComboChanged(int);
 	void OnFunctionComboChanged(int);
 	void OnMaxRequestsChanged(int);

@@ -53,11 +53,16 @@
 //		2021 - Modified By: Carl Miller <carl.miller@pnnl.gov> from original by
 //                  Lance Irvine, LMI Developments, LLC.
 //		02.24.2021 CHM - Support multiple Testers.
+//		05.17.2021 CHM - Support added 'Name' field to Rule table.
 //-------------------------------------------------------------------------------
 //
 // Summary: Rule.h
 //-------------------------------------------------------------------------------
-
+/*
+ * if there is no time rule, then the temp and count rules apply to all times
+ * if there IS a time rule, the count and temperature rules apply only during
+ * the specified time
+ */
 #ifndef RULE_H
 #define RULE_H
 
@@ -73,6 +78,7 @@ public:
 	QString m_Function;
 	QString m_Endpoint;
 	QString m_Method;
+	QString m_Name;
 	QString m_email;
 	QString m_maxTemp;
 	QString m_minTemp;
@@ -106,6 +112,7 @@ public:
 	QString m_Function;
 	QString m_EndPoint;
 	QString m_Method;
+	QString m_Name;
 
 public:
 	RemObject() {}

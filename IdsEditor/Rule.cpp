@@ -28,6 +28,7 @@ void RuleData::clear(void)
 	m_Function = DB_NO_VALUE;
 	m_Endpoint = DB_NO_VALUE;
 	m_Method = DB_NO_VALUE;
+	m_Name = DB_NO_VALUE;
 	m_email = DB_NO_VALUE;
 	m_maxTemp = DB_NO_VALUE;
 	m_minTemp = DB_NO_VALUE;
@@ -79,7 +80,8 @@ QString Rule::ToString() const
 RemObject::RemObject(const RemObject& rs)
 	: m_Function(rs.m_Function),
 	  m_EndPoint(rs.m_EndPoint),
-	  m_Method(rs.m_Method)
+	  m_Method(rs.m_Method),
+	  m_Name(rs.m_Name)
 {
 	for (Rule* rule : rs.Rules)
 		Rules.insert(rule->Name, new Rule(*rule));
@@ -93,6 +95,7 @@ void RemObject::Copy(const RemObject& rs)
 	m_Function = rs.m_Function;
 	m_EndPoint = rs.m_EndPoint;
 	m_Method = rs.m_Method;
+	m_Name = rs.m_Name;
 	qDeleteAll(Rules);
 	Rules.clear();
 
@@ -143,6 +146,7 @@ void RemObject::getData( RuleData& rd, QString tstr )
 	rd.m_Function = m_Function;
 	rd.m_Endpoint = m_EndPoint;
 	rd.m_Method   = m_Method;
+	rd.m_Name     = m_Name;
 
 	for (Rule* rule : Rules){
 		if (rule->Name == RULE_TYPE_MAX_REQ)
@@ -176,10 +180,7 @@ void RemObject::getData( RuleData& rd, QString tstr )
 //
 QString RemObject::Rem() const
 {
-	//return QStringLiteral("[%1@%2]").arg(Method, EndPoint);
-	//return QStringLiteral("%1::%2").arg(Method, EndPoint);
-	//return QStringLiteral("%1::%2").arg(EndPoint, Method);
-	return QStringLiteral("%1::%2").arg(m_EndPoint, m_Method);
+	return QStringLiteral("%1::%2::%3").arg(m_EndPoint, m_Method, m_Name);
 }
 
 //-------------------------------------------------------------------------------

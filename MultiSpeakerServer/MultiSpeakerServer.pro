@@ -10,16 +10,14 @@
 
 TEMPLATE = app
 TARGET = MultiSpeakerServer
-#DESTDIR = ../run
-QT += core xml network gui widgets xmlpatterns
-#LIBS += -L/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server -ljvm
-LIBS += -L/opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib -lssl -lcrypto
-#CONFIG += debug
-DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB _MSS_
+QT += core network gui widgets # xml xmlpatterns
+LIBS += -L/opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib # -lssl -lcrypto
+DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB  _MSS_ # QT_XML_LIB
+# “symbol _ZdlPvm, version Qt_5 not defined in file libQt5Core.so.5
+#	with link time reference” - set "-fno-sized-deallocation"
+#      this did not work,removing -lssl -lcrypto did....
+QMAKE_CXXFLAGS += "-fno-sized-deallocation"
 #QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant
-INCLUDEPATH += \
-	. #\
-#    ../Valid8or
 CONFIG(debug, debug|release) {
 	DEFINES += _DEBUG_
 	DESTDIR = $${_PRO_FILE_PWD_}/../builds/Debug
@@ -33,7 +31,7 @@ CONFIG(release, debug|release) {
 }
 DEPENDPATH += .
 MOC_DIR += GeneratedFiles
-OBJECTS_DIR += debug
+OBJECTS_DIR += objs
 UI_DIR += GeneratedFiles
 RCC_DIR += GeneratedFiles
 
@@ -43,13 +41,7 @@ HEADERS += \
     Settings.h \
     Server.h \
     ServerWorker.h \
-	SslServer.h #\
-	#../Valid8or/Valid8.h \
-	#../Valid8or/Process.h \
-	#../Valid8or/ProgressWidget.h \
-	#../Valid8or/Valid8Worker.h \
-	#../Valid8or/QSL.h \
-	#../Valid8or/Status.h
+	SslServer.h
 
 SOURCES += \
     HttpResponse.cpp \
@@ -57,15 +49,9 @@ SOURCES += \
     MultiSpeakerServer.cpp \
     Server.cpp \
     ServerWorker.cpp \
-	SslServer.cpp #\
-	#../Valid8or/Valid8.cpp \
-	#../Valid8or/Process.cpp \
-	#../Valid8or/ProgressWidget.cpp \
-	#../Valid8or/Valid8Worker.cpp
+	SslServer.cpp
 
-FORMS += MultiSpeakerServer.ui #\
-	#../Valid8or/Valid8.ui \
-	#../Valid8or/ProgressWidget.ui
+FORMS += MultiSpeakerServer.ui
 
 RESOURCES += MultiSpeakerServer.qrc
 

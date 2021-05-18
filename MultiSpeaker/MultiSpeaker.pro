@@ -6,17 +6,13 @@
 #  nautilus, The behavior is occurring because newer ubuntu distros set GCC default link
 #  flag -pie, which marks e_type as ET_DYN on the binary file. Consequently, the Operating System
 #  recognizes as Shared Library.
-//QMAKE_LFLAGS += -no-pie
+# QMAKE_LFLAGS += -no-pie
 
 TEMPLATE = app
 TARGET = MultiSpeaker
-#DESTDIR = ../run
-QT += core xml network gui widgets #xmlpatterns
+QT += core network gui widgets xml # xml needed for QDomDocument
 DEFINES += QT_DLL QT_NETWORK_LIB QT_WIDGETS_LIB QT_XML_LIB _MS_ #WIN64
 #QMAKE_CXXFLAGS += -Wzero-as-null-pointer-constant
-INCLUDEPATH += \
-	. #\
-#	../Valid8or \
 CONFIG(debug, debug|release) {
 	DEFINES += _DEBUG_
 	DESTDIR = $${_PRO_FILE_PWD_}/../builds/Debug
@@ -30,7 +26,7 @@ CONFIG(release, debug|release) {
 }
 DEPENDPATH += .
 MOC_DIR += GeneratedFiles
-OBJECTS_DIR += obj
+OBJECTS_DIR += objs
 UI_DIR += GeneratedFiles
 RCC_DIR += GeneratedFiles
 
@@ -81,13 +77,6 @@ HEADERS += \
     WsdlTreeViewHeaderWidget.h \
 	WsdlXmlViewHeaderWidget.h \
 	WsdlLayout.h
-	#\
-	#../Valid8or/Valid8.h \
-	#../Valid8or/Process.h \
-	#../Valid8or/ProgressWidget.h \
-	#../Valid8or/Valid8Worker.h \
-	#../Valid8or/QSL.h \
-	#../Valid8or/Status.h
 
 SOURCES += \
     AnimatedLineItem.cpp \
@@ -118,7 +107,6 @@ SOURCES += \
     TimelineEvent.cpp \
     TimelineEventEditor.cpp \
     TimelineEventItem.cpp \
-#    TimelineEventSendWorker.cpp \
     TimelineHeaderWidget.cpp \
     TimelineScene.cpp \
     TimelineView.cpp \
@@ -134,11 +122,6 @@ SOURCES += \
     WsdlTreeViewHeaderWidget.cpp \
 	WsdlXmlViewHeaderWidget.cpp \
 	WsdlLayout.cpp
-	#\
-	#../Valid8or/Valid8.cpp \
-	#../Valid8or/Process.cpp \
-	#../Valid8or/ProgressWidget.cpp \
-	#../Valid8or/Valid8Worker.cpp
 
 FORMS += \
     CertInfoDlg.ui \
@@ -163,9 +146,6 @@ FORMS += \
     WsdlTreeViewHeaderWidget.ui \
 	WsdlXmlViewHeaderWidget.ui \
 	WsdlLayout.ui
-	#\
-	#../Valid8or/Valid8.ui \
-	#../Valid8or/ProgressWidget.ui
 
 RESOURCES += MultiSpeaker.qrc
 

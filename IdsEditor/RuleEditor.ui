@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>712</width>
-    <height>637</height>
+    <width>797</width>
+    <height>783</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,6 +37,36 @@
     </widget>
    </item>
    <item row="1" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Rule Name</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="RuleName"/>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_10">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
     <widget class="QScrollArea" name="scrollArea">
      <property name="widgetResizable">
       <bool>true</bool>
@@ -46,8 +76,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>692</width>
-        <height>505</height>
+        <width>777</width>
+        <height>616</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_6">
@@ -628,7 +658,7 @@
      </widget>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="3" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="enabled">
       <bool>true</bool>
