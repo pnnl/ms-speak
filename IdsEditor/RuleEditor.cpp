@@ -136,10 +136,14 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	ui.RuleName->setMaxLength(80);
 	if( m_bNew ){
 		ui.RuleName->setFocus();
+		// ui.chkInverse->setChecked(false);
 	}
 	//else{
 	//	ui.RuleName->setEnabled(false);
 	//}
+	
+	// ui.chkInverse->isChecked();
+
 	InitFunctions();
 	UpdateUi(true);
 
@@ -348,6 +352,7 @@ void RuleEditor::UpdateUi( bool init )
 			ui.MaxTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MAXTIME).toInt());
 			ui.MinTimeSpin->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
 			ui.MinTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
+			ui.chkInverse->setChecked(rule->KeyValue.value(RULE_KEY_INVERSE).toInt());
 		}
 	}
 	/*

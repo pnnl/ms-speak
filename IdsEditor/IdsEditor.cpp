@@ -435,10 +435,11 @@ bool IdsEditor::CreateBizDB(const QString& fileName, QString& errStr)
 	"	[minTemp] INTEGER CHECK( (minTemp = NULL) OR (minTemp between 0 and 100) ),"
 	"	[maxHour] INTEGER CHECK( (maxHour = NULL) OR (maxHour between 1 and 24) ),"
 	"	[minHour] INTEGER CHECK( (minHour = NULL) OR (minHour between 0 and 23) ),"
+	"	[Inverse] INTEGER CHECK( Inverse between 0 and 1 )," 
 	"	[numReq] INTEGER,"
 	"	[numRPH] INTEGER,"
 	"	[email] NVARCHAR(50),"
-	"	UNIQUE(Tester,Endpoint,Method),"
+	"	UNIQUE(Tester,Endpoint,Method,Name),"
 	"	CHECK( (maxTemp = NULL AND minTemp = NULL) OR (maxTemp > minTemp) ),"
 	"	CHECK( (maxHour = NULL AND minHour = NULL) OR (maxHour > minHour) ),"
 	"	FOREIGN KEY(Tester) REFERENCES Testers(Id),"
@@ -1176,12 +1177,12 @@ bool IdsEditor::OnFileSave()
 	// == Add Tester Rule ==
 	QString strQueryAddRule = QStringLiteral(
 		"WITH EpId AS (SELECT Id FROM EndPoints WHERE Name = :EpName) "
-		"INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, Name, maxTemp, minTemp, maxHour, minHour, numReq, numRPH, email ) "
+		"INSERT OR REPLACE INTO Rules (Tester, Function, Endpoint, Method, Name, maxTemp, minTemp, maxHour, minHour, Inverse, numReq, numRPH, email ) "
 		"VALUES ((SELECT Id FROM Testers WHERE Name = :TstrName), "
 		"(SELECT Id FROM Functions WHERE Name =:FuncName), "
 		"(SELECT * from EpId), "
 		"(SELECT Id FROM Methods WHERE (Name = :MetName AND EndPoint=(SELECT * from EpId))), "
-		":Name, :mxTemp, :mnTemp, :mxHour, :mnHour, :nReq, :nRPH, :em);"
+		":Name, :mxTemp, :mnTemp, :mxHour, :mnHour, :Inverse, :nReq, :nRPH, :em);"
 	);
 
 	/* == Remove Tester Rule ==
@@ -1323,9 +1324,11 @@ bool IdsEditor::OnFileSave()
 							if (rd.m_maxHour.isEmpty()){
 								query.bindValue(":mxHour", QVariant(QVariant::String));
 								query.bindValue(":mnHour", QVariant(QVariant::String));
+								query.bindValue(":Inverse", QVariant(QVariant::String));
 							}else{
 								query.bindValue(":mxHour", rd.m_maxHour.toInt());
 								query.bindValue(":mnHour", rd.m_minHour.toInt());
+								query.bindValue(":Inverse", rd.m_Inverse.toInt());
 							}
 							if (rd.m_numReq.isEmpty()){
 								query.bindValue(":nReq", QVariant(QVariant::String));
