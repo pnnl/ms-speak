@@ -118,19 +118,19 @@ private:
 
 private slots:
 	void OnNameChanged(void);
+	void OnMethodComboChanged(int);
 	void OnEndPointComboChanged(int);
 	void OnFunctionComboChanged(int);
 	void OnMaxRequestsChanged(int);
 	void OnMaxReqPHChanged(int);
 	void OnMaxRequestsToggled(bool);
 	void OnMaxRequestsPHToggled(bool);
+	void OnInverseToggled(bool);
 	void OnMaxTempChanged(int);
 	void OnMaxTimeChanged(int);
-	void OnMethodComboChanged(int);
 	void OnMinTempChanged(int);
 	void OnMinTimeChanged(int);
 	void OnEmailChanged(void);
-
 	void OnTempToggled(bool);
 	void OnTimeToggled(bool);
 	void OnEmailToggled(bool);

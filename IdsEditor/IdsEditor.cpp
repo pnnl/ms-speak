@@ -111,6 +111,8 @@ IdsEditor::IdsEditor(QWidget* parent)
 	ui.RulesTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
 	ui.RulesTreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
+	ui.RulesTreeView->setSortingEnabled(true);
+
 	statusBar()->addWidget(&m_dbFileNameLabel);
 	statusBar()->setToolTip( "SQLite Open-source Database" );
 
@@ -772,7 +774,7 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 	// 	"SELECT testers.Name as who, functions.Name as Function, endpoints.name as EndPoint, methods.name as Method,"
 	strQuery = QStringLiteral(
 	"SELECT testers.Name as who, functions.Name, endpoints.Name, methods.Name,"
-	" rules.Name, rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
+	" rules.Name, rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.Inverse,rules.numReq,rules.numRPH,rules.email"
 	" FROM rules"
 	" INNER JOIN functions ON functions.id = rules.function"
 	" INNER JOIN endpoints ON endpoints.id = rules.endpoint"
@@ -801,9 +803,10 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 		QString minTemp =  query.value(6).toString();
 		QString maxHour =  query.value(7).toString();
 		QString minHour =  query.value(8).toString();
-		QString numReq =  query.value(9).toString();
-		QString numRPH =  query.value(10).toString();
-		QString email =  query.value(11).toString();
+		QString Inverse =  query.value(9).toString();
+		QString numReq =  query.value(10).toString();
+		QString numRPH =  query.value(11).toString();
+		QString email =  query.value(12).toString();
 		/*
 		qDebug() << Tester;
 		qDebug() << "   " << EndPoint << "::" << Method;
@@ -835,6 +838,7 @@ bool IdsEditor::LoadRules( QSqlDatabase& db, QString& errStr )
 				rule->Name = RULE_TYPE_TIME_RANGE;
 				rule->KeyValue.insert(RULE_KEY_MAXTIME, maxHour);
 				rule->KeyValue.insert(RULE_KEY_MINTIME, minHour);
+				rule->KeyValue.insert(RULE_KEY_INVERSE, Inverse);
 			}
 		}
 		if( !numReq.isEmpty() ){

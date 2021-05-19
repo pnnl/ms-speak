@@ -34,6 +34,7 @@ void RuleData::clear(void)
 	m_minTemp = DB_NO_VALUE;
 	m_maxHour = DB_NO_VALUE;
 	m_minHour = DB_NO_VALUE;
+	m_Inverse = DB_NO_VALUE;
 	m_numReq = DB_NO_VALUE;
 	m_numRPH = DB_NO_VALUE;
 }
@@ -127,6 +128,7 @@ Rule* RemObject::CreateRule(const QString& ruleName)
 	{
 		rule->KeyValue.insert(RULE_KEY_MAXTIME, QStringLiteral("1"));
 		rule->KeyValue.insert(RULE_KEY_MINTIME, QStringLiteral("0"));
+		rule->KeyValue.insert(RULE_KEY_INVERSE, QStringLiteral("0"));
 	}
 	else if (ruleName == RULE_TYPE_EMAIL)
 	{
@@ -166,6 +168,7 @@ void RemObject::getData( RuleData& rd, QString tstr )
 		{
 			rd.m_maxHour = rule->KeyValue[RULE_KEY_MAXTIME];
 			rd.m_minHour = rule->KeyValue[RULE_KEY_MINTIME];
+			rd.m_Inverse = rule->KeyValue[RULE_KEY_INVERSE];
 		}
 		else if (rule->Name == RULE_TYPE_EMAIL)
 		{

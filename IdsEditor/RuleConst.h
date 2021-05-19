@@ -70,6 +70,7 @@ const QString RULE_KEY_MAXTEMP = QStringLiteral("maxTemp");
 const QString RULE_KEY_MAXTIME = QStringLiteral("maxHour");
 const QString RULE_KEY_MINTEMP = QStringLiteral("minTemp");
 const QString RULE_KEY_MINTIME = QStringLiteral("minHour");
+const QString RULE_KEY_INVERSE = QStringLiteral("Inverse");
 const QString RULE_KEY_NUMREQ = QStringLiteral("numReq");
 const QString RULE_KEY_NUMRPH = QStringLiteral("numRPH");
 const QString RULE_KEY_EMAIL = QStringLiteral("email");
@@ -85,8 +86,9 @@ const QString DB_TABLE_ENDPOINTS = QStringLiteral("EndPoints");
 const QString DB_TABLE_METHODS = QStringLiteral("Methods");
 const QString DB_TABLE_RULES = QStringLiteral("Rules");
 // --- Columns
-const QString DB_COLUMN_ID = QStringLiteral("Id");
 const QString DB_COLUMN_NAME = QStringLiteral("Name");
+/*
+const QString DB_COLUMN_ID = QStringLiteral("Id");
 const QString DB_COLUMN_HOST = QStringLiteral("Host");
 const QString DB_COLUMN_ENDPOINT = QStringLiteral("EndPoint");
 const QString DB_COLUMN_METHOD = QStringLiteral("Method");
@@ -100,7 +102,7 @@ const QString DB_COLUMN_EMAIL = QStringLiteral("Email");
 const QString DB_COLUMN_APPID = QStringLiteral("AppId");
 const QString DB_COLUMN_ZIPCODE = QStringLiteral("Zipcode");
 const QString DB_COLUMN_TESTER = QStringLiteral("Tester");
-
+*/
 // Rule Types
 const QString RULE_TYPE_MAX_REQ = QStringLiteral("MaxValue");
 const QString RULE_TYPE_MAX_RPH = QStringLiteral("RphValue");

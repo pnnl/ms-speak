@@ -105,12 +105,12 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	//m_reqsGBHeight = ui.MaxRequestsGroup->maximumHeight();
 	//m_rphsGBHeight = ui.MaxRequestsPHGroup->maximumHeight();
 	m_emailGBHeight = ui.EmailGroup->maximumHeight();
-	m_tempGBHeight = ui.TempGroup->maximumHeight();
 	m_timeGBHeight = ui.TimeGroup->maximumHeight();
+	m_tempGBHeight = ui.TempGroup->maximumHeight();
 
 	ui.EmailGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
-	ui.TempGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 	ui.TimeGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
+	ui.TempGroup->setMaximumHeight(ui.EmailGroup->fontMetrics().height());
 
 	ui.FunctionCombo->setMinimumContentsLength(1);
 	ui.EndPointCombo->setMinimumContentsLength(1);
@@ -136,7 +136,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	ui.RuleName->setMaxLength(80);
 	if( m_bNew ){
 		ui.RuleName->setFocus();
-		// ui.chkInverse->setChecked(false);
+		ui.chkInverse->setChecked(false);
 	}
 	//else{
 	//	ui.RuleName->setEnabled(false);
@@ -184,6 +184,7 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	connect(ui.MinTempSpin, SIGNAL(valueChanged(int)), ui.MinTempSlider, SLOT(setValue(int)));
 	connect(ui.MinTempSpin, SIGNAL(valueChanged(int)), this, SLOT(OnMinTempChanged(int)));
 
+	connect(ui.chkInverse, SIGNAL(toggled(bool)), this, SLOT(OnInverseToggled(bool)));
 	connect(ui.MaxTimeSlider, SIGNAL(valueChanged(int)), ui.MaxTimeSpin, SLOT(setValue(int)));
 	connect(ui.MaxTimeSlider, SIGNAL(valueChanged(int)), this, SLOT(OnMaxTimeChanged(int)));
 	connect(ui.MaxTimeSpin, SIGNAL(valueChanged(int)), ui.MaxTimeSlider, SLOT(setValue(int)));
@@ -362,17 +363,16 @@ void RuleEditor::UpdateUi( bool init )
 	else{
 		ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
 	}
-	if( ui.TempGroup->isChecked() ){
-		ui.TempGroup->setMaximumHeight(m_tempGBHeight);
-	}
-	else{
-		ui.TempGroup->setMaximumHeight(ui.TempGroup->fontMetrics().height());
-	}
 	if( ui.TimeGroup->isChecked() ){
 		ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
 	}
 	else{
 		ui.TimeGroup->setMaximumHeight(ui.TimeGroup->fontMetrics().height());
+	}	if( ui.TempGroup->isChecked() ){
+		ui.TempGroup->setMaximumHeight(m_tempGBHeight);
+	}
+	else{
+		ui.TempGroup->setMaximumHeight(ui.TempGroup->fontMetrics().height());
 	}
 	if( ui.EmailGroup->isChecked() ){
 		ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
@@ -632,6 +632,19 @@ void RuleEditor::OnMinTempChanged(int value)
 }
 
 //-------------------------------------------------------------------------------
+// OnInverseToggled
+//
+void RuleEditor::OnInverseToggled(bool checked)
+{
+	if(checked)
+		m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_INVERSE, QStringLiteral("1"));
+	else
+		m_ruleObject.Rules.value(RULE_TYPE_TIME_RANGE)->KeyValue.insert(RULE_KEY_INVERSE, QStringLiteral("0"));
+
+	UpdateUi();
+}
+
+//-------------------------------------------------------------------------------
 // OnMaxTimeChanged
 //
 void RuleEditor::OnMaxTimeChanged(int value)
@@ -757,6 +770,10 @@ void RuleEditor::OnTimeToggled(bool checked)
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_TIME_RANGE);
 			rule->KeyValue.insert(RULE_KEY_MAXTIME, QString::number(ui.MaxTimeSpin->value()));
 			rule->KeyValue.insert(RULE_KEY_MINTIME, QString::number(ui.MinTimeSpin->value()));
+			if(ui.chkInverse->isChecked())
+				rule->KeyValue.insert(RULE_KEY_INVERSE, QStringLiteral("1"));
+			else
+				rule->KeyValue.insert(RULE_KEY_INVERSE, QStringLiteral("0"));
 			m_ruleObject.Rules.insert(RULE_TYPE_TIME_RANGE, rule);
 		}
 		else

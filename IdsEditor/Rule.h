@@ -84,6 +84,7 @@ public:
 	QString m_minTemp;
 	QString m_maxHour;
 	QString m_minHour;
+	QString m_Inverse;
 	QString m_numReq;
 	QString m_numRPH;
 public:
