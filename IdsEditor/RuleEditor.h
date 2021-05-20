@@ -90,11 +90,12 @@ private:
 	bool	 m_modded;
 	bool	 m_tmpmodded;
 	bool	 m_saved;
+	int		 m_requestsGBHeight;
 	//int		 m_reqsGBHeight;
-	//int		 m_rphsGBHeight;
-	int		 m_tempGBHeight;
-	int		 m_timeGBHeight;
+	//int		 m_rphGBHeight;
 	int		 m_emailGBHeight;
+	int		 m_timeGBHeight;
+	int		 m_tempGBHeight;
 
 public:
 	RuleEditor(const RemObject& ruleObj, bool bnew, IdsEditor* parent = Q_NULLPTR);
@@ -123,6 +124,7 @@ private slots:
 	void OnFunctionComboChanged(int);
 	void OnMaxRequestsChanged(int);
 	void OnMaxReqPHChanged(int);
+	void OnRequestsToggled(bool);
 	void OnMaxRequestsToggled(bool);
 	void OnMaxRequestsPHToggled(bool);
 	void OnInverseToggled(bool);

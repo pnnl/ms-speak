@@ -102,8 +102,9 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	ui.EmailFrame->setVisible(false);
 	ui.TempFrame->setVisible(false);
 	ui.TimeFrame->setVisible(false);
+	m_requestsGBHeight = ui.RequestsGroup->maximumHeight();
 	//m_reqsGBHeight = ui.MaxRequestsGroup->maximumHeight();
-	//m_rphsGBHeight = ui.MaxRequestsPHGroup->maximumHeight();
+	//m_rphGBHeight = ui.MaxRequestsPHGroup->maximumHeight();
 	m_emailGBHeight = ui.EmailGroup->maximumHeight();
 	m_timeGBHeight = ui.TimeGroup->maximumHeight();
 	m_tempGBHeight = ui.TempGroup->maximumHeight();
@@ -152,11 +153,12 @@ RuleEditor::RuleEditor(const RemObject& ruleObj, bool bn, IdsEditor* parent)
 	ui.Email->setValidator(validator);*/
 
 	// Group Toggle connections before SetRule
+	connect(ui.RequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnRequestsToggled(bool)));
 	connect(ui.MaxRequestsGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsToggled(bool)));
 	connect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
 	connect(ui.EmailGroup, SIGNAL(toggled(bool)), this, SLOT(OnEmailToggled(bool)));
-	connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 	connect(ui.TimeGroup, SIGNAL(toggled(bool)), this, SLOT(OnTimeToggled(bool)));
+	connect(ui.TempGroup, SIGNAL(toggled(bool)), this, SLOT(OnTempToggled(bool)));
 
 	connect(ui.RuleName, SIGNAL(editingFinished()), this, SLOT(OnNameChanged()));
 	connect(ui.Email, SIGNAL(editingFinished()), this, SLOT(OnEmailChanged()));
@@ -323,7 +325,8 @@ void RuleEditor::UpdateUi( bool init )
 		{
 			ui.EmailGroup->setChecked(true);
 			ui.EmailFrame->setVisible(true);
-			ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
+			if( init )
+					ui.EmailGroup->setMaximumHeight(m_emailGBHeight);
 			/* As far as I know, QtCreator makes functions italic that are either
 			*		Virtual methods (e.g. "virtual void foo();" ), or
 			*		methods that are derived from a base class and then overridden
@@ -338,7 +341,8 @@ void RuleEditor::UpdateUi( bool init )
 		{
 			ui.TempGroup->setChecked(true);
 			ui.TempFrame->setVisible(true);
-			ui.TempGroup->setMaximumHeight(m_tempGBHeight);
+			if( init )
+				ui.TempGroup->setMaximumHeight(m_tempGBHeight);
 			ui.MaxTempSpin->setValue(rule->KeyValue.value(RULE_KEY_MAXTEMP).toInt());
 			ui.MaxTempSlider->setValue(rule->KeyValue.value(RULE_KEY_MAXTEMP).toInt());
 			ui.MinTempSpin->setValue(rule->KeyValue.value(RULE_KEY_MINTEMP).toInt());
@@ -348,7 +352,8 @@ void RuleEditor::UpdateUi( bool init )
 		{
 			ui.TimeGroup->setChecked(true);
 			ui.TimeFrame->setVisible(true);
-			ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
+			if( init )
+				ui.TimeGroup->setMaximumHeight(m_timeGBHeight);
 			ui.MaxTimeSpin->setValue(rule->KeyValue.value(RULE_KEY_MAXTIME).toInt());
 			ui.MaxTimeSlider->setValue(rule->KeyValue.value(RULE_KEY_MAXTIME).toInt());
 			ui.MinTimeSpin->setValue(rule->KeyValue.value(RULE_KEY_MINTIME).toInt());
@@ -358,7 +363,7 @@ void RuleEditor::UpdateUi( bool init )
 	}
 	/*
 	if( ui.MaxRequestsGroup->isChecked() ){
-		ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);m_rphsGBHeight
+		ui.MaxRequestsGroup->setMaximumHeight(m_reqsGBHeight);m_rphGBHeight
 	}
 	else{
 		ui.MaxRequestsGroup->setMaximumHeight(ui.MaxRequestsGroup->fontMetrics().height());
@@ -449,6 +454,20 @@ void RuleEditor::OnEmailChanged(void)
 	UpdateUi();
 }
 
+//-------------------------------------------------------------------------------
+// OnRequestsToggled
+//
+void RuleEditor::OnRequestsToggled(bool checked)
+{
+	Q_UNUSED(checked);
+	if( ui.RequestsGroup->maximumHeight() == m_requestsGBHeight ){
+		ui.RequestsGroup->setMaximumHeight(ui.RequestsGroup->fontMetrics().height());
+	}
+	else{
+		ui.RequestsGroup->setMaximumHeight(m_requestsGBHeight);
+	}
+	UpdateUi();
+}
 //-------------------------------------------------------------------------------
 // OnMaxRequestsToggled
 //
@@ -559,11 +578,11 @@ void RuleEditor::OnMaxRequestsPHToggled(bool checked)
 	if( QGuiApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ){
 		disconnect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
 		ui.MaxRequestsPHGroup->setChecked(!checked);
-		if( ui.MaxRequestsPHGroup->maximumHeight() == m_rphsGBHeight ){
+		if( ui.MaxRequestsPHGroup->maximumHeight() == m_rphGBHeight ){
 			ui.MaxRequestsPHGroup->setMaximumHeight(ui.MaxRequestsPHGroup->fontMetrics().height());
 		}
 		else{
-			ui.MaxRequestsPHGroup->setMaximumHeight(m_rphsGBHeight);
+			ui.MaxRequestsPHGroup->setMaximumHeight(m_rphGBHeight);
 		}
 		connect(ui.MaxRequestsPHGroup, SIGNAL(toggled(bool)), this, SLOT(OnMaxRequestsPHToggled(bool)));
 	}
@@ -571,7 +590,7 @@ void RuleEditor::OnMaxRequestsPHToggled(bool checked)
 		ui.MaxRequestsPHFrame->setVisible(checked);*/
 		if (checked)
 		{
-			//ui.MaxRequestsPHGroup->setMaximumHeight(m_rphsGBHeight);
+			//ui.MaxRequestsPHGroup->setMaximumHeight(m_rphGBHeight);
 			Rule* rule = RemObject::CreateRule(RULE_TYPE_MAX_RPH);
 			rule->KeyValue.insert(RULE_KEY_NUMRPH, QString::number(ui.MaxReqPHSpin->value()));
 			m_ruleObject.Rules.insert(RULE_TYPE_MAX_RPH, rule);
