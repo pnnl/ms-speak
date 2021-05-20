@@ -54,7 +54,7 @@
 //                  Lance Irvine, LMI Developments, LLC.
 //		02.09.2021 CHM - Populate from Sqlite DB, added DB_FILE_NAME.
 //		05.17.2021 CHM - Moved SOFTWARE_VERSION here.
-//		05.20.2021 CHM - Added Requests Groupbox.
+//		05.20.2021 CHM - Added 'Show Requests' Groupbox.
 //-------------------------------------------------------------------------------
 // Summary: IdsSettings.h
 //-------------------------------------------------------------------------------
