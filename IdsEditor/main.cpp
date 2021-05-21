@@ -126,7 +126,9 @@ int main(int argc, char *argv[])
 	QCoreApplication::setOrganizationName(QStringLiteral("MSSPEAK-IDS"));
 	QCoreApplication::setOrganizationDomain(QStringLiteral("MSSPEAK-IDS.com"));
 	QCoreApplication::setApplicationName(QStringLiteral("IdsEditor"));
-
+	
+	QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // 5.20.2021, AA_DisableHighDpiScaling
+	
 	CreateHomeFolders();
 	int ret;
 	{

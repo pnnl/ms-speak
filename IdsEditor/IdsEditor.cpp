@@ -1079,7 +1079,8 @@ void IdsEditor::OnFileOpen()
 		QString qs3 = QStringLiteral("Assure you have a soft link to '%1'").arg(IDS_EDITOR_HOME_PATH);
 		QString qs = QStringLiteral("Unable to Open File: %1\n%2\n\n%3").arg(m_dbFileName).arg(err).arg(qs3);
 #endif
-		m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs2));
+		//m_dbFileNameLabel.setText(QDir::toNativeSeparators(qs2));
+		m_dbFileNameLabel.setText(QDir::toNativeSeparators(err));
 		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
 							 qs, QMessageBox::Ok, QMessageBox::Ok);
 	}
