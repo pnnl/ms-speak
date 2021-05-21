@@ -73,7 +73,8 @@
 							v3 msg hdr does not contain the Endpoint
 							v3 msg hdr does not contain caller information
 		05/12/2021 - CHM: Email notifications working.
--------------------------------------------------------------------------------
+		05/20/2021 - CHM: Added Inverse and Name to Rule.
+		-------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
 	to build squid:
@@ -334,10 +335,12 @@
 #define DB_COLNAME_FUNCTION "Function"
 #define DB_COLNAME_ENDPOINT "Endpoint"
 #define DB_COLNAME_METHOD	"Method"
-#define DB_COLNAME_MAXTEMP	"maxTemp"
-#define DB_COLNAME_MINTEMP	"minTemp"
+#define DB_COLNAME_NAME		"Name"
+#define DB_COLNAME_INVERSE	"Inverse"
 #define DB_COLNAME_MAXHOUR	"maxHour"
 #define DB_COLNAME_MINHOUR	"minHour"
+#define DB_COLNAME_MAXTEMP	"maxTemp"
+#define DB_COLNAME_MINTEMP	"minTemp"
 #define DB_COLNAME_NUMREQ	"numReq"
 #define DB_COLNAME_NUMRPH	"numRPH"
 #define DB_COLNAME_EMAIL	"email"
@@ -420,12 +423,18 @@ typedef struct _bizrule{
 	signed long m_maxHour;
 	signed long m_NumRequests;
 	signed long m_NumRequestsPH;
+	signed long m_Inverse;
 	char  m_Function[MAX_DB_NAMELEN+1];
 	char  m_EndPoint[MAX_DB_NAMELEN+1];
 	char  m_Method[MAX_DB_NAMELEN+1];
-	char  m_Email[MAX_DB_NAMELEN+1];
+	char  m_Email[MAX_DB_NAMELEN + 1];
+	char  m_Name[MAX_DB_NAMELEN + 1];
 	time_t m_StartTime;
 } BIZ_RULE;
+
+typedef struct _methrules {
+	BIZ_RULE *pRule;
+} METHOD_RULES;
 
 // structs
 /*
@@ -488,7 +497,8 @@ pid_t gblMainProc = 0;
 pthread_t    gblWeatherThread;
 TESTER_DATA  gblTesterStruct={};
 TESTER_DATA *gblpTesterData=NULL;
-BIZ_RULE	*gblpBizRules=NULL;
+BIZ_RULE	 *gblpBizRules = NULL;
+METHOD_RULES *gblpMethRules = NULL;
 FILE *gblLogFile = NULL;
 bool gblThreadRunning = false;
 bool gblTempTestMode = false;
@@ -640,8 +650,9 @@ CI_DECLARE_MOD_DATA ci_service_module_t service ={
 };
 
 // general prototypes
-int handle_request_preview(BIZ_RULE *, char *, bool);
-int handle_response_preview(BIZ_RULE *, bool);
+//int handle_request_preview(BIZ_RULE *, char *, bool, BIZ_RULE **);
+int handle_request_preview(METHOD_RULES *, char *, bool, BIZ_RULE **);
+int handle_response_preview(char *, char *, bool);
 void BccUsage(void);
 void ShowDBRules( TESTER_DATA *, BIZ_RULE *, int, int );
 void WriteLog(int, FILE *, const char *, ...);
@@ -679,8 +690,8 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 		TESTER_DATA	*pTester=&gblTesterStruct;
 		BIZ_RULE *pBizRecs = (BIZ_RULE *)data;
 		BIZ_RULE *pBzd = &pBizRecs[gblRowCnt++];
-		pBzd->m_NumRequests = 0;
-		pBzd->m_NumRequestsPH = 0;
+		//pBzd->m_NumRequests = 0;
+		//pBzd->m_NumRequestsPH = 0;
 		for(i = 0; i<colcount; i++ ){
 			if( !values[i] ){
 				continue;
@@ -694,18 +705,21 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 			else if( !strcmp(curr_key, DB_COLNAME_NUMRPH) ){
 				pBzd->m_maxRPH = atoll(values[i]);
 			}
-			else if( !strcmp(curr_key, DB_COLNAME_MINTEMP) ){
-				pBzd->m_minTemp = atoll(values[i]);
+			else if (!strcmp(curr_key, DB_COLNAME_MAXHOUR)) {
+				pBzd->m_maxHour = atoll(values[i]);
+			}
+			else if (!strcmp(curr_key, DB_COLNAME_MINHOUR)) {
+				pBzd->m_minHour = atoll(values[i]);
+			}
+			else if (!strcmp(curr_key, DB_COLNAME_INVERSE)) {
+				pBzd->m_Inverse = atoll(values[i]);
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_MAXTEMP) ){
 				pBzd->m_maxTemp = atoll(values[i]);
 				gblUsingTempRule = true;
 			}
-			else if( !strcmp(curr_key, DB_COLNAME_MINHOUR) ){
-				pBzd->m_minHour = atoll(values[i]);
-			}
-			else if( !strcmp(curr_key, DB_COLNAME_MAXHOUR) ){
-				pBzd->m_maxHour = atoll(values[i]);
+			else if (!strcmp(curr_key, DB_COLNAME_MINTEMP)) {
+				pBzd->m_minTemp = atoll(values[i]);
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_TESTER) ){
 				if( gblRowCnt == 1 ){ // we only need store Tester name once
@@ -731,8 +745,11 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 			else if( !strcmp(curr_key, DB_COLNAME_ENDPOINT) ){
 				strncpy( pBzd->m_EndPoint, values[i], MAX_DB_NAMELEN );
 			}
-			else if( !strcmp(curr_key, DB_COLNAME_METHOD) ){
-				strncpy( pBzd->m_Method, values[i], MAX_DB_NAMELEN );
+			else if (!strcmp(curr_key, DB_COLNAME_METHOD)) {
+				strncpy(pBzd->m_Method, values[i], MAX_DB_NAMELEN);
+			}
+			else if (!strcmp(curr_key, DB_COLNAME_NAME)) {
+				strncpy(pBzd->m_Name, values[i], MAX_DB_NAMELEN);
 			}
 			else{
 				ci_debug_printf(0, "Key Lookup Sanity Failure: %s\n", curr_key);
@@ -807,8 +824,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	}
 
 	size_t size = gblNumBizRules * sizeof(BIZ_RULE);
-	gblpBizRules = (BIZ_RULE *)calloc(1,size);
-	// assure all string buffs will be null-termed
+	gblpBizRules = (BIZ_RULE *)calloc(1,size); 	// calloc to assure all string buffs will be null-termed
 	for( int i=0; i<gblNumBizRules; i++ ){
 		gblpBizRules[i].m_maxReq = WILDCARD; // preset for any missing fields in DB
 		gblpBizRules[i].m_maxRPH = WILDCARD;
@@ -816,14 +832,17 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 		gblpBizRules[i].m_maxTemp = WILDCARD;
 		gblpBizRules[i].m_minHour = WILDCARD;
 		gblpBizRules[i].m_maxHour = WILDCARD;
+		// m_Inverse only applies if m_maxReq or m_maxRPH not WILDCARD
 	}
+	size = (gblNumBizRules+1) * sizeof(METHOD_RULES);
+	gblpMethRules = (METHOD_RULES *)calloc(1, size); 	// calloc to assure all ptrs will be null-termed
 
 	/* Execute SQL statement 
 	The fourth parameter of sqlite3_exec can be used to pass information to the callback.
 	A pointer to a struct to fill would be useful.
 	*/
 	sql = "SELECT testers.Name as Tester, testers.AppId, testers.Zipcode, functions.Name as Function, endpoints.name as Endpoint, methods.name as Method,"
-		"rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.numReq,rules.numRPH,rules.email"
+		"rules.Name, rules.maxTemp,rules.minTemp,rules.maxHour,rules.minHour,rules.Inverse,rules.numReq,rules.numRPH,rules.email"
 		 SQL_FROM_QUERY;
 	gblRowCnt = 0;
 	rc = sqlite3_exec(db, sql, callback, (void*)gblpBizRules, &zErrMsg);
@@ -871,14 +890,16 @@ void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgL
 {
 	ci_debug_printf(dbgLvl,"Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
 	for( int i=0; i<NumRules; i++ ){
-		ci_debug_printf(dbgLvl,"          Function: %s, Endpoint: %s, Method: %s\n",
-			   pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
-		ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
-			pRules->m_maxReq,pRules->m_maxRPH,pRules->m_maxTemp,pRules->m_minTemp,pRules->m_maxHour,pRules->m_minHour);
+		ci_debug_printf(dbgLvl, "    Name: %s\n", pRules->m_Name);
+		ci_debug_printf(dbgLvl, "          Function: %s, Endpoint: %s, Method: %s\n",
+			pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
+		ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxHour: %ld, minHour: %ld, Inverse: %ld, maxTemp: %ld, minTemp: %ld\n",
+			pRules->m_maxReq,pRules->m_maxRPH,pRules->m_maxHour, pRules->m_minHour, pRules->m_Inverse, pRules->m_maxTemp, pRules->m_minTemp);
 		ci_debug_printf(dbgLvl,"          Email: %s\n\n",pRules->m_Email);
 		pRules++;
 	}
 }
+
 /*
  * init_string - initializer for weather update string struct
  */
@@ -949,7 +970,7 @@ bool UpdateWeather( CURL *pCurl, struct string *pXmlStr, WEATHER_DATA *pWd )
 		xmlDocPtr xmlDoc;
 		xmlDoc = xmlParseMemory(pXmlStr->ptr, pXmlStr->len);
 		if( xmlDoc == NULL ){
-			ci_debug_printf(0,("XML Document not parsed successfully.\n");
+			ci_debug_printf(0,"XML Document not parsed successfully.\n");
 			ci_debug_printf(0," Assure that you are using a valid AppID.\n");
 			return false;
 		}
@@ -1193,7 +1214,7 @@ void *WeatherUpdater(void *data)
 					if( UpdateWeather( curl, &xmlStr, &weatherData ) ){
 						if( weatherData.bSuccess ){
 							gblCurrentTemp = weatherData.currentTemp;
-							ci_debug_printf(2,"\nCurrent Temperature: %d\n", gblCurrentTemp);
+							//ci_debug_printf(2,"\nCurrent Temperature: %d\n", gblCurrentTemp);
 							/*errno = 0;
 							// rewind the stream pointer to the start of temporary file
 							if( -1 == lseek(pData->m_FileDesc,0,SEEK_SET))
@@ -2024,12 +2045,13 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	if( REQ_TYPE == ICAP_REQMOD) // #define ICAP_REQMOD    0x02
 	{
-		msRet = handle_request_preview(pRuleData, &ViolationMessage[0], mspd->msginfo.bIsV3);
+		msRet = handle_request_preview( gblpMethRules, &ViolationMessage[0], 
+			mspd->msginfo.bIsV3, &pRuleData); // offending rule returned in pRuleData
 		if( msRet == MSP_BIZ_VIO)
 		{
-			if( pRuleData->m_Email ){
+			if (pRuleData && pRuleData->m_Email ){
 				char *from, *subject, *message;
-				from = "m_users@gmail.com";
+				from = "msspeak@gmail.com";
 				subject = "MULTISPEAK RULE VIOLATION";
 				message = &ViolationMessage[0];
 				ci_debug_printf(3,"Sending Email Notification to: %s\n", pRuleData->m_Email);
@@ -2058,7 +2080,8 @@ int msp_end_of_data_handler(ci_request_t * req)
 	else if( REQ_TYPE == ICAP_RESPMOD)
 	{
 		ci_debug_printf(5, "*** handling_response_preview ...\n");
-		msRet = handle_response_preview(pRuleData, mspd->msginfo.bIsV3);
+		// m_Method is the same for all rules in gblpMethRules
+		msRet = handle_response_preview(pRuleData->m_EndPoint, pRuleData->m_Method, mspd->msginfo.bIsV3);
 		if( msRet == MSP_ERROR ){
 			icRet = CI_ERROR;
 		}
@@ -2183,26 +2206,38 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 }
 
 /************************** AUXILLIARY ROUTINES ********************************************/
-
 /*
 * handle_request_preview - is only called if GetBusinessRecord() finds a match for the
 * 							method and endpoint in the packet.
 */
-int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
+
+//int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
+int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3, BIZ_RULE **pRetRule)
 {
-	char *pEpMsg;
-	char *pRequestStr, *pRequestStrPH;
+	BIZ_RULE *pRuleData;
+	char *pRequestStr, *pRequestStrPH, *pEpMsg;
 	char reqBuff[250];
 	char rphBuff[250];
-	bool bDailyLimit=false, bHourlyLimit=false;
+	bool bDailyLimit, bHourlyLimit;
+	bool bFirstDaily = true, bFirstHourly = true, bNewDay = false;
+	int iRetVal = MSP_OK;
 
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
 
-	if( bIsV3 ){
-		pEpMsg =  "(first found V3)";
+	if(pMethRules && pMethRules->pRule ) {
+		if (bIsV3) {
+			pEpMsg = "(first found V3)";
+		}
+		else {
+			pEpMsg = pRuleData->m_EndPoint;
+		}
 	}
-	else{
-		pEpMsg =  pRuleData->m_EndPoint;
+	else {
+		sprintf(pVioBuff, "SANITY FAILURE: %s\n", "Null Method Rules Pointer");
+		WriteLog(1, gblLogFile, pVioBuff);
+		ci_debug_printf(0, pVioBuff);
+		*pRetRule = NULL;
+		iRetVal =  MSP_BIZ_VIO;
 	}
 
 	time_t currtime = time(NULL);
@@ -2215,106 +2250,151 @@ int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 		gblHourOfDay = tm_struct->tm_hour;
 		if( gblCurrentDay != tm_struct->tm_mday ){
 			gblCurrentDay = tm_struct->tm_mday;
-			pRuleData->m_NumRequests = 0;
+			bNewDay = true;
+			//pRuleData->m_NumRequests = 0;
 			//pRuleData->m_NumRequestsPH = 0; allow hour to cross days
 		}
 	}
 
-	if( pRuleData->m_maxReq != WILDCARD ){
-		bDailyLimit=true;
-		pRuleData->m_NumRequests++;
-		if( pRuleData->m_maxReq == 1 )
-			pRequestStr = "request";
-		else
-			pRequestStr = "requests";
-		sprintf(reqBuff, "request %ld of %ld today", pRuleData->m_NumRequests, pRuleData->m_maxReq);
-	}
-	if( pRuleData->m_maxRPH != WILDCARD ){
-		bHourlyLimit=true;
-		if( pRuleData->m_maxRPH == 1 )
-			pRequestStrPH = "request";
-		else
-			pRequestStrPH = "requests";
-		if( pRuleData->m_NumRequestsPH == 0 ){
-			time(&pRuleData->m_StartTime);
-		}
-		else{
-			time_t now;
-			time(&now);
-			double ElapsedTime = difftime(now, pRuleData->m_StartTime);// seconds
-			if( ElapsedTime >= 3600 ){
-				pRuleData->m_NumRequestsPH = 0;
-				time(&pRuleData->m_StartTime);
+	pRequestStr = "requests";
+	// loop thru all the rules for this method until we find a violation
+	for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++)
+	{
+		ci_debug_printf(3, "\nProcessing Rule '%s'.\n", pRuleData->m_Name);
+		bDailyLimit = false;
+		bHourlyLimit = false;
+
+
+		if( pRuleData->m_maxReq != WILDCARD ){
+			bDailyLimit=true;
+			if (bNewDay)
+				pRuleData->m_NumRequests = 0;
+			pRuleData->m_NumRequests++;
+			if (bFirstDaily) {
+				bFirstDaily = false;
+				if (pRuleData->m_maxReq == 1)
+					pRequestStr = "request";					
+				sprintf(reqBuff, "request %ld of %ld today", pRuleData->m_NumRequests, pRuleData->m_maxReq);
 			}
 		}
-		pRuleData->m_NumRequestsPH++;
-		sprintf(rphBuff, "request %ld of %ld this hour", pRuleData->m_NumRequestsPH, pRuleData->m_maxRPH);
-	}
+		if( pRuleData->m_maxRPH != WILDCARD ){
+			bHourlyLimit=true;
+			if (bNewDay)
+				pRuleData->m_NumRequestsPH = 0;
 
-	// TODO: 
-	//		Allow numReqs per hour and/or per day:
-	//			if -1:  don't enforce limit
-	//			if  0:	don't allow any
-	//			if both are -1, uncheck the group
-	//			if either is 0, make both 0 (0==don't allow any msgs), numRPH should never be 0:
-	//				instead, numReq would be(none per hour === none per day)
-	//	don't increment this count until we see a response come back from the endpoint
-	//		that way, if endpoint is unreachable, we don't count these as successful requests.
-	//BUT:  if we want to limit the # of ATTEMPTS, i.e., during a DDOS, then we should
-	//		increment it now....
-	if( bDailyLimit && (pRuleData->m_NumRequests > pRuleData->m_maxReq) ){
-		sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
-		    "   Only %ld %s per day are allowed."
-		    "   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg, 
-						 pRuleData->m_maxReq, pRequestStr, reqBuff);
-		WriteLog(1, gblLogFile, pVioBuff);
-		return MSP_BIZ_VIO;
-	}
-	else if( bHourlyLimit && (pRuleData->m_NumRequestsPH > pRuleData->m_maxRPH) ){
-		sprintf(pVioBuff, "The '%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
-		"   Only %ld %s per hour are allowed."
-		"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequestsPH, pEpMsg, 
-												pRuleData->m_maxRPH, pRequestStrPH, rphBuff);
-		WriteLog(1, gblLogFile, pVioBuff);
-		return MSP_BIZ_VIO;
-	}
-	else if( (pRuleData->m_maxHour != WILDCARD) && ((gblHourOfDay > pRuleData->m_maxHour) 
-										   ||  (gblHourOfDay < pRuleData->m_minHour)) ){
-		sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
-		    "   These type of requests are only allowed between the hours of %ld and %ld.\n"
-			"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour,
-											   gblHourOfDay);
-		WriteLog(1, gblLogFile, pVioBuff);
-		return MSP_BIZ_VIO;
-	}
-	else if( (pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp > pRuleData->m_maxTemp)
-											    ||  (gblCurrentTemp < pRuleData->m_minTemp)) ){
-		sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Temperature Violation:\n"
-		    "   These type of requests are only allowed when the temperature is between %ld and %ld degrees."
-			"   Current Temperature is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,
-											   gblCurrentTemp);
-		WriteLog(1, gblLogFile, pVioBuff);
-		return MSP_BIZ_VIO;
-	}
-	else{
-		WriteLog(1, gblLogFile, "\nThe '%s' request for the '%s' Endpoint was Accepted.", 
-					pRuleData->m_Method, pEpMsg);
-		if( bDailyLimit ){
-			if( bHourlyLimit )
-				WriteLog(1, gblLogFile, "   ( %s, %s )", reqBuff, rphBuff);
-			else
-				WriteLog(1, gblLogFile, "   ( %s )", reqBuff);
+			if( pRuleData->m_NumRequestsPH == 0 ){
+				time(&pRuleData->m_StartTime);
+			}
+			else{
+				time_t now;
+				time(&now);
+				double ElapsedTime = difftime(now, pRuleData->m_StartTime);// seconds
+				if( ElapsedTime >= 3600 ){
+					pRuleData->m_NumRequestsPH = 0;
+					time(&pRuleData->m_StartTime);
+				}
+			}
+			pRuleData->m_NumRequestsPH++;
+			if (bFirstHourly) {
+				bFirstHourly = false;
+				if (pRuleData->m_maxRPH == 1)
+					pRequestStrPH = "request";
+				else
+					pRequestStrPH = "requests";
+				sprintf(rphBuff, "request %ld of %ld this hour", pRuleData->m_NumRequestsPH, pRuleData->m_maxRPH);
+			}
 		}
-		else if( bHourlyLimit )
-			WriteLog(1, gblLogFile, "   ( %s )", rphBuff);
-		return MSP_OK;
-	}
+
+		// TODO: 
+		//		Allow numReqs per hour and/or per day:
+		//			if -1:  don't enforce limit
+		//			if  0:	don't allow any
+		//			if both are -1, uncheck the group
+		//			if either is 0, make both 0 (0==don't allow any msgs), numRPH should never be 0:
+		//				instead, numReq would be(none per hour === none per day)
+		//	don't increment this count until we see a response come back from the endpoint
+		//		that way, if endpoint is unreachable, we don't count these as successful requests.
+		//BUT:  if we want to limit the # of ATTEMPTS, i.e., during a DDOS, then we should
+		//		increment it now....
+
+		if (iRetVal != MSP_BIZ_VIO) {
+			/*
+			* If there is no Time Rule, then enforce any other violation right now
+			* If there IS a time rule, only enforce temp and request rules if it is
+			* currently in the specified time interval.
+			* / figure this out
+			if (pRuleData->m_maxHour != WILDCARD)
+			{
+				if (pRuleData->m_Inverse == 0) {
+					if ((gblHourOfDay > pRuleData->m_maxHour) || (gblHourOfDay < pRuleData->m_minHour)) {
+						sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
+							"   These type of requests are only allowed between the hours of %ld and %ld according to rule '%s'.\n"
+							"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour,
+							pRuleData->m_Name, gblHourOfDay);
+						WriteLog(1, gblLogFile, pVioBuff);
+						iRetVal = MSP_BIZ_VIO;
+					}
+				}
+				else {
+					if ((gblHourOfDay > pRuleData->m_maxHour) || (gblHourOfDay < pRuleData->m_minHour)) {
+						sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
+							"   These type of requests are only allowed between the hours of %ld and %ld according to rule '%s'.\n"
+							"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour,
+							pRuleData->m_Name, gblHourOfDay);
+						WriteLog(1, gblLogFile, pVioBuff);
+						iRetVal = MSP_BIZ_VIO;
+					}
+				}
+			}
+			else if (bDailyLimit && (pRuleData->m_NumRequests > pRuleData->m_maxReq)) {
+				sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+					"   Only %ld %s per day are allowed according to rule '%s'."
+					"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg,
+					pRuleData->m_maxReq, pRequestStr, reqBuff, pRuleData->m_Name);
+				WriteLog(1, gblLogFile, pVioBuff);
+				iRetVal = MSP_BIZ_VIO;
+			}
+			else if (bHourlyLimit && (pRuleData->m_NumRequestsPH > pRuleData->m_maxRPH)) {
+				sprintf(pVioBuff, "The '%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+					"   Only %ld %s per hour are allowed according to rule '%s'."
+					"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequestsPH, pEpMsg,
+					pRuleData->m_maxRPH, pRequestStrPH, rphBuff, pRuleData->m_Name);
+				WriteLog(1, gblLogFile, pVioBuff);
+				iRetVal = MSP_BIZ_VIO;
+			}
+			else if ((pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp > pRuleData->m_maxTemp)
+				|| (gblCurrentTemp < pRuleData->m_minTemp))) {
+				sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Temperature Violation:\n"
+					"   These type of requests are only allowed when the temperature is between %ld and %ld degrees according to rule '%s'."
+					"   Current Temperature is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,
+					pRuleData->m_Name, gblCurrentTemp);
+				WriteLog(1, gblLogFile, pVioBuff);
+				iRetVal = MSP_BIZ_VIO;
+			}
+			else {
+				WriteLog(1, gblLogFile, "\nThe '%s' request for the '%s' Endpoint was Accepted.",
+					pRuleData->m_Method, pEpMsg);
+				if (bDailyLimit) {
+					if (bHourlyLimit)
+						WriteLog(1, gblLogFile, "   ( %s, %s )", reqBuff, rphBuff);
+					else
+						WriteLog(1, gblLogFile, "   ( %s )", reqBuff);
+				}
+				else if (bHourlyLimit)
+					WriteLog(1, gblLogFile, "   ( %s )", rphBuff);
+				iRetVal = MSP_OK;
+			}
+		} // iRetVal != MSP_BIZ_VIO
+	} // for pMethRules
+	return iRetVal;
 }
 
 /*
 * handle_response_preview
 */
-int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
+//int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
+int handle_response_preview(char *pEndpoint, char *pMethod, bool bIsV3)
+
 {
 	char *pEpMsg;
 	ci_debug_printf(5, "    --->handle_response_preview::\n");
@@ -2322,7 +2402,7 @@ int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
 		pEpMsg =  "(first found V3)";
 	}
 	else{
-		pEpMsg =  pRuleData->m_EndPoint;
+		pEpMsg = pEndpoint;
 	}
 	/* TODO: get ip address and lookup the right BIZ_RULE per IP....
 	 * ultimately, we'd want to index the src/dest ips to find the BIZ_RULE
@@ -2340,7 +2420,7 @@ int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
 	}*/
 
 	WriteLog(1, gblLogFile, "\nThe '%s' RESPONSE for the '%s' Endpoint was Received.", 
-				pRuleData->m_Method, pEpMsg);
+		pMethod, pEpMsg);
 
 	return MSP_OK; // always pass the response on to client;
 }
@@ -2378,10 +2458,8 @@ int handle_response_preview(BIZ_RULE *pRuleData, bool bIsV3)
 */
 BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 {
-	char *pMethod=NULL;
-	char *pEndpoint=NULL;
-	int showData = 0;
-	int i=0;
+	char *pMethod=NULL, *pEndpoint = NULL;
+	int showData = 0, i = 0, midx = 0;
 	xmlNodePtr root;
 	xmlDocPtr xmlDoc;
 
@@ -2467,6 +2545,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 			// found the endpoint (or if v3, don't care), so check method now
 			if( !strcmp( pRuleData->m_Method, pMethod) ){
 				ci_debug_printf(4, "Found Business Record for %s / %s\n", pMethod, pEndpoint );
+				gblpMethRules[midx++].pRule = pRuleData;
 				break;
 			}
 			else{
@@ -2477,6 +2556,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		}
 		pRuleData++;
 	}
+	gblpMethRules[midx].pRule = NULL; // terminate list
 	if( i == gblNumBizRules )
 	{
 		if( mspd->isReqmod ){
@@ -2486,7 +2566,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		//	ci_debug_printf(1, "\nNo Business Rules Defined for %s@%s, Allowing Response.\n", pMethod, pEndpoint );
 		//}
 		*pErrRet = MSP_OK;
-		pRuleData = NULL;
+		//pRuleData = NULL;
 	}
 	else{
 		if( mspd->isReqmod ){
@@ -2608,16 +2688,16 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 				// do not consider missing calling info a big deal
 				ci_debug_printf(4, "*** Caller Information is Absent.\n");
 				*pErrRet = MSP_OK;
-				pRuleData = pRuleData;
+				//pRuleData = pRuleData; WTH ?????
 			}
 			else{
 				*pErrRet = MSP_OK;
-				pRuleData = pRuleData;
+				//pRuleData = pRuleData; WTH ?????
 			}
 		}
 		else{
 			*pErrRet = MSP_OK;
-			pRuleData = pRuleData;
+			//pRuleData = pRuleData; WTH ?????
 		}
 	}
 
@@ -2625,7 +2705,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	//xmlFree((void *)pMethod);
 	xmlFreeDoc(xmlDoc); 
 
-	return pRuleData;
+	return gblpMethRules[0].pRule; // pRuleData
 }
 
 /*
