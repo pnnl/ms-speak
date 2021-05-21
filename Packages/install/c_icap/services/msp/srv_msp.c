@@ -73,7 +73,7 @@
 							v3 msg hdr does not contain the Endpoint
 							v3 msg hdr does not contain caller information
 		05/12/2021 - CHM: Email notifications working.
-		05/20/2021 - CHM: Added Inverse and Name to Rule.
+		05/20/2021 - CHM: Added Inverse and Name to Rule in order to handle multiple rules per method.
 		-------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -419,8 +419,8 @@ typedef struct _bizrule{
 	signed long m_maxRPH;
 	signed long m_minTemp;
 	signed long m_maxTemp;
-	signed long m_minHour;
-	signed long m_maxHour;
+	signed long m_startHour;
+	signed long m_endHour;
 	signed long m_NumRequests;
 	signed long m_NumRequestsPH;
 	signed long m_Inverse;
@@ -508,7 +508,7 @@ bool gblNeedLoadActiveRules = true;
 int gblNumBizRules=0;
 int gblRowCnt=0;
 int gblCurrentDay=-1;
-int gblHourOfDay=-1;
+int gblCurrentHourOfDay=-1;
 int gblCurrentTemp = 0;
 //int gblFileDesc = -1;
 // Declaration of thread condition variable 
@@ -706,10 +706,10 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 				pBzd->m_maxRPH = atoll(values[i]);
 			}
 			else if (!strcmp(curr_key, DB_COLNAME_MAXHOUR)) {
-				pBzd->m_maxHour = atoll(values[i]);
+				pBzd->m_endHour = atoll(values[i]);
 			}
 			else if (!strcmp(curr_key, DB_COLNAME_MINHOUR)) {
-				pBzd->m_minHour = atoll(values[i]);
+				pBzd->m_startHour = atoll(values[i]);
 			}
 			else if (!strcmp(curr_key, DB_COLNAME_INVERSE)) {
 				pBzd->m_Inverse = atoll(values[i]);
@@ -830,8 +830,8 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 		gblpBizRules[i].m_maxRPH = WILDCARD;
 		gblpBizRules[i].m_minTemp = WILDCARD;
 		gblpBizRules[i].m_maxTemp = WILDCARD;
-		gblpBizRules[i].m_minHour = WILDCARD;
-		gblpBizRules[i].m_maxHour = WILDCARD;
+		gblpBizRules[i].m_startHour = WILDCARD;
+		gblpBizRules[i].m_endHour = WILDCARD;
 		// m_Inverse only applies if m_maxReq or m_maxRPH not WILDCARD
 	}
 	size = (gblNumBizRules+1) * sizeof(METHOD_RULES);
@@ -871,7 +871,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 				ci_debug_printf(3,"          Function: %s, Endpoint: %s, Method: %s\n",
 					   pBizRecs->m_Function,pBizRecs->m_EndPoint,pBizRecs->m_Method);
 				ci_debug_printf(3,"          numReq: %ld, numRPH: %ld, maxTemp: %ld, minTemp: %ld, maxHour: %ld, minHour: %ld\n",
-					pBizRecs->m_maxReq,pBizRecs->m_maxRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_maxHour,pBizRecs->m_minHour);
+					pBizRecs->m_maxReq,pBizRecs->m_maxRPH,pBizRecs->m_maxTemp,pBizRecs->m_minTemp,pBizRecs->m_endHour,pBizRecs->m_startHour);
 				ci_debug_printf(3,"          Email: %s\n\n",pBizRecs->m_Email);
 				pBizRecs++;
 			}*/
@@ -894,7 +894,7 @@ void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgL
 		ci_debug_printf(dbgLvl, "          Function: %s, Endpoint: %s, Method: %s\n",
 			pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
 		ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxHour: %ld, minHour: %ld, Inverse: %ld, maxTemp: %ld, minTemp: %ld\n",
-			pRules->m_maxReq,pRules->m_maxRPH,pRules->m_maxHour, pRules->m_minHour, pRules->m_Inverse, pRules->m_maxTemp, pRules->m_minTemp);
+			pRules->m_maxReq,pRules->m_maxRPH,pRules->m_endHour, pRules->m_startHour, pRules->m_Inverse, pRules->m_maxTemp, pRules->m_minTemp);
 		ci_debug_printf(dbgLvl,"          Email: %s\n\n",pRules->m_Email);
 		pRules++;
 	}
@@ -1916,7 +1916,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 				break;
 			case BCC_CURRENT_HOUR:
 				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
-				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblHourOfDay);
+				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblCurrentHourOfDay);
 				break;
 			case BCC_SET_CURRENT_TEMP:
 				if( mspd->bHasArg ){
@@ -1945,8 +1945,8 @@ int msp_end_of_data_handler(ci_request_t * req)
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 24) ){
 						gblHourTestMode = true;
-						gblHourOfDay = mspd->CommandArg;
-						ci_debug_printf(1, "   The Current Hour of the Day changed to %d\n", gblHourOfDay);
+						gblCurrentHourOfDay = mspd->CommandArg;
+						ci_debug_printf(1, "   The Current Hour of the Day changed to %d\n", gblCurrentHourOfDay);
 					}
 					else{
 						if( mspd->CommandArg == -1 ){
@@ -2218,7 +2218,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	char *pRequestStr, *pRequestStrPH, *pEpMsg;
 	char reqBuff[250];
 	char rphBuff[250];
-	bool bDailyLimit, bHourlyLimit;
+	bool bDailyLimit, bHourlyLimit, bInTimeSlot;
 	bool bFirstDaily = true, bFirstHourly = true, bNewDay = false;
 	int iRetVal = MSP_OK;
 
@@ -2235,7 +2235,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	else {
 		sprintf(pVioBuff, "SANITY FAILURE: %s\n", "Null Method Rules Pointer");
 		WriteLog(1, gblLogFile, pVioBuff);
-		ci_debug_printf(0, pVioBuff);
+		ci_debug_printf(0, "%s\n", pVioBuff);
 		*pRetRule = NULL;
 		iRetVal =  MSP_BIZ_VIO;
 	}
@@ -2247,7 +2247,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 		ci_debug_printf(1,"\nSimulating Hour of %d While in Test Mode.\n",gblHourTestMode);
 	}
 	else{
-		gblHourOfDay = tm_struct->tm_hour;
+		gblCurrentHourOfDay = tm_struct->tm_hour; // range 0 to 23
 		if( gblCurrentDay != tm_struct->tm_mday ){
 			gblCurrentDay = tm_struct->tm_mday;
 			bNewDay = true;
@@ -2257,13 +2257,12 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	}
 
 	pRequestStr = "requests";
+	bDailyLimit = false;
+	bHourlyLimit = false;
 	// loop thru all the rules for this method until we find a violation
 	for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++)
 	{
 		ci_debug_printf(3, "\nProcessing Rule '%s'.\n", pRuleData->m_Name);
-		bDailyLimit = false;
-		bHourlyLimit = false;
-
 
 		if( pRuleData->m_maxReq != WILDCARD ){
 			bDailyLimit=true;
@@ -2273,7 +2272,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 			if (bFirstDaily) {
 				bFirstDaily = false;
 				if (pRuleData->m_maxReq == 1)
-					pRequestStr = "request";					
+					pRequestStr = "request";
 				sprintf(reqBuff, "request %ld of %ld today", pRuleData->m_NumRequests, pRuleData->m_maxReq);
 			}
 		}
@@ -2322,70 +2321,111 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 			* If there is no Time Rule, then enforce any other violation right now
 			* If there IS a time rule, only enforce temp and request rules if it is
 			* currently in the specified time interval.
-			* / figure this out
-			if (pRuleData->m_maxHour != WILDCARD)
+			* Rather than only just checking if we're out of the specified time slot, if
+			* time is specified, apply the frequency and temperature rules for that slot.
+			* if the intent is to not allow any requests in a slot, numReq should be 0
+			* this way you can have a rule to allow only n request during a certain time.
+			* Want to be able to have a rule that applies temperature and/or frequency rules only
+			* during a certain time slot, otherwise, allow the rule rather than reject it?
+			*     using timeslot to allow/reject request vs using it to check temp/freq ranges...
+					if time is specifed, then check freq/temp rules (can always use no frequency rule
+						to indicate 'anytime' or m_maxReq=0 for 'never'). If there is no time rule, that
+						implies 'anytime'.
+						
+				SO, if there is a time rule, apply during that slot, otherwise, if outside the timeslot,
+				allow the request.  if you don't want to allow the request outside that timeslot, make a 
+				an inverse rule with maxfreq = 0.
+				how enforce 'never'?
+					starHour =0, EndHour=24, numReq=0
+			*/
+			bInTimeSlot = true; // default to true as if no time rule implies 'anytime'
+			if (pRuleData->m_endHour != WILDCARD)
 			{
-				if (pRuleData->m_Inverse == 0) {
-					if ((gblHourOfDay > pRuleData->m_maxHour) || (gblHourOfDay < pRuleData->m_minHour)) {
+				if ((pRuleData->m_startHour <= gblCurrentHourOfDay) && (gblCurrentHourOfDay < pRuleData->m_endHour)) {
+					if (pRuleData->m_Inverse == 1) {
+						bInTimeSlot = false;
+					}
+				}
+				else{
+					if (pRuleData->m_Inverse == 0) {
+						bInTimeSlot = false;
+					}
+				}
+				/*if (pRuleData->m_Inverse == 0) {
+					if ((gblCurrentHourOfDay > pRuleData->m_endHour) || (gblCurrentHourOfDay < pRuleData->m_startHour)) {
 						sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
 							"   These type of requests are only allowed between the hours of %ld and %ld according to rule '%s'.\n"
-							"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour,
-							pRuleData->m_Name, gblHourOfDay);
+							"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_startHour, pRuleData->m_endHour,
+							pRuleData->m_Name, gblCurrentHourOfDay);
+						WriteLog(1, gblLogFile, pVioBuff);
+						iRetVal = MSP_BIZ_VIO;
+						bInTimeSlot = false;
+					}
+				}
+				else { // inverse time
+					if ((gblCurrentHourOfDay > pRuleData->m_endHour) || (gblCurrentHourOfDay < pRuleData->m_startHour)) {
+						sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
+							"   These type of requests are NOT allowed between the hours of %ld and %ld according to rule '%s'.\n"
+							"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_startHour, pRuleData->m_endHour,
+							pRuleData->m_Name, gblCurrentHourOfDay);
 						WriteLog(1, gblLogFile, pVioBuff);
 						iRetVal = MSP_BIZ_VIO;
 					}
-				}
-				else {
-					if ((gblHourOfDay > pRuleData->m_maxHour) || (gblHourOfDay < pRuleData->m_minHour)) {
-						sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Time Violation:\n"
-							"   These type of requests are only allowed between the hours of %ld and %ld according to rule '%s'.\n"
-							"   Current Hour Of Day is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minHour, pRuleData->m_maxHour,
-							pRuleData->m_Name, gblHourOfDay);
-						WriteLog(1, gblLogFile, pVioBuff);
-						iRetVal = MSP_BIZ_VIO;
+					else{
+						bInTimeSlot = false;
 					}
+				}*/
+			}
+			if( bInTimeSlot )
+			{
+				if (bDailyLimit && (pRuleData->m_NumRequests > pRuleData->m_maxReq)) {
+					sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+						"   Only %ld %s per day are allowed according to rule '%s'."
+						"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg,
+						pRuleData->m_maxReq, pRequestStr, reqBuff, pRuleData->m_Name);
+					WriteLog(1, gblLogFile, pVioBuff);
+					iRetVal = MSP_BIZ_VIO;
+				}
+				else if (bHourlyLimit && (pRuleData->m_NumRequestsPH > pRuleData->m_maxRPH)) {
+					sprintf(pVioBuff, "The '%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+						"   Only %ld %s per hour are allowed according to rule '%s'."
+						"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequestsPH, pEpMsg,
+						pRuleData->m_maxRPH, pRequestStrPH, rphBuff, pRuleData->m_Name);
+					WriteLog(1, gblLogFile, pVioBuff);
+					iRetVal = MSP_BIZ_VIO;
+				}
+				else if ((pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp > pRuleData->m_maxTemp)
+					|| (gblCurrentTemp < pRuleData->m_minTemp))) {
+					sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Temperature Violation:\n"
+						"   These type of requests are only allowed when the temperature is between %ld and %ld degrees according to rule '%s'."
+						"   Current Temperature is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,
+						pRuleData->m_Name, gblCurrentTemp);
+					WriteLog(1, gblLogFile, pVioBuff);
+					iRetVal = MSP_BIZ_VIO;
+				}
+				if( iRetVal != MSP_BIZ_VIO ) {
+					ci_debug_printf(3, "\nRule '%s' is not violated at this time.\n", pRuleData->m_Name);
 				}
 			}
-			else if (bDailyLimit && (pRuleData->m_NumRequests > pRuleData->m_maxReq)) {
-				sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
-					"   Only %ld %s per day are allowed according to rule '%s'."
-					"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg,
-					pRuleData->m_maxReq, pRequestStr, reqBuff, pRuleData->m_Name);
-				WriteLog(1, gblLogFile, pVioBuff);
-				iRetVal = MSP_BIZ_VIO;
-			}
-			else if (bHourlyLimit && (pRuleData->m_NumRequestsPH > pRuleData->m_maxRPH)) {
-				sprintf(pVioBuff, "The '%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
-					"   Only %ld %s per hour are allowed according to rule '%s'."
-					"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequestsPH, pEpMsg,
-					pRuleData->m_maxRPH, pRequestStrPH, rphBuff, pRuleData->m_Name);
-				WriteLog(1, gblLogFile, pVioBuff);
-				iRetVal = MSP_BIZ_VIO;
-			}
-			else if ((pRuleData->m_maxTemp != WILDCARD) && ((gblCurrentTemp > pRuleData->m_maxTemp)
-				|| (gblCurrentTemp < pRuleData->m_minTemp))) {
-				sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Temperature Violation:\n"
-					"   These type of requests are only allowed when the temperature is between %ld and %ld degrees according to rule '%s'."
-					"   Current Temperature is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,
-					pRuleData->m_Name, gblCurrentTemp);
-				WriteLog(1, gblLogFile, pVioBuff);
-				iRetVal = MSP_BIZ_VIO;
-			}
-			else {
-				WriteLog(1, gblLogFile, "\nThe '%s' request for the '%s' Endpoint was Accepted.",
-					pRuleData->m_Method, pEpMsg);
-				if (bDailyLimit) {
-					if (bHourlyLimit)
-						WriteLog(1, gblLogFile, "   ( %s, %s )", reqBuff, rphBuff);
-					else
-						WriteLog(1, gblLogFile, "   ( %s )", reqBuff);
-				}
-				else if (bHourlyLimit)
-					WriteLog(1, gblLogFile, "   ( %s )", rphBuff);
-				iRetVal = MSP_OK;
+			else{
+				ci_debug_printf(3, "\nRule '%s' does not apply during the current time.\n", pRuleData->m_Name);
 			}
 		} // iRetVal != MSP_BIZ_VIO
+		else{
+			ci_debug_printf(3, "\nSkipping Rule '%s' as a Violation Has Already Been Detected.\n", pRuleData->m_Name);
+		}
 	} // for pMethRules
+	if( iRetVal != MSP_BIZ_VIO ) {
+		WriteLog(1, gblLogFile, "\nThe '%s' request for the '%s' Endpoint was Accepted.", pRuleData->m_Method, pEpMsg);
+		if (bDailyLimit) {
+			if (bHourlyLimit)
+				WriteLog(1, gblLogFile, "   ( %s, %s )", reqBuff, rphBuff);
+			else
+				WriteLog(1, gblLogFile, "   ( %s )", reqBuff);
+		}
+		else if (bHourlyLimit)
+			WriteLog(1, gblLogFile, "   ( %s )", rphBuff);
+	}
 	return iRetVal;
 }
 
