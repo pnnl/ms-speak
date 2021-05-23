@@ -1,0 +1,80 @@
+# http:/127.0.0.1:3128/icap?cmd=1
+#
+# curl --proxy http://127.0.0.1:3128 --url 'http://127.0.0.1:8080' --data @ODEventNotification.xml user-agent = "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification" referer = "http://buster.test.com/" --output response.xml
+#
+# curl --silent -S --proxy http://127.0.0.1:3128 --url 'http://127.0.0.1:8080' --data @ChangeCustomerData.xml user-agent = "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/V5.0/wsdl/CB_Server/ChangeCustomerData" referer = "http://buster.test.com/" --output response.xml
+#
+# curl --proxy http://127.0.0.1:3128 --url 'http://127.0.0.1:8080' --data @InitiateConnectDisconnect.xml user-agent = "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H  "SOAPAction: http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateCDStateRequest" referer = "http://buster.test.com/" --output response.xml
+#
+# curl --silent -S --proxy http://127.0.0.1:3128 --url 'http://127.0.0.1:8080' --data @GetMethods.xml user-agent = "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/V5.0/wsdl/DR_Server/GetMethods" referer = "http://buster.test.com/" --output response.xml
+#
+
+--proxy http://127.0.0.1:3128
+url = "http://127.0.0.1:8080"
+--data @ODEventNotification.xml
+user-agent = "MultiSpeak Test/1.0"
+-H  "Accept: application / soap + xml, application / dime, multipart / related, text/*"
+-H  "Content-Type: text/xml;charset=utf-8"
+-H  "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification"
+referer = "http://buster.test.com/"
+--output response.xml
+
+--next
+
+--proxy http://127.0.0.1:3128
+url = "http://127.0.0.1:8080"
+--data @ChangeCustomerData.xml
+user-agent = "MultiSpeak Test/1.0"
+-H  "Accept: application / soap + xml, application / dime, multipart / related, text/*"
+-H  "Content-Type: text/xml;charset=utf-8"
+-H  "SOAPAction: http://www.multispeak.org/V5.0/wsdl/CB_Server/ChangeCustomerData"
+referer = "http://buster.test.com/"
+--output response.xml
+
+--next
+
+--proxy http://127.0.0.1:3128
+url = "http://127.0.0.1:8080"
+--data @InitiateConnectDisconnect.xml
+user-agent = "MultiSpeak Test/1.0"
+-H  "Accept: application / soap + xml, application / dime, multipart / related, text/*"
+-H  "Content-Type: text/xml;charset=utf-8"
+-H  "SOAPAction: http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateCDStateRequest"
+referer = "http://buster.test.com/"
+--output response.xml
+
+--next
+
+--proxy http://127.0.0.1:3128
+url = "http://127.0.0.1:8080"
+--data @InitiateConnectDisconnect.xml
+user-agent = "MultiSpeak Test/1.0"
+-H  "Accept: application / soap + xml, application / dime, multipart / related, text/*"
+-H  "Content-Type: text/xml;charset=utf-8"
+-H  "SOAPAction: http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect"
+referer = "http://buster.test.com/"
+--output response.xml
+
+--next
+
+--proxy http://127.0.0.1:3128
+url = "http://127.0.0.1:8080"
+--data @GetMethods.xml
+user-agent = "MultiSpeak Test/1.0"
+-H  "Accept: application / soap + xml, application / dime, multipart / related, text/*"
+-H  "Content-Type: text/xml;charset=utf-8"
+-H  "SOAPAction: http://www.multispeak.org/V5.0/wsdl/DR_Server/GetMethods"
+referer = "http://buster.test.com/"
+--output response.xml
+
+--next
+
+--proxy http://127.0.0.1:3128
+url = "http://127.0.0.1:8080"
+--data @ChangeCustomerData.xml
+user-agent = "MultiSpeak Test/1.0"
+-H  "Accept: application / soap + xml, application / dime, multipart / related, text/*"
+-H  "Content-Type: text/xml;charset=utf-8"
+-H  "SOAPAction: http://www.multispeak.org/V5.0/wsdl/CB_Server/ChangeCustomerData"
+referer = "http://buster.test.com/"
+--output response.xml

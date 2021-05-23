@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Header>
+    <request:MultiSpeakRequestMsgHeader xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" MessageID="?" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" TimeStamp="?" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/DR_Server" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2">
+      <request:MultiSpeakVersion>
+        <com:MajorVersion>?</com:MajorVersion>
+        <com:MinorVersion>?</com:MinorVersion>
+        <com:Build>?</com:Build>
+      </request:MultiSpeakVersion>
+      <request:Caller>
+        <com:AppName>?</com:AppName>
+        <com:Company>?</com:Company>
+      </request:Caller>
+    </request:MultiSpeakRequestMsgHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:GetMethods xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:msp="http://www.multispeak.org/V5.0" xmlns:com="http://www.multispeak.org/V5.0/commonTypes" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:response="http://www.multispeak.org/V5.0/ws/response" xmlns:enum="http://www.multispeak.org/V5.0/enumerations" xmlns:request="http://www.multispeak.org/V5.0/ws/request" xmlns:ns9="http://www.w3.org/2005/08/addressing" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:prim="http://www.multispeak.org/V5.0/primitives" xmlns:arrays="http://www.multispeak.org/V5.0/commonArrays" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.multispeak.org/V5.0/wsdl/DR_Server" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:ns8="http://docs.oasis-open.org/wsrf/bf-2">?</tns:GetMethods>
+  </soap:Body>
+</soap:Envelope>

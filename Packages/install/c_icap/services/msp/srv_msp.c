@@ -275,6 +275,45 @@
 					 --header="Content-Type: text/xml"
 					 --header="SOAPAction: \"http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect\"" -O response.xml
 
+			note sure if curl will work:
+				curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
+				curl -uri "http://192.168.1.3:3128/icap?cmd=4" -Method POST -Body "ICAP CMD"
+				this got to msp module:
+					curl "http://192.168.1.3:8080/icap?cmd=4"  (with http_proxy=127.0.0.1:3128 set)
+						don't have to have MSS running either
+					curl "http://192.168.1.3:8080/icap?cmd=4" -Method POST -Body "ICAP CMD"
+############ this worked, sent to MSS via icap on same machine ##############################
+saved ODEventNotification.xml from MS, then:
+	curl --config curl.cmds
+curl.cmds:
+	url = "http://127.0.0.1:8080"
+	--data @ODEventNotification.xml
+	user-agent = "MultiSpeak Test/1.0"
+	-H  "Accept: application / soap + xml, application / dime, multipart / related, text/[*]"
+	-H  "Content-Type: text/xml;charset=utf-8"
+	-H  "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification"
+	referer = "http://buster.test.com/"
+	--proxy http://127.0.0.1:3128
+
+wget --post-file=ODEventNotification.xml -S http://127.0.0.1:8080
+	 --header="Content-Type: text/xml"
+	 --header="SOAPAction: \"http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect\""
+
+POST / HTTP/1.1
+Accept: application / soap + xml, application / dime, multipart / related, text/[*]
+Host: 192.168.1.3:8080
+Content-Type: text/xml;charset=utf-8
+SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification
+Content-Length: 1212
+Connection: Keep-Alive
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,*
+User-Agent: Mozilla/5.0
+
+msp_preview_handler::no body data.
+msp_preview_handler::no referer in header
+An error occured in preview handler (outside preview)! return code: -1, req->allow204=1, req->allow206=0
+
 	others packages that may need to be installed:
 		sudo apt-get install libglib2.0-dev
 		sudo apt-get install libxml2
@@ -607,8 +646,6 @@ struct ci_fmt_entry MspFmtTable [] ={
 	{ "%MSTXID", "XActID", fmt_srv_msp_transactionid },
    { NULL, NULL, NULL}
 };
-
-// curl -uri "http://130.20.141.136:8077/" -Method POST -Body "ICAP CMD"
 
 /* Sequence of calls:
 msp_init_service()
@@ -1182,8 +1219,8 @@ void *WeatherUpdater(void *data)
 		CURL *curl;
 		const static char *api_endpoint = "http://api.openweathermap.org/data/2.5/weather?appid=%s&zip=%s&units=imperial&mode=xml";
 		char api_buffer[APIBUFFLEN+1];
-		//unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
-		unsigned seconds = WEATHER_UPDATE_INTERVAL * 18;
+		unsigned seconds = WEATHER_UPDATE_INTERVAL * 60;
+		//unsigned seconds = WEATHER_UPDATE_INTERVAL * 18;
 		bool init = true;
 
 		curl = curl_easy_init();
@@ -1235,7 +1272,7 @@ void *WeatherUpdater(void *data)
 							ci_debug_printf(0,"\nERROR Updating Weather, No Temperature.\n");
 						}
 						if( weatherData.city ){
-							ci_debug_printf(2,"\nCurrent Temperature in %s: %d\n", weatherData.city, gblCurrentTemp);
+							ci_debug_printf(2,"\nTemperature in %s: %d\n", weatherData.city, gblCurrentTemp);
 							//ci_debug_printf(2,"City: %s\n", weatherData.city);
 						}
 						else{
@@ -2005,7 +2042,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 			ci_debug_printf(4,"\n CurrentTemp read from temporary file: %d\n",gblCurrentTemp);
 			}
 			}*/
-			ci_debug_printf(2, "The Current Temperature is %d(F)\n", gblCurrentTemp);
+			;//ci_debug_printf(2, "The Current Temperature is %d(F)\n", gblCurrentTemp);
 		}
 	}
 	else{
@@ -2215,7 +2252,7 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3, BIZ_RULE **pRetRule)
 {
 	BIZ_RULE *pRuleData;
-	char *pRequestStr, *pRequestStrPH, *pEpMsg;
+	char *pRequestStr, *pRequestStrPH, *pEpMsg, *pMethod;
 	char reqBuff[250];
 	char rphBuff[250];
 	bool bDailyLimit, bHourlyLimit, bInTimeSlot;
@@ -2224,15 +2261,19 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 
 	ci_debug_printf(5, "    --->handle_request_preview::\n");
 
+	// all rules processed here should have same EP and Method
 	if(pMethRules && pMethRules->pRule ) {
 		if (bIsV3) {
 			pEpMsg = "(first found V3)";
 		}
 		else {
-			pEpMsg = pRuleData->m_EndPoint;
+			pEpMsg = pMethRules->pRule->m_EndPoint;
 		}
+		pMethod = pMethRules->pRule->m_Method;
 	}
 	else {
+		pMethod = NULL;
+		pEpMsg = NULL; // just to shutup compiler
 		sprintf(pVioBuff, "SANITY FAILURE: %s\n", "Null Method Rules Pointer");
 		WriteLog(1, gblLogFile, pVioBuff);
 		ci_debug_printf(0, "%s\n", pVioBuff);
@@ -2260,10 +2301,9 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	bDailyLimit = false;
 	bHourlyLimit = false;
 	// loop thru all the rules for this method until we find a violation
-	for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++)
+	for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++,pRuleData = pMethRules->pRule)
 	{
 		ci_debug_printf(3, "\nProcessing Rule '%s'.\n", pRuleData->m_Name);
-
 		if( pRuleData->m_maxReq != WILDCARD ){
 			bDailyLimit=true;
 			if (bNewDay)
@@ -2382,7 +2422,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 					sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
 						"   Only %ld %s per day are allowed according to rule '%s'."
 						"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg,
-						pRuleData->m_maxReq, pRequestStr, reqBuff, pRuleData->m_Name);
+						pRuleData->m_maxReq, pRequestStr, pRuleData->m_Name, reqBuff);
 					WriteLog(1, gblLogFile, pVioBuff);
 					iRetVal = MSP_BIZ_VIO;
 				}
@@ -2390,7 +2430,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 					sprintf(pVioBuff, "The '%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
 						"   Only %ld %s per hour are allowed according to rule '%s'."
 						"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequestsPH, pEpMsg,
-						pRuleData->m_maxRPH, pRequestStrPH, rphBuff, pRuleData->m_Name);
+						pRuleData->m_maxRPH, pRequestStrPH, pRuleData->m_Name, rphBuff);
 					WriteLog(1, gblLogFile, pVioBuff);
 					iRetVal = MSP_BIZ_VIO;
 				}
@@ -2404,19 +2444,22 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 					iRetVal = MSP_BIZ_VIO;
 				}
 				if( iRetVal != MSP_BIZ_VIO ) {
-					ci_debug_printf(3, "\nRule '%s' is not violated at this time.\n", pRuleData->m_Name);
+					ci_debug_printf(3, "Rule '%s' is not violated at this time.\n", pRuleData->m_Name);
+					if (pRuleData->m_maxTemp != WILDCARD)
+							ci_debug_printf(2, "The Current Temperature is %d(F)\n", gblCurrentTemp);
 				}
 			}
 			else{
-				ci_debug_printf(3, "\nRule '%s' does not apply during the current time.\n", pRuleData->m_Name);
+				ci_debug_printf(3, "Rule '%s' does not apply during the current time.\n", pRuleData->m_Name);
 			}
 		} // iRetVal != MSP_BIZ_VIO
 		else{
-			ci_debug_printf(3, "\nSkipping Rule '%s' as a Violation Has Already Been Detected.\n", pRuleData->m_Name);
+			ci_debug_printf(3, "Skipping Rule '%s' as a Violation Has Already Been Detected.\n", pRuleData->m_Name);
 		}
 	} // for pMethRules
 	if( iRetVal != MSP_BIZ_VIO ) {
-		WriteLog(1, gblLogFile, "\nThe '%s' request for the '%s' Endpoint was Accepted.", pRuleData->m_Method, pEpMsg);
+		// pRuleData is now null, don't access...
+		WriteLog(1, gblLogFile, "The '%s' request for the '%s' Endpoint was Accepted.", pMethod, pEpMsg);
 		if (bDailyLimit) {
 			if (bHourlyLimit)
 				WriteLog(1, gblLogFile, "   ( %s, %s )", reqBuff, rphBuff);
@@ -2586,7 +2629,7 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 			if( !strcmp( pRuleData->m_Method, pMethod) ){
 				ci_debug_printf(4, "Found Business Record for %s / %s\n", pMethod, pEndpoint );
 				gblpMethRules[midx++].pRule = pRuleData;
-				break;
+				//break;
 			}
 			else{
 				ci_debug_printf(4, "Checking Business Record for %s / %s\n",
@@ -2597,7 +2640,8 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 		pRuleData++;
 	}
 	gblpMethRules[midx].pRule = NULL; // terminate list
-	if( i == gblNumBizRules )
+	//if( i == gblNumBizRules )
+	if( gblpMethRules[0].pRule == NULL )
 	{
 		if( mspd->isReqmod ){
 			ci_debug_printf(1, "\nNo Business Rules Defined for %s / %s, Allowing Request.\n", pMethod, pEndpoint );

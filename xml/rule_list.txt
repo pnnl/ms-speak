@@ -1,0 +1,71 @@
+Tester: MsUser, AppId: 85cd2a23af95429c1dbbc7b308463346, Zip: 99352
+    Name: Only 10 a day
+          Function: Distribution Operations, Endpoint: OA_Server, Method: ODEventNotification
+          numReq: 10, numRPH: -1, maxHour: -1, minHour: -1, Inverse: 0, maxTemp: -1, minTemp: -1
+          Email: msspkuser@outlook.com
+
+    Name: Allow CD Changes
+          Function: Customer Billing, Endpoint: CB_Server, Method: ChangeCustomerData
+          numReq: -1, numRPH: 5, maxHour: 17, minHour: 9, Inverse: 0, maxTemp: -1, minTemp: -1
+          Email: msspkuser@outlook.com
+
+    Name: Disallow CD Changes
+          Function: Customer Billing, Endpoint: CB_Server, Method: ChangeCustomerData
+          numReq: 0, numRPH: -1, maxHour: 17, minHour: 9, Inverse: 1, maxTemp: -1, minTemp: -1
+          Email: msspkuser@outlook.com
+
+    Name: Temps For 8  to 4
+          Function: Customer Billing, Endpoint: CB_Server, Method: ChangeCustomerData
+          numReq: -1, numRPH: -1, maxHour: 16, minHour: 8, Inverse: 0, maxTemp: 68, minTemp: 50
+          Email: msspkuser@outlook.com
+
+    Name: Temps For Not  8  to 4
+          Function: Customer Billing, Endpoint: CB_Server, Method: ChangeCustomerData
+          numReq: -1, numRPH: -1, maxHour: 16, minHour: 8, Inverse: 1, maxTemp: 53, minTemp: 26
+          Email: msspkuser@outlook.com
+
+    Name: Dont Disconnect
+          Function: Metering Management, Endpoint: CD_Server, Method: InitiateConnectDisconnect
+          numReq: -1, numRPH: -1, maxHour: 16, minHour: 8, Inverse: 0, maxTemp: 90, minTemp: 50
+          Email: 
+
+    Name: NoGetMethods
+          Function: Demand Response, Endpoint: DR_Server, Method: GetMethods
+          numReq: 0, numRPH: -1, maxHour: -1, minHour: -1, Inverse: 0, maxTemp: -1, minTemp: -1
+          Email: msspkuser@outlook.com
+
+
+Processing Rule 'Temps For 8  to 4'.
+'ChangeCustomerData' request #0 for the 'CB_Server' Endpoint was Rejected Due to a Frequency Violation:
+   Only -1 requests per day are allowed according to rule 'Temps For 8  to 4'.   ( request 1 of 0 today )
+          
+          
+          
+Pacific Northwest National Laboratory
+MultiSpeaker
+IdsEditor
+3.1.0a
+          
+The server is running on IP: 0.0.0.0 Port: 8080
+
+POST / HTTP/1.1
+Accept: application / soap + xml, application / dime, multipart / related, text/*
+Host: 192.168.1.3:8080
+Content-Type: text/xml;charset=utf-8
+SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification
+Content-Length: 1212
+Connection: Keep-Alive
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,*
+User-Agent: Mozilla/5.0
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soap:Header>
+    <tns:MultiSpeakMsgHeader xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://www.multispeak.org/Version_3.0" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/">?</tns:MultiSpeakMsgHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:ODEventNotification xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://www.multispeak.org/Version_3.0" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"/>
+  </soap:Body>
+</soap:Envelope>
