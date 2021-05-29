@@ -7,6 +7,9 @@
 #  flag -pie, which marks e_type as ET_DYN on the binary file. Consequently, the Operating System
 #  recognizes as Shared Library.
 #QMAKE_LFLAGS += -no-pie
+# qDebug is also preprocessor-controlled, but it has its own special macro,
+#		 QT_NO_DEBUG_OUTPUT.
+# If you add that to your Release build defines, it will not print out.
 
 TEMPLATE = app
 TARGET = MultiSpeakerServer
