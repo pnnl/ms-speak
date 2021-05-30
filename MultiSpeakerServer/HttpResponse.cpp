@@ -271,11 +271,27 @@ void HttpResponse::write(QByteArray data, bool lastPart)
         {
             writeToSocket("0\r\n\r\n");
         }
+
 		if (isSSL) {
-			ssocket->flush();
+			if (ssocket->isValid()) {
+				if (ssocket->state() == QAbstractSocket::ConnectedState) {
+					;//ssocket->flush(); this cause a crash on 3rd MS msg
+				}
+				else{
+					qDebug() << "SSL State Not Connected";
+				}
+			}
+			else{
+				qDebug() << "Broken SSL Connection";
+			}
 		}
 		else {
-			socket->flush();
+			if (socket->isValid()) {
+				socket->flush();
+			}
+			else{
+				qDebug() << "Broken Connection";
+			}
 		}
 		sentLastPart = true;
 	}

@@ -89,6 +89,7 @@ signals:
 	void Finished();
 	void Message(const QByteArray& msg);
 	void Message(int length, const QByteArray& msg);
+	void MessageLF(const QByteArray& msg);
 	void SocketError(QAbstractSocket::SocketError socketError, const QString& errorString);
 
 private slots:

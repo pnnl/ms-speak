@@ -160,14 +160,18 @@ SslServer::~SslServer()
 //
 void SslServer::incomingConnection(qintptr socketDescriptor)
 {
-	qDebug() << "SslServer::incomingConnection()";
-
+	//qDebug() << "SslServer::incomingConnection()";
 	QSslSocket* socket = new QSslSocket(this);
 	if (!socket->setSocketDescriptor(socketDescriptor))
 	{
 		qDebug() << "SslServer::incomingConnection() ERROR: unable to setSocketDescriptor()";
 		return;
 	}
+	QString qs;
+	QTextStream out(&qs);
+	out << "Incoming SSL Connection from " << socket->peerAddress().toString() <<
+			", port " << socket->peerPort() << endl;
+	emit Message(qs.toUtf8());
 
 	connect(socket, SIGNAL(connected()), this, SLOT(OnConnected()));
 	connect(socket, SIGNAL(disconnected()), this, SLOT(OnDisconnected()));
@@ -384,7 +388,9 @@ void SslServer::OnError(QAbstractSocket::SocketError error)
 //
 void SslServer::OnNewConnection()
 {
-	emit Message("Client connected to Server\n");
+	;
+	//emit Message("Client connected to Server\n");
+
 	/*
 		Call nextPendingConnection() to accept the pending connection as a
 		connected QTcpSocket. The function returns a pointer to a QTcpSocket in
@@ -399,14 +405,14 @@ void SslServer::OnNewConnection()
 		override incomingConnection().
 
 	*/
-	if (QSslSocket* socket = qobject_cast<QSslSocket*>(nextPendingConnection()))
+	if( QSslSocket* socket = qobject_cast<QSslSocket*>(nextPendingConnection())  )
     {
-        Q_UNUSED(socket);
-        qDebug() << "SslServer::OnNewConnection()";
-		emit Message("SslServer::OnNewConnection\n");
-    }
+		Q_UNUSED(socket);
+		//qDebug() << "SslServer::OnNewConnection()";
+		//emit Message("SslServer::OnNewConnection\n");
+	}
 	//else {
-	//	emit Message("SslServer::OnNewConnection - Socket Failure\n");
+	//	emit Message("SslServer::OnNewConnection - No next Pending Connection\n");
 	//}
 }
 //------------------------------------------------------------------------------

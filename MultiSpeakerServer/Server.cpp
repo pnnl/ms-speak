@@ -88,7 +88,8 @@ Server::~Server()
 //
 void Server::incomingConnection(qintptr socketDescriptor)
 {
-	qDebug() << "Server::incomingConnection():" << serverAddress().toString() << serverPort();
+	//qDebug() << "Server::incomingConnection():" << serverAddress().toString() << serverPort();
+
 	QThread* thread = new QThread;
 	ServerWorker* worker = new ServerWorker(socketDescriptor,m_responseFile);
 	worker->moveToThread(thread);
@@ -97,6 +98,7 @@ void Server::incomingConnection(qintptr socketDescriptor)
 	connect(worker, SIGNAL(Finished()), worker, SLOT(deleteLater()));
 	connect(worker, SIGNAL(Message(const QByteArray&)), this, SIGNAL(Message(const QByteArray&)));
 	connect(worker, SIGNAL(Message(int, const QByteArray&)), this, SIGNAL(Message(int, const QByteArray&)));
+	connect(worker, SIGNAL(MessageLF(const QByteArray&)), this, SIGNAL(MessageLF(const QByteArray&)));
 	connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 	connect(thread, SIGNAL(started()), worker, SLOT(OnStart()));
 	thread->start();

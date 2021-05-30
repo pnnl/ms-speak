@@ -105,6 +105,7 @@ private slots :
 	void OnInitHostAddress();
 	void OnMessage(const QByteArray& msg);
 	void OnMessage(int length, const QByteArray& msg);
+	void OnMessageLF(const QByteArray& msg);
 	void OnPrivateKeyFileBrowse() { FileNameBrowse("Select Private Key File", SK_SSL_PRIVATE_KEY_FILE, ui.PrivateKeyFileLabel); }
 	void OnServerAcceptError(QAbstractSocket::SocketError error);
 	void OnSocketError(QAbstractSocket::SocketError error, const QString& errorString);

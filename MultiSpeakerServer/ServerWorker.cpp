@@ -104,16 +104,23 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 	qint64 initBytesAvailable = socket->bytesAvailable(); // max tcp packet: 65,535, dunno why its a qint64...
 	qint64 bytesAvailable=initBytesAvailable;
 
-	//qDebug() << "Initial Bytes Available:" << initBytesAvailable;
+	qDebug() << "Initial Bytes Available:" << initBytesAvailable;
+	//emit Message("");
 	if( initBytesAvailable && (m_bytesYettoRead == 0) )
 	{
 		m_headerRead = false;
 		// the header ends with a final empty line, that separates the data block from the header block.
 		QString CLString;
 		QString CL = "Content-Length:";
+		//bool once=false;
 		do{
 			if( socket->canReadLine() ){
 				QString line =  socket->readLine();
+				if( line.isEmpty() ){
+					emit MessageLF(	"Unexpected Data Received: \\u0016\\u0003\\u0001\\u0002" );
+					break; //  this seems to happen if we listen on nonssl 8443 and
+					// MS sends a request as SSL
+				}
 				Header.append(line);
 				if( line.startsWith(CL) ){
 					ContentLenRead = true;
@@ -123,14 +130,30 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 					if( line.trimmed().isEmpty() )
 						m_headerRead = true;
 				}
+				/*else{
+					if( line.isEmpty() ){
+						break;
+					}
+					if( !once )
+					{
+						errString = "";
+						QTextStream out(&errString);
+						//out << "Non Content-Len Data Read : " << line.toUtf8().toBase64();
+						out << "Non Content-Len Data Read : " << line.toUtf8();
+						emit MessageLF(errString.toUtf8());
+						qDebug() << line;
+						once=true;
+					}
+				}*/
 			}
 			else{
 				QTime dieTime= QTime::currentTime().addSecs(1);
 				while (QTime::currentTime() < dieTime)
 					QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 			}
-			bytesAvailable = socket->bytesAvailable();
-			//qDebug() << "Bytes Now Available:" << bytesAvailable;
+			if( socket->isValid() )
+				bytesAvailable = socket->bytesAvailable();
+			//qDebug() << "Bytes Now Available:" << bytesAvailable; // 267
 		}while( !m_headerRead && bytesAvailable );
 
 		if( ContentLenRead ){
@@ -143,16 +166,16 @@ void ServerWorker::ReadMessage(QTcpSocket* socket)
 				m_bytesYettoRead = content_len;
 			}
 			else{
-				errString =  "Failed to extract " + CL;
+				errString = "Failed to extract " + CL;
 			}
 		}
 		else{
-			errString =   "Failed to read Content Length";
+			errString = "Failed to read Content Length";
 		}
 		if (!m_headerRead)
 		{
 			qDebug() << errString;
-			emit Message(errString.toLatin1());
+			emit MessageLF(errString.toLatin1());
 			socket->readAll(); // read any remaining data
 			m_bytesYettoRead = 0;
 			return;
@@ -297,5 +320,10 @@ void ServerWorker::OnStart()
 		emit Finished();
 	}
 	connect(socket, SIGNAL(readyRead()), this, SLOT(OnReadyRead()));
-	qDebug() << "SpeakerServerWorker::OnStart()" << socket->peerAddress().toString() << socket->peerPort();
+	//qDebug() << "ServerWorker::OnStart()" << socket->peerAddress().toString() << socket->peerPort();
+	QString qs;
+	QTextStream out(&qs);
+	out << "IncomingConnection from " << socket->peerAddress().toString() <<
+			", port " << socket->peerPort() << endl;
+	emit Message(qs.toUtf8());
 }

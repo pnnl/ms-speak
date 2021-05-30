@@ -256,6 +256,7 @@ void MultiSpeakerServer::ServerListen()
 	connect(m_server, SIGNAL(acceptError(QAbstractSocket::SocketError)), this, SLOT(OnServerAcceptError(QAbstractSocket::SocketError)));
 	connect(m_server, SIGNAL(Message(const QByteArray&)), this, SLOT(OnMessage(const QByteArray&)));
 	connect(m_server, SIGNAL(Message(int, const QByteArray&)), this, SLOT(OnMessage(int, const QByteArray&)));
+	connect(m_server, SIGNAL(MessageLF(const QByteArray&)), this, SLOT(OnMessageLF(const QByteArray&)));
 	connect(m_server, SIGNAL(SocketError(QAbstractSocket::SocketError, const QString&)), this, SLOT(OnSocketError(QAbstractSocket::SocketError, const QString&)));
 	connect(m_server, SIGNAL(destroyed(QObject*)), this, SLOT(OnServerClosed(QObject*)));
 
@@ -267,8 +268,9 @@ void MultiSpeakerServer::ServerListen()
 		  .arg(m_server->errorString()));
 		return;
 	}
-	qDebug() << "The server is running on IP:" << m_server->serverAddress().toString() << "Port:" << m_server->serverPort();
-	ui.plainTextEdit->appendPlainText(QString("The server is running on IP: %1 Port: %2")
+
+	qDebug() << "The Server is Listening on IP:" << m_server->serverAddress().toString() << "Port:" << m_server->serverPort();
+	ui.plainTextEdit->appendPlainText(QString("The Server is Listening on IP: %1 Port: %2")
 	.arg(m_server->serverAddress().toString())
 	.arg(m_server->serverPort()));
 	ui.plainTextEdit->appendPlainText(QString(""));
@@ -358,6 +360,16 @@ void MultiSpeakerServer::OnInitHostAddress()
 
 	ui.HostCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
+}
+//------------------------------------------------------------------------------
+// OnMessageLF
+//
+void MultiSpeakerServer::OnMessageLF(const QByteArray& msg)
+{
+	ui.plainTextEdit->moveCursor (QTextCursor::End);
+	ui.plainTextEdit->insertPlainText(msg);
+	ui.plainTextEdit->moveCursor (QTextCursor::End);
+	ui.plainTextEdit->appendPlainText(QString(""));
 }
 //------------------------------------------------------------------------------
 // OnMessage
