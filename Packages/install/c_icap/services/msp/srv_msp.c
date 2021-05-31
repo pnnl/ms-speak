@@ -501,6 +501,7 @@ struct srv_msp_data{
 	int  isReqmod;
 	bool bHasCommand;
 	bool bHasArg;
+	bool bIsSSL;
 	USER_CMD Command;
 	int  CommandArg;
 };
@@ -1586,6 +1587,14 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	ci_headers_list_t *pHeader = NULL;
 	struct srv_msp_data *mspd = NULL;
 
+	// 5.30 - set mspd here
+	mspd = ci_service_data(req);
+	mspd->maxBodyData = MaxBodyData;
+	mspd->isReqmod = 0;
+	mspd->bHasCommand = false;
+	mspd->bHasArg = false;
+	mspd->bIsSSL = false;
+	mspd->Command = BCC_NO_CMD;
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
 	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
 	// TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
@@ -1601,6 +1610,19 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			unlock_data(req);// this appears to prevent the browser cache having to be cleared each time
 			return CI_ERROR; 
 		}
+
+		char buf[1000];
+		size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+		msp_dumphex(buf, len);
+		// search for ':8443 HTTP' to see if this is SSL
+		const char *ptr;
+		ptr = strnstr( (const char *)&buf, ":8443 HTTP", len);
+		if( ptr ){
+			ci_debug_printf(3, "SSL, Found: %s.\n", ":8443 HTTP");
+			mspd->bIsSSL = true;
+			return CI_MOD_CONTINUE;
+		}
+
 		//ci_debug_printf(0, "msp_preview_handler: NO BODY:\n");
 		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://192.168.1.14:3128/icap?cmd=2 [&arg=]
 		if( !referer ){
@@ -1634,10 +1656,10 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		}
 		//ci_debug_printf(4, "cmdstr: %s.\n", cmdstr);
 		//ci_debug_printf(3, "Command Received: %d.\n", cmd);
-		mspd = ci_service_data(req);
+		/*mspd = ci_service_data(req);
 		mspd->bHasCommand = true;
 		mspd->bHasArg = false;
-		mspd->Command = cmd;
+		mspd->Command = cmd;*/
 		if( (cmd == BCC_SET_CURRENT_TEMP) || (cmd == BCC_SET_CURRENT_HOUR) ){
 			// check to see if an arg also passed in
 			//	http://192.168.1.14:3128/icap?cmd=2&arg=22 
@@ -1670,13 +1692,13 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		}
 		return CI_MOD_CONTINUE;
 	}
-
+	/*
 	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
 	mspd->isReqmod = 0;
 	mspd->bHasCommand = false;
 	mspd->bHasArg = false;
-	mspd->Command = BCC_NO_CMD;
+	mspd->Command = BCC_NO_CMD;*/
 	/*
 		from the wake forest pcap data (MS v3) this is what the Post Header contains:
 			POST /omsservices/services/OA_ServerSoap HTTP/1.0
@@ -1914,6 +1936,12 @@ int msp_end_of_data_handler(ci_request_t * req)
 	ci_debug_printf(2,"handle_request_preview:: Child pid: %d: \n",pid);
 #endif
 
+	if( mspd->bIsSSL ){
+		// SSL testing, allow all requests
+		unlock_data(req);
+		return CI_MOD_ALLOW204;
+	}
+
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
@@ -1949,7 +1977,6 @@ int msp_end_of_data_handler(ci_request_t * req)
 						ci_debug_printf(2, "   The Current Temperature is %d(F)\n", gblCurrentTemp);
 					}
 				}
-
 				break;
 			case BCC_CURRENT_HOUR:
 				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
