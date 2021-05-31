@@ -54,6 +54,7 @@
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
 //		2021 -     bumped TIMELINE_SCENE_HEIGHT to match SCENE_HEIGHT.
 //					set SSL_SELF_CERT_CN as ssl cert CN.
+//		2021 - 5.31.2012 - Added PROXY_CACERT for SSL bumping.
 //-------------------------------------------------------------------------------
 //
 // Summary: Settings.h
@@ -73,7 +74,7 @@ const int GRAPH_TYPE_TIMELINE = 3;
 const int GRAPH_TYPE_TIMELINE_EVENT = 4;
 
 const QString DECOUPLE_RUN_FILE = "decouple.run";
-
+const QString PROXY_CACERT = QStringLiteral(":/MultiSpeaker/Resources/mspCA.der");
 const QString ROOT_HOME_PATH = QString("%1/.MultiSpeaker").arg(QDir::homePath());
 
 // note: the following three need to stay in sync with MultiSpeakerServer/settings...

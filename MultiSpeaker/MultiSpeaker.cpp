@@ -135,7 +135,43 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	//QSettings s;
 	//QString certFile = "C:\\Users\\D3M907\\OneDrive - PNNL\\Desktop\\Projects\\MS-SPEAK\\Phase3\\ms-speak\\Installer\\mss.crt";
 		//s.value(SK_SSL_CERT_FILE, QString()).toString();
-	//QSslSocket::addDefaultCaCertificates(certFile);
+
+
+	/*
+	 * Searches all files in the path for certificates encoded in the specified format
+	 * and adds them to this socket's CA certificate database. path must be a file or a
+	 * pattern matching one or more files, as specified by syntax. Returns true if one
+	 * or more certificates are added to the socket's CA certificate database; otherwise
+	 * returns false.
+	 *		QSslSocket::addDefaultCaCertificates(certpath);
+	 * bool QSslSocket::addCaCertificates(const QString &path,
+	 * QSsl::EncodingFormat format = QSsl::Pem,  (or QSsl::Der)
+	 * QRegExp::PatternSyntax syntax = QRegExp::FixedString)
+	 */
+
+	/* Adds the certificate to this socket's CA certificate database.
+	 * The CA certificate database is used by the socket during the handshake
+	 * phase to validate the peer's certificate.
+	 *		void QSslSocket::addCaCertificate(const QSslCertificate &certificate)
+
+		If you want to make sure your root CA certificates will be used by QNAM you can take
+		advantage of the fact that QNAM uses QSslSocket to make SSL connections and use any of the
+		following static methods
+			void addDefaultCaCertificate ( const QSslCertificate & certificate )
+			bool addDefaultCaCertificates ( const QString & path, QSsl::EncodingFormat encoding = QSsl::Pem, QRegExp::PatternSyntax syntax = QRegExp::FixedString )
+			void addDefaultCaCertificates ( const QList<QSslCertificate> & certificates )
+			void setDefaultCaCertificates ( const QList<QSslCertificate> & certificates )
+		to set root CA certificates to be used by all SSL connections made using QSslSocket.
+		Remember, this is global setting and affects all SSL connections made using QSslSocket not
+		only these made using QNAM. There's no API to set this only for specific QNAM or for all QNAMs.
+	QString certFile = PROXY_CACERT;
+	bool bRet = QSslSocket::addDefaultCaCertificates(certFile,QSsl::Der);
+	if( bRet )
+		qDebug() << "Added Default CaCertificate: " <<  certFile;
+	else
+		qDebug() << "Failed to Add Default CaCertificate: " <<  certFile;
+	*/
+
 	// QSettings().setValue(sk, fileName);
 
 	// check if this is first running after a fresh install, if so, clear old file settings since

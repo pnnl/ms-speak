@@ -913,7 +913,52 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 				// 2021: SSL_SELF_CERT_CN
 				//request.setPeerVerifyName(SSL_SELF_CERT_CN);
 				QSslConfiguration sslconf;
-				sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);
+				if( theApp->ProxyEnabled() )
+				{
+					//QSslConfiguration SslConfiguration(QSslConfiguration::defaultConfiguration());
+
+					//QLatin1String rootCApath = QLatin1String(":/MultiSpeaker/Resources/mspCA.der");
+					QLatin1String rootCApath = QLatin1String("/home/carl/mspCA.der");
+					QFileInfo check_file(rootCApath);
+					// check if file exists and if yes: Is it really a file and no directory?
+					if( check_file.exists() && check_file.isFile() )
+						qDebug() << "File exists"; // This is just a log function for displaying messages in the GUI.
+					else
+						qDebug() << "File doesn't exist";
+
+					//QString tempssl;
+					//QDir dir ;
+					//tempssl=dir.relativeFilePath(":/MultiSpeaker/Resources/mspCA.der");
+					//static QList<QSslCertificate> cert = QSslCertificate::fromPath(tempssl);
+					static QList<QSslCertificate> cert = QSslCertificate::fromPath(rootCApath);
+					if(cert.size()==1)
+					{
+						sslconf.setCaCertificates(cert);
+					}
+					else
+					{
+						QString s = "Server certificate not found. Size is " + QString::number(cert.size());
+						qDebug() << s;
+					}
+// "I found the solution in my case: I didn't add the OpenSSL libraries libeay32.dll and ssleay32.dll to the directory where my exe resides in."
+
+					/*
+					QList<QSslCertificate> certificates = sslconf.caCertificates();
+					QSslCertificate certificate = QSslCertificate::QSslCertificate(PROXY_CACERT,QSsl::Der);
+					certificates.append(QSslCertificate::fromData(certificate.toAscii(), QSsl::Der));
+					sslconf.setCaCertificates(certificates);
+					*/
+					/*bool bRet = request.addDefaultCaCertificates(certFile,QSsl::Der);
+					if( bRet ){
+						qDebug() << "Added Default CaCertificate: " <<  certFile;
+						sslconf.addDefaultCaCertificates(certFile,QSsl::Der);
+					}else{
+						qDebug() << "Failed to Add Default CaCertificate: " <<  certFile;
+					}*/
+				}
+				//else{
+					sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);
+				//}
 				request.setSslConfiguration(sslconf);
 				request.setUrl(QUrl(QString("https://%1:%2/").arg(host->ReqHostAddress()).arg(host->ReqHostPort())));
 			}
