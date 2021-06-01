@@ -50,10 +50,10 @@
 */
 /*
 -------------------------------------------------------------------------------
-	History
-		05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
-		06/19/2019 - CHM - added body_data_buf.
-		04/05/2021 - CHM: support Phase3 enhancements.
+History
+05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
+06/19/2019 - CHM - added body_data_buf.
+06/01/2021 - CHM - assume body->type == MEMORY, in case ssl.
 ---------------------------------------------------------------------------------
 */
 
@@ -192,6 +192,7 @@ int body_data_write(struct body_data *body, char *buf, int len, int iseof)
 int body_data_read(struct body_data *body, char *buf, int len)
 {
 	ci_debug_printf(5, "    --->body_data_read::read our saved data into client(Squid)'s receive buffer...\n");
+
 	if( body->type == CACHED ){
         len = ci_cached_file_read(body->store.cached, buf, len);
         return len;
@@ -229,19 +230,25 @@ int body_data_read(struct body_data *body, char *buf, int len)
 char *body_data_buf(struct body_data *body)
 {
     if( body->type == CACHED ){
+		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "CACHED");
 	    return body->store.cached->buf;
     }
     else if(body->type == RING  ){
+		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "RING");
 	    return body->store.ring->buf;
     }
     else if(body->type == ERROR_PAGE) {
+		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "ERROR_PAGE");
 	    return body->store.error_page->buf;
     }
     else if (body->type == MEMORY) {
+		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "MEMORY");
 	    return body->store.mem_buff->buf;
     }
     else {
-        ci_debug_printf(0, "body_data_buf::invalid body type:%d\n", body->type);
+		ci_debug_printf(0, "body_data_buf::invalid body type:%d\n", body->type);
 		return NULL;
+		//ci_debug_printf(0, "body_data_buf::invalid body type:%d, returning mem_buff\n", body->type);
+		//return body->store.mem_buff->buf; this caused a crash....
 	}
 }

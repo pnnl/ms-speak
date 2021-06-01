@@ -1596,14 +1596,14 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd->bIsSSL = false;
 	mspd->Command = BCC_NO_CMD;
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
-	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
+	ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
 	// TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
 	//return CI_MOD_CONTINUE;
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
 	if( !ci_req_hasbody(req) ){
-		ci_debug_printf(4, "msp_preview_handler::no body data.\n");
+		ci_debug_printf(3, "msp_preview_handler::no body data.\n");
 		pHeader = ci_http_request_headers(req);
 		if( !pHeader ){
 			ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
@@ -1622,13 +1622,44 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			mspd->bIsSSL = true;
 			return CI_MOD_CONTINUE;
 		}
+		ptr = strnstr( (const char *)&buf, ":443 HTTP", len);
+		if( ptr ){
+			ci_debug_printf(3, "SSL, Found: %s, returning CI_MOD_CONTINUE.\n", ":443 HTTP");
+			mspd->bIsSSL = true;
+			return CI_MOD_CONTINUE;
+		}
 
 		//ci_debug_printf(0, "msp_preview_handler: NO BODY:\n");
 		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://192.168.1.14:3128/icap?cmd=2 [&arg=]
 		if( !referer ){
 			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
-			unlock_data(req);
-			return CI_ERROR;
+			if( mspd->bIsSSL ){
+				ci_debug_printf(3, "SSL, Found %s.\n", "On Response?");
+				return CI_MOD_CONTINUE;
+			}
+			else{
+
+				const int REQ_TYPE = ci_req_type(req);
+				if( REQ_TYPE == ICAP_REQMOD ){
+					ci_debug_printf(3, "SSL, %s.\n", "REQ_TYPE == ICAP_REQMOD");
+					pHeader = ci_http_request_headers(req);
+				}
+				else{
+					ci_debug_printf(3, "SSL, %s.\n", "REQ_TYPE == ICAP_RESPMOD");
+					pHeader = ci_http_response_headers(req);
+				}
+
+				char buf[1000];
+				size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+				ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
+				msp_dumphex(buf, len);
+					
+				ci_debug_printf(3, "SSL, %s.\n", "NOT mspd->bIsSSL");
+				
+				//unlock_data(req);
+				mspd->bIsSSL = true;
+				return CI_MOD_CONTINUE;//CI_ERROR;
+			}
 		}
 		ci_debug_printf(4, "Referer: %s.\n", referer);
 		char const *needle = "icap?cmd=";
@@ -1692,6 +1723,17 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		}
 		return CI_MOD_CONTINUE;
 	}
+	else{
+		ci_debug_printf(3, "msp_preview_handler::DOES have BODY!!!\n");
+		/* the body may not be available yet, in preview_handler...
+		char *buf2 = body_data_buf( &mspd->body );
+		if( !buf2 ){
+			ci_debug_printf(0, "\n*** msp_preview_handler:: FAILED TO GET BODY BUFFER  ***\n");
+		}
+		else{
+			msp_dumphex(buf2, mspd->expectedData);
+		}*/
+	}
 	/*
 	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
@@ -1718,15 +1760,41 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	if( REQ_TYPE == ICAP_REQMOD ){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		mspd->isReqmod = 1;
 		pHeader = ci_http_request_headers(req);
+		ci_debug_printf(0, "\n*** msp_preview_handler:: REQ_TYPE == ICAP_REQMOD  ***\n");
 	}
 	else{
 		pHeader = ci_http_response_headers(req);
+		ci_debug_printf(0, "\n*** msp_preview_handler:: REQ_TYPE <> ICAP_REQMOD  ***\n");
 	}
 	if( !pHeader ){
 		ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
 		return CI_ERROR; 
 	}
 
+	
+	char buf[1000];
+	size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+	ci_debug_printf(0, "msp_preview_handler:HTTP HEADER:\n");
+	msp_dumphex(buf, len);
+	
+	
+	
+	const char *ptr;
+	ptr = strnstr( (const char *)&buf, "https://", len);
+	if( ptr ){
+		ci_debug_printf(3, "msp_preview_handler::SSL, Found: %s.\n", "https://");
+		mspd->bIsSSL = true;
+		return CI_MOD_CONTINUE;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	if( REQ_TYPE == ICAP_REQMOD ){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		/*
 		what Multispeaker sends is:
@@ -1936,11 +2004,47 @@ int msp_end_of_data_handler(ci_request_t * req)
 	ci_debug_printf(2,"handle_request_preview:: Child pid: %d: \n",pid);
 #endif
 
+	// body_data_buf::body type: MEMORY
 	if( mspd->bIsSSL ){
-		// SSL testing, allow all requests
+		if( ci_req_hasbody(req) ){
+			// SSL testing, allow all requests
+			ci_debug_printf(3, "\n*** msp_end_of_data_handler::getting body_data_buf(ssl)\n");
+			char *buf = body_data_buf( &mspd->body );
+			ci_debug_printf(3, "*** msp_end_of_data_handler::got body_data_buf\n");
+			if( !buf ){
+				ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL FAILED TO GET BODY BUFFER ! ***\n");
+			}
+			else{
+				msp_dumphex(buf, mspd->expectedData);
+			}
+		}
+		else{
+			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(ssl)\n");
+		}
+		//mspd->eof = 1;
+		// Unlock the request body data so the c-icap server can send data
+		//ci_req_unlock_data(req);
 		unlock_data(req);
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::returning CI_MOD_ALLOW204\n");
 		return CI_MOD_ALLOW204;
 	}
+	else{
+		if( ci_req_hasbody(req) ){
+			ci_debug_printf(3, "\n*** msp_end_of_data_handler::getting body_data_buf(non-ssl)\n");
+			char *buf = body_data_buf( &mspd->body );
+			ci_debug_printf(3, "*** msp_end_of_data_handler::got body_data_buf\n");
+			if( !buf ){
+				ci_debug_printf(3, "\n*** msp_end_of_data_handler::FAILED TO GET BODY BUFFER ! ***\n");
+			}
+			else{
+				msp_dumphex(buf, mspd->expectedData);
+			}
+		}
+		else{
+			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(non-ssl)\n");
+		}
+	}
+
 
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
@@ -2566,6 +2670,7 @@ int handle_response_preview(char *pEndpoint, char *pMethod, bool bIsV3)
         "</Body>"
     "</soapenv:Envelope>";
 */
+
 BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 {
 	char *pMethod=NULL, *pEndpoint = NULL;

@@ -52,7 +52,8 @@
  History
  05/30/2019 - Carl Miller <carl.miller@pnnl.gov>
  06/19/2019 - CHM - added MEMORY body_type, mem_buff to store union.
- ---------------------------------------------------------------------------------
+ 06/01/2021 - CHM - return store body pointer, in case ssl.
+---------------------------------------------------------------------------------
  */
 #include "body.h"
 
