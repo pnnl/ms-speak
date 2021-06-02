@@ -1641,23 +1641,24 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 				const int REQ_TYPE = ci_req_type(req);
 				if( REQ_TYPE == ICAP_REQMOD ){
-					ci_debug_printf(3, "SSL, %s.\n", "REQ_TYPE == ICAP_REQMOD");
+					ci_debug_printf(3, "msp_preview_handler::SSL, %s.\n", "REQ_TYPE == ICAP_REQMOD");
 					pHeader = ci_http_request_headers(req);
 				}
 				else{
-					ci_debug_printf(3, "SSL, %s.\n", "REQ_TYPE == ICAP_RESPMOD");
+					ci_debug_printf(3, "msp_preview_handler::SSL, %s.\n", "REQ_TYPE == ICAP_RESPMOD");
 					pHeader = ci_http_response_headers(req);
 				}
 
 				char buf[1000];
 				size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
-				ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
+				ci_debug_printf(0, "msp_preview_handler: HTTP HEADER(!referer):\n");
 				msp_dumphex(buf, len);
 					
-				ci_debug_printf(3, "SSL, %s.\n", "NOT mspd->bIsSSL");
+				ci_debug_printf(3, "msp_preview_handler::SSL, %s.\n", "NOT mspd->bIsSSL");
 				
 				//unlock_data(req);
 				mspd->bIsSSL = true;
+				ci_debug_printf(3, "msp_preview_handler:: %s.\n", "returning CI_MOD_CONTINUE");
 				return CI_MOD_CONTINUE;//CI_ERROR;
 			}
 		}
@@ -1784,16 +1785,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	if( ptr ){
 		ci_debug_printf(3, "msp_preview_handler::SSL, Found: %s.\n", "https://");
 		mspd->bIsSSL = true;
-		return CI_MOD_CONTINUE;
+		//return CI_MOD_CONTINUE;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	if( REQ_TYPE == ICAP_REQMOD ){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
 		/*
@@ -1822,7 +1815,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		if( showHeader ){
 			char buf[1000];
 			size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
-			ci_debug_printf(0, "msp_preview_handler:RESP HTTP HEADER:\n");
+			ci_debug_printf(0, "msp_preview_handler:ICAP_RESPMOD, HTTP HEADER:\n");
 			msp_dumphex(buf, len);
 		}
 	}
@@ -1839,10 +1832,18 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_ERROR; // TODO: should we throw an error or allow?
 	}
 	if( strstr(content_type, "text/xml") == NULL ){
-		ci_debug_printf(0, "msp_preview_handler content type %s will not be processed...\n", content_type);
-		return CI_ERROR; // TODO: should we throw an error or allow?
+		if( mspd->bIsSSL ){
+			ci_debug_printf(0, "msp_preview_handler content type %s being allowed for SSL testing..\n", content_type);
+		}
+		else{
+			ci_debug_printf(0, "msp_preview_handler content type %s will not be processed...\n", content_type);
+			return CI_ERROR; // TODO: should we throw an error or allow?
+		}
 	}
-	
+	else{
+		ci_debug_printf(0, "msp_preview_handler content type %s found\n", content_type);
+	}
+
 	// If there is a Content-Length header, check it since we do not want to
 	//		process body data with more than MaxBodyData size
 	content_len = ci_http_content_length(req);
@@ -2021,11 +2022,11 @@ int msp_end_of_data_handler(ci_request_t * req)
 		else{
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(ssl)\n");
 		}
-		//mspd->eof = 1;
+		mspd->eof = 1;
 		// Unlock the request body data so the c-icap server can send data
-		//ci_req_unlock_data(req);
-		unlock_data(req);
-		ci_debug_printf(3, "\n*** msp_end_of_data_handler::returning CI_MOD_ALLOW204\n");
+		ci_req_unlock_data(req);
+		//unlock_data(req);
+		ci_debug_printf(3, "*** msp_end_of_data_handler::returning CI_MOD_ALLOW204\n");
 		return CI_MOD_ALLOW204;
 	}
 	else{
@@ -2044,7 +2045,6 @@ int msp_end_of_data_handler(ci_request_t * req)
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(non-ssl)\n");
 		}
 	}
-
 
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
@@ -2310,7 +2310,7 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 	struct srv_msp_data *mspd = ci_service_data(req);
 
 	if( !mspd->body.type ){
-		ci_debug_printf(0, "    !mspd->body.type\n");
+		ci_debug_printf(0, "    msp_io::!mspd->body.type\n");
 		// probably 206 response.
 		*wlen = CI_EOF;
 		return CI_OK;
