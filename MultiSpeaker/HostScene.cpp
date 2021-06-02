@@ -910,13 +910,35 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 			//request.setUrl(QUrl("http://64.184.186.24:8080/"));
 			//if (s.value(SK_HTTP_OUT_SSL, false).toBool())
 			if( host->EnableSsl() ){
-				// 2021: SSL_SELF_CERT_CN
-				//request.setPeerVerifyName(SSL_SELF_CERT_CN);
 				QSslConfiguration sslconf;
+
+				if( theApp->ProxyEnabled() )
+				{
+					// Trust store: which CAs or self-signed certs we are going to trust.
+					// We use setCaCertificates() instead than QSslSocket::addCaCertificates()
+					// because we don't want to trust the ~200 default CAs.
+					QList<QSslCertificate> trustedCas = QSslCertificate::fromPath("/home/carl/mspCAder.pem");
+					if (trustedCas.empty()) {
+						//qFatal("Error: no trusted Cas");
+						qDebug("Error: no trusted Cas");
+					}
+					else{
+						trustedCas.append( QSslCertificate::fromPath("/home/carl/mss.pem") );
+						sslconf.setCaCertificates(trustedCas);
+					}//
+					/* QSslSocket::VerifyNone will not request a certificate from the peer.
+								  ::QueryPeer will request a certificate from the peer, but
+									does not require this certificate to be valid.
+					*/
+					sslconf.setPeerVerifyMode(QSslSocket::QueryPeer);
+				}
+				else{
+					sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);// 2021: SSL_SELF_CERT_CN
+				}
+				/*
 				if( theApp->ProxyEnabled() )
 				{
 					//QSslConfiguration SslConfiguration(QSslConfiguration::defaultConfiguration());
-
 					//QLatin1String rootCApath = QLatin1String(":/MultiSpeaker/Resources/mspCA.der");
 					QLatin1String rootCApath = QLatin1String("/home/carl/mspCA.der");
 					QFileInfo check_file(rootCApath);
@@ -942,23 +964,20 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 					}
 // "I found the solution in my case: I didn't add the OpenSSL libraries libeay32.dll and ssleay32.dll to the directory where my exe resides in."
 
-					/*
+					/ *
 					QList<QSslCertificate> certificates = sslconf.caCertificates();
 					QSslCertificate certificate = QSslCertificate::QSslCertificate(PROXY_CACERT,QSsl::Der);
 					certificates.append(QSslCertificate::fromData(certificate.toAscii(), QSsl::Der));
 					sslconf.setCaCertificates(certificates);
-					*/
-					/*bool bRet = request.addDefaultCaCertificates(certFile,QSsl::Der);
+					* /
+					/ *bool bRet = request.addDefaultCaCertificates(certFile,QSsl::Der);
 					if( bRet ){
 						qDebug() << "Added Default CaCertificate: " <<  certFile;
 						sslconf.addDefaultCaCertificates(certFile,QSsl::Der);
 					}else{
 						qDebug() << "Failed to Add Default CaCertificate: " <<  certFile;
-					}*/
-				}
-				//else{
-					sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);
-				//}
+					}* /
+				}*/
 				request.setSslConfiguration(sslconf);
 				request.setUrl(QUrl(QString("https://%1:%2/").arg(host->ReqHostAddress()).arg(host->ReqHostPort())));
 			}

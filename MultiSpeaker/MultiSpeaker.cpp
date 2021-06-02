@@ -136,6 +136,8 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 	//QString certFile = "C:\\Users\\D3M907\\OneDrive - PNNL\\Desktop\\Projects\\MS-SPEAK\\Phase3\\ms-speak\\Installer\\mss.crt";
 		//s.value(SK_SSL_CERT_FILE, QString()).toString();
 
+	//sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);
+
 
 	/*
 	 * Searches all files in the path for certificates encoded in the specified format
