@@ -9,6 +9,12 @@
 # curl --silent -S --proxy http://127.0.0.1:3128 --url 'http://127.0.0.1:8080' --data @GetMethods.xml user-agent = "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/V5.0/wsdl/DR_Server/GetMethods" referer = "http://buster.test.com/" --output response.xml
 #
 
+# non proxy from cmdline:   need use double quotes, don't use equal sign, use -- prefixes:
+#
+# curl --url "http://127.0.0.1:8080" --data @ODEventNotification.xml -A "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification" --referer "http://buster.test.com/" --output response.xml
+#
+
+
 --proxy http://127.0.0.1:3128
 url = "http://127.0.0.1:8080"
 --data @ODEventNotification.xml
