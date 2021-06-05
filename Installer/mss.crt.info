@@ -1,0 +1,91 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            56:42:dc:e2:e4:f1:91:6b:f0:06:1c:77:94:0a:21:c2:1d:6b:07:28
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C = US, ST = WA, L = Richland, O = Pacific Northwest National Laboratory, OU = EED, CN = *.pnnl.gov, emailAddress = carl.miller@pnnl.gov
+        Validity
+            Not Before: Jun  4 21:33:20 2021 GMT
+            Not After : Jun  4 21:33:20 2022 GMT
+        Subject: C = US, ST = WA, L = Richland, O = Pacific Northwest National Laboratory, OU = EED, CN = *.pnnl.gov, emailAddress = carl.miller@pnnl.gov
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:be:82:85:b0:e9:11:23:3b:b2:23:9a:34:8b:df:
+                    59:d4:b6:29:33:2f:ea:ac:84:42:d3:e7:d6:09:58:
+                    9f:91:49:d1:43:a8:27:15:d4:e0:d6:05:20:0a:d4:
+                    ed:cd:f6:15:86:df:0f:6d:56:01:a0:e5:b4:27:c0:
+                    43:3f:9e:b9:9a:a9:de:88:5e:1d:21:b1:6d:c4:27:
+                    90:30:7c:89:8b:11:f9:86:2a:62:08:e3:a0:07:f1:
+                    7d:34:93:8e:ff:f6:da:57:20:ff:3d:43:fa:bb:f7:
+                    ad:6e:f8:cb:57:f7:23:1f:46:be:be:24:5f:4c:4b:
+                    1f:81:7b:03:10:23:3a:25:28:3c:eb:1d:74:04:aa:
+                    e0:c0:65:2f:a2:c1:f8:93:57:b5:d2:95:5c:40:11:
+                    bf:75:f5:42:fb:50:0b:32:31:46:d2:c5:b8:19:78:
+                    69:c8:e1:8c:de:77:d0:4c:58:e2:6d:9f:24:4f:ae:
+                    5e:d7:59:66:e5:da:09:60:00:b1:80:e0:60:7d:8d:
+                    4a:0b:1f:d7:d4:dd:06:52:87:45:83:c4:00:0a:b8:
+                    85:4e:0c:54:c8:e1:d1:ce:99:ba:b5:d3:fe:dc:c7:
+                    41:95:8b:ab:d7:e2:1f:e3:fc:dc:2c:12:4e:5e:31:
+                    9d:a3:2b:e0:07:28:f2:a1:cb:6f:3e:98:14:82:cf:
+                    17:11
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Key Usage: 
+                Digital Signature, Key Agreement, Certificate Sign, CRL Sign
+            X509v3 Subject Key Identifier: 
+                DB:B3:BC:51:1F:17:04:9A:B1:0A:45:66:9B:D0:88:0C:BC:6C:64:4F
+            X509v3 Authority Key Identifier: 
+                keyid:DB:B3:BC:51:1F:17:04:9A:B1:0A:45:66:9B:D0:88:0C:BC:6C:64:4F
+
+            X509v3 Basic Constraints: critical
+                CA:TRUE
+            X509v3 Subject Alternative Name: 
+                DNS:pnl.gov, DNS:pnnl.gov, DNS:*.pnl.gov, DNS:*.pnnl.gov, DNS:localhost, DNS:localhost.localdomain, DNS:127.0.0.1, DNS:192.168.1.3, DNS:192.168.1.14, DNS:::1, DNS:fe80::1, IP Address:127.0.0.1, IP Address:0:0:0:0:0:0:0:1, IP Address:192.168.1.1, IP Address:192.168.1.2, IP Address:192.168.1.3, IP Address:192.168.1.4, IP Address:192.168.1.14
+    Signature Algorithm: sha256WithRSAEncryption
+         49:84:2e:75:9b:4b:92:d9:b0:c5:e9:69:c1:91:a8:30:5c:ce:
+         08:5f:b3:53:1b:99:57:9a:6a:dc:3e:15:be:f3:ee:e5:ea:9d:
+         46:6e:c3:c4:20:52:bd:81:65:41:3b:1c:4e:99:4f:90:fa:d5:
+         91:fb:3f:18:bd:05:9c:55:f9:a6:29:53:6d:c8:56:bc:7f:41:
+         fe:89:10:60:ff:c2:8a:2d:76:a8:d8:2f:8c:59:b2:d4:66:03:
+         47:1c:50:a7:2a:44:db:d5:b5:5e:69:73:ea:1a:b9:bd:aa:6c:
+         b9:21:8c:30:80:fb:83:25:a4:df:2c:2d:3f:e4:69:5d:e4:21:
+         e4:2a:35:5e:3d:18:df:2b:3e:69:c3:a9:7d:c7:4a:c0:6b:25:
+         38:5e:01:9c:45:e7:f7:fe:04:5d:d8:aa:38:fb:e1:c8:c8:b2:
+         ee:1c:96:6d:f9:46:53:a1:02:5a:b8:fe:54:08:5a:fd:3f:da:
+         e5:07:ae:72:78:aa:9b:44:61:64:96:3a:31:b3:c0:4c:cd:b5:
+         5c:ed:34:bb:7d:e8:a2:b0:63:a6:89:27:37:d9:c2:26:36:00:
+         80:5e:9d:23:c2:07:c9:d3:5f:51:cb:9d:24:59:bd:bd:c1:3e:
+         7a:6a:e0:bd:b2:25:55:a3:11:9f:9b:0c:af:1b:4b:d2:48:84:
+         76:a9:c2:7b
+-----BEGIN CERTIFICATE-----
+MIIFAjCCA+qgAwIBAgIUVkLc4uTxkWvwBhx3lAohwh1rBygwDQYJKoZIhvcNAQEL
+BQAwgaUxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UEBwwIUmljaGxh
+bmQxLjAsBgNVBAoMJVBhY2lmaWMgTm9ydGh3ZXN0IE5hdGlvbmFsIExhYm9yYXRv
+cnkxDDAKBgNVBAsMA0VFRDETMBEGA1UEAwwKKi5wbm5sLmdvdjEjMCEGCSqGSIb3
+DQEJARYUY2FybC5taWxsZXJAcG5ubC5nb3YwHhcNMjEwNjA0MjEzMzIwWhcNMjIw
+NjA0MjEzMzIwWjCBpTELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAldBMREwDwYDVQQH
+DAhSaWNobGFuZDEuMCwGA1UECgwlUGFjaWZpYyBOb3J0aHdlc3QgTmF0aW9uYWwg
+TGFib3JhdG9yeTEMMAoGA1UECwwDRUVEMRMwEQYDVQQDDAoqLnBubmwuZ292MSMw
+IQYJKoZIhvcNAQkBFhRjYXJsLm1pbGxlckBwbm5sLmdvdjCCASIwDQYJKoZIhvcN
+AQEBBQADggEPADCCAQoCggEBAL6ChbDpESM7siOaNIvfWdS2KTMv6qyEQtPn1glY
+n5FJ0UOoJxXU4NYFIArU7c32FYbfD21WAaDltCfAQz+euZqp3oheHSGxbcQnkDB8
+iYsR+YYqYgjjoAfxfTSTjv/22lcg/z1D+rv3rW74y1f3Ix9Gvr4kX0xLH4F7AxAj
+OiUoPOsddASq4MBlL6LB+JNXtdKVXEARv3X1QvtQCzIxRtLFuBl4acjhjN530ExY
+4m2fJE+uXtdZZuXaCWAAsYDgYH2NSgsf19TdBlKHRYPEAAq4hU4MVMjh0c6ZurXT
+/tzHQZWLq9fiH+P83CwSTl4xnaMr4Aco8qHLbz6YFILPFxECAwEAAaOCASYwggEi
+MAsGA1UdDwQEAwIBjjAdBgNVHQ4EFgQU27O8UR8XBJqxCkVmm9CIDLxsZE8wHwYD
+VR0jBBgwFoAU27O8UR8XBJqxCkVmm9CIDLxsZE8wDwYDVR0TAQH/BAUwAwEB/zCB
+wQYDVR0RBIG5MIG2ggdwbmwuZ292gghwbm5sLmdvdoIJKi5wbmwuZ292ggoqLnBu
+bmwuZ292gglsb2NhbGhvc3SCFWxvY2FsaG9zdC5sb2NhbGRvbWFpboIJMTI3LjAu
+MC4xggsxOTIuMTY4LjEuM4IMMTkyLjE2OC4xLjE0ggM6OjGCB2ZlODA6OjGHBH8A
+AAGHEAAAAAAAAAAAAAAAAAAAAAGHBMCoAQGHBMCoAQKHBMCoAQOHBMCoAQSHBMCo
+AQ4wDQYJKoZIhvcNAQELBQADggEBAEmELnWbS5LZsMXpacGRqDBczghfs1MbmVea
+atw+Fb7z7uXqnUZuw8QgUr2BZUE7HE6ZT5D61ZH7Pxi9BZxV+aYpU23IVrx/Qf6J
+EGD/wootdqjYL4xZstRmA0ccUKcqRNvVtV5pc+oaub2qbLkhjDCA+4MlpN8sLT/k
+aV3kIeQqNV49GN8rPmnDqX3HSsBrJTheAZxF5/f+BF3Yqjj74cjIsu4clm35RlOh
+Alq4/lQIWv0/2uUHrnJ4qptEYWSWOjGzwEzNtVztNLt96KKwY6aJJzfZwiY2AIBe
+nSPCB8nTX1HLnSRZvb3BPnpq4L2yJVWjEZ+bDK8bS9JIhHapwns=
+-----END CERTIFICATE-----
