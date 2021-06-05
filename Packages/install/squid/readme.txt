@@ -16,12 +16,18 @@ and (though i'm not sure these did anything useful):
 	IP.7 = 192.168.1.14
 
 # create squid ca cert:
-	openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -extensions v3_ca -keyout mspCA.pem -out mspCA.pem	
+	openssl req -new -newkey rsa:2048 -sha256 -days 365 -nodes -x509 -extensions v3_ca -keyout squidCA.pem -out squidCA.pem	
+	
+	# .crt or .cer stands simply for certificate, usually an X509v3 certificate, 
+	# the encoding could be PEM or DER; a certificate contains the public key and
+	# the signature by the Certificate Authority over the data and public key.
+	openssl x509 -in squidCA.pem -outform DER -out squidCA.der
+	
 	sudo mkdir /usr/local/squid/ssl_cert
 	sudo chown nobody:nogroup /usr/local/squid/ssl_cert
 	sudo chmod 700 /usr/local/squid/ssl_cert
-	sudo cp mspCA.pem /usr/local/squid/ssl_cert
-	sudo chown nobody:nogroup /usr/local/squid/ssl_cert/mspCA.pem
+	sudo cp squidCA.pem /usr/local/squid/ssl_cert
+	sudo chown nobody:nogroup /usr/local/squid/ssl_cert/squidCA.pem
 		1182  cd Packages/squid-4.7/
 		1184  ./configure --with-openssl --enable-ssl-crtd
 		1186  sudo apt-get install libssl-dev
@@ -49,21 +55,46 @@ and (though i'm not sure these did anything useful):
 
 # update ca store:	
 	sudo ls /usr/local/share/ca-certificates
-	sudo rm /usr/local/share/ca-certificates/mssca.crt
-	sudo cp mss.crt /usr/local/share/ca-certificates/mssca.crt
+	sudo rm /usr/local/share/ca-certificates/mssCA.crt
+	
+	# i think on a separate box, like windoze, import to store the windows way
+	sudo cp mss.crt /usr/local/share/ca-certificates/mssCA.crt
 	
 	# i think i only need do the following since i can't load the .der file into a browser....
-	sudo cp /usr/local/squid/ssl_cert/mspCA.pem /usr/local/share/ca-certificates/mspCA.crt
+	sudo cp /usr/local/squid/ssl_cert/squidCA.pem /usr/local/share/ca-certificates/squidCA.crt
 	
-	sudo ls -l /etc/ssl/certs/ms*
+	sudo ls -l /etc/ssl/certs/*CA*
 	sudo update-ca-certificates -f
+	#
+	#  FOR LINUX
+	# 	After these steps the new CA is known by system utilities like curl and get. 
+	# Unfortunately, this does not affect most web browsers like Mozilla Firefox or Google Chrome.
+	# Web browsers like Firefox, Chromium, Google Chrome, Vivaldi and even e-mail clients like Mozilla 
+	# Thunderbird don’t make use of the OS trust store, but use their own certificate trust store. 
+	# These trust stores are files in the user directory, named “cert8.db” and “cert9.db” (for newer versions). 
+	# You can modify the trust store files by using the “certutil” tool. To install certutil, execute the
+	# following apt command:
+	#     sudo apt install libnss3-tools
+	#
+	#  FOR WINDOZE
+	# New root certificates can easily be imported into Windows via Active Directory. However, if you do not 
+	# have Active Directory enabled on your Windows machines, this is how you manually 
+	# import your certificate:
+	# 		Change your certificate’s file name extension from .pem to .crt and open the file.
+	#		Select “Install certificate” => “Local machine” and browse the certificate store. 
+	#		Your certificate should be installed into
+	#			“Trusted Root Certification Authorities”.
+	#
+	# On Windows most webbrowsers and other applications use the OS trust store, so Google Chrome should accept
+	# your certificates instantly. However, Firefox needs special treatment. 
+
 	
 # modify squid.conf
 /usr/local/squid/etc/squid.conf
 	added acl SSL_ports port  8443
 
 	http_port 3128 ssl-bump \
-	cert=/usr/local/squid/ssl_cert/mspCA.pem \
+	cert=/usr/local/squid/ssl_cert/squidCA.pem \
 	generate-host-certificates=on dynamic_cert_mem_cache_size=4MB
 
 	# For squid 4.x 
