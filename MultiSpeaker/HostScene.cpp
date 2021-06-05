@@ -916,7 +916,7 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 				{
 					// Trust store: which CAs or self-signed certs we are going to trust.
 					// We use setCaCertificates() instead than QSslSocket::addCaCertificates()
-					// because we don't want to trust the ~200 default CAs.
+					/* because we don't want to trust the ~200 default CAs.
 					QList<QSslCertificate> trustedCas = QSslCertificate::fromPath("/home/carl/mspCAder.pem");
 					if (trustedCas.empty()) {
 						//qFatal("Error: no trusted Cas");
@@ -925,15 +925,21 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 					else{
 						trustedCas.append( QSslCertificate::fromPath("/home/carl/mss.pem") );
 						sslconf.setCaCertificates(trustedCas);
-					}//
+					}*/
 					/* QSslSocket::VerifyNone will not request a certificate from the peer.
-								  ::QueryPeer will request a certificate from the peer, but
+								 ::QueryPeer will request a certificate from the peer, but
 									does not require this certificate to be valid.
+								 ::VerifyPeer will request a certificate from the peer during
+									the SSL handshake phase, and requires that this certificate
+									is valid.  On failure, will emit the sslErrors() signal.
+									This mode is the default for clients.
 					*/
-					sslconf.setPeerVerifyMode(QSslSocket::QueryPeer);
+					//sslconf.setPeerVerifyMode(QSslSocket::QueryPeer);
+					sslconf.setPeerVerifyMode(QSslSocket::VerifyPeer);
 				}
 				else{
 					sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);// 2021: SSL_SELF_CERT_CN
+					//sslconf.setPeerVerifyMode(QSslSocket::VerifyPeer);
 				}
 				/*
 				if( theApp->ProxyEnabled() )

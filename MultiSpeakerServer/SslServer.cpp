@@ -66,6 +66,8 @@
 #include <QMessageBox>
 #include <QSslSocket>
 #include <QThread>
+// #include <QTime>
+#include <QCoreApplication>
 
 #include "ServerWorker.h"
 #include "SslServer.h"
@@ -87,7 +89,8 @@ SslServer::SslServer( QObject* parent)
 	m_headerRead(false),
 	m_parseContentLengthFlag(false),
 	m_parseSourceAndDestIdFlag(false),
-	m_Supported(false)
+	m_Supported(false),
+	m_bytesYettoRead(0)
 {
 	/*
 	 * qt.network.ssl: Incompatible version of OpenSSL
@@ -238,9 +241,159 @@ bool SslServer::SetSslPrivateKey(const QString& fileName, QSsl::KeyAlgorithm alg
 	m_sslPrivateKey = QSslKey(keyFile.readAll(), algorithm, format, QSsl::PrivateKey, passPhrase);
 	return true;
 }
+
+// 6.4.2021 - took ServerWorker::ReadMessage to use here since, we weren't
+//			getting all the data, without delaying at a breakpoint
+void SslServer::ReadMessage(QSslSocket* socket)
+{
+	//QByteArray Header = "\n*** HTTP Header ***\n";
+	QByteArray Header = "\n";
+	QString errString = "Failed to read Header.";
+	bool ContentLenRead = false;
+	quint16 content_len=0;
+	qint64 initBytesAvailable = socket->bytesAvailable(); // max tcp packet: 65,535, dunno why its a qint64...
+	qint64 bytesAvailable=initBytesAvailable;
+
+	qDebug() << "Initial Bytes Available:" << initBytesAvailable;
+	//emit Message("");
+	if( initBytesAvailable && (m_bytesYettoRead == 0) )
+	{
+		m_headerRead = false;
+		// the header ends with a final empty line, that separates the data block from the header block.
+		QString CLString;
+		QString CL = "Content-Length:";
+		//bool once=false;
+		do{
+			if( socket->canReadLine() ){
+				QString line =  socket->readLine();
+				if( line.isEmpty() ){
+					emit MessageLF(	"Unexpected Data Received: \\u0016\\u0003\\u0001\\u0002" );
+					break; //  this seems to happen if we listen on nonssl 8443 and
+					// MS sends a request as SSL
+				}
+				Header.append(line);
+				if( line.startsWith(CL) ){
+					ContentLenRead = true;
+					CLString = line;
+				}
+				else if( ContentLenRead ){
+					if( line.trimmed().isEmpty() )
+						m_headerRead = true;
+				}
+				/*else{
+					if( line.isEmpty() ){
+						break;
+					}
+					if( !once )
+					{
+						errString = "";
+						QTextStream out(&errString);
+						//out << "Non Content-Len Data Read : " << line.toUtf8().toBase64();
+						out << "Non Content-Len Data Read : " << line.toUtf8();
+						emit MessageLF(errString.toUtf8());
+						qDebug() << line;
+						once=true;
+					}
+				}*/
+			}
+			else{
+				QTime dieTime= QTime::currentTime().addSecs(1);
+				while (QTime::currentTime() < dieTime)
+					QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+			}
+			if( socket->isValid() )
+				bytesAvailable = socket->bytesAvailable();
+			//qDebug() << "Bytes Now Available:" << bytesAvailable; // 267
+		}while( !m_headerRead && bytesAvailable );
+
+		if( ContentLenRead ){
+			QStringList LenToken = CLString.split(CL, QString::SkipEmptyParts, Qt::CaseInsensitive);
+			if (LenToken.length() == 1){
+				QTextStream stream(&LenToken[0]);
+				stream >> content_len;
+				//qDebug() << "Content Length is " << content_len;
+				m_bufferSize = content_len;
+				m_bytesYettoRead = content_len;
+			}
+			else{
+				errString = "Failed to extract " + CL;
+			}
+		}
+		else{
+			errString = "Failed to read Content Length";
+		}
+		if (!m_headerRead)
+		{
+			qDebug() << errString;
+			emit MessageLF(errString.toLatin1());
+			socket->readAll(); // read any remaining data
+			m_bytesYettoRead = 0;
+			return;
+		}
+		emit Message(Header);
+		//qDebug() << QString("Header Size: %1.").arg(initBytesAvailable-bytesAvailable);
+		//qDebug() << "Bytes left to read: " << bytesAvailable;
+	}
+	else{
+		if( initBytesAvailable == 0 ){
+			//qDebug() << "No bytesAvailable";
+			return;
+		}
+		m_bufferSize =  static_cast <int>(m_bytesYettoRead);
+	}
+	if( bytesAvailable == 0 )
+		return;
+	//Header = "*** Message Content ***\n"; // note: reusing 'Header' string
+	//emit Message(Header);
+	QByteArray block;
+	if (m_bufferSize == 0) // buffer size of 0 means we are streaming
+	{
+		block = socket->readAll(); // We are streaming so read it all
+		emit Message(block);  // We are streaming with no idea of size of message so just emit and return
+		qDebug() << "Streaming";
+		m_bytesYettoRead = 0;
+		return;
+	}
+	else
+		block = socket->read(m_bufferSize); //  - m_bytesRead, Read at most what is left in this message
+
+	m_buffer.append(block);
+	m_bytesRead = block.size();
+	m_bytesYettoRead -= m_bytesRead;
+	if (m_bytesRead >= m_bufferSize)
+	{
+		//qDebug() << "Read all " << m_bytesRead << " bytes out of " << m_bufferSize;
+		emit Message(static_cast <qint32>(m_bytesRead), m_buffer);
+		//m_buffer.clear();
+	}
+	else{
+		//qDebug() << "Only Read " << m_bytesRead << " bytes out of " << m_bufferSize;
+		emit Message(m_buffer);
+		//m_buffer.clear();
+		return;
+	}
+	if (socket->bytesAvailable()){
+		qDebug() << "recursive ReadMessage";
+		ReadMessage(socket); // recursive, will reset ContentLenRead
+	}
+	//QByteArray respdata = m_responseFile;
+	QString respdata = ResponseFile();
+	if( respdata.isEmpty() )
+		respdata="\n*** No Response File Selected *** ";
+
+	SendResponse(200, respdata, socket, m_buffer);
+	m_buffer.clear();
+
+	//  reset;sudo tcpdump -i lo -v	# capture loopback traffic
+	//  show all data, in hex:  sudo tcpdump -i lo tcp and dst port 8888 -s0 -vv -X -c 1000
+	// reset;sudo tcpdump -i lo tcp and dst port 8888 -s0 -A -c 100 -q -t -v >= 400
+}
+
 //------------------------------------------------------------------------------
 // ReadMessage
-//
+/*
+// 6.4.2021 - took ServerWorker::ReadMessage to use here since, we weren't
+//			getting all the data, without delaying at a breakpoint
 void SslServer::ReadMessage(QSslSocket* socket)
 {
 	qint64 bytesAvailable = socket->bytesAvailable();
@@ -294,13 +447,13 @@ void SslServer::ReadMessage(QSslSocket* socket)
 
 		in >> data;
 		//qDebug() << data.count() << data;
-		/*
+		/ *
 		if (m_parseSourceAndDestIdFlag)
 			//   static_cast <unsigned int>(
 			;//emit Message(m_srcId, m_dstId, static_cast <qint32>(m_bytesRead), m_buffer);
 		else
 			emit Message(static_cast <qint32>(m_bytesRead), m_buffer);
-		*/
+		* /
 		m_headerRead = false;
 	}
 	if (socket->bytesAvailable())
@@ -313,7 +466,7 @@ void SslServer::ReadMessage(QSslSocket* socket)
 	SendResponse(200, respdata, socket, m_buffer);
 	m_buffer.clear();
 
-}
+}*/
 
 //------------------------------------------------------------------------------
 // SendResponse
@@ -363,10 +516,12 @@ void SslServer::OnEncrypted()
 //
 void SslServer::OnEncryptedBytesWritten(qint64 written)
 {
-	QString qs = QString("SslServer::OnEncryptedBytesWritten: %1\n").arg(written);
+	QString qs = QString("\nSslServer::OnEncryptedBytesWritten: %1\n").arg(written);
 	QByteArray qb = qs.toUtf8();
 	emit Message(qb);
+	//emit MessageLF(qb);
 }
+
 //------------------------------------------------------------------------------
 // OnError
 //

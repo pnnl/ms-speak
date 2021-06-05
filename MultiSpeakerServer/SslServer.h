@@ -89,6 +89,7 @@ private:
 	bool m_parseSourceAndDestIdFlag;
 	bool m_Supported;
 	//QString m_responseFile;
+	qint64 m_bytesYettoRead;
 
 public:
 	SslServer(QObject* parent = Q_NULLPTR);
