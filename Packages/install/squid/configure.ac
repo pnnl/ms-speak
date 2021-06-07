@@ -5,6 +5,10 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
+## To create a configure script with Autoconf, you need to write an Autoconf input file 
+##      configure.ac (or configure.in) and run autoconf on it.
+## To create configure from configure.ac, run the autoconf program with no arguments. autoconf processes configure.ac
+
 AC_INIT([Squid Web Proxy],[4.7-20190507-r2e17b0261],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
@@ -1357,16 +1361,15 @@ if test "x$with_openssl" = "xyes"; then
     AC_CHECK_LIB(crypto,[CRYPTO_new_ex_data],[LIBOPENSSL_LIBS="-lcrypto $LIBOPENSSL_LIBS"],[
       AC_MSG_ERROR([library 'crypto' is required for OpenSSL])
     ],$LIBOPENSSL_LIBS)
-
-	#
-    #AC_CHECK_LIB(ssl,[SSL_library_init],[LIBOPENSSL_LIBS="-lcrypto -lssl $LIBOPENSSL_LIBS"],[
-    #  AC_MSG_ERROR([**** library 'ssl' is STILL required for OpenSSL ***])
-    #],$LIBOPENSSL_LIBS)
-	FOUND_SSL_LIB="no"
-     AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
-     AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])
-     AS_IF([test "x$FOUND_SSL_LIB" = xno], [AC_MSG_ERROR([**** library 'ssl' is YET AGAIN required for OpenSSL ****])])
+    AC_CHECK_LIB(ssl,[SSL_library_init],[LIBOPENSSL_LIBS="-lssl $LIBOPENSSL_LIBS"],[
+      AC_MSG_ERROR([library 'ssl' is required for OpenSSL])
+    ],$LIBOPENSSL_LIBS)
   ])
+  # the following commenteds were above, but build failed for bumping in the VM
+    #-- FOUND_SSL_LIB="no"
+    #--  AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
+    #--  AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])
+    #--  AS_IF([test "x$FOUND_SSL_LIB" = xno], [AC_MSG_ERROR([**** library 'ssl' is YET AGAIN required for OpenSSL ****])])
 
   # This is a workaround for RedHat 9 brain damage..
   if test -d /usr/kerberos/include -a -f /usr/include/openssl/kssl.h; then
