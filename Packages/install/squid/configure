@@ -24141,6 +24141,11 @@ else
 $as_echo "yes" >&6; }
 
 fi
+  # the following commenteds were above, but build failed for bumping in the VM
+    #-- FOUND_SSL_LIB="no"
+    #--  AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
+    #--  AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])
+    #--  AS_IF([test "x$FOUND_SSL_LIB" = xno], [AC_MSG_ERROR([**** library 'ssl' is YET AGAIN required for OpenSSL ****])])
 
   # This is a workaround for RedHat 9 brain damage..
   if test -d /usr/kerberos/include -a -f /usr/include/openssl/kssl.h; then
@@ -46344,9 +46349,6 @@ if test "$no_recursion" != yes; then
   # Remove --cache-file, --srcdir, and --disable-option-checking arguments
   # so they do not pile up.
   ac_sub_configure_args=
-  # Add --quiet option if used
-  test "$silent" = yes &&
-    ac_sub_configure_args="$ac_sub_configure_args --quiet"
   ac_prev=
   eval "set x $ac_configure_args"
   shift
