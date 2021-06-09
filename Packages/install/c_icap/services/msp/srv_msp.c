@@ -1596,14 +1596,13 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd->bIsSSL = false;
 	mspd->Command = BCC_NO_CMD;
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
-	ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
+	ci_debug_printf(4, "\n*** msp_preview_handler:: ***\n");
 	// TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
-	//return CI_MOD_CONTINUE;
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
 	if( !ci_req_hasbody(req) ){
-		ci_debug_printf(3, "msp_preview_handler::no body data.\n");
+		ci_debug_printf(4, "msp_preview_handler::no body data.\n");
 		pHeader = ci_http_request_headers(req);
 		if( !pHeader ){
 			ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
@@ -1618,34 +1617,31 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		const char *ptr;
 		ptr = strnstr( (const char *)&buf, ":8443 HTTP", len);
 		if( ptr ){
-			ci_debug_printf(3, "SSL, Found: %s.\n", ":8443 HTTP");
+			ci_debug_printf(4, "SSL, Found: %s.\n", ":8443 HTTP");
 			mspd->bIsSSL = true;
 			return CI_MOD_CONTINUE;
 		}
 		ptr = strnstr( (const char *)&buf, ":443 HTTP", len);
 		if( ptr ){
-			ci_debug_printf(3, "SSL, Found: %s, returning CI_MOD_CONTINUE.\n", ":443 HTTP");
+			ci_debug_printf(4, "SSL, Found: %s, returning CI_MOD_CONTINUE.\n", ":443 HTTP");
 			mspd->bIsSSL = true;
 			return CI_MOD_CONTINUE;
 		}
 
-		//ci_debug_printf(0, "msp_preview_handler: NO BODY:\n");
-		const char *referer = ci_headers_value(pHeader, "Referer"); // : http://192.168.1.14:3128/icap?cmd=2 [&arg=]
+		const char *referer = ci_headers_value(pHeader, "Referer");
 		if( !referer ){
-			ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
-			if( mspd->bIsSSL ){
-				ci_debug_printf(3, "SSL, Found %s.\n", "On Response?");
+			//ci_debug_printf(0, "msp_preview_handler::no referer in header\n");
+			if( mspd->bIsSSL ){ // response?
+				//ci_debug_printf(4, "SSL, Found %s.\n", "!referer");
 				return CI_MOD_CONTINUE;
 			}
 			else{
-
+				/*
 				const int REQ_TYPE = ci_req_type(req);
 				if( REQ_TYPE == ICAP_REQMOD ){
-					ci_debug_printf(3, "msp_preview_handler::SSL, %s.\n", "REQ_TYPE == ICAP_REQMOD");
 					pHeader = ci_http_request_headers(req);
 				}
 				else{
-					ci_debug_printf(3, "msp_preview_handler::SSL, %s.\n", "REQ_TYPE == ICAP_RESPMOD");
 					pHeader = ci_http_response_headers(req);
 				}
 
@@ -1653,15 +1649,13 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 				size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 				ci_debug_printf(0, "msp_preview_handler: HTTP HEADER(!referer):\n");
 				msp_dumphex(buf, len);
-					
-				ci_debug_printf(3, "msp_preview_handler::SSL, %s.\n", "NOT mspd->bIsSSL");
 				
-				//unlock_data(req);
+				//unlock_data(req);*/
 				mspd->bIsSSL = true;
-				ci_debug_printf(3, "msp_preview_handler:: %s.\n", "returning CI_MOD_CONTINUE");
 				return CI_MOD_CONTINUE;//CI_ERROR;
 			}
 		}
+		// http://192.168.1.14:3128/icap?cmd=2 [&arg=]
 		ci_debug_printf(4, "Referer: %s.\n", referer);
 		char const *needle = "icap?cmd=";
 		size_t needle_length = strlen(needle);
@@ -1723,18 +1717,18 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			mspd->bHasArg = false;
 		}
 		return CI_MOD_CONTINUE;
-	}
-	else{
+	} // !ci_req_hasbody
+	/*else{
 		ci_debug_printf(3, "msp_preview_handler::DOES have BODY!!!\n");
-		/* the body may not be available yet, in preview_handler...
+		/ * the body may not be available yet, in preview_handler...
 		char *buf2 = body_data_buf( &mspd->body );
 		if( !buf2 ){
 			ci_debug_printf(0, "\n*** msp_preview_handler:: FAILED TO GET BODY BUFFER  ***\n");
 		}
 		else{
 			msp_dumphex(buf2, mspd->expectedData);
-		}*/
-	}
+		}* /
+	}*/
 	/*
 	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
@@ -1772,14 +1766,12 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_ERROR; 
 	}
 
-	
 	char buf[1000];
 	size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+	/*
 	ci_debug_printf(0, "msp_preview_handler:HTTP HEADER:\n");
 	msp_dumphex(buf, len);
-	
-	
-	
+	*/
 	const char *ptr;
 	ptr = strnstr( (const char *)&buf, "https://", len);
 	if( ptr ){
@@ -1833,16 +1825,16 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	}
 	if( strstr(content_type, "text/xml") == NULL ){
 		if( mspd->bIsSSL ){
-			ci_debug_printf(0, "msp_preview_handler content type %s being allowed for SSL testing..\n", content_type);
+			ci_debug_printf(4, "msp_preview_handler content type %s being allowed for SSL testing..\n", content_type);
 		}
 		else{
 			ci_debug_printf(0, "msp_preview_handler content type %s will not be processed...\n", content_type);
 			return CI_ERROR; // TODO: should we throw an error or allow?
 		}
 	}
-	else{
-		ci_debug_printf(0, "msp_preview_handler content type %s found\n", content_type);
-	}
+	//else{
+	//	ci_debug_printf(0, "msp_preview_handler content type %s found\n", content_type);
+	//}
 
 	// If there is a Content-Length header, check it since we do not want to
 	//		process body data with more than MaxBodyData size
@@ -2005,6 +1997,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	ci_debug_printf(2,"handle_request_preview:: Child pid: %d: \n",pid);
 #endif
 
+	/*//// staart of ssl testing ///////////////
 	// body_data_buf::body type: MEMORY
 	if( mspd->bIsSSL ){
 		if( ci_req_hasbody(req) ){
@@ -2045,7 +2038,13 @@ int msp_end_of_data_handler(ci_request_t * req)
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(non-ssl)\n");
 		}
 	}
-
+	*/ // end of ssl testing ///////////////
+	if( mspd->bIsSSL ){
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL DETECTED\n");
+	}
+	else{
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::no SSL detected\n");
+	}
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
