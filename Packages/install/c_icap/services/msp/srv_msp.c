@@ -310,10 +310,6 @@ Accept-Encoding: gzip, deflate
 Accept-Language: en-US,*
 User-Agent: Mozilla/5.0
 
-msp_preview_handler::no body data.
-msp_preview_handler::no referer in header
-An error occured in preview handler (outside preview)! return code: -1, req->allow204=1, req->allow206=0
-
 	others packages that may need to be installed:
 		sudo apt-get install libglib2.0-dev
 		sudo apt-get install libxml2
@@ -806,6 +802,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	TESTER_DATA *pRetData=NULL;
 	sqlite3 *db;
 	char *zErrMsg = 0;
+	const char *dbErr;
 	int rc;
 	char *sql;
 	/* Open database */
@@ -814,7 +811,12 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 
 	rc = sqlite3_open_v2(pdbFile, &db, SQLITE_OPEN_READONLY, NULL);  
 	if( rc ){
-		ci_debug_printf(0, "Can't open database: %s\n", sqlite3_errmsg(db));
+		if( access( pdbFile, F_OK ) == 0 ) {
+			dbErr = sqlite3_errmsg(db);
+		} else {
+			dbErr = "File Does Not Exists.";
+		}
+		ci_debug_printf(0, "    Could not open database: %s\n", dbErr);
 		return(pRetData);
 	} else{
 		;//ci_debug_printf(0, "Opened database successfully\n");
@@ -853,7 +855,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 	sqlite3_finalize(stmt);	
 
 	if( gblNumBizRules == 0 ){
-		ci_debug_printf(0, "DATABASE FAILURE: %s\n", "No Active Tester Rules Found");
+		ci_debug_printf(0, "DATABASE ISSUE: %s\n", "No Active Tester Rules Found");
 		sqlite3_close(db);
 		return(pRetData);
 	}else{
@@ -925,15 +927,21 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 
 void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgLvl )
 {
-	ci_debug_printf(dbgLvl,"Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
-	for( int i=0; i<NumRules; i++ ){
-		ci_debug_printf(dbgLvl, "    Name: %s\n", pRules->m_Name);
-		ci_debug_printf(dbgLvl, "          Function: %s, Endpoint: %s, Method: %s\n",
-			pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
-		ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxHour: %ld, minHour: %ld, Inverse: %ld, maxTemp: %ld, minTemp: %ld\n",
-			pRules->m_maxReq,pRules->m_maxRPH,pRules->m_endHour, pRules->m_startHour, pRules->m_Inverse, pRules->m_maxTemp, pRules->m_minTemp);
-		ci_debug_printf(dbgLvl,"          Email: %s\n\n",pRules->m_Email);
-		pRules++;
+	
+	if( gblpTesterData ){ // DB has been successfully loaded ?
+		ci_debug_printf(dbgLvl,"Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
+		for( int i=0; i<NumRules; i++ ){
+			ci_debug_printf(dbgLvl, "    Name: %s\n", pRules->m_Name);
+			ci_debug_printf(dbgLvl, "          Function: %s, Endpoint: %s, Method: %s\n",
+				pRules->m_Function,pRules->m_EndPoint,pRules->m_Method);
+			ci_debug_printf(dbgLvl,"          numReq: %ld, numRPH: %ld, maxHour: %ld, minHour: %ld, Inverse: %ld, maxTemp: %ld, minTemp: %ld\n",
+				pRules->m_maxReq,pRules->m_maxRPH,pRules->m_endHour, pRules->m_startHour, pRules->m_Inverse, pRules->m_maxTemp, pRules->m_minTemp);
+			ci_debug_printf(dbgLvl,"          Email: %s\n\n",pRules->m_Email);
+			pRules++;
+		}
+	}
+	else{
+		ci_debug_printf(dbgLvl, "NO DATABASE HAS BEEN LOADED YET.\n");
 	}
 }
 
@@ -1345,7 +1353,7 @@ bool LoadActiveRules( char *pDatabaseName ){
 			}
 		}
 		else if( gblUsingTempRule ){ // also, m_AppId must not be NULL
-			ci_debug_printf(4, "\n *** WAITING FOR WEATHER UPDATE APPLICATION TO START ***\n");
+			ci_debug_printf(3, "\n *** WAITING FOR WEATHER UPDATE ***\n");
 			// Create weather update thread, must be called after GetTesterData
 			pthread_create(&gblWeatherThread, NULL, WeatherUpdater, gblpTesterData);
 			//wait for WeatherUpdater to start
@@ -1362,9 +1370,9 @@ bool LoadActiveRules( char *pDatabaseName ){
 			ci_debug_printf(4, "\n *** WEATHER UPDATE APPLICATION STARTED ***\n");
 		}
 	}
-	else{
-		ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
-	}
+	//else{
+	//	ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n\n");
+	//}
 	gblNeedLoadActiveRules = false; // indicates we at least tried to load them.
 	return bRetVal;
 }
@@ -1512,7 +1520,7 @@ void *msp_init_request_data(ci_request_t * req) // first call
 	// importantly, the weatherthread will be created in the child process context, allowing it to
 	// share the global variable 'gblCurrentTemp'.
 		if( !LoadActiveRules( DATABASE_NAME ) ){ //  sets gblpTesterData
-			ci_debug_printf(0, "\n    Error loading Business Rules\n");
+			ci_debug_printf(0, "\n    Error loading Business Rules - NO RULES ARE IN EFFECT !\n");
 			//exit( -2 );
 		}
 	}
@@ -1624,7 +1632,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		//msp_dumphex(buf, len);
 		// search for 'https://' to see if this is SSL
 		const char *ptr;
-		ptr = strnstr( (const char *)&buf, "https://", len);
+		ptr = strnstr( (const char *)&buf, "https://", len);  // i think only curl ssl has no body
 		if( ptr ){
 			ci_debug_printf(3, "SSL, Found: %s.\n", "https://");
 			mspd->bIsSSL = true;
@@ -1671,7 +1679,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			}
 		}
 		// http://192.168.1.14:3128/icap?cmd=2 [&arg=]
-		ci_debug_printf(4, "Referer: %s.\n", referer);
+		//ci_debug_printf(3, "Referer: %s.\n", referer);
 		char const *needle = "icap?cmd=";
 		size_t needle_length = strlen(needle);
 		char const *needle_pos = strstr(referer, needle);
@@ -1697,10 +1705,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		}
 		//ci_debug_printf(4, "cmdstr: %s.\n", cmdstr);
 		//ci_debug_printf(3, "Command Received: %d.\n", cmd);
-		/*mspd = ci_service_data(req);
 		mspd->bHasCommand = true;
-		mspd->bHasArg = false;
-		mspd->Command = cmd;*/
+		mspd->Command = cmd;
 		if( (cmd == BCC_SET_CURRENT_TEMP) || (cmd == BCC_SET_CURRENT_HOUR) ){
 			// check to see if an arg also passed in
 			//	http://192.168.1.14:3128/icap?cmd=2&arg=22 
@@ -1727,9 +1733,6 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 				mspd->bHasArg = true;
 				mspd->CommandArg = cmdarg;
 			}
-		}
-		else{
-			mspd->bHasArg = false;
 		}
 		return CI_MOD_CONTINUE;
 	} // !ci_req_hasbody
@@ -1935,8 +1938,8 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=\n  i.e.,\n      http://192.168.1.14:3128/icap?cmd=4";
-	ci_debug_printf(1, "\nUser Commands Available Thru: '%s'\n",pCmd);
+	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://192.168.1.14:3128/icap?cmd=1";
+	ci_debug_printf(1, "\nUser Commands Available Thru: '%s\n",pCmd);
 	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
 		switch( cmd ){
@@ -2077,7 +2080,6 @@ int msp_end_of_data_handler(ci_request_t * req)
 		return CI_MOD_ALLOW204;
 	}
 
-	
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
@@ -2096,9 +2098,19 @@ int msp_end_of_data_handler(ci_request_t * req)
 				break;
 			case BCC_SHOW_ACT: // 3
 				ci_debug_printf(3, "Show Active User Command Received.\n");
-				ci_debug_printf(1, "   The Active Tester is '%s'\n", gblpTesterData->m_Tester);
-				ci_debug_printf(1, "       Application ID is '%s'\n", gblpTesterData->m_AppId);
-				ci_debug_printf(1, "       Active Weather Zipcode is '%s'\n", gblpTesterData->m_Zipcode);
+				if( gblpTesterData ){
+					if( gblpTesterData->m_Tester ){
+						ci_debug_printf(1, "   The Active Tester is '%s'\n", gblpTesterData->m_Tester);
+						ci_debug_printf(1, "       Application ID is '%s'\n", gblpTesterData->m_AppId);
+						ci_debug_printf(1, "       Active Weather Zipcode is '%s'\n", gblpTesterData->m_Zipcode);
+					}
+					else{
+						ci_debug_printf(1, "NO ACTIVE TESTER DEFINED IN DATABASE YET.\n");
+					}
+				}
+				else{
+					ci_debug_printf(1, "NO DATABASE HAS BEEN LOADED YET.\n");
+				}
 				break;
 			case BCC_CURRENT_TEMP:
 				ci_debug_printf(3, "Show Current Temperature Command Received.\n");
