@@ -688,7 +688,6 @@ CI_DECLARE_MOD_DATA ci_service_module_t service ={
 };
 
 // general prototypes
-//int handle_request_preview(BIZ_RULE *, char *, bool, BIZ_RULE **);
 int handle_request_preview(METHOD_RULES *, char *, bool, BIZ_RULE **);
 int handle_response_preview(char *, char *, bool);
 void BccUsage(void);
@@ -1596,18 +1595,23 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd->bIsSSL = false;
 	mspd->Command = BCC_NO_CMD;
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
-	ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
+	//ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
 	// TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
 	const int REQ_TYPE = ci_req_type(req);
 	if( REQ_TYPE == ICAP_REQMOD ){
 		mspd->isReqmod = 1;
 	}
-	
+	/*if( mspd->isReqmod ){
+		ci_debug_printf(3, "\n*** msp_preview_handler::REQUEST");
+	}
+	else{
+		ci_debug_printf(3, "\n*** msp_preview_handler::RESPONSE");
+	}*/
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
 	if( !ci_req_hasbody(req) ){
-		ci_debug_printf(4, "msp_preview_handler::no body data.\n");
+		//ci_debug_printf(3, "\nmsp_preview_handler::no body data.\n");
 		pHeader = ci_http_request_headers(req);
 		if( !pHeader ){
 			ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
@@ -1730,7 +1734,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_MOD_CONTINUE;
 	} // !ci_req_hasbody
 	/*else{
-		ci_debug_printf(3, "msp_preview_handler::DOES have BODY!!!\n");
+		ci_debug_printf(3, "\nmsp_preview_handler::DOES have body\n");
 		/ * the body may not be available yet, in preview_handler...
 		char *buf2 = body_data_buf( &mspd->body );
 		if( !buf2 ){
@@ -1783,10 +1787,11 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	ci_debug_printf(0, "msp_preview_handler:HTTP HEADER:\n");
 	msp_dumphex(buf, len);
 	*/
+	// the response header doesn't have https://
 	const char *ptr;
 	ptr = strnstr( (const char *)&buf, "https://", len);
 	if( ptr ){
-		ci_debug_printf(3, "msp_preview_handler::SSL, Found: %s.\n", "https://");
+		//ci_debug_printf(3, "msp_preview_handler::SSL, Found: %s.\n", "https://");
 		mspd->bIsSSL = true;
 		//return CI_MOD_CONTINUE;
 	}
@@ -1815,9 +1820,10 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		;
 	}
 	else{
+		showHeader = 0;
 		if( showHeader ){
-			char buf[1000];
-			size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+			//char buf[1000];
+			//size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 			ci_debug_printf(0, "msp_preview_handler:ICAP_RESPMOD, HTTP HEADER:\n");
 			msp_dumphex(buf, len);
 		}
@@ -2005,47 +2011,48 @@ int msp_end_of_data_handler(ci_request_t * req)
 		return CI_MOD_DONE;
 	}*/
 #ifdef _SHOW_PIDS_
-	ci_debug_printf(2,"handle_request_preview:: Child pid: %d: \n",pid);
+	ci_debug_printf(2,"msp_end_of_data_handler:: Child pid: %d: \n",pid);
 #endif
 
-	////// staart of ssl testing ///////////////
+	/*///// start of ssl testing ///////////////
+	// the response doesn't indicate if ssl or not
 	if( mspd->isReqmod ){
 		ci_debug_printf(3, "\n*** msp_end_of_data_handler::REQUEST");
+		if( mspd->bIsSSL ){
+			ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL DETECTED\n");
+		}
+		else{
+			ci_debug_printf(3, "\n*** msp_end_of_data_handler::no SSL detected\n");
+		}
 	}
 	else{
 		ci_debug_printf(3, "\n*** msp_end_of_data_handler::RESPONSE");
 	}
-	if( mspd->bIsSSL ){
-		ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL DETECTED\n");
-	}
-	else{
-		ci_debug_printf(3, "\n*** msp_end_of_data_handler::no SSL detected\n");
-	}	
-
+	
 	if( mspd->bIsSSL ){
 		if( ci_req_hasbody(req) ){
 			// SSL testing, allow all requests
-			ci_debug_printf(3, "\n*** msp_end_of_data_handler::getting body_data_buf(ssl)\n");
-			char *buf = body_data_buf( &mspd->body );
+			ci_debug_printf(3, "*** msp_end_of_data_handler::has body_data_buf(ssl)\n");
+			/ *char *buf = body_data_buf( &mspd->body );
 			ci_debug_printf(3, "*** msp_end_of_data_handler::got body_data_buf\n");
 			if( !buf ){
 				ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL FAILED TO GET BODY BUFFER ! ***\n");
 			}
 			else{
 				;//msp_dumphex(buf, mspd->expectedData);
-			}
+			}* /
 		}
 		else{
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(ssl)\n");
+			mspd->eof = 1;
+			// Unlock the request body data so the c-icap server can send data
+			ci_req_unlock_data(req);
+			//unlock_data(req);
+			ci_debug_printf(3, "*** msp_end_of_data_handler::returning CI_MOD_ALLOW204\n");
+			return CI_MOD_ALLOW204;
 		}
-		mspd->eof = 1;
-		// Unlock the request body data so the c-icap server can send data
-		ci_req_unlock_data(req);
-		//unlock_data(req);
-		ci_debug_printf(3, "*** msp_end_of_data_handler::returning CI_MOD_ALLOW204\n");
-		return CI_MOD_ALLOW204;
 	}
-	else{
+	/ *else{
 		if( ci_req_hasbody(req) ){
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::getting body_data_buf(non-ssl)\n");
 			char *buf = body_data_buf( &mspd->body );
@@ -2060,8 +2067,15 @@ int msp_end_of_data_handler(ci_request_t * req)
 		else{
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(non-ssl)\n");
 		}
+	}* /
+	*//// end of ssl testing ///////////////
+	if( mspd->bIsSSL && !ci_req_hasbody(req) ){
+		ci_debug_printf(3, "\n*** SSL DETECTED\n");
+		mspd->eof = 1;
+		// Unlock the request body data so the c-icap server can send data
+		ci_req_unlock_data(req);
+		return CI_MOD_ALLOW204;
 	}
-	// // end of ssl testing ///////////////
 
 	
 	if( mspd->bHasCommand ){
@@ -2397,7 +2411,6 @@ int msp_io(char *wbuf, int *wlen, char *rbuf, int *rlen, int iseof,
 * 							method and endpoint in the packet.
 */
 
-//int handle_request_preview(BIZ_RULE *pRuleData, char *pVioBuff, bool bIsV3)
 int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3, BIZ_RULE **pRetRule)
 {
 	BIZ_RULE *pRuleData;
@@ -2441,8 +2454,6 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 		if( gblCurrentDay != tm_struct->tm_mday ){
 			gblCurrentDay = tm_struct->tm_mday;
 			bNewDay = true;
-			//pRuleData->m_NumRequests = 0;
-			//pRuleData->m_NumRequestsPH = 0; allow hour to cross days
 		}
 	}
 
@@ -2450,9 +2461,10 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	bDailyLimit = false;
 	bHourlyLimit = false;
 	// loop thru all the rules for this method until we find a violation
+	ci_debug_printf(3, "\nLooping thru all rules looking for a violation of the '%s' rule.\n", pMethRules->pRule->m_Name);
 	for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++,pRuleData = pMethRules->pRule)
 	{
-		ci_debug_printf(3, "\nProcessing Rule '%s'.\n", pRuleData->m_Name);
+		//ci_debug_printf(3, "Processing Rule '%s'.\n", pRuleData->m_Name);
 		if( pRuleData->m_maxReq != WILDCARD ){
 			bDailyLimit=true;
 			if (bNewDay)
@@ -2593,13 +2605,12 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 					iRetVal = MSP_BIZ_VIO;
 				}
 				if( iRetVal != MSP_BIZ_VIO ) {
-					ci_debug_printf(3, "Rule '%s' is not violated at this time.\n", pRuleData->m_Name);
-					if (pRuleData->m_maxTemp != WILDCARD)
-							ci_debug_printf(2, "The Current Temperature is %d(F)\n", gblCurrentTemp);
+					ci_debug_printf(3, "No Violations Found for Rule '%s' at this time.\n", pRuleData->m_Name);
 				}
 			}
 			else{
 				ci_debug_printf(3, "Rule '%s' does not apply during the current time.\n", pRuleData->m_Name);
+				ci_debug_printf(3, "      Current Time: %d.\n", gblCurrentHourOfDay);
 			}
 		} // iRetVal != MSP_BIZ_VIO
 		else{
