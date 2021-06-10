@@ -230,19 +230,19 @@ int body_data_read(struct body_data *body, char *buf, int len)
 char *body_data_buf(struct body_data *body)
 {
     if( body->type == CACHED ){
-		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "CACHED");
+		ci_debug_printf(5, "    --->body_data_buf::body type: %s\n", "CACHED");
 	    return body->store.cached->buf;
     }
     else if(body->type == RING  ){
-		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "RING");
+		ci_debug_printf(5, "    --->body_data_buf::body type: %s\n", "RING");
 	    return body->store.ring->buf;
     }
     else if(body->type == ERROR_PAGE) {
-		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "ERROR_PAGE");
+		ci_debug_printf(5, "    --->body_data_buf::body type: %s\n", "ERROR_PAGE");
 	    return body->store.error_page->buf;
     }
     else if (body->type == MEMORY) {
-		ci_debug_printf(3, "    --->body_data_buf::body type: %s\n", "MEMORY");
+		ci_debug_printf(5, "    --->body_data_buf::body type: %s\n", "MEMORY");
 	    return body->store.mem_buff->buf;
     }
     else {

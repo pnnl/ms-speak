@@ -1596,9 +1596,14 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	mspd->bIsSSL = false;
 	mspd->Command = BCC_NO_CMD;
 	//ci_debug_printf(0, "\n*** msp_preview_handler::preview_data_len: %d  ***\n", preview_data_len);
-	ci_debug_printf(4, "\n*** msp_preview_handler:: ***\n");
+	ci_debug_printf(3, "\n*** msp_preview_handler:: ***\n");
 	// TODO: each thread would handle a different connection, needs its own BIZ_RULE struct ...
 
+	const int REQ_TYPE = ci_req_type(req);
+	if( REQ_TYPE == ICAP_REQMOD ){
+		mspd->isReqmod = 1;
+	}
+	
 	// If there is no body data in HTTP encapsulated object but only headers
 	//	 respond with Allow204 (no modification required) and terminate the ICAP transaction here
 	if( !ci_req_hasbody(req) ){
@@ -1612,12 +1617,18 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 
 		char buf[1000];
 		size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
-		msp_dumphex(buf, len);
-		// search for ':8443 HTTP' to see if this is SSL
+		//msp_dumphex(buf, len);
+		// search for 'https://' to see if this is SSL
 		const char *ptr;
-		ptr = strnstr( (const char *)&buf, ":8443 HTTP", len);
+		ptr = strnstr( (const char *)&buf, "https://", len);
 		if( ptr ){
-			ci_debug_printf(4, "SSL, Found: %s.\n", ":8443 HTTP");
+			ci_debug_printf(3, "SSL, Found: %s.\n", "https://");
+			mspd->bIsSSL = true;
+			return CI_MOD_CONTINUE;
+		}
+		/*ptr = strnstr( (const char *)&buf, ":8443 HTTP", len);
+		if( ptr ){
+			ci_debug_printf(4, "SSL, Found: %s, returning CI_MOD_CONTINUE.\n", ":443 HTTP");
 			mspd->bIsSSL = true;
 			return CI_MOD_CONTINUE;
 		}
@@ -1626,7 +1637,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			ci_debug_printf(4, "SSL, Found: %s, returning CI_MOD_CONTINUE.\n", ":443 HTTP");
 			mspd->bIsSSL = true;
 			return CI_MOD_CONTINUE;
-		}
+		}*/
 
 		const char *referer = ci_headers_value(pHeader, "Referer");
 		if( !referer ){
@@ -1729,7 +1740,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 			msp_dumphex(buf2, mspd->expectedData);
 		}* /
 	}*/
-	/*
+	/*   
 	mspd = ci_service_data(req);
 	mspd->maxBodyData = MaxBodyData;
 	mspd->isReqmod = 0;
@@ -1751,15 +1762,15 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	*/
 
 	// Extract the HTTP header from the request/response
-	const int REQ_TYPE = ci_req_type(req);
+	//const int REQ_TYPE = ci_req_type(req);
 	if( REQ_TYPE == ICAP_REQMOD ){	// Assure there is a soap action (required for soap requests according to according to https://www.w3.org/TR/2000/NOTE-SOAP-20000508 )
-		mspd->isReqmod = 1;
+		//mspd->isReqmod = 1;
 		pHeader = ci_http_request_headers(req);
-		ci_debug_printf(0, "\n*** msp_preview_handler:: REQ_TYPE == ICAP_REQMOD  ***\n");
+		//ci_debug_printf(0, "\n*** msp_preview_handler:: REQ_TYPE == ICAP_REQMOD  ***\n");
 	}
 	else{
 		pHeader = ci_http_response_headers(req);
-		ci_debug_printf(0, "\n*** msp_preview_handler:: REQ_TYPE <> ICAP_REQMOD  ***\n");
+		//ci_debug_printf(0, "\n*** msp_preview_handler:: REQ_TYPE <> ICAP_REQMOD  ***\n");
 	}
 	if( !pHeader ){
 		ci_debug_printf(0, "msp_preview_handler::ERROR: unable to get http header\n");
@@ -1997,8 +2008,20 @@ int msp_end_of_data_handler(ci_request_t * req)
 	ci_debug_printf(2,"handle_request_preview:: Child pid: %d: \n",pid);
 #endif
 
-	/*//// staart of ssl testing ///////////////
-	// body_data_buf::body type: MEMORY
+	////// staart of ssl testing ///////////////
+	if( mspd->isReqmod ){
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::REQUEST");
+	}
+	else{
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::RESPONSE");
+	}
+	if( mspd->bIsSSL ){
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL DETECTED\n");
+	}
+	else{
+		ci_debug_printf(3, "\n*** msp_end_of_data_handler::no SSL detected\n");
+	}	
+
 	if( mspd->bIsSSL ){
 		if( ci_req_hasbody(req) ){
 			// SSL testing, allow all requests
@@ -2009,7 +2032,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL FAILED TO GET BODY BUFFER ! ***\n");
 			}
 			else{
-				msp_dumphex(buf, mspd->expectedData);
+				;//msp_dumphex(buf, mspd->expectedData);
 			}
 		}
 		else{
@@ -2031,20 +2054,16 @@ int msp_end_of_data_handler(ci_request_t * req)
 				ci_debug_printf(3, "\n*** msp_end_of_data_handler::FAILED TO GET BODY BUFFER ! ***\n");
 			}
 			else{
-				msp_dumphex(buf, mspd->expectedData);
+				;//msp_dumphex(buf, mspd->expectedData);
 			}
 		}
 		else{
 			ci_debug_printf(3, "\n*** msp_end_of_data_handler::NO BODY DATA(non-ssl)\n");
 		}
 	}
-	*/ // end of ssl testing ///////////////
-	if( mspd->bIsSSL ){
-		ci_debug_printf(3, "\n*** msp_end_of_data_handler::SSL DETECTED\n");
-	}
-	else{
-		ci_debug_printf(3, "\n*** msp_end_of_data_handler::no SSL detected\n");
-	}
+	// // end of ssl testing ///////////////
+
+	
 	if( mspd->bHasCommand ){
 		switch( mspd->Command ){
 			case BCC_NO_CMD:
