@@ -55,6 +55,7 @@
 //		02.09.2021 CHM - Populate from Sqlite DB.
 //		05.17.2021 CHM - Support multiple rules for same endpoint (added
 //							'Name' field to Rule table).
+//		06.10.2021 CHM - Preserve the Id if tester already exists when modifying.
 //-------------------------------------------------------------------------------
 //
 // Summary: IdsEditor.cpp
@@ -1161,9 +1162,15 @@ bool IdsEditor::OnFileSave()
 	QString strQuery;
 
 	// == Add or Modify Tester ==
+	/* 6.10 - fix update Id snafu
 	QString strQueryAddMod = QStringLiteral(
 			"INSERT OR REPLACE INTO Testers(Name, AppId, Zipcode) "
 			"VALUES (:Name, :AppId, :Zipcode);"
+	);*/
+	// preserve the Id if tester already exists:
+	QString strQueryAddMod = QStringLiteral(
+			"INSERT OR REPLACE INTO Testers(Id, Name, AppId, Zipcode) "
+			"VALUES ((select Id from Testers where Name = :Name), :Name, :AppId, :Zipcode);"
 	);
 
 	// == Update Active Tester ==
