@@ -1400,7 +1400,12 @@ bool IdsEditor::OnFileSave()
 		// show if dirty rules
 	} // for m_Testers
 	QString actQueryStr = Q_NULLPTR;
-	if( delActive ){
+	if( Q_NULLPTR == m_ActTester ){ // 6.11
+		delActive = true;
+		actQueryStr = strQueryDelAct;
+		strQueryModAct = actQueryStr;
+	}
+	else if( delActive ){
 		m_ActTester = Q_NULLPTR;
 		m_ActTesterOrig = Q_NULLPTR;
 		actQueryStr = strQueryDelAct;
@@ -1428,10 +1433,12 @@ bool IdsEditor::OnFileSave()
 		}
 	}
 	if( Active().isEmpty() ){
-		qDebug() << "No Active Tester Set.";
-	}else{
-		qDebug() << "Active Tester Set To: " << Active();
-	}
+		errStr = QStringLiteral("Warning, There is No Active Tester Set.");
+		QMessageBox::warning(this, QStringLiteral("IDS Editor"),
+							 errStr, QMessageBox::Ok, QMessageBox::Ok);
+	}//else{
+	//	qDebug() << "Active Tester Set To: " << Active();
+	//}
 	m_saveErr = false;
 	return true;
 }
