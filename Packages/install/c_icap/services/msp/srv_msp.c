@@ -822,7 +822,7 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 		;//ci_debug_printf(0, "Opened database successfully\n");
 	}
 
-	sql = "SELECT Count(*)" SQL_FROM_QUERY;  // get coount of rules for active counter
+	sql = "SELECT Count(*)" SQL_FROM_QUERY;  // get count of rules for active tester
 
 	sqlite3_stmt *stmt;
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
@@ -1337,8 +1337,10 @@ bool LoadActiveRules( char *pDatabaseName ){
 	if( gblpTesterData )
 	{
 		bRetVal = true;
-		ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
 		ci_debug_printf(1, "\nActive Tester: '%s'\n\n", gblpTesterData->m_Tester);
+		if( gblNumBizRules > 0 ){
+			ci_debug_printf(2, "    Successfully Loaded Business Rules.\n");
+		}
 		//if( CI_DEBUG_LEVEL >= 1 ){
 		//	ci_debug_printf(3,"  %s\n", "TBD: Dump database\n");
 		//}
