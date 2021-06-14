@@ -56,6 +56,7 @@
 //		05.17.2021 CHM - Support multiple rules for same endpoint (added
 //							'Name' field to Rule table).
 //		06.10.2021 CHM - Preserve the Id if tester already exists when modifying.
+//		06.11.2021 CHM - Handle saving when no Active User selected.
 //-------------------------------------------------------------------------------
 //
 // Summary: IdsEditor.cpp

@@ -15,6 +15,7 @@
         <file>Resources/httpout.png</file>
         <file>Resources/squid.png</file>
         <file>Resources/WsdlLayout.png</file>
-        <file>Resources/mspCA.der</file>
+        <file>Resources/squidCA.crt</file>
+        <file>Resources/squidCA.der</file>
     </qresource>
 </RCC>

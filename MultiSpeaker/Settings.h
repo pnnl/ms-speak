@@ -74,7 +74,7 @@ const int GRAPH_TYPE_TIMELINE = 3;
 const int GRAPH_TYPE_TIMELINE_EVENT = 4;
 
 const QString DECOUPLE_RUN_FILE = "decouple.run";
-const QString PROXY_CACERT = QStringLiteral(":/MultiSpeaker/Resources/mspCA.der");
+const QString PROXY_CACERT = QStringLiteral(":/MultiSpeaker/Resources/squidCA.der");
 const QString ROOT_HOME_PATH = QString("%1/.MultiSpeaker").arg(QDir::homePath());
 
 // note: the following three need to stay in sync with MultiSpeakerServer/settings...
