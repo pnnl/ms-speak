@@ -56,6 +56,7 @@
 //		05.17.2021 CHM - Moved SOFTWARE_VERSION here.
 //		05.20.2021 CHM - Added 'Show Requests' Groupbox.
 //		06.11.2021 CHM - Handle saving when no Active User selected.
+//		06.16.2021 CHM - Sync with ms not using certs as resources.
 //-------------------------------------------------------------------------------
 // Summary: IdsSettings.h
 //-------------------------------------------------------------------------------
@@ -67,7 +68,7 @@
 #include <QString>
 
 // Version
-const QString SOFTWARE_VERSION = QStringLiteral("21.06.11");
+const QString SOFTWARE_VERSION = QStringLiteral("21.06.16");
 const QString SOFTWARE_ABOUT = QString("<center><h2>MS-SPEAK IDS</h2><h3>Business Rule Editor</h3><h4>Copyright 2021</h4><h4>Pacific Northwest National Laboratory</h4><h5>All Rights Reserved.</h5><h3>Version " + SOFTWARE_VERSION + "</h3></center");
 
 const QString DB_CONNECTION_NAME = QStringLiteral("BizConn");

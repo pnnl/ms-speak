@@ -197,6 +197,7 @@ copy "$(QtDir)\plugins\platforms\*.dll" "$(TargetDir)platforms
 
 copy "$(ProjectDir)\Resources\MultiSpeaker.ico" "$(TargetDir)
 copy "$(ProjectDir)\Resources\squidCA.crt" "$(TargetDir)"
+copy "$(ProjectDir)\Resources\squidCA.der" "$(TargetDir)"
 
 copy "C:\OpenSSL-Win64\bin\libeay32.dll" "$(TargetDir)"
 copy "C:\OpenSSL-Win64\bin\ssleay32.dll" "$(TargetDir)"

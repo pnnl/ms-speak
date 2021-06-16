@@ -74,7 +74,7 @@ class SslServer : public Server
 {
 	Q_OBJECT
 private:
-	QString m_sslCertFolder;
+	//QString m_sslCertFolder;
 	QSslCertificate m_sslLocalCertificate;
 	QSslKey m_sslPrivateKey;
 	QSsl::SslProtocol m_sslProtocol;
@@ -95,13 +95,13 @@ public:
 	SslServer(QObject* parent = Q_NULLPTR);
 	~SslServer();
 
-	QString SslCertFolder() const { return m_sslCertFolder; }
+	//QString SslCertFolder() const { return m_sslCertFolder; }
 	const QSslCertificate& SslLocalCertificate() const {return m_sslLocalCertificate;}
 	const QSslKey& SslPrivateKey() const {return m_sslPrivateKey;}
 	QSsl::SslProtocol SslProtocol() const {return m_sslProtocol;}
 
 	bool IsSupported() const {return m_Supported;}
-	bool SetSslCertFolder(const QString& folder);
+	//bool SetSslCertFolder(const QString& folder);
 
 	void SetSslLocalCertificate(const QSslCertificate& certificate) {m_sslLocalCertificate = certificate;}
 	bool SetSslLocalCertificate(const QString& path, QSsl::EncodingFormat format = QSsl::Pem);

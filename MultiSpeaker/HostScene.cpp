@@ -938,8 +938,8 @@ void HostScene::OnTimelineEventProcessed(TimelineEvent& e)
 					sslconf.setPeerVerifyMode(QSslSocket::VerifyPeer);
 				}
 				else{
-					sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);// 2021: SSL_SELF_CERT_CN
-					//sslconf.setPeerVerifyMode(QSslSocket::VerifyPeer);
+					//sslconf.setPeerVerifyMode(QSslSocket::VerifyNone);// 2021: SSL_SELF_CERT_CN
+					sslconf.setPeerVerifyMode(QSslSocket::VerifyPeer); // enable this: 6.16
 				}
 				/*
 				if( theApp->ProxyEnabled() )

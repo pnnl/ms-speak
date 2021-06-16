@@ -202,19 +202,19 @@ void SslServer::incomingConnection(qintptr socketDescriptor)
 }
 //------------------------------------------------------------------------------
 // SetSslCertFolder
-//
+/*
 bool SslServer::SetSslCertFolder(const QString& folder)
 {
-	/*
+	/ *
 	 * 2021 - don't see any reason to have this, certfolder never used
 	if (!QFileInfo::exists(folder))
 		return false;
 
 	m_sslCertFolder = folder;
-	*/
+	* /
 	Q_UNUSED(folder)
 	return true;
-}
+}*/
 //------------------------------------------------------------------------------
 // SetSslLocalCertificate
 //

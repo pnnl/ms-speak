@@ -52,6 +52,7 @@
 //	History
 //		2017 - Created By: Lance Irvine.
 //		2018 - Modified By: Carl Miller <carl.miller@pnnl.gov>
+//		21.06.16 CHM:  Don't use certs as resources.
 //-------------------------------------------------------------------------------
 //
 // Summary: Settings.h
@@ -60,10 +61,18 @@
 #ifndef SPEAKERSERVERSETTINGS_H
 #define SPEAKERSERVERSETTINGS_H
 
+#include <QDir>
 #include <QString>
 
-const QString CERTIFICATE_FILE = QStringLiteral(":/MultiSpeakerServer/Resources/mss.crt");
-const QString CERTIFICATE_KEY = QStringLiteral(":/MultiSpeakerServer/Resources/mss.key");
+const QString ROOT_HOME_PATH = QString("%1/.MultiSpeaker").arg(QDir::homePath());
+
+//const QString CERTIFICATE_FILE = QStringLiteral(":/MultiSpeakerServer/Resources/mss.crt");
+//const QString CERTIFICATE_KEY = QStringLiteral(":/MultiSpeakerServer/Resources/mss.key");
+//const QString DEF_CERTIFICATE_FILE = QStringLiteral("mss.crt");
+//const QString DEF_CERTIFICATE_KEY = QStringLiteral("mss.key");
+//const QString DEF_CERTIFICATE_DIR = ROOT_HOME_PATH;
+const QString DEF_CERTIFICATE_FILE = QString("%1/%2").arg(ROOT_HOME_PATH).arg("mss.crt");
+const QString DEF_CERTIFICATE_KEY = QString("%1/%2").arg(ROOT_HOME_PATH).arg("mss.key");
 
 // note: the following three need to stay in sync with MultiSpeaker/settings...
 const QString SK_XSD_FILE = "sk_xsd_file";
@@ -74,7 +83,7 @@ const QString SK_IGNORE_SSL_SELF_CERT_ERROR = QStringLiteral("sk_ignore_ssl_self
 const QString SK_SSL_ENABLED = QStringLiteral("sk_ssl_enabled");
 const QString SK_SSL_CERT_FILE = QStringLiteral("sk_ssl_cert_file");
 const QString SK_SSL_PRIVATE_KEY_FILE = QStringLiteral("sk_ssl_private_key_file");
-const QString SK_SSL_CERT_FOLDER = QStringLiteral("sk_ssl_cert_folder");
+//const QString SK_SSL_CERT_FOLDER = QStringLiteral("sk_ssl_cert_folder");
 const QString SK_RESPONSE_FILE = QStringLiteral("sk_response_file");
 // Main Window States
 const QString SK_MAIN_GEOMETRY = QStringLiteral("sk_main_geometry");

@@ -8,8 +8,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{F58A5A61-D60E-4B83-AD6D-5D7E99B500B5}}
 AppName=MultiSpeaker
-AppVersion=21.06.11
-;AppVerName=MultiSpeaker 21.06.11
+AppVersion=21.06.16
+;AppVerName=MultiSpeaker 21.06.16
 AppPublisher=Pacific Northwest National Laboratory
 AppPublisherURL=http://www.pnnl.gov
 AppSupportURL=http://www.pnnl.gov
@@ -23,12 +23,12 @@ AppUpdatesURL=http://www.pnnl.gov
 ArchitecturesInstallIn64BitMode=x64
 DefaultDirName={pf}\PNNL\MultiSpeaker
 DefaultGroupName=PNNL\MultiSpeaker
-OutputBaseFilename=MultiSpeaker-21.06.11-win10-setup
+OutputBaseFilename=MultiSpeaker-21.06.16-win10-setup
 Compression=lzma
 SolidCompression=yes
 UsePreviousAppDir=no
 UsePreviousGroup=no
-VersionInfoVersion=21.06.11
+VersionInfoVersion=21.06.16
 VersionInfoCompany=Pacific Northwest National Laboratory
 
 [Languages]
@@ -69,6 +69,7 @@ Source: "..\x64\Release\MultiSpeakerServer.ico"; DestDir: "{app}"; check: Is64Bi
 Source: "..\x64\Release\mss.crt"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\mss.key"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\x64\Release\squidCA.crt"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
+Source: "..\x64\Release\squidCA.der"; DestDir: "{app}"; check: Is64BitInstallMode; Flags: ignoreversion
 Source: "..\WSDLs\EndPoints\*"; DestDir: "{app}\EndPoints"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 Source: "..\WSDLs\xsd\*"; DestDir: "{app}\xsd"; check: Is64BitInstallMode; Flags: ignoreversion recursesubdirs
 ; MyFile.txt is an empty text file

@@ -1,7 +1,5 @@
 <RCC>
     <qresource prefix="/MultiSpeakerServer">
-        <file>Resources/mss.crt</file>
-        <file>Resources/mss.key</file>
         <file>Resources/MultiSpeakerServer.ico</file>
     </qresource>
 </RCC>
