@@ -101,18 +101,23 @@ MultiSpeakerServer::MultiSpeakerServer(QWidget* parent)
 	connect(ui.btnResponse, SIGNAL(clicked()), this, SLOT(OnResponse()));
 
 	QSettings s;
-	//ui.CertFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_CERT_FILE).toString()));// CERTIFICATE_FILE
+	bool bTest = false;
 	QString cf = s.value(SK_SSL_CERT_FILE).toString();
-	if (cf.isEmpty())
+	if( cf.isEmpty() || bTest ){
 		cf = DEF_CERTIFICATE_FILE;
-	ui.CertFileLabel->setText(QDir::toNativeSeparators(cf)); 
+		QSettings().setValue(SK_SSL_CERT_FILE, DEF_CERTIFICATE_FILE);
+	}
+	ui.CertFileLabel->setText(QDir::toNativeSeparators(cf));
+	//ui.CertFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_CERT_FILE).toString()));// CERTIFICATE_FILE
 
-	//ui.PrivateKeyFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_PRIVATE_KEY_FILE).toString()));// CERTIFICATE_KEY
 	cf = s.value(SK_SSL_PRIVATE_KEY_FILE).toString();
-	if (cf.isEmpty())
+	if( cf.isEmpty() || bTest ){
 		cf = DEF_CERTIFICATE_KEY;
+		QSettings().setValue(SK_SSL_PRIVATE_KEY_FILE, DEF_CERTIFICATE_KEY);
+	}
 	ui.PrivateKeyFileLabel->setText(QDir::toNativeSeparators(cf));
-		
+	//ui.PrivateKeyFileLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_PRIVATE_KEY_FILE).toString()));// CERTIFICATE_KEY
+
 	//ui.CertFolderLabel->setText(QDir::toNativeSeparators(s.value(SK_SSL_CERT_FOLDER).toString()));
 	/*cf = s.value(SK_SSL_CERT_FOLDER).toString();
 	if (cf.isEmpty())
