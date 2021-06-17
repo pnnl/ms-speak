@@ -1292,7 +1292,7 @@ void *WeatherUpdater(void *data)
 					}
 					else{
 						ci_debug_printf(0,"\nERROR Updating Weather.\n");
-						break;
+						//break;
 					}
 					//ci_debug_printf(3, "*** Weather Updated ***\n");
 					init_string(&xmlStr);
