@@ -94,26 +94,36 @@ SslServer::SslServer( QObject* parent)
 {
 	/*
 	 * qt.network.ssl: Incompatible version of OpenSSL
-	qDebug() << QSslSocket::sslLibraryBuildVersionString();
-		"OpenSSL 1.0.2k-fips  26 Jan 2017"
-	I've copied libcrypto.so and libssl.so (v1.0.2) to my current compiler lib directory
-	(<QTDIR>/5.11.1/gcc_64/lib). In my case I took theese 2 libs in /usr/lib/x86_64-linux-gnu/:
-	libssl.so.1.0.0 and libcrypto.so.1.0.0, copied and renamed. It worked for me.
-		sudo cp libssl.so.1.1 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libssl.so.1.0.0
-		sudo cp libcrypto.so.1.1 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libcrypto.so.1.0.0
-		this did not work, tried this:
-			make/install openssl-1.0.2k.tar.gz
-			cd /usr/local/ssl/lib
-			sudo cp libssl.so.1.0.0 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libssl.so
-			sudo cp libcrypto.so.1.0.0 /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib/libcrypto.so
-		got this:
-			error while loading shared libraries: libssl.so.1.0.0: cannot open shared object file: No such file or directory
-		so did this:
-			cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
-			sudo ln -s libssl.so libssl.so.1.0.0
-			sudo ln -s libcrypto.so libcrypto.so.1.0.0
-		and this worked.
+		qDebug() << QSslSocket::sslLibraryBuildVersionString();
+			"OpenSSL 1.0.2k-fips  26 Jan 2017"
 
+		*******  MS Application not supporting SSL ******************
+		"QSslSocket: cannot resolve SSL_library_init"
+		do using openssl-1.0.2k.tar.gz
+			sudo apt install build-essential zlib1g-dev -y
+			./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+			make
+			sudo make install
+		now /usr/local/ssl/lib exists
+		cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
+			this:
+				sudo cp /usr/local/ssl/lib/libssl.so.1.0.0 libssl.so
+				sudo cp /usr/local/ssl/lib/libcrypto.so.1.0.0 libcrypto.so
+				sudo ln -s libssl.so libssl.so.1.0.0
+				sudo ln -s libcrypto.so libcrypto.so.1.0.0
+			should probably be this:
+				sudo cp /usr/local/ssl/lib/libssl.so.1.0.0 .
+				sudo cp /usr/local/ssl/lib/libcrypto.so.1.0.0 .
+				sudo ln -s libssl.so.1.0.0 libssl.so
+				sudo ln -s libcrypto.so.1.0.0 libcrypto.so
+
+		cd /etc/ld.so.conf.d
+		nano openssl-1.0.2k.conf
+			paste /usr/local/ssl/lib
+		sudo ldconfig -v
+			/usr/local/ssl/lib:
+				libcrypto.so -> libcrypto.so.1.0.0
+				ibssl.so -> libssl.so.1.0.0
 		but on windoze:
 			"OpenSSL 1.1.1d  10 Sep 2019"
 			On windoze, the MultiSpeaker apps are built with Qt 5.15,
@@ -130,16 +140,7 @@ SslServer::SslServer( QObject* parent)
 					C:\Qt\Tools\OpenSSL
 			i now no longer get !QSslSocket::supportsSsl(), but
 			i don't see the MS packet either,added openssl-1.1.1l-dev
-
-			Debian, runtime:
-				"QSslSocket: cannot resolve SSL_library_init"
-				"you just need to install the package libssl-dev"
-					- no, doesn't help, was already installed
-				BUT, i mistakenly linked to the wrong file:
-					libssl.so.1.0.0 -> libcrypto.so
-				fixed it and it works now:
-					libssl.so.1.0.0 -> libssl.so
-			*/
+	*/
 	if( !QSslSocket::supportsSsl() ){
 		//qDebug()<<"SSL version use for run-time: "<<QSslSocket::sslLibraryVersionNumber();
 		QString qs2 = QSslSocket::sslLibraryBuildVersionString();

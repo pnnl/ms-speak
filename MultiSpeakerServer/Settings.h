@@ -71,6 +71,8 @@ const QString ROOT_HOME_PATH = QString("%1/.MultiSpeaker").arg(QDir::homePath())
 //const QString DEF_CERTIFICATE_FILE = QStringLiteral("mss.crt");
 //const QString DEF_CERTIFICATE_KEY = QStringLiteral("mss.key");
 //const QString DEF_CERTIFICATE_DIR = ROOT_HOME_PATH;
+
+// qApp->applicationDirPath()
 const QString DEF_CERTIFICATE_FILE = QString("%1/%2").arg(ROOT_HOME_PATH).arg("mss.crt");
 const QString DEF_CERTIFICATE_KEY = QString("%1/%2").arg(ROOT_HOME_PATH).arg("mss.key");
 
