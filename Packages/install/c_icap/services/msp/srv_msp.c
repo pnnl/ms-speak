@@ -731,7 +731,7 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 			}
 			char *curr_key = columns[i];
 			// Note, any non-existant keys will have already been preset to WILDCARD
-			// strncmp is not necessary when comapring #defined strings
+			// strncmp is not necessary when comparing #defined strings
 			if( !strcmp(curr_key, DB_COLNAME_NUMREQ) ){
 				pBzd->m_maxReq = atoll(values[i]);
 			}
@@ -770,6 +770,7 @@ static int callback(void *data, int colcount, char **values, char **columns ){
 				}
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_EMAIL) ){
+				//ci_debug_printf(0, "Setting email: %s, '%s'\n", curr_key,values[i]);
 				strncpy( pBzd->m_Email, values[i], MAX_DB_NAMELEN );
 			}
 			else if( !strcmp(curr_key, DB_COLNAME_FUNCTION) ){
@@ -927,8 +928,8 @@ TESTER_DATA *GetTesterData( char *pdbFile ){
 
 void ShowDBRules( TESTER_DATA *pTester, BIZ_RULE *pRules, int NumRules, int dbgLvl )
 {
-	
-	if( gblpTesterData ){ // DB has been successfully loaded ?
+	//if( gblpTesterData ){ // DB has been successfully loaded ?
+	if( pTester ){ // DB has been successfully loaded ?
 		ci_debug_printf(dbgLvl,"Tester: %s, AppId: %s, Zip: %s\n", pTester->m_Tester, pTester->m_AppId, pTester-> m_Zipcode);
 		for( int i=0; i<NumRules; i++ ){
 			ci_debug_printf(dbgLvl, "    Name: %s\n", pRules->m_Name);
@@ -1917,6 +1918,44 @@ void msp_close_service()
 
 // https://support.google.com/accounts/answer/6010255
 // https://myaccount.google.com/lesssecureapps
+/*
+from home, no vpn the following gets delivered immediately
+when bridged.
+	with NO VPN: works
+	with VPN:   also works
+
+If NAT & Host-Only, it also works with no VPN.
+	If VPNd(connect vpn after Irene running), does NOT work, if
+	I turn off VPN, then it works again.
+running on the PNL network (ie, csf) same as VPN.
+	without the VPN, i can ping/resolve outlook.com, with it, i can't
+sudo apt-get install dnsutils
+I set back to HO/NAT and rebooted while already VPNd and got:
+	->nslookup outlook.com
+	Server:		130.20.128.83    instead of 192.168.1.1
+	Address:	130.20.128.83#53
+and emails worked.
+but this doesn't explain why didn't work in CSF...
+
+name resolution are defined in the /etc/resolv.conf file
+	->cat /etc/resolv.conf
+	domain pnl.gov
+	search pnl.gov
+	nameserver 130.20.128.83
+	nameserver 130.20.248.22
+	nameserver 192.168.1.1
+i added nameserver 192.168.56.1
+{
+echo From: msspeak@gmail.com
+echo To: mspkuser@outlook.com
+echo Subject: test
+echo 
+echo This is the message
+} | /usr/lib/sendmail -t
+
+sudo truncate -s 0 /var/log/syslog
+sudo cat /var/log/syslog
+*/
 int sendmail(const char *to, const char *from, 
 			 const char *subject, const char *message)
 {
@@ -2245,7 +2284,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 
 	int ErrRet;
 	BIZ_RULE *pRuleData = GetBusinessRecord(mspd, &ErrRet);
-	if( !pRuleData)
+	if( !pRuleData )
 	{
 		if( ErrRet != MSP_OK ){
 			WriteLog(0, gblLogFile, "Error Looking up Request Business Record.");
@@ -2263,13 +2302,19 @@ int msp_end_of_data_handler(ci_request_t * req)
 			mspd->msginfo.bIsV3, &pRuleData); // offending rule returned in pRuleData
 		if( msRet == MSP_BIZ_VIO)
 		{
-			if (pRuleData && pRuleData->m_Email ){
-				char *from, *subject, *message;
-				from = "msspeak@gmail.com";
-				subject = "MULTISPEAK RULE VIOLATION";
-				message = &ViolationMessage[0];
-				ci_debug_printf(3,"Sending Email Notification to: %s\n", pRuleData->m_Email);
-				sendmail( pRuleData->m_Email, from, subject, message );
+			if (pRuleData ){
+				if ( strlen(pRuleData->m_Email) > 0 ){
+					char *from, *subject, *message;
+					from = "msspeak@gmail.com";
+					subject = "MULTISPEAK RULE VIOLATION";
+					message = &ViolationMessage[0];
+					//ci_debug_printf(3,"Sending Email Notification for rule: '%s'\n", pRuleData->m_Name);
+					ci_debug_printf(3,"Sending Email Notification to: '%s'\n", pRuleData->m_Email);
+					sendmail( pRuleData->m_Email, from, subject, message );
+				}
+				//else{
+				//	ci_debug_printf(3,"No Email Notification for rule: '%s'\n", pRuleData->m_Name);
+				//}
 			}
 			if( !ci_req_sent_data(req) ){
 				ci_membuf_t *err_page = generate_error_page(req);
@@ -2461,7 +2506,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	struct tm *tm_struct = localtime(&currtime);
 
 	if( gblHourTestMode ){
-		ci_debug_printf(1,"\nSimulating Hour of %d While in Test Mode.\n",gblHourTestMode);
+		ci_debug_printf(1,"\nSimulating Hour of %d While in Test Mode.\n",gblCurrentHourOfDay);
 	}
 	else{
 		gblCurrentHourOfDay = tm_struct->tm_hour; // range 0 to 23
@@ -2478,7 +2523,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 	ci_debug_printf(3, "\nLooping thru all rules looking for a violation of the '%s' rule.\n", pMethRules->pRule->m_Name);
 	for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++,pRuleData = pMethRules->pRule)
 	{
-		//ci_debug_printf(3, "Processing Rule '%s'.\n", pRuleData->m_Name);
+		ci_debug_printf(3, "Processing Rule '%s'.\n", pRuleData->m_Name);
 		if( pRuleData->m_maxReq != WILDCARD ){
 			bDailyLimit=true;
 			if (bNewDay)
@@ -2556,15 +2601,25 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 			bInTimeSlot = true; // default to true as if no time rule implies 'anytime'
 			if (pRuleData->m_endHour != WILDCARD)
 			{
+				//ci_debug_printf(3, "Checking EndTime for %ld.\n", pRuleData->m_endHour);
 				if ((pRuleData->m_startHour <= gblCurrentHourOfDay) && (gblCurrentHourOfDay < pRuleData->m_endHour)) {
 					if (pRuleData->m_Inverse == 1) {
+						//ci_debug_printf(3, "Setting %s.\n", "Inverse Time Not Now");
 						bInTimeSlot = false;
 					}
+					//else{
+					//	ci_debug_printf(3, "Setting %s.\n", "Inverse Time not in use");
+					//}
 				}
 				else{
+					//ci_debug_printf(3, "Hour %d %s.\n", gblCurrentHourOfDay,"NOT In Slot");
 					if (pRuleData->m_Inverse == 0) {
 						bInTimeSlot = false;
+						//ci_debug_printf(3, "Setting %s.\n", "NOT Inverse Time set");
 					}
+					//else{
+					//	ci_debug_printf(3, "Setting %s.\n", "Inverse Time slot active");
+					//}
 				}
 				/*if (pRuleData->m_Inverse == 0) {
 					if ((gblCurrentHourOfDay > pRuleData->m_endHour) || (gblCurrentHourOfDay < pRuleData->m_startHour)) {
@@ -2593,11 +2648,18 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 			}
 			if( bInTimeSlot )
 			{
+				//ci_debug_printf(3, "%s.\n", "Rule Timeslot IS Active.");
 				if (bDailyLimit && (pRuleData->m_NumRequests > pRuleData->m_maxReq)) {
-					sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
-						"   Only %ld %s per day are allowed according to rule '%s'."
-						"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg,
-						pRuleData->m_maxReq, pRequestStr, pRuleData->m_Name, reqBuff);
+					if( pRuleData->m_maxReq == 0 ){
+						sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+							"   No Requests are allowed at this time according to rule '%s'."
+							"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg, pRuleData->m_Name, reqBuff);
+					} else {
+						sprintf(pVioBuff, "'%s' request #%ld for the '%s' Endpoint was Rejected Due to a Frequency Violation:\n"
+							"   Only %ld %s per day are allowed according to rule '%s'."
+							"   ( %s )", pRuleData->m_Method, pRuleData->m_NumRequests, pEpMsg,
+							pRuleData->m_maxReq, pRequestStr, pRuleData->m_Name, reqBuff);
+					}
 					WriteLog(1, gblLogFile, pVioBuff);
 					iRetVal = MSP_BIZ_VIO;
 				}
@@ -2624,7 +2686,9 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 			}
 			else{
 				ci_debug_printf(3, "Rule '%s' does not apply during the current time.\n", pRuleData->m_Name);
-				ci_debug_printf(3, "      Current Time: %d.\n", gblCurrentHourOfDay);
+				ci_debug_printf(3, "      (Current Time: %d).\n", gblCurrentHourOfDay);
+				bDailyLimit = false;
+				bHourlyLimit = false;
 			}
 		} // iRetVal != MSP_BIZ_VIO
 		else{
