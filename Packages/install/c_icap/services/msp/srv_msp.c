@@ -546,6 +546,7 @@ int gblRowCnt=0;
 int gblCurrentDay=-1;
 int gblCurrentHourOfDay=-1;
 int gblCurrentTemp = 0;
+int gblLastCurrentTemp = 0;
 //int gblFileDesc = -1;
 // Declaration of thread condition variable 
 pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
@@ -1349,7 +1350,7 @@ bool LoadActiveRules( char *pDatabaseName ){
 			if( gblUsingTempRule ){
 				ci_debug_printf(0, "\n *** WARNING: TEMPERATURE RULE(s) ARE DEFINED, BUT NO REAL-TIME WEATHER UPDATE APPLICATION ID WAS PROVIDED. ***\n");
 				gblTempTestMode = true;
-				gblCurrentTemp = 50;
+				gblCurrentTemp = 60;
 			}
 			else{
 				ci_debug_printf(0, "\n *** WARNING: NO TEMPERATURE RULE(s) ARE DEFINED, REAL-TIME WEATHER UPDATES WILL BE DISABLED. ***\n");
@@ -1918,7 +1919,7 @@ void msp_close_service()
 
 // https://support.google.com/accounts/answer/6010255
 // https://myaccount.google.com/lesssecureapps
-/*
+/* http://192.168.56.114
 from home, no vpn the following gets delivered immediately
 when bridged.
 	with NO VPN: works
@@ -1945,16 +1946,57 @@ name resolution are defined in the /etc/resolv.conf file
 	nameserver 130.20.248.22
 	nameserver 192.168.1.1
 i added nameserver 192.168.56.1
+321:
+	->sudo cat /etc/resolv.conf
+	domain pnl.gov
+	search pnl.gov
+	nameserver 130.20.248.22
+	nameserver 130.20.128.83
+
+Are you advertising yourself as a non-routable IP?
+We may not accept email from senders who fail a reverse-DNS lookup. In some cases legitimate senders advertise themselves incorrectly as a non-internet routable IP when attempting to open a connection to Outlook.com. IP addresses that are reserved for private (non-routable) networking are 192.168.0.0/16, 10.0.0.0/8, and 172.16.0.0/11 (or 192.168.0.0 - 192.168.255.255, 10.0.0.0 - 10.255.255.255, 172.16.0.0 - 172.31.255.255).
+
 {
 echo From: msspeak@gmail.com
 echo To: mspkuser@outlook.com
-echo Subject: test
+echo Subject: From 321, so basically, VPN with HO/NAT
 echo 
-echo This is the message
+echo From 321, so basically, VPN with HO/NAT
 } | /usr/lib/sendmail -t
 
 sudo truncate -s 0 /var/log/syslog
 sudo cat /var/log/syslog
+sudo cat /var/log/mail.log
+
+didn't work in 321
+	set to bridged now:
+		still didn't work
+			/etc/resolv.conf changed
+
+321:
+	nslookup outlook-com.olc.protection.outlook.com
+	Address: 104.47.6.33
+	Address: 104.47.4.33
+		cant ping either
+james:
+	nslookup outlook-com.olc.protection.outlook.com
+	104.47.56.33
+	104.47.51.33
+		
+both can ping 56.33, not 51.33
+
+
+Powershell:
+	Send-MailMessage -SmtpServer 'outlook.live.com' -From 'msspeak@gmail.com' -To 'mspkuser@outlook.com' -Subject 'From 321, POWERSHELL'
+
+ nslookup outlook-com.olc.protection.outlook.com
+Server:  ns4.pnl.gov
+Address:  130.20.248.22
+
+Non-authoritative answer:
+Name:    outlook-com.olc.protection.outlook.com
+Addresses:  104.47.51.33
+          104.47.56.33
 */
 int sendmail(const char *to, const char *from, 
 			 const char *subject, const char *message)
@@ -2175,11 +2217,13 @@ int msp_end_of_data_handler(ci_request_t * req)
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 101) ){
 						gblTempTestMode = true;
+						gblLastCurrentTemp = gblCurrentTemp;
 						gblCurrentTemp = mspd->CommandArg;
 						ci_debug_printf(1, "   Current Temperature changed to %d(F)\n", gblCurrentTemp);
 					}
 					else{
 						if( mspd->CommandArg == -1 ){
+							gblCurrentTemp = gblLastCurrentTemp;
 							gblTempTestMode = false;
 							ci_debug_printf(1, "   Temperature Test Mode Disabled\n");
 						}
@@ -2675,13 +2719,14 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 					|| (gblCurrentTemp < pRuleData->m_minTemp))) {
 					sprintf(pVioBuff, "The '%s' request for the '%s' Endpoint was Rejected Due to a Temperature Violation:\n"
 						"   These type of requests are only allowed when the temperature is between %ld and %ld degrees according to rule '%s'."
-						"   Current Temperature is %d\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,
+						"\n   (Current Temperature is %d)\n", pRuleData->m_Method, pEpMsg, pRuleData->m_minTemp, pRuleData->m_maxTemp,
 						pRuleData->m_Name, gblCurrentTemp);
 					WriteLog(1, gblLogFile, pVioBuff);
 					iRetVal = MSP_BIZ_VIO;
 				}
 				if( iRetVal != MSP_BIZ_VIO ) {
 					ci_debug_printf(3, "No Violations Found for Rule '%s' at this time.\n", pRuleData->m_Name);
+					//ci_debug_printf(3, "   The Current Temperature is %d(F)\n", gblCurrentTemp);
 				}
 			}
 			else{
