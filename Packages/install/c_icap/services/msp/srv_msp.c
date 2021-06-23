@@ -2331,7 +2331,16 @@ int msp_end_of_data_handler(ci_request_t * req)
 	if( !pRuleData )
 	{
 		if( ErrRet != MSP_OK ){
-			WriteLog(0, gblLogFile, "Error Looking up Request Business Record.");
+			if( mspd->isReqmod )
+				WriteLog(0, gblLogFile, "Error Looking up Request Business Record(request).\n");
+			else
+				WriteLog(0, gblLogFile, "Error Looking up Request Business Record(response).\n");
+
+
+			char *buf = body_data_buf( &mspd->body );
+			msp_dumphex(buf, mspd->expectedData);
+
+			
 			unlock_data(req);
 			return CI_ERROR;
 		}
