@@ -563,6 +563,9 @@ void HttpResponse::SetData( int code, QString& data, QByteArray& buffer, QByteAr
 	QString time_format = "yyyy-MM-dd HH:mm:ss.zzz";
 	QDateTime dt = QDateTime::currentDateTime();
 	QString sTs = dt.toString(time_format);
+
+	// 06.22.2021, set these non-empty to avoid icap error: ??
+	//	namespace error : xmlns:tns: Empty XML namespace is not allowed
 	QString sAppName("");
 	QString sCompany("");
 	QString sMethod("");
@@ -617,7 +620,11 @@ void HttpResponse::SetData( int code, QString& data, QByteArray& buffer, QByteAr
 					//qDebug(qPrintable(sMethod));
 					sMethodNS = reader.namespaceUri().toString();
 					//qDebug() << "Is in NameSpace: " << sMethodNS;
-
+					if( sMethodNS.isEmpty() ){
+						sMethodNS = "http://www.multispeak.org/V4.4/wsdl/" + sMethod;
+						//reader.qualifiedName().toString();
+						qDebug() << "Is in NameSpace: " << sMethodNS;
+					}
 					while (reader.readNextStartElement()) {
 						if (reader.name() == "transactionID") {
 							sTid = reader.readElementText();
