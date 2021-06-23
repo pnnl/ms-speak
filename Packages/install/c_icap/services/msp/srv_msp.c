@@ -1980,7 +1980,7 @@ didn't work in 321
 		cant ping either
 james:
 	nslookup outlook-com.olc.protection.outlook.com
-	104.47.56.33
+	104.47.56.33 <=============== pings
 	104.47.51.33
 		
 both can ping 56.33, not 51.33
@@ -1997,6 +1997,32 @@ Non-authoritative answer:
 Name:    outlook-com.olc.protection.outlook.com
 Addresses:  104.47.51.33
           104.47.56.33
+
+this worked, from home, VPN'd before starting Irene:
+using NAT & HO:
+->nslookup outlook-com.olc.protection.outlook.com
+	Server:		130.20.128.83
+	Address:	130.20.128.83#53
+	Address: 104.47.73.161
+	Address: 104.47.73.33
+->cat /etc/resolv.conf
+	domain pnl.gov
+	search pnl.gov
+	nameserver 130.20.128.83
+	nameserver 130.20.248.22
+	nameserver 192.168.1.1
+
+ but not able to talk to/from winhost (192.168.56.1)
+	see VPN_Adapters.png
+	tried disabling vEthernet (Default Switch)
+		made no diff.
+	disc VPN, reboot Irene:
+		now can see winhost:
+			->ping winhost
+			PING host.pnnl.gov (192.168.56.1) 56(84) bytes of data.
+			64 bytes from host.pnnl.gov (192.168.56.1): icmp_seq=1 ttl=128 time=0.635 ms
+		can still email to outlook
+
 */
 int sendmail(const char *to, const char *from, 
 			 const char *subject, const char *message)
@@ -2021,7 +2047,7 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://192.168.1.14:3128/icap?cmd=1";
+	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://192.168.56.114:3128/icap?cmd=1";
 	ci_debug_printf(1, "\nUser Commands Available Thru: '%s\n",pCmd);
 	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
@@ -2211,7 +2237,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 				break;
 			case BCC_CURRENT_HOUR:
 				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
-				ci_debug_printf(1, "   The Current Hour of the Day is '%d(F)'\n", gblCurrentHourOfDay);
+				ci_debug_printf(1, "   The Current Hour of the Day is '%d'\n", gblCurrentHourOfDay);
 				break;
 			case BCC_SET_CURRENT_TEMP:
 				if( mspd->bHasArg ){
@@ -2226,6 +2252,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 							gblCurrentTemp = gblLastCurrentTemp;
 							gblTempTestMode = false;
 							ci_debug_printf(1, "   Temperature Test Mode Disabled\n");
+							ci_debug_printf(1, "     (Current Temperature %d(F))\n",gblCurrentTemp);
 						}
 						else{
 							ci_debug_printf(1, "   *** ERROR, INVALID NEW TEMP VALUE SPECIFIED: %d ***\n", mspd->CommandArg);
@@ -2794,7 +2821,7 @@ int handle_response_preview(char *pEndpoint, char *pMethod, bool bIsV3)
 		pRuleData->m_NumRequestsPH, pRuleData->m_maxRPH);
 	}*/
 
-	WriteLog(1, gblLogFile, "\nThe '%s' RESPONSE for the '%s' Endpoint was Received.", 
+	WriteLog(1, gblLogFile, "The '%s' RESPONSE for the '%s' Endpoint was Received.", 
 		pMethod, pEpMsg);
 
 	return MSP_OK; // always pass the response on to client;
