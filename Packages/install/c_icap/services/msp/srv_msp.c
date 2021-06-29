@@ -2137,6 +2137,8 @@ int msp_end_of_data_handler(ci_request_t * req)
 	int msRet = MSP_NO_STATUS;
 	const int REQ_TYPE = ci_req_type(req);
 	struct srv_msp_data *mspd = ci_service_data(req);
+	BIZ_RULE *pRuleData;
+	METHOD_RULES *pMethRules;
 
 	ci_debug_printf(4, "\n*** msp_end_of_data_handler:: ***\n");
 #ifdef _SHOW_PIDS_
@@ -2290,16 +2292,33 @@ int msp_end_of_data_handler(ci_request_t * req)
 				}
 				break;
 			case BCC_SET_CURRENT_HOUR:
+				pMethRules = gblpMethRules;
 				ci_debug_printf(3, "Change Current Hour of the Day Command Received.\n");
 				if( mspd->bHasArg ){
 					if( (mspd->CommandArg >=0) && (mspd->CommandArg < 24) ){
 						gblHourTestMode = true;
+						/* since sudo date -s "+1 hour" does not stick (time reverts back to actual time),
+							to cause an hour transition for testing m_maxRPH, just subtract 3600 from each rule's m_StartTime
+						*/
+						for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++,pRuleData = pMethRules->pRule)
+						{
+							if( pRuleData->m_maxRPH != WILDCARD ){
+								pRuleData->m_StartTime -= 3600;
+							}
+						}
 						gblCurrentHourOfDay = mspd->CommandArg;
 						ci_debug_printf(1, "   The Current Hour of the Day changed to %d\n", gblCurrentHourOfDay);
 					}
 					else{
 						if( mspd->CommandArg == -1 ){
 							gblHourTestMode = false;
+							// undo time shift
+							for (pRuleData = pMethRules->pRule; pRuleData; pMethRules++,pRuleData = pMethRules->pRule)
+							{
+								if( pRuleData->m_maxRPH != WILDCARD ){
+									pRuleData->m_StartTime += 3600;
+								}
+							}
 							ci_debug_printf(1, "   Hour Test Mode Disabled\n");
 						}
 						else{
@@ -2379,7 +2398,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 	//ci_debug_printf(0, "    Message Type: %s\n", ci_method_string(REQ_TYPE));
 
 	int ErrRet;
-	BIZ_RULE *pRuleData = GetBusinessRecord(mspd, &ErrRet);
+	pRuleData = GetBusinessRecord(mspd, &ErrRet);
 	if( !pRuleData )
 	{
 		if( ErrRet != MSP_OK ){
@@ -2642,6 +2661,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 			}
 		}
 		if( pRuleData->m_maxRPH != WILDCARD ){
+			//printf("Seconds since January 1, 1970 = %ld\n", currtime);
 			bHourlyLimit=true;
 			if (bNewDay)
 				pRuleData->m_NumRequestsPH = 0;
@@ -2650,6 +2670,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 				time(&pRuleData->m_StartTime);
 			}
 			else{
+				//ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
 				time_t now;
 				time(&now);
 				double ElapsedTime = difftime(now, pRuleData->m_StartTime);// seconds
@@ -2657,6 +2678,7 @@ int handle_request_preview(METHOD_RULES *pMethRules, char *pVioBuff, bool bIsV3,
 					pRuleData->m_NumRequestsPH = 0;
 					time(&pRuleData->m_StartTime);
 				}
+				ci_debug_printf(1, "   ElapsedTime: %.1f\n", ElapsedTime);
 			}
 			pRuleData->m_NumRequestsPH++;
 			if (bFirstHourly) {
