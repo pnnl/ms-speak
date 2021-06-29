@@ -1965,7 +1965,7 @@ echo From 321, so basically, VPN with HO/NAT
 } | /usr/lib/sendmail -t
 
 sudo truncate -s 0 /var/log/syslog
-sudo cat /var/log/syslog
+
 sudo cat /var/log/mail.log
 
 didn't work in 321
@@ -2005,7 +2005,7 @@ using NAT & HO:
 	Address:	130.20.128.83#53
 	Address: 104.47.73.161
 	Address: 104.47.73.33
-->cat /etc/resolv.conf
+->
 	domain pnl.gov
 	search pnl.gov
 	nameserver 130.20.128.83
@@ -2022,6 +2022,31 @@ using NAT & HO:
 			PING host.pnnl.gov (192.168.56.1) 56(84) bytes of data.
 			64 bytes from host.pnnl.gov (192.168.56.1): icmp_seq=1 ttl=128 time=0.635 ms
 		can still email to outlook
+
+cls;{ echo From: msspeak@gmail.com; echo To: mspkuser@outlook.com; echo Subject: test; echo ; echo boot while NOVPN, WITH NAT AND HO; } | /usr/lib/sendmail -t
+{ echo From: carl.miller@pnnl.gov; echo To: carl.miller@pnnl.gov; echo Subject: test; echo ; echo boot while NOVPN, WITH NAT AND HO; } | /usr/lib/sendmail -t
+
+cat /etc/mail/local-host-names
+
+cd /etc/mail/
+m4 /etc/mail/sendmail.mc > /etc/mail/sendmail.cf
+/etc/init.d/sendmail start
+
+all i did was 
+	sudo /etc/init.d/sendmail start
+and then i got the email i had sent to carl.miller@pnnl.gov (sent from 321 wsl)
+	sent 2nd and got it too
+not getting any to mspkuser@outlook.com from From: msspeak@gmail.com
+	or from carl.miller@pnnl.gov
+
+this also worked: (from 321 wsl)
+{ echo From: msspeak@gmail.com; echo To: carl.miller@pnnl.gov; echo Subject: test; echo ; echo msspeak@gmail.com test; } | /usr/lib/sendmail -t -v
+
+from 321 irene:
+{ echo From: msspeak@gmail.com; echo To: carl.miller@pnnl.gov; echo Subject: test; echo ; echo 321 Irene test; } | /usr/lib/sendmail -t -v
+	this also worked, from Irene!
+
+set 5 pings rule to send to carl.miller
 
 */
 int sendmail(const char *to, const char *from, 
