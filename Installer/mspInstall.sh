@@ -312,10 +312,14 @@ else
 				cd ../
 				if sudo cp install/squid/squid.conf /usr/local/squid/etc/; then
 					sudo chmod 777 /usr/local/squid -R
-					if sudo mkdir /usr/local/squid/ssl_cert; then
+					if [ ! -d /usr/local/squid/ssl_cert ]; then
+						sudo mkdir /usr/local/squid/ssl_cert
+					fi
+					#if sudo mkdir /usr/local/squid/ssl_cert; then
+					if [ -d /usr/local/squid/ssl_cert ]; then
                         sudo chown nobody:nogroup /usr/local/squid/ssl_cert
-                        if sudo cp install/squid/mspCA.pem /usr/local/squid/ssl_cert; then
-                            sudo chown nobody:nogroup /usr/local/squid/ssl_cert/mspCA.pem
+                        if sudo cp install/squid/squidCA.pem /usr/local/squid/ssl_cert; then
+                            sudo chown nobody:nogroup /usr/local/squid/ssl_cert/squidCA.pem
                             sudo chmod 700 /usr/local/squid/ssl_cert
                             if sudo /usr/local/squid/libexec/security_file_certgen -c -s /var/lib/ssl_db -M 4MB; then
                                 sudo chown nobody:nogroup -R /var/lib/ssl_db
@@ -412,25 +416,25 @@ else
 					#sudo mkdir -p /usr/local/share/c_icap
 					#sudo mkdir -p /usr/local/share/c_icap/templates
 					#if sudo mkdir -p /usr/local/share/c_icap/templates/msp; then
-						if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en-US; then
-							if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en-US; then
-								sudo cp install/c_icap/c-icap.conf /usr/local/etc
-								sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
-								#sudo cp install/BizRules.db $NEW_DIR
-								sudo mkdir -p /var/run/c-icap
-								if sudo ln -s $NEW_DIR /home/msspeak; then
-									#sudo cp install/qt.qpa.sh /etc/profile.d
-									echo '/home/msspeak link created.'
-								else
-									echo '/home/msspeak link could not be made.'
-								fi
-								retval=$?
+					if sudo mkdir -p /usr/local/share/c_icap/templates/msp/en-US; then
+						if sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en-US; then
+							sudo cp install/c_icap/c-icap.conf /usr/local/etc
+							sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
+							#sudo cp install/BizRules.db $NEW_DIR
+							sudo mkdir -p /var/run/c-icap
+							if sudo ln -s $NEW_DIR /home/msspeak; then
+								#sudo cp install/qt.qpa.sh /etc/profile.d
+								echo '/home/msspeak link created.'
 							else
-								retval=$?
+								echo '/home/msspeak link could not be made.'
 							fi
+							retval=$?
 						else
 							retval=$?
 						fi
+					else
+						retval=$?
+					#fi
 					#else
 					#	retval=$?
 					fi
