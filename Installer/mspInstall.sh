@@ -1,6 +1,10 @@
 #!/bin/sh
 set  -e
-
+#
+#  7.13.2021 - added the following pkgs so ./configure --with-openssl --enable-ssl-crtd
+#				does not fail with 'ssl is required for OpenSSL'
+#     libexpat1-dev, pkg-config
+#
 # How do I fix “$'\r': command not found” errors running Bash scripts in WSL?
 #		sudo apt-get install dos2unix
 #		dos2unix mspInstall
@@ -113,11 +117,19 @@ else
 								if sudo apt-get install libcurl4-gnutls-dev; then
 									if sudo apt-get install libssl-dev; then
 										if sudo apt-get install sendmail; then
-											printf "\n\n*** Successfully Installed required packages"
+											if sudo apt-get install libexpat1-dev; then
+												if sudo apt-get install pkg-config; then
+													printf "\n\n*** Successfully Installed required packages"
+												else
+													printf "\nFailed to Install pkg-config, can not continue"
+													false
+											else
+												printf "\nFailed to Install libexpat1-dev, can not continue"
+												false
+											fi
 										else
 											printf "\nFailed to Install sendmail, can not continue"
 											false
-										fi
 									else
 										printf "\nFailed to Install libssl-dev, can not continue"
 										false
@@ -333,7 +345,7 @@ else
 	fi
 	#retval=$?
 	if [ $retval -ne 0 ]; then
-		printf "\nFailed to Successfully Install Squid, can not continue"
+		printf "\nFailed to Successfully Install Squid, can not continue\n"
 		read -p "Press [Enter] to exit."
 		cd $ORIG_DIR
 		return 0
