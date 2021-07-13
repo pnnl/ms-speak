@@ -462,6 +462,12 @@ else
 		sudo ldconfig
 	fi
 fi
+#
+# TODO - add in certs:
+#
+#	sudo cp mss.crt /usr/local/share/ca-certificates/mssCA.crt
+#	sudo update-ca-certificates -f
+
 # export QT_QPA_PLATFORM=wayland  this only appiles to the current cmd window
 echo "export QT_QPA_PLATFORM=wayland" >> ~/.bashrc
 echo "alias cls='clear'"
