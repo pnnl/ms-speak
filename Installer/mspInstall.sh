@@ -92,7 +92,7 @@ fi
 
 # required packages  libssl1.0-dev ? for MSS
 printf "\nThe Following required packages will now be installed:"
-printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git, libcurl4-openssl, libcurl4-gnutls-dev, libssl-dev & sendmail"
+printf "\n    g++, libsqlite3-dev, libxml2-dev, libxml2, uuid-dev, git, libcurl4-openssl, libcurl4-gnutls-dev, libssl-dev, sendmail, libexpat1-dev & pkg-config"
 printf "\n\nPress just the [Enter] key to continue with this Installation, or"
 printf "\n  else enter 'S' to skip this step, otherwise enter 'N' to terminate completely:\n"
 read DO_INSTALL
@@ -123,6 +123,7 @@ else
 												else
 													printf "\nFailed to Install pkg-config, can not continue"
 													false
+												fi
 											else
 												printf "\nFailed to Install libexpat1-dev, can not continue"
 												false
@@ -130,6 +131,7 @@ else
 										else
 											printf "\nFailed to Install sendmail, can not continue"
 											false
+										fi
 									else
 										printf "\nFailed to Install libssl-dev, can not continue"
 										false
