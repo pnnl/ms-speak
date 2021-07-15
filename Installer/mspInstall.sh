@@ -49,6 +49,7 @@ set  -e
 #				this does not appear to use wayland...
 #
 #		to use X11:  ./IdsEditor -platform xcb
+#			need to do it this way for VNC connections
 #
 # return 0 in all cases so as not to abort a wsl session (zero for success).
 
