@@ -307,7 +307,11 @@ if [ ! -z "$DO_INSTALL" ]; then
 else
 	cd squid-4.7
 	# if ./configure; then
-	if ./configure --with-openssl --enable-ssl-crtd; then
+	# Squid 3.4 and later crashes with Illegal Instruction error immediately after startup on a virtual machine on Intel-compatible processors
+	#		 can be overridden by supplying the --disable-arch-native option to the configure script.
+	#  ./configure --with-openssl --enable-ssl-crtd --disable-arch-native
+	#if ./configure --with-openssl --enable-ssl-crtd; then
+	if ./configure --with-openssl --enable-ssl-crtd --disable-arch-native; then
 		if make; then
 			if sudo make install; then
 				cd ../
