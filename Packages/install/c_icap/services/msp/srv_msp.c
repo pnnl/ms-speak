@@ -74,6 +74,7 @@
 							v3 msg hdr does not contain caller information
 		05/12/2021 - CHM: Email notifications working.
 		05/20/2021 - CHM: Added Inverse and Name to Rule in order to handle multiple rules per method.
+		07/15/2021 - CHM: Use Azure private IP in help.
 		-------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -1404,7 +1405,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
 	//sleep(1);
-	ci_debug_printf(0, "\n*** Initializing msp module v3.1 ***\n");
+	ci_debug_printf(0, "\n*** Initializing msp module v3.2 ***\n");
 	 gblMainProc = getpid();
 #ifdef _SHOW_PIDS_
 	ci_debug_printf(3, "msp_init_service pid: %d.\n", gblMainProc);
@@ -2048,6 +2049,10 @@ from 321 irene:
 
 set 5 pings rule to send to carl.miller
 
+
+Azure:
+	cls;{ echo From: msspeak@gmail.com; echo To: mspkuser@outlook.com; echo Subject: Azure Test; echo ; echo This is an Azure Test Message; } | /usr/lib/sendmail -t
+		this worked
 */
 int sendmail(const char *to, const char *from, 
 			 const char *subject, const char *message)
@@ -2072,7 +2077,7 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://192.168.56.114:3128/icap?cmd=1";
+	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://10.16.124.4:3128/icap?cmd=1";
 	ci_debug_printf(1, "\nUser Commands Available Thru: '%s\n",pCmd);
 	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
