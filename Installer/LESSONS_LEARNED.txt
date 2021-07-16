@@ -1,0 +1,225 @@
+
+
+###### LESSONS LEARNED ###########################
+only need mss.crt istalled into Irene's store
+	>sudo ls -al /usr/local/share/ca-certificates
+		-rw-r--r-- 1 root root 1864 Jun 16 14:52 mssCA.crt
+only need squidCA.crt istalled into Alice's store
+	>sudo ls -al /usr/local/share/ca-certificates
+		-rw-r--r-- 1 root root 3166 Jun  8 12:55 squidCA.crt
+only need mss.crt and mss.key available to MSS on Bob
+if not using proxy, the cert from bob is not validated
+if are using proxy bumping, irene/squid needs to be able to
+validate bob's cert (mss.crt) and Alice needs to be able to
+validate irene's cert (squdCA.crt)
+
+needed to add specific IPs to mss.crt
+	DNS.8  = 192.168.1.2
+	DNS.9  = 192.168.1.7
+	DNS.10 = 192.168.1.14
+	DNS.11 = 192.168.1.21
+	IP.4 = 192.168.1.2
+	IP.5 = 192.168.1.7
+	IP.6 = 192.168.1.14
+	IP.7 = 192.168.1.21
+(probably only needed to add Bob's (192.168.1.21)
+
+Alice only needs Multispeaker, Bob only MultispeakerServer, Irene only RuleEditor
+
+WARNING!  If i don't use a bridged i/f, then sendmail fails if using the VPN
+if i do, then can't use MS from host.
+Have to setup 2 adapters in each VM, one to access the internet, one to access
+other VMs and the host:
+	Set the first adapter to NAT and second adapter to Host-only adapter.
+
+	sudo nano /etc/network/interfaces.d/setup
+		# The loopback network interface
+		auto lo
+		iface lo inet loopback
+		# The primary network interface - Internet Access
+		auto enp0s3
+		iface enp0s3 inet dhcp
+
+		# Alice
+		# The network interface to Host and other VMs
+		auto enp0s8
+		iface enp0s8 inet static
+		address 192.168.56.107
+
+	sudo nano /etc/hosts
+		192.168.56.1     host.pnnl.gov  WinHost
+		192.168.56.107   alice.pnnl.gov Alice
+		192.168.56.121   bob.pnnl.gov   Bob
+		
+		10.16.124.4     irene.az.pnnl.gov Irene
+		10.16.124.5     alice.az.pnnl.gov Alice
+		10.16.124.6     bob.az.pnnl.gov   Bob
+		130.20.141.136  WE37088.pnl.gov   WinHost321
+
+***** NEED TO UPDATE THE MSS CERT TO THESE IPS NOW... **********
+	sudo ls -al /usr/local/share/ca-certificates
+		-rw-r--r-- 1 root root mssCA.crt
+	sudo ls -al /etc/ssl/certs/mssCA.pem
+		lrwxrwxrwx 1 root root /etc/ssl/certs/mssCA.pem -> /usr/local/share/ca-certificates/mssCA.crt
+	sudo rm /usr/local/share/ca-certificates/mssCA.crt
+	sudo update-ca-certificates -f
+	sudo cp mss.crt /usr/local/share/ca-certificates/mssCA.crt
+	sudo update-ca-certificates -f
+	sudo ls -al /etc/ssl/certs/mssCA.pem
+		lrwxrwxrwx 1 root root /etc/ssl/certs/mssCA.pem -> /usr/local/share/ca-certificates/mssCA.crt
+
+
+
+Azure:
+	i installed Qt from the .run file
+		into Irene? then made alice and bob from snapshots?
+	apt-get update and after that apt-get install autocutsel
+	created a xstartup file under the ~/.vnc directory, with the following content:
+
+	#!/bin/sh
+	/usr/bin/autocutsel -s CLIPBOARD -fork
+	Then you need to make it executable:
+		chmod +x ~/.vnc/xstartup
+	https://wiki.parabola.nu/TightVNC
+	i CAN paste from host to xfce terminal
+
+	# Squid 3.4 and later crashes with Illegal Instruction error immediately after startup on a virtual machine on Intel-compatible processors
+	#		 can be overridden by supplying the --disable-arch-native option to the configure script.
+	cd /home/msuser/msspeak/Packages/squid-4.7
+	./configure --with-openssl --enable-ssl-crtd --disable-arch-native
+	make
+	make install
+		squid now runs, sans Illegal Instruction crashes
+	
+	sent from windoze box in 321 sciffer
+	to Azure cloud squid/icap at 10.16.124.4
+	onto Azure cloud MSS at 10.16.124.6
+	SSL b4 updating certificates
+		bob/mss says "System does not support Qt OpenSSL Version: OpenSSL 1.0.2k-fips 26 Jan 2017"
+########### from 3VM_crt_testing.txt #########################################
+	6.19
+	ls /usr/local/ssl/lib  doesn't exist on Alice, does in buster
+
+	qt.network.ssl: QSslSocket: cannot resolve CRYPTO_num_locks
+		cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
+		sudo cp /usr/lib/x86_64-linux-gnu/libssl.so .
+		sudo cp /usr/lib/x86_64-linux-gnu/libcrypto.so .
+		sudo ln -s libssl.so libssl.so.1.0.0
+		sudo ln -s libcrypto.so libcrypto.so.1.0.0
+	this is messed up, look at this: the above links look reversed
+		/usr/local/ssl/lib
+			lrwxrwxrwx 1 root root      18 Apr 18 14:17 libcrypto.so -> libcrypto.so.1.0.0
+			-r-xr-xr-x 1 root root 2694024 Apr 18 14:17 libcrypto.so.1.0.0
+			lrwxrwxrwx 1 root root      15 Apr 18 14:17 libssl.so -> libssl.so.1.0.0
+			-r-xr-xr-x 1 root root  517208 Apr 18 14:17 libssl.so.1.0.0
+
+	put libssl.so.1.0.0, libcrypto.so.1.0.0 in ~
+		cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
+		sudo cp ~/libssl.so.1.0.0 .
+		sudo cp ~/libcrypto.so.1.0.0 .
+		sudo ln -s libssl.so.1.0.0 libssl.so 
+		sudo ln -s libcrypto.so.1.0.0 libcrypto.so 
+	ACTUALLY, THE WAY IT IS ON BUSTER IS THE FIRST WAY
+		sudo cp ~/libssl.so.1.0.0 libssl.so
+		sudo cp ~/libcrypto.so.1.0.0 libcrypto.so
+		sudo ln -s libssl.so libssl.so.1.0.0
+		sudo ln -s libcrypto.so libcrypto.so.1.0.0
+	MS still fails
+
+	do using openssl-1.0.2k.tar.gz
+		sudo apt install build-essential zlib1g-dev -y
+		./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+		make
+		sudo make install 
+	now /usr/local/ssl/lib exists
+
+	cd /etc/ld.so.conf.d
+	nano openssl-1.0.2k.conf
+		paste /usr/local/ssl/lib
+	sudo ldconfig -v
+	/usr/local/ssl/lib:
+		libcrypto.so.1.0.0 -> libcrypto.so.1.0.0
+		libssl.so.1.0.0 -> libssl.so.1.0.0
+
+	***** WOOOOOOOOOO-HOOOOOOOOOOO!  *******
+	I NOW GET THIS WHEN RUN MS:
+		SSL Support:  true
+		Compile Time:  "OpenSSL 1.0.2k-fips  26 Jan 2017"
+		Run Time:  "OpenSSL 1.0.2k  26 Jan 2017"
+########### from 3VM_crt_testing.txt #########################################
+On Azure:
+	bob:
+		mss says: "System does not support Qt OpenSSL Version: OpenSSL 1.0.2k-fips 26 Jan 2017"
+		need install same openssl version that QT is using:
+			ls /usr/local/ssl/lib
+				 No such file or directory
+			->openssl version
+				OpenSSL 1.1.1d  10 Sep 2019
+			put xxx into Downloads folder
+			cd /home/msuser/Downloads
+			'Extract Here" or tar –xvzf openssl-1.0.2k.tar.gz
+			cd openssl-1.0.2k
+			sudo apt install build-essential zlib1g-dev -y
+			./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+			make
+			sudo make install 
+			now verify /usr/local/ssl/lib exist:
+				->ls /usr/local/ssl/lib
+				engines      libcrypto.so        libssl.a   libssl.so.1.0.0
+				libcrypto.a  libcrypto.so.1.0.0  libssl.so  pkgconfig
+			then do:
+				cd /etc/ld.so.conf.d
+				sudo nano openssl-1.0.2k.conf
+					paste: /usr/local/ssl/lib
+				sudo ldconfig -v
+				verifiy display shows:
+					/usr/local/ssl/lib:
+						libcrypto.so.1.0.0 -> libcrypto.so.1.0.0
+						libssl.so.1.0.0 -> libssl.so.1.0.0
+			mss now says:
+				"Error Reading Cert File '/home/msuser/.MultiSpeaker/mss.crt'"
+				folder is empty
+			cd /home/msuser/msspeak/Packages/install
+			mkdir /home/msuser/.MultiSpeaker
+			cp mss.crt /home/msuser/.MultiSpeaker/mss.crt
+			cp mss.key /home/msuser/.MultiSpeaker/mss.key
+			mss now does not complain.
+
+	alice:
+		ms says: nothing no error msgs, huh.(no proxy used)
+		->./argsMultiSpeaker x -platform xcb
+			qt.network.ssl: QSslSocket: cannot resolve CRYPTO_num_locks
+			qt.network.ssl: QSslSocket: cannot resolve CRYPTO_set_id_callback
+			...
+			qt.network.ssl: QSslSocket: cannot resolve SSL_library_init
+			...
+			qt.network.ssl: Incompatible version of OpenSSL
+			SSL Support:  false
+			Compile Time:  "OpenSSL 1.0.2k-fips  26 Jan 2017"
+			Run Time:  ""
+		>./MultiSpeaker -platform xcb
+			run MSS on bob, from Buster
+				got "Incoming connection from 104.42.253.51...."
+			but on alice got the same errors as argsMultiSpeaker x showed above
+		Now install same openssl version that QT is using as did for bob above
+		->./argsMultiSpeaker x -platform xcb
+			now says:
+				SSL Support:  true
+				Compile Time:  "OpenSSL 1.0.2k-fips  26 Jan 2017"
+				Run Time:  "OpenSSL 1.0.2k  26 Jan 2017"
+	MSS listening from one machine running linux, launched via ssh -X to Bob Azure VM
+	MS running  from other windoze machine connected to Alice Azure VM
+	successfully sent SSL message from alice to bob
+	I think ssl worked eventhough mss.crt doesn't have any azure IPs because
+	if not using proxy, the cert from bob is not validated
+	if are using proxy bumping, irene/squid needs to be able to
+	validate bob's cert (mss.crt) and Alice needs to be able to
+	validate irene's cert (squdCA.crt)
+
+
+
+
+??????? do this next:
+#	sudo cp mss.crt /usr/local/share/ca-certificates/mssCA.crt
+#	sudo update-ca-certificates -f
+
