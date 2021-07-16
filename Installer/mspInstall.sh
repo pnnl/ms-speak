@@ -469,9 +469,29 @@ else
 fi
 #
 # TODO - add in certs:
-#
+#	cd /home/msuser/msspeak/Packages/install
+#	mkdir /home/msuser/.MultiSpeaker
+#	cp mss.crt /home/msuser/.MultiSpeaker/mss.crt
+#	cp mss.key /home/msuser/.MultiSpeaker/mss.key
 #	sudo cp mss.crt /usr/local/share/ca-certificates/mssCA.crt
 #	sudo update-ca-certificates -f
+# 
+#	install same openssl version that QT is using:
+#		put openssl-1.0.2k.tar.gz into Downloads folder
+#		'Extract Here"(via vnc)
+#		cd openssl-1.0.2k
+#		sudo apt install build-essential zlib1g-dev -y
+#		./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
+#		make
+#		sudo make install 
+#		->ls /usr/local/ssl/lib
+#			engines      libcrypto.so        libssl.a   libssl.so.1.0.0
+#			libcrypto.a  libcrypto.so.1.0.0  libssl.so  pkgconfig
+#		cd /etc/ld.so.conf.d
+#		sudo nano openssl-1.0.2k.conf
+#			paste: /usr/local/ssl/lib
+#		sudo ldconfig -v
+#
 
 # export QT_QPA_PLATFORM=wayland  this only appiles to the current cmd window
 echo "export QT_QPA_PLATFORM=wayland" >> ~/.bashrc
