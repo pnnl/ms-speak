@@ -478,7 +478,8 @@ fi
 # 
 #	install same openssl version that QT is using:
 #		put openssl-1.0.2k.tar.gz into Downloads folder
-#		'Extract Here"(via vnc)
+#		cd /home/msuser/Downloads
+#		tar –xvzf openssl-1.0.2k.tar.gz
 #		cd openssl-1.0.2k
 #		sudo apt install build-essential zlib1g-dev -y
 #		./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
