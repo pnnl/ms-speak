@@ -108,7 +108,7 @@ private:
 	bool m_useCreds;
 
 public:
-	MultiSpeaker(QWidget* parent=Q_NULLPTR);
+	MultiSpeaker(quint16 argMask, QWidget* parent=Q_NULLPTR);
 	~MultiSpeaker();
 	static MultiSpeaker *theApp();
 	bool InitOk() {return m_bInitDone; }

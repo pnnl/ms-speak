@@ -107,7 +107,7 @@ MultiSpeaker *MultiSpeaker::pMainWindow = nullptr;
 //------------------------------------------------------------------------------
 // MultiSpeaker
 //
-MultiSpeaker::MultiSpeaker(QWidget* parent)
+MultiSpeaker::MultiSpeaker(quint16 argMask, QWidget* parent)
   : QMainWindow(parent),
 	m_clearSettingsShortcut(QKeySequence("Ctrl+Shift+C"), this, SLOT(OnClearSettings())),
 	m_functionBlockDock(Q_NULLPTR),
@@ -144,36 +144,38 @@ MultiSpeaker::MultiSpeaker(QWidget* parent)
 
 		*******  MS Application not supporting SSL ******************
 		"QSslSocket: cannot resolve SSL_library_init"
-		do using openssl-1.0.2k.tar.gz
+		need install same openssl version that QT is using:
+			ls /usr/local/ssl/lib
+				 No such file or directory
+			->openssl version
+				OpenSSL 1.1.1d  10 Sep 2019
+			put xxx into Downloads folder
+			'Extract Here"
+			cd openssl-1.0.2k
 			sudo apt install build-essential zlib1g-dev -y
 			./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib
 			make
 			sudo make install
-		now /usr/local/ssl/lib exists
-		cd /opt/Qt/Qt5.11.3/5.11.3/gcc_64/lib
-			this:
-				sudo cp /usr/local/ssl/lib/libssl.so.1.0.0 libssl.so
-				sudo cp /usr/local/ssl/lib/libcrypto.so.1.0.0 libcrypto.so
-				sudo ln -s libssl.so libssl.so.1.0.0
-				sudo ln -s libcrypto.so libcrypto.so.1.0.0
-			should probably be this:
-				sudo cp /usr/local/ssl/lib/libssl.so.1.0.0 .
-				sudo cp /usr/local/ssl/lib/libcrypto.so.1.0.0 .
-				sudo ln -s libssl.so.1.0.0 libssl.so
-				sudo ln -s libcrypto.so.1.0.0 libcrypto.so
+			now verify /usr/local/ssl/lib exist:
+				->ls /usr/local/ssl/lib
+				engines      libcrypto.so        libssl.a   libssl.so.1.0.0
+				libcrypto.a  libcrypto.so.1.0.0  libssl.so  pkgconfig
+			then do:
+				cd /etc/ld.so.conf.d
+				sudo nano openssl-1.0.2k.conf
+					paste: /usr/local/ssl/lib
+				sudo ldconfig -v
+				verifiy display shows:
+					/usr/local/ssl/lib:
+						libcrypto.so.1.0.0 -> libcrypto.so.1.0.0
+						libssl.so.1.0.0 -> libssl.so.1.0.0
 
-		cd /etc/ld.so.conf.d
-		nano openssl-1.0.2k.conf
-			paste /usr/local/ssl/lib
-		sudo ldconfig -v
-			/usr/local/ssl/lib:
-				libcrypto.so -> libcrypto.so.1.0.0
-				ibssl.so -> libssl.so.1.0.0
-
+	*/
+	if( argMask != 0 ){
 		qInfo() << "SSL Support: " << QSslSocket::supportsSsl();
 		qInfo() << "Compile Time: " << QSslSocket::sslLibraryBuildVersionString();
 		qInfo() << "Run Time: " << QSslSocket::sslLibraryVersionString();
-	*/
+	}
 	/*
 	 * Searches all files in the path for certificates encoded in the specified format
 	 * and adds them to this socket's CA certificate database. path must be a file or a

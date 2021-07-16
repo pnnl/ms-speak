@@ -69,6 +69,7 @@ Q_DECLARE_METATYPE(QSslCipher)
 
 int main(int argc, char* argv[])
 {
+	quint16 argMask=0;
 	qRegisterMetaType<QAbstractSocket::SocketError>();
 	qRegisterMetaType<QList<QSslError> >();
 	qRegisterMetaType<QSslCipher>();
@@ -79,8 +80,13 @@ int main(int argc, char* argv[])
 	QCoreApplication::setApplicationName("MultiSpeaker");
 
 	QApplication app(argc, argv);
-
-	MultiSpeaker ms;
+	QStringList args = app.arguments();
+	if (args.count() == 2)
+	{
+		argMask=1;
+	}
+	//MultiSpeaker ms;
+	MultiSpeaker ms(argMask);
 	if (ms.InitOk()) {
 		ms.show();
 	}
