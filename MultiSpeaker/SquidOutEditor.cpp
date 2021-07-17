@@ -97,8 +97,13 @@ void SquidOutEditor::Init()
 	ui.ProxyIpEdit->lineEdit()->setAlignment(Qt::AlignCenter);
 	ui.ProxyIpEdit->lineEdit()->setInputMask("000.000.000.000");
 
-	QStringList ipList = getIpAddresses();
-	ipList << "255.255.255.255";
+	QStringList ipList;// = getIpAddresses();
+	//ipList << "255.255.255.255";
+	ipList << "138.91.74.160";
+	ipList << "10.16.124.4";
+	ipList << "192.168.56.114";
+	ipList << "127.0.0.1";
+
 	ui.ProxyIpEdit->insertItems(0, ipList);
 	ui.ProxyIpEdit->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 

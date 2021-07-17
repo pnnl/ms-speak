@@ -120,8 +120,17 @@ void HttpOutEditor::Init(const Host& host)
     ui.ResponseHostIpEdit->lineEdit()->setInputMask( "000.000.000.000" );
 	ui.ResponseHostIpEdit->lineEdit()->setFont(ipFont);
 
-	QStringList ipList = getIpAddresses();
-	ipList << "255.255.255.255";
+	QStringList ipList;// = getIpAddresses();
+	//ipList << "255.255.255.255";
+	ipList << "104.42.123.157";
+	ipList << "10.16.124.6";
+	ipList << "192.168.56.121";
+	ipList << "127.0.0.1";
+/* Azure pub / priv / vbox
+Irene: 138.91.74.160  / 10.16.124.4 / 192.168.56.114
+Alice: 104.42.253.51  / 10.16.124.5 / 192.168.56.107
+Bob:   104.42.123.157 / 10.16.124.6 / 192.168.56.121
+*/
 	ui.RequestHostIpEdit->insertItems(0, ipList);
 	ui.ResponseHostIpEdit->insertItems(0, ipList);
 
