@@ -1405,7 +1405,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
 	//sleep(1);
-	ci_debug_printf(0, "\n*** Initializing msp module v3.2 ***\n");
+	ci_debug_printf(0, "\n*** Initializing msp module v3.3 ***\n");
 	 gblMainProc = getpid();
 #ifdef _SHOW_PIDS_
 	ci_debug_printf(3, "msp_init_service pid: %d.\n", gblMainProc);
@@ -1742,15 +1742,15 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_MOD_CONTINUE;
 	} // !ci_req_hasbody
 	/*else{
-		ci_debug_printf(3, "\nmsp_preview_handler::DOES have body\n");
-		/ * the body may not be available yet, in preview_handler...
+		ci_debug_printf(3, "\nmsp_preview_handler::DOES have body\n"); // body_data_buf::invalid body type:0
+		// the body may not be available yet, in preview_handler...
 		char *buf2 = body_data_buf( &mspd->body );
 		if( !buf2 ){
 			ci_debug_printf(0, "\n*** msp_preview_handler:: FAILED TO GET BODY BUFFER  ***\n");
 		}
 		else{
 			msp_dumphex(buf2, mspd->expectedData);
-		}* /
+		}//
 	}*/
 	/*   
 	mspd = ci_service_data(req);
@@ -1789,8 +1789,9 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_ERROR; 
 	}
 
-	char buf[1000];
-	size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
+#define hdrbufsize 5000
+	char buf[hdrbufsize];
+	size_t len = ci_headers_pack_to_buffer(pHeader, buf, hdrbufsize);
 	/*
 	ci_debug_printf(0, "msp_preview_handler:HTTP HEADER:\n");
 	msp_dumphex(buf, len);
@@ -1848,12 +1849,15 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		ci_debug_printf(0, "msp_preview_handler::no content type in header\n");
 		return CI_ERROR; // TODO: should we throw an error or allow?
 	}
+	ci_debug_printf(4, "Content type :'%s'.\n", content_type);
 	if( strstr(content_type, "text/xml") == NULL ){
 		if( mspd->bIsSSL ){
 			ci_debug_printf(4, "msp_preview_handler content type %s being allowed for SSL testing..\n", content_type);
 		}
 		else{
-			ci_debug_printf(0, "msp_preview_handler content type %s will not be processed...\n", content_type);
+			ci_debug_printf(0, "msp_preview_handler content type '%s' will not be processed...\n", content_type);
+			//ci_debug_printf(3, "pHeader: '%s'\n", pHeader);
+			msp_dumphex(buf, len); // msp_dumphex:: len: 0
 			return CI_ERROR; // TODO: should we throw an error or allow?
 		}
 	}
@@ -1870,6 +1874,7 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	/*If we do not have content len, for simplicity do not proccess it*/
 	if( content_len <= 0 ){
 		ci_debug_printf(0, "msp_preview_handler::no Content-Length, will not process\n");
+		msp_dumphex(buf, len);
 		return CI_ERROR;
 	}
 
@@ -2077,8 +2082,10 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://10.16.124.4:3128/icap?cmd=1";
+	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://10.16.124.4:3128/icap?cmd=Help";
 	ci_debug_printf(1, "\nUser Commands Available Thru: '%s\n",pCmd);
+	ci_debug_printf(1, "      http://138.91.74.160:3128/icap?cmd=1\n");
+	ci_debug_printf(1, "      http://138.91.74.160:3128/icap?cmd=6&arg=53\n");
 	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
 		switch( cmd ){
@@ -2099,12 +2106,12 @@ void BccUsage(void)
 				break; 
 			case BCC_SET_CURRENT_TEMP:
 				ci_debug_printf(1, "%d - Set Current Temperature(F)(enter test mode).\n", cmd);
-				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=')\n");
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=XX')\n");
 				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_SET_CURRENT_HOUR:
 				ci_debug_printf(1, "%d - Set Current Hour of the Day(enter test mode).\n", cmd);
-				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=')\n");
+				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=XX')\n");
 				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_HELP:
