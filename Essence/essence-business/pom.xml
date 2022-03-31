@@ -150,7 +150,7 @@
 <dependency>
    <groupId>org.springframework</groupId>
    <artifactId>spring-beans</artifactId>
-   <version>3.1.0.RELEASE</version>
+   <version>5.3.18</version>
   </dependency>
 	<!-- for Spring injection -->
 		<dependency>			
