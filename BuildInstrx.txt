@@ -1,0 +1,299 @@
+Build Instructions for updating MS-SPEAK ICAP SERVICE (msp)
+
+to update the msp service:
+> save current icap:
+>	sudo mv /usr/local/bin/c-icap /usr/local/bin/c-icap.sav
+**** SANITY CHECK - make icap before any changes, should NOT CREATE /usr/local/bin/c-icap 
+			( everything should say "Nothing to be done for 'all'.")
+			update: no new /usr/local/bin/c-icap will be created until you do make install
+	> gocap
+	> make
+
+> cd /home/msuser/msp
+> edit srv_msp.c
+> cp -i /home/msuser/msp/srv_msp.c /home/msspeak/Packages/c_icap-0.5.5/services/msp
+
+> cd /home/msspeak/Packages/c_icap-0.5.5  (gocap)
+> make
+> if ok:
+>	 sudo make install
+
+
+
+
+Build Instructions for MS-SPEAK Toolkit Custom Intrusion Detection Systems 
+
+
+NOTE:	the following build instructions apply to, and have been tested on a linux debian 9 system
+		and assumes there is a local user account for 'msspeak' (i.e, there exists a directory at 
+		/home/msspeak, to install and build under a different user account, replace the 'msspeak'
+		user with that user in the following instructions.
+
+Retrieve the MS-SPEAK source code from the 'Phase2' branch of the ms-speak github code repository at:
+	https://github.com/pnnl/ms-speak/tree/Phase2/Multispeaker
+
+Create a directory under the current users home directory, called 'Packages' and change to it:
+	mkdir /home/msspeak/Packages
+	cd /home/msspeak/Packages
+
+Build the Squid http proxy:
+	download the most recent nightly build of Squid from http://www.squid-cache.org/Versions/v4/
+		i.e., squid-4.7-20190507-r2e17b0261.tar.gz to /home/msspeak/Packages and unpack it:
+	cd /home/msspeak/Packages
+	tar xzf squid-4.7-20190507-r2e17b0261.tar.gz
+	for convenience, rename the squid-4.7-20190507-r2e17b0261 directory:
+		mv squid-4.7-20190507-r2e17b0261 squid-4.7
+	build:
+		cd /home/msspeak/Packages/squid-4.7
+		./configure		// note: this will generate Makefile from the existing Makefile.in
+						// 		 (there is no need to run automake to generate the Makefile.in)
+		make			// this will take about 20 minutes
+
+		// before running make install, modify ./src/squid.conf.default as below
+		// then run sudo make install and verify the changes are in /usr/local/squid/etc/squid.conf
+		sudo make install
+
+	modify squid configuration file (/usr/local/squid/etc/squid.conf) as follows:
+	(or copy squid.conf from the MS-SPEAK source code as ./src/squid.conf.default)
+	//// start of squid.conf changes ////////////////////////////////////////////////
+		#
+		# Enable and configure the ICAP client in Squid
+		#
+		icap_enable on
+		icap_preview_enable on
+		icap_preview_size 0
+		icap_send_client_ip on
+		icap_service service_msp_req reqmod_precache icap ://127.0.0.1:1344/msp
+		icap_service service_msp_resp respmod_precache icap ://127.0.0.1:1344/msp
+
+		# This directive specifies the location of Squid’s error message files.
+		# If you want to customize the error messages, you should put them into a nondefault directory.
+		# Otherwise, they may be overwritten if you run make install in the future
+		# point to our MSP error files
+		error_directory /home/msspeak/Packages/c_icap-0.5.5/services/msp/errors
+
+		#
+		# Define what the squid content adaptation layer class maps
+		#
+		adaptation_access service_msp_req allow all
+		adaptation_access service_msp_resp allow all
+
+		#
+		#
+		# adaptation_service_set class_msp service_msp_req service_msp_respmod
+		#
+		#
+		# This is the traffic match ACL for ICAP.   It currently funnels everything to icap for inspection.
+		# This should change to an ACL that matches multispeak traffic, if possible.  Otherwise, msp will
+		# will have to perform all filtering work.
+		#
+		#adaptation_access class_msp allow all
+
+		# Example rule allowing access from your local networks.
+		# Adapt to list your (internal) IP networks from where browsing
+		# should be allowed
+		#acl localnet src 0.0.0.1-0.255.255.255	# RFC 1122 "this" network (LAN)
+		#acl localnet src 10.0.0.0/8		# RFC 1918 local private network (LAN)
+		#acl localnet src 100.64.0.0/10		# RFC 6598 shared address space (CGN)
+		#acl localnet src 169.254.0.0/16 	# RFC 3927 link-local (directly plugged) machines
+		#acl localnet src 192.168.0.0/16	# RFC 1918 local private network (LAN)
+		#acl localnet src fc00::/7       	# RFC 4193 local private network range
+		#acl localnet src fe80::/10      	# RFC 4291 link-local (directly plugged) machines
+		acl localnet src 172.20.219.0/24	# RFC 1918 local private network (LAN)
+
+		// add
+		acl Safe_ports port 8080	# http
+
+		# Squid normally listens to port 3128
+		# http_port 3128 - set to listen for ipv4 only:
+		http_port 0.0.0.0:3128
+	//// end of squid.conf changes ////////////////////////////////////////////////
+
+	NOTE: if you run automake, it will replace the Squid.conf file(/usr/local/squid/etc/squid.conf), so
+	in that case, you need to replace it with a version that allows only IPV4 addresses and
+	also sets port 8080 as a safeport, as above (that version is in the repo @../Multispeaker/Proxy/squid).
+
+	to run Squid:
+		sudo /usr/local/squid/sbin/squid -h		// to list all options
+				or 
+		sudo /usr/local/squid/sbin/squid -N -d 1
+				or (to run squid as a background process)
+		sudo /usr/local/squid/sbin/squid &
+					
+		if you see this error:
+				logfileHandleWrite: daemon:/var/logs/access.log: error writing ((32) Broken pipe
+			do the following:
+				add your user to the staff group:
+					usermod -a -G staff username
+					(then shutdown, restart)
+				cd /usr/local
+				sudo chmod 777 squid -R
+
+
+Build the c-icap ICAP content adaptation and filtering service:
+	download c_icap-0.5.5 from http://c-icap.sourceforge.net/download.html
+	(i.e., c_icap-0.5.5.tar.gz) to /home/msspeak/Packages and unpack it:
+		cd /home/msspeak/Packages
+		tar xzf c_icap-0.5.5.tar.gz
+	cd /home/msspeak/Packages/c_icap-0.5.5
+	add 'services/msp/Makefile' to 'ac_config_files' variable in the script file called 'configure' :
+		the 'ac_config_files' variable should then look as:
+			ac_config_files="$ac_config_files include/c-icap-conf.h Makefile utils/Makefile services/Makefile services/echo/Makefile services/ex-206/Makefile services/msp/Makefile modules/Makefile tests/Makefile docs/Makefile docs/man/Makefile"
+		
+	create a directory under ./c_icap-0.5.5/services called 'msp'
+		sudo mkdir services/msp
+	add the following files from MS-SPEAK source code to the services/msp directory:
+		(these files should be @ Proxy/c_icap/services/msp/ in the repository)
+		Makefile.am, Makefile.in, makefile.w32, srv_msp.c, srv_msp_body.c, srv_msp_body.h & srv_msp.def
+	also copy the 'errors' folder from the MS-SPEAK source code there
+
+	change the line in ./services/Makefile.am and /services/Makefile.in
+		from
+			SUBDIRS = echo ex-206 
+		to
+			SUBDIRS = echo ex-206 msp
+
+	./configure		// note: this will generate Makefile from the existing Makefile.in
+					//		 (no need to run automake to generate the Makefile.in)
+	make			// this will take a minute or 2
+
+	// before running make install, modify ./c_icap-0.5.5/c-icap.conf.in as below
+	// then run: and verify the changes are in /usr/local/etc/c-icap.conf
+	sudo make install // generates /usr/local/etc/c-icap.conf from 'c-icap.conf.in'
+
+	//// start of c-icap.conf.in changes ////////////////////////////////////////////////
+		modify the following section in './c_icap-0.5.5/c-icap.conf.in':
+		######################################################
+		# External modules comming with core c-icap server
+		#
+		# Module: echo
+		# Description:
+		#	Simple test service
+		# Example:
+		#	Service echo srv_echo.so
+		Service echo srv_echo.so		<== change this
+		Service msp srv_msp.so  		<== to this				
+
+		to verify c-icap configuration:
+			these lines must be in /usr/local/etc/c-icap.conf:
+				Service msp srv_msp.so
+				TemplateDir /usr/local/share/c_icap/templates
+					(NOTE: do not place a slash at the end)
+	//// end of c-icap.conf.in changes ////////////////////////////////////////////////
+
+	create the directory /usr/local/share/c_icap/templates/msp/en:
+		sudo mkdir /usr/local/share/c_icap/templates/msp
+		sudo mkdir /usr/local/share/c_icap/templates/msp/en			
+	copy MSP_RESPONSE from the MS-SPEAK source code to the new directory:
+		sudo cp MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en
+
+	to run c-icap (and the MS-SPEAK IDS service):
+		sudo /usr/local/bin/c-icap -h		// to list all options
+				or 
+		sudo /usr/local/bin/c-icap -N -d 1	// for more verbose output use a higher number after -d
+				or (to run c-icap as a background process)
+		sudo /usr/local/bin/c-icap &
+		
+		NOTE: if you see this error:
+			/usr/local/bin/c-icap: error while loading shared libraries: libicapapi.so.5: cannot open shared object file: No such file or directory
+		do:
+			sudo ldconfig
+		and try again
+
+others packages that may need to be installed:
+	sudo apt-get install libglib2.0-dev
+	sudo apt-get install libxml2
+	sudo apt-get install libxml2-dev
+	sudo apt-get install uuid-dev
+
+NOTE:  After the initial installation of Squid & c-icap (see above) the MS-SPEAK IDS service may be modified without
+		needing to rebuild either squid or c-icap: i.e., if you are only modifying msp/srv_msp.c, 
+		just do the following 
+			from /home/msspeak/Packages/c_icap-0.5.5:
+				edit and save srv_msp.c
+				make
+				sudo make install
+
+		if adding a new source file to msp, add it to Makefile.am and run:
+			automake (requies Makefile.am)
+			./configure
+		then do 
+			make
+			sudo make install
+
+NOTES:
+	automake uses Makefile.am to generate Makefile.in
+	./configure uses Makefile.in to generate Makefile
+
+	if the c-icap machine is rebooted, the directories for the c-icap lock file will no longer exist,
+	and must be recreated: you may see the following error when starting c-icap:
+		Cannot open the pid file: /var/run/c-icap/c-icap.pid or c-icap.ctl
+	if so, do:
+		sudo mkdir /var/run/c-icap
+	this happens because /var/run is a tmpfs filesystem, so it
+	is emptied at each boot, to have a directory created in /var/run after each
+	boot, add a .conf file to /run/tmpfiles.d:
+		/usr/lib/tmpfiles.d/c-icap.conf
+		d /var/run/c-icap 0755 - - -
+
+	the icap daemon will create the actual lock file in the directory when started.
+
+	QT does not pass loopback requests to a proxy, so it cannot be used to test the installation on the same machine
+	To test the installation of squid/c-icap using a single machine, do the following:
+		http_proxy=127.0.0.1:3128
+		export http_proxy
+
+		/usr/local/bin/c-icap-client -i 127.0.0.1 -s msp -p 1344 -req use-any-url
+			or
+		wget --post-file=TestConnDiscReq.xml -S http://127.0.0.1:8080
+		--header="Content-Type: text/xml"
+		--header="SOAPAction: \"http://www.multispeak.org/V5.0/wsdl/CD_Server/InitiateConnectDisconnect\"" -O response.xml
+
+
+
+to build the business rule editor:
+	check which version of java is currently installed and active:
+		java -version
+		the response should be:
+			java version "11.0.1" 2018-10-16 LTS
+		if java version 11 is not installed, install it via:
+			download jdk-11.0.1_linux-x64_bin.deb 
+				from https://www.oracle.com/technetwork/java/javase/downloads/jdk11-downloads-5066655.html
+		from the directory you saved jdk-11.0.1_linux-x64_bin.deb to:
+			sudo dpkg -i jdk-11.0.1_linux-x64_bin.deb
+		verify java 11 is installed and active:
+			java -version
+			the response should be:
+				java version "11.0.1" 2018-10-16 LTS		
+		install the build essentials:
+			sudo apt install build-essential
+
+	copy the MS-SPEAK source file directory 'IdsEditor/' of the github repository to /home/msspeak/MS-Speaker
+	cd /home/msspeak/MS-Speaker/IdsEditor/src
+	build the editor:
+		make
+	run the editor:
+		java -cp ../bin:../lib/ini4j-0.5.4.jar IdsEditor
+
+Note: typically Multispeaker would be installed on a different machine than
+	  squid and icap, as follows, the same procedure is used to install MultispeakerServer on 
+	  yet another (3rd) machine:
+to install MultiSpeaker & MultiSpeakerServer:
+	download qt-opensource-linux-x64-5.11.1.run from https://download.qt.io/archive/qt/5.11/5.11.1/
+	make the installer executable:
+		sudo chmod 777 qt-opensource-linux-x64-5.11.1.run 
+	run the installer
+		./qt-opensource-linux-x64-5.11.1.run
+		
+	create the MS-SPEAK run folders:
+		cd /home/msspeak
+		cd MS-Speaker
+		cd MS-Speaker/run
+		cd MS-Speaker/run/Release
+	copy the MS-SPEAK binaries from the 'Release' folder of the github repository to MS-Speaker/run/Release
+	make sure the binary files are executable:
+		sudo chmod 777 MultiSpeaker
+		sudo chmod 777 MultiSpeakerServer
+
+	
+
