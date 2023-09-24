@@ -75,6 +75,7 @@
 		05/12/2021 - CHM: Email notifications working.
 		05/20/2021 - CHM: Added Inverse and Name to Rule in order to handle multiple rules per method.
 		07/15/2021 - CHM: Use Azure private IP in help.
+		09/24/2023 - CHM: Use Azure public IP in help, tweak log levels.
 		-------------------------------------------------------------------------------
 	NOTE:  the following build instructions apply to a linux debian 10 system
 
@@ -1405,7 +1406,7 @@ int msp_init_service(ci_service_xdata_t * srv_xdata,
 					struct ci_server_conf *server_conf)
 {
 	//sleep(1);
-	ci_debug_printf(0, "\n*** Initializing msp module v3.3 ***\n");
+	ci_debug_printf(0, "\n*** Initializing msp module v3.1 ***\n");
 	 gblMainProc = getpid();
 #ifdef _SHOW_PIDS_
 	ci_debug_printf(3, "msp_init_service pid: %d.\n", gblMainProc);
@@ -1742,15 +1743,15 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_MOD_CONTINUE;
 	} // !ci_req_hasbody
 	/*else{
-		ci_debug_printf(3, "\nmsp_preview_handler::DOES have body\n"); // body_data_buf::invalid body type:0
-		// the body may not be available yet, in preview_handler...
+		ci_debug_printf(3, "\nmsp_preview_handler::DOES have body\n");
+		/ * the body may not be available yet, in preview_handler...
 		char *buf2 = body_data_buf( &mspd->body );
 		if( !buf2 ){
 			ci_debug_printf(0, "\n*** msp_preview_handler:: FAILED TO GET BODY BUFFER  ***\n");
 		}
 		else{
 			msp_dumphex(buf2, mspd->expectedData);
-		}//
+		}* /
 	}*/
 	/*   
 	mspd = ci_service_data(req);
@@ -1789,9 +1790,8 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		return CI_ERROR; 
 	}
 
-#define hdrbufsize 5000
-	char buf[hdrbufsize];
-	size_t len = ci_headers_pack_to_buffer(pHeader, buf, hdrbufsize);
+	char buf[1000];
+	size_t len = ci_headers_pack_to_buffer(pHeader, buf, 1000);
 	/*
 	ci_debug_printf(0, "msp_preview_handler:HTTP HEADER:\n");
 	msp_dumphex(buf, len);
@@ -1849,15 +1849,12 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 		ci_debug_printf(0, "msp_preview_handler::no content type in header\n");
 		return CI_ERROR; // TODO: should we throw an error or allow?
 	}
-	ci_debug_printf(4, "Content type :'%s'.\n", content_type);
 	if( strstr(content_type, "text/xml") == NULL ){
 		if( mspd->bIsSSL ){
 			ci_debug_printf(4, "msp_preview_handler content type %s being allowed for SSL testing..\n", content_type);
 		}
 		else{
-			ci_debug_printf(0, "msp_preview_handler content type '%s' will not be processed...\n", content_type);
-			//ci_debug_printf(3, "pHeader: '%s'\n", pHeader);
-			msp_dumphex(buf, len); // msp_dumphex:: len: 0
+			ci_debug_printf(0, "msp_preview_handler content type %s will not be processed...\n", content_type);
 			return CI_ERROR; // TODO: should we throw an error or allow?
 		}
 	}
@@ -1874,7 +1871,6 @@ int msp_preview_handler(char *preview_data, int preview_data_len, ci_request_t *
 	/*If we do not have content len, for simplicity do not proccess it*/
 	if( content_len <= 0 ){
 		ci_debug_printf(0, "msp_preview_handler::no Content-Length, will not process\n");
-		msp_dumphex(buf, len);
 		return CI_ERROR;
 	}
 
@@ -2054,10 +2050,6 @@ from 321 irene:
 
 set 5 pings rule to send to carl.miller
 
-
-Azure:
-	cls;{ echo From: msspeak@gmail.com; echo To: mspkuser@outlook.com; echo Subject: Azure Test; echo ; echo This is an Azure Test Message; } | /usr/lib/sendmail -t
-		this worked
 */
 int sendmail(const char *to, const char *from, 
 			 const char *subject, const char *message)
@@ -2082,49 +2074,47 @@ int sendmail(const char *to, const char *from,
 void BccUsage(void)
 {
 	USER_CMD cmd = BCC_NO_CMD;
-	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://10.16.124.4:3128/icap?cmd=Help";
-	ci_debug_printf(1, "\nUser Commands Available Thru: '%s\n",pCmd);
-	ci_debug_printf(1, "      http://138.91.74.160:3128/icap?cmd=1\n");
-	ci_debug_printf(1, "      http://138.91.74.160:3128/icap?cmd=6&arg=53\n");
-	ci_debug_printf(1, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
+	char *pCmd = "http://proxyIP:port/icap?cmd=n\n  i.e.,\n      http://138.91.74.160/icap?cmd=1";
+	ci_debug_printf(3, "\nUser Commands Available Thru: '%s\n",pCmd);
+	ci_debug_printf(3, "   (Note: Ignore the browser 'Invalid URL' return message)\n");
 	while( ++cmd <= BCC_HELP ){
 		switch( cmd ){
 			case BCC_SHOW_DB:
-				ci_debug_printf(1, "%d - Show Current Database Configuration.\n", cmd);
+				ci_debug_printf(3, "%d - Show Current Database Configuration.\n", cmd);
 				break;
 			case BCC_RELOAD_DB:
-				ci_debug_printf(1, "%d - Reload Database Configuration.\n", cmd);
+				ci_debug_printf(3, "%d - Reload Database Configuration.\n", cmd);
 				break;
 			case BCC_SHOW_ACT:
-				ci_debug_printf(1, "%d - Show Current Active User.\n", cmd);
+				ci_debug_printf(3, "%d - Show Current Active User.\n", cmd);
 				break; 
 			case BCC_CURRENT_TEMP:
-				ci_debug_printf(1, "%d - Show Current Temperature(F).\n", cmd);
+				ci_debug_printf(3, "%d - Show Current Temperature(F).\n", cmd);
 				break; 
 			case BCC_CURRENT_HOUR:
-				ci_debug_printf(1, "%d - Show Current Hour of the Day.\n", cmd);
+				ci_debug_printf(3, "%d - Show Current Hour of the Day.\n", cmd);
 				break; 
 			case BCC_SET_CURRENT_TEMP:
-				ci_debug_printf(1, "%d - Set Current Temperature(F)(enter test mode).\n", cmd);
-				ci_debug_printf(1, "     (argument required: 'icap?cmd=6&arg=XX')\n");
-				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
+				ci_debug_printf(3, "%d - Set Current Temperature(F)(enter test mode).\n", cmd);
+				ci_debug_printf(3, "     (argument required: 'icap?cmd=6&arg=')\n");
+				ci_debug_printf(3, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_SET_CURRENT_HOUR:
-				ci_debug_printf(1, "%d - Set Current Hour of the Day(enter test mode).\n", cmd);
-				ci_debug_printf(1, "     (argument required: 'icap?cmd=7&arg=XX')\n");
-				ci_debug_printf(1, "     (use -1 to disable test mode)\n");
+				ci_debug_printf(3, "%d - Set Current Hour of the Day(enter test mode).\n", cmd);
+				ci_debug_printf(3, "     (argument required: 'icap?cmd=7&arg=')\n");
+				ci_debug_printf(3, "     (use -1 to disable test mode)\n");
 				break; 
 			case BCC_HELP:
-				ci_debug_printf(1, "%d - Show This Help.\n", cmd);
-				ci_debug_printf(1, "     (also via 'icap?cmd=help')\n");
+				ci_debug_printf(3, "%d - Show This Help.\n", cmd);
+				ci_debug_printf(3, "     (also via 'icap?cmd=help')\n");
 				break;
 			default:
-				ci_debug_printf(1, "User Command '%d' Not Supported.\n", cmd);
+				ci_debug_printf(3, "User Command '%d' Not Supported.\n", cmd);
 				BccUsage();
 				break;
 		}
 	}
-	ci_debug_printf(1, "\n");
+	ci_debug_printf(3, "\n");
 }
 
 /*
@@ -2276,7 +2266,7 @@ int msp_end_of_data_handler(ci_request_t * req)
 				break;
 			case BCC_CURRENT_HOUR:
 				ci_debug_printf(3, "Show Current Hour of the Day Command Received.\n");
-				ci_debug_printf(1, "   The Current Hour of the Day is '%d'\n", gblCurrentHourOfDay);
+				ci_debug_printf(2, "   The Current Hour of the Day is '%d'\n", gblCurrentHourOfDay);
 				break;
 			case BCC_SET_CURRENT_TEMP:
 				if( mspd->bHasArg ){
