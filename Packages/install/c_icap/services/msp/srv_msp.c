@@ -51,6 +51,13 @@
 /*
 -------------------------------------------------------------------------------
 	History
+		12/26/2023 - CHM: added comment regarding v3 / v5 endpoints:
+			it seems that v5 SOAPAction contains an endpoint, but v3 and v4.1 don't:
+				SOAPAction: http://www.multispeak.org/Version_4.1_Release/PingURL
+						vs
+				SOAPAction: http://www.multispeak.org/V5.0/wsdl/CB_Server/PingURL
+			renamed V3_NULL_ENDPOINT
+		
 		03/23/2019 - inital modification from examples @ https://sourceforge.net/projects/c-icap/: Carl Miller <carl.miller@pnnl.gov>
 		04/01/2019 - CHM: added logging.
 		05/13/2019 - CHM: return MS response on business rule violation.
@@ -384,7 +391,7 @@ User-Agent: Mozilla/5.0
 #define APIBUFFLEN     				250
 #define WEATHER_UPDATE_INTERVAL     5   // minutes
 #define DATABASE_NAME "/home/msspeak/BizRules.db"
-#define V3_NULL_ENDPOINT "V3_Server"
+#define NO_ENDPOINT "Generic_Server" // V3_NULL_ENDPOINT "V3_Server"
 #define STRBUFF_LEN 800
 #define SQL_FROM_QUERY " FROM rules"\
 		" INNER JOIN functions ON functions.id = rules.function"\
@@ -1506,7 +1513,7 @@ int msp_post_init_service(ci_service_xdata_t * srv_xdata, struct ci_server_conf 
 	struct tm *tm_struct = localtime(&currtime);
 	ci_debug_printf(1, "    Current local time: %s", asctime(tm_struct));
 	ci_debug_printf(3, "\n*** Waiting for Initial Request... ***\n");
-
+	//ci_debug_printf(3, "\n*** DEBUG - REBUILD TEST ***\n");
 	return CI_OK;
 }
 
@@ -2954,10 +2961,17 @@ BIZ_RULE *GetBusinessRecord(struct srv_msp_data *mspd, int *pErrRet)
 	if( get_method_info(root, pMsgInfo)) // get just what is needed to find the right business rule record
 	{
 		pMethod = pMsgInfo->method;
-		// seems that most (not PingURL) V3 msgs don't include an endpoint
+		/* seems that most (not PingURL) V3 msgs don't include an endpoint
+				12/26/2023 - CHM: added comment regarding v3 / v5 endpoints:
+			it seems that v5 SOAPAction contains an endpoint, but v3 and v4.1 don't:
+				SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification
+				SOAPAction: http://www.multispeak.org/Version_4.1_Release/PingURL
+						vs
+				SOAPAction: http://www.multispeak.org/V5.0/wsdl/CB_Server/PingURL
+		*/
 		if( !strncasecmp(pMsgInfo->endpoint, "Version", 7) ){ // Version_3.0
 			//if( !strcmp(pMsgInfo->endpoint, "3") ){
-				pEndpoint = V3_NULL_ENDPOINT;
+				pEndpoint = NO_ENDPOINT; // V3_NULL_ENDPOINT;
 				pMsgInfo->bIsV3 = true;
 			//}
 		}
