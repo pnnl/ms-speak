@@ -1,0 +1,143 @@
+
+------------------------------------------------------------------------------------------------
+--- to modify ICAP msp service on Azure Irene:
+	start all VMs, username is msuser
+				   password is Msspeak123
+	verify old before modding:
+		bob>   mss
+		irene> sqid 2; cap 3; browse to http://138.91.74.160/icap?cmd=1  works
+		
+			curl --url "http://138.91.74.160/icap?cmd=1"  doesnt work
+		
+		--silent
+		alice> curl --proxy http://10.16.124.4:3128 --url 'http://10.16.124.6:8080' -H "User-Agent: MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification" --output /home/msuser/msspeak/xml/response.xml --data @/home/msuser/msspeak/xml/ODEventNotification.xml  doesnt work either
+		
+		##### I HAVE TO SEND TO SQUID VIA PORT 80 NOW, NOT 3128 !!!! ################
+		curl --proxy http://10.16.124.4:80 --url 'http://10.16.124.6:8080' -H "User-Agent: MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification" --output /home/msuser/msspeak/xml/response.xml --data @/home/msuser/msspeak/xml/ODEventNotification.xml
+		
+	make mods to service:
+		gocap (cd /home/msspeak/Packages/c_icap-0.5.5)
+		save prior service:
+			ls -al /usr/local/lib/c_icap/srv_msp.*
+			sudo mv /usr/local/lib/c_icap/srv_msp.la /usr/local/lib/c_icap/srv_msp.la.sav
+			sudo mv /usr/local/lib/c_icap/srv_msp.so /usr/local/lib/c_icap/srv_msp.so.sav
+		cap 3 (verify no service available)
+		save current src file
+			cd services/msp
+			cp srv_msp.c srv_msp.c.sav
+		edit service src file
+			cp srv_msp.c 
+			cp srv_msp.c ~
+			edit ~/srv_msp.c 
+				service starts at msp_post_init_service
+				ADDED THE FOLLOWING:
+					ci_debug_printf(3, "\n*** DEBUG - REBUILD TEST ***\n");
+			cp ~/srv_msp.c /home/msspeak/Packages/c_icap-0.5.5/services/msp
+			make
+			sudo make install
+				Libraries will be installed in:
+					/usr/local/lib/c_icap
+				ls -al /usr/local/lib/c_icap/srv_msp.*
+			cap 3 (verify new service mods available)
+
+	#  summary:  
+		  cp ~/srv_msp.c /home/msspeak/Packages/c_icap-0.5.5/services/msp
+		  gocap
+		  make
+		  sudo make install
+		  ls -al /usr/local/lib/c_icap/srv_msp.*
+
+	send 4.1 packets from Alice:
+		curl --proxy http://10.16.124.4:80 --url 'http://10.16.124.6:8080' -H "User-Agent: Axis/1.3" -H "Accept: application/soap+xml, application/dime, multipart/related, text/*" -H "Content-Type: text/xml; charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_4.1_Release/ODEventNotification" --data @/home/msuser/msspeak/xml/ODEventNotification_4_1.xml
+
+		curl --proxy http://10.16.124.4:80 --url 'http://10.16.124.6:8080' -H "User-Agent: Axis/1.3" -H "Accept: application/soap+xml, application/dime, multipart/related, text/*" -H "Content-Type: text/xml; charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_4.1_Release/PingURL" --data @/home/msuser/msspeak/xml/PingURL_4_1.xml
+
+
+
+the "Endpoint" is like CB_SERVER etc.
+
+
+--- to modify ICAP msp service on Azure Irene:
+------------------------------------------------------------------------------------------------
+
+
+
+------------------------------------------------------------------------------------------------
+--- building ICAP only on PR, as Squid as installed via apt ------------------------------------
+	ssh to 204.98.53.179
+	login as
+		msspeak / PNNL!2023@
+I did not build Squid as it would not compile and i got it installed via
+	> sudo apt install squid
+I also was able to install c-icap via
+	> sudo apt install c-icap
+but it did not include source files, which i need to make the msp server
+	so i did the following step (taken from mspInstall.sh)
+
+	cd /home/msspeak/msspeak/Packages
+		cp install/c_icap/configure c_icap-0.5.5
+		cp install/c_icap/c-icap.conf.in c_icap-0.5.5
+		cp install/c_icap/configure.ac c_icap-0.5.5
+		mkdir -p c_icap-0.5.5/services/msp
+		cp -r install/c_icap/services/msp/* c_icap-0.5.5/services/msp
+		cp install/c_icap/services/Makefile.am c_icap-0.5.5/services/Makefile.am
+		cp install/c_icap/services/Makefile.in c_icap-0.5.5/services/Makefile.in
+
+		cd c_icap-0.5.5
+		./configure
+		make
+			NOW i see:
+			Making all in msp
+			make[3]: Entering directory '/home/msspeak/msspeak/Packages/c_icap-0.5.5/services/msp'
+
+		sudo make install
+			note: before doing this, /usr/local/bin was empty
+				afterwards it had all this:
+					-rwxr-xr-x  1 root root 438372 Oct  5 13:27 c-icap
+					-rwxr-xr-x  1 root root  47036 Oct  5 13:27 c-icap-client
+					-rwxr-xr-x  1 root root   1796 Oct  5 13:27 c-icap-config
+					-rwxr-xr-x  1 root root    800 Oct  5 13:27 c-icap-libicapapi-config
+					-rwxr-xr-x  1 root root  61916 Oct  5 13:27 c-icap-stretch
+								
+		cd ../
+		sudo mkdir -p /usr/local/share/c_icap/templates/msp/en-US
+		sudo cp install/c_icap/services/msp/MSP_RESPONSE /usr/local/share/c_icap/templates/msp/en-US
+		sudo cp install/c_icap/c-icap.conf /usr/local/etc
+		sudo cp install/c-icap.conf.tmpf /usr/lib/tmpfiles.d/c-icap.conf
+		sudo mkdir -p /var/run/c-icap
+		sudo ldconfig
+		
+		
+		this now exists:
+			-rwxr-xr-x 1 root root 438372 Oct  5 13:27 /usr/local/bin/c-icap
+	
+	
+	> sudo /usr/local/bin/c-icap -N -D -d 3
+		*** Initializing msp module v3.1 ***
+		My hostname is: MS-SPEAK.preco.lan
+
+		User Commands Available Thru: 'http://proxyIP:port/icap?cmd=n
+		  i.e.,
+			  http://138.91.74.160/icap?cmd=1
+		   (Note: Ignore the browser 'Invalid URL' return message)
+		1 - Show Current Database Configuration.
+		2 - Reload Database Configuration.
+		3 - Show Current Active User.
+		4 - Show Current Temperature(F).
+		5 - Show Current Hour of the Day.
+		6 - Set Current Temperature(F)(enter test mode).
+			 (argument required: 'icap?cmd=6&arg=')
+			 (use -1 to disable test mode)
+		7 - Set Current Hour of the Day(enter test mode).
+			 (argument required: 'icap?cmd=7&arg=')
+			 (use -1 to disable test mode)
+		8 - Show This Help.
+			 (also via 'icap?cmd=help')
+
+			Current local time: Thu Oct  5 13:34:56 2023
+
+		*** Waiting for Initial Request... ***
+	
+	
+--- building ICAP only on PR, as Squid as installed via apt ------------------------------------	
+	
