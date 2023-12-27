@@ -14,10 +14,6 @@
 # curl --url "http://127.0.0.1:8080" --data @ODEventNotification.xml -A "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification" --referer "http://buster.test.com/" --output response.xml
 #
 
-sudo curl -v --proxy http://192.168.1.3:3128 https://google.com
-sudo curl -v https://google.com
-
-
 # --cacert /home/carl/mss.pem, --verbose
 curl -v --cacert /home/carl/mss.pem --url "https://127.0.0.1:8443" --data @ODEventNotification.xml -A "MultiSpeak Test/1.0" -H "Accept: application / soap + xml, application / dime, multipart / related, text/*" -H "Content-Type: text/xml;charset=utf-8" -H "SOAPAction: http://www.multispeak.org/Version_3.0/ODEventNotification" --referer "http://buster.test.com/"
 

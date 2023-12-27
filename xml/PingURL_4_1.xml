@@ -1,0 +1,24 @@
+<?xml
+	version="1.0"
+	encoding="utf-8"
+	?>
+<soap:Envelope
+	xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<soap:Header>
+		<MultiSpeakMsgHeader
+			BuildString="PR"
+			UserID="SCADA"
+			Pwd="xxxxx"
+			AppName="Survalent ADMS"
+			AppVersion="2.0"
+			Company="Survalent Technology Corporation"
+			SessionID="17568"
+			xmlns="http://www.multispeak.org/Version_4.1_Release"/>
+		</soap:Header>
+	<soap:Body>
+		<PingURL
+			xmlns="http://www.multispeak.org/Version_4.1_Release"/>
+	</soap:Body>
+</soap:Envelope>
